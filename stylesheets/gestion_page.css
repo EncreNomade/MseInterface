@@ -1,0 +1,50 @@
+#pagesbanner {
+	position:relative;
+	margin:0px;
+	padding:0px;
+	width:100%;
+	height:250px;
+	left:0px;
+	top:-125px;
+	background:#4d4d4d;
+	overflow:auto;
+}
+
+#confirm {
+	position:relative;
+	padding:0px;
+	top:-100px;
+	left:50px;
+}
+
+.page {
+	position:relative;
+	background:url('../images/UI/full_page.png') right bottom no-repeat;
+	width:128px;
+	height:128px;
+	float:left;
+	margin:41px 0px 0px 30px;
+	padding:0px;
+}
+#new_page {
+	position:relative;
+	background:url('../images/UI/add_page.png') right bottom no-repeat;
+	width:128px;
+	height:128px;
+	float:left;
+	margin:41px 0px 0px 30px;
+	padding:0px;
+}
+.page h5, #new_page h5, .page input {
+	position:relative;
+	margin:0px;
+	padding:0px;
+	top:128px;
+	width:100%;
+	height:30px;
+	line-height:30px;
+	text-align:center;
+	font-size:15px;
+	color:#fff;
+	font-family:verdana;
+}

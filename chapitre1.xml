@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE root [
+	<!ENTITY width "800">
+	<!ENTITY height "600">
+	<!ENTITY size "800, 600">
+]>
+
+<!--
+	parent automatique defined as parent in the structure if not parametered
+-->
+
+<root name="chapitre1" book="Le mort ne porte pas de rouge" id="root" width="&width;" height="&height;" orient="portrait">
+
+<src name="couverture" type="img" path="couverture.jpg" preload="true"></src>
+<src name="bgRue" type="img" path="bg_rue.jpg" preload="true"></src>
+<src name="bgForet" type="img" path="bg_foret.jpg" preload="true"></src>
+<src name="cyc1" type="img" path="wiki/cyc1.png" preload="false"></src>
+<src name="cyc2" type="img" path="wiki/cyc2.jpeg" preload="false"></src>
+<src name="sim_run" type="img" path="sim_run.jpg" preload="true"></src>
+<src name="sim_cache" type="img" path="sim_cache.jpg" preload="true"></src>
+
+<src name="like" type="img" path="button/like.png" preload="false"></src>
+<src name="auteur" type="img" path="button/auteur.png" preload="false"></src>
+<src name="aide" type="img" path="button/aide.png" preload="false"></src>
+<src name="credits" type="img" path="button/credits.png" preload="false"></src>
+<src name="logo" type="img" path="button/logo.png" preload="false"></src>
+<src name="likeBar" type="img" path="barre/like.png" preload="false"></src>
+<src name="auteurBar" type="img" path="barre/auteur.png" preload="false"></src>
+<src name="aideBar" type="img" path="barre/aide.png" preload="false"></src>
+<src name="creditsBar" type="img" path="barre/credits.png" preload="false"></src>
+
+<src name="fouine" type="img" path="fouine.png" preload="true"></src>
+<src name="sim_cours" type="img" path="sim_cours.png" preload="true"></src>
+<src name="grillage" type="img" path="grillage.png" preload="true"></src>
+<src name="cran" type="img" path="cran.png" preload="true"></src>
+
+<src name="audCourir" type="aud" path="audio/courir" preload="false"></src>
+<src name="audRER" type="aud" path="audio/RER" preload="false"></src>
+<src name="audCran" type="aud" path="audio/cran" preload="false"></src>
+<src name="audKlaxon" type="aud" path="audio/klaxon" preload="false"></src>
+<src name="audPas" type="aud" path="audio/pas" preload="false"></src>
+<src name="audPiege" type="aud" path="audio/piege" preload="false"></src>
+
+<!--
+	Title
+-->
+<page id="title" type="BaseContainer">
+	<param><size>&size;</size></param>
+	
+	<layers>
+		<layer id="couv" type="Layer" depth="0">
+			<param><size>&size;</size></param>
+
+			<obj type="img" id="couvimg" src="couverture">
+				<param><size>&size;</size></param>
+			</obj>
+			<obj type="txt" id="txtTitle" content="Le mort ne porte pas de rouge à lèvres" styled="true">
+				<param>
+					<pos>80, 100</pos>
+					<font>35px Verdana</font>
+					<fillStyle>rgb(200,200,200)</fillStyle>
+				</param>
+			</obj>
+			<obj type="txt" id="txtAuteur" content="Christophe DEBIEN" styled="true">
+				<param>
+					<pos>370, 155</pos>
+					<font>30px Verdana</font>
+					<fillStyle>rgb(86,61,29)</fillStyle>
+				</param>
+			</obj>
+		</layer>
+	</layers>
+</page>
+
+<!--
+	Chapitre
+-->
+<page id="chapitre" type="BaseContainer" parent="null">
+	<param><size>&size;</size></param>
+	
+	<layer id="chaBg" type="Layer" depth="0">
+		<param><size>&size;</size></param>
+		
+		<obj type="img" id="bgRueImg" src="bgRue">
+			<param><size>&size;</size></param>
+		</obj>
+	</layer>
+	
+	<layer id="chaLayer" type="Layer" depth="1">
+		<param><pos>220, 0</pos><size>360, 600</size></param>
+		
+		<obj type="mask" id="mask">
+			<param>
+				<size>360, 600</size>
+				<fillStyle>rgba(0,0,0,0.8)</fillStyle>
+			</param>
+		</obj>
+		<obj type="txt" id="titChapitre" content="CHASSE A L\'HOMME" styled="true">
+			<param>
+				<pos>180, 110</pos>
+				<textBaseline>middle</textBaseline>
+				<textAlign>center</textAlign>
+				<font>32px Verdana</font>
+				<fillStyle>#FFF</fillStyle>
+			</param>
+		</obj>
+		<obj type="txt" id="chapitre1" content="Chapitre I" styled="true">
+			<param>
+				<pos>180, 260</pos>
+				<textBaseline>middle</textBaseline>
+				<textAlign>center</textAlign>
+				<font>32px Verdana</font>
+				<fillStyle>#FFF</fillStyle>
+			</param>
+		</obj>
+	</layer>
+	
+	<anime id="showChaAnime" type="keyframe" tar="chaLayer" repeat="1" immi="false">
+		<frame>[0,72,84]</frame>
+		<opacity>[0,0,1]</opacity>
+	</anime>
+</page>
+
+<!--
+	PageWiki
+-->
+<page id="wkCycPage" type="BaseContainer" parent="null">
+	<param><size>&size;</size></param>
+	
+	<layer id="wkCycLayer" type="Layer" depth="0">
+		<param><pos>220,0</pos><size>360,600</size></param>
+		
+		<obj type="img" id="temp" src="couverture">
+			<param><pos>-220,0</pos><size>&size;</size></param>
+		</obj>
+		<obj type="mask" id="temp">
+			<param>
+				<size>360, 600</size>
+				<fillStyle>rgba(0,0,0,0.8)</fillStyle>
+			</param>
+		</obj>
+	</layer>
+	
+	<layer id="cyclope" type="PageWiki" depth="1" title="Les Cyclopes">
+		<param>
+			<pos>220,0</pos><size>360,600</size>
+			<fillStyle>#FFF</fillStyle>
+			<font>16px Verdana</font>
+		</param>
+		<galery src="cyc1"></galery>
+		<galery src="cyc2"></galery>
+		<content>Les cyclopes sont des créatures fantastiques de la mythologie grecque. Ce sont des géants qui ne possèdent qu\'un seul oeil au milieu du front.\n • Les cyclopes ouraniens : Ils sont enfermés car leur force effraye. Zeus les délivre pour lutter contre les titans. Ils remercient Zeus en lui forgeant des éclairs foudroyants, ils créent aussi le trident de Poséidon, ...\n • Les cyclopes forgerons : ils aident Héphaïstos, dieu du feu, de la métallurgie et des volcans. Ils forgent l’airain pour fabriquer les armu res des dieux et des héros.\n • Les cyclopes bâtisseurs : ils ont construit les « murailles cyclopéennes » de Mycènes et Tirynthe.\n • Les cyclopes pasteurs : ils vivent de l’élevage en Sicile.\nPlusieurs origines possibles du mythe :\n • Soit la découverte de cranes d’éléphants : ils ont une énorme cavité à la place de la trompe. Or, les grecs voyaient très peu d’éléphants vivants\n • Soit parce que les forgerons se protégeaient un oeil lorsqu\'ils travaillaient pour éviter l’accident qui les rende aveugle.\n • Soit à cause de malformations de certains bébés à la naissance.\n • Soit un mythe irlandais de monstres (les Fomoires) ne possédant qu’un oeil, un bras et une jambe.\nLien Wikipédia : http://fr.wikipedia.org/wiki/Cyclope.\nLe Cyclope de Marvel :\nCyclope est aussi un super-héros (Cyclops) créé par Jack Kirby et Stan Lee en 1963. C\'est un mutant qui a la capacité de générer des rayons extrêmement puissants avec ses yeux mais il évite au maximum d\'utiliser la violence. Il devient un des leaders des X-Men.\nLien Wikipédia : http://fr.wikipedia.org/ wiki/ Cyclope_comics</content>
+	</layer>
+</page>
+
+<!--
+	Page article
+-->
+<page id="articlePage" type="BaseContainer" parent="null">
+	<param><size>&size;</size></param>
+	
+	<layer id="background" type="Layer" depth="0">
+		<param><size>&size;</size></param>
+		
+		<obj type="img" id="bg1" src="bgRue">
+			<param><size>&size;</size></param>
+		</obj>
+		<obj type="img" id="bg2" src="bgForet" phIndex="-1">
+			<param><size>&size;</size></param>
+		</obj>
+		<obj type="mask" id="temp">
+			<param>
+				<pos>220,0</pos><size>360,600</size><fillStyle>rgba(0,0,0,0.8)</fillStyle>
+			</param>
+		</obj>
+	</layer>
+	<layer id="illu" type="Layer" depth="2"></layer>
+	<layer id="article" type="ArticleLayer" depth="1" defile="1300">
+		<param>
+			<pos>250,10</pos><size>300,600</size>
+			<font>18px Verdana</font>
+			<fillStyle>#FFF</fillStyle>
+			<textBaseline>top</textBaseline>
+		</param>
+		<content>Ils étaient là.\nÀ moins de cent mètres derrière Simon. Bien décidés à lui faire payer l’affront qu’ils avaient subi. La Meute.\nQuatre adolescents qui faisaient régner leur loi au foyer.\nRecroquevillé dans la pénombre d’un porche, Simon contemplait le ballet des lampes torches qui déchiraient la nuit.\nDes yeux, scrutant le moindre recoin, repoussant les ténèbres de leurs lueurs cyclopes.\nBientôt, ils seraient sur lui.\nSimon frissonna en songeant à ce qui allait lui arriver. Il savait que Kevin, leur chef, serait sans pitié…\nIl fallait qu’il leur échappe.\nAbsolument. Et tant pis s’il ne pouvait jamais retourner au foyer.\nLes pas se rapprochaient, de plus en plus. Simon pouvait entendre leurs voix à présent.\n - Trouvez-moi ce sale petit rat ! Il va comprendre qu’on ne peut pas se moquer de nous comme ça !\n - Ouaip, on va lui faire sa fête !\nÇa, c’était « La Fouine ».\nDix sept ans, un mètre quatre-vingt, soixante quinze kilos de violence pure. Une véritable bombe ambulante qui ne demandait qu’à exploser.\nSimon se pencha un instant hors de son abri pour évaluer ses chances de leur échapper.\nProche du zéro absolu s’il ne bougeait pas de sa cachette. Un peu plus s’il tentait une sortie. À condition de tomber sur quelqu’un, un adulte qui saurait éloigner ses poursuivants.\n - Tu es prêt ? chuchota-t-il à Dark.\nDark. Vador. Son rat albinos. Son plus fidèle compagnon depuis un an.\nLe seul en vérité.\nSimon repoussa l’élan de mélancolie qui menaçait de le submerger et enfouit Dark au fond de son sac.\nIl passa les lanières autour de ses épaules et s’élança.\n\nPas de réaction.\nIl s’était mis à courir comme si sa vie en dépendait.\nSi la « Meute » lui tombait dessus, il était bon pour un passage à tabac dans les règles de l’art. Voilà ce qui se passe lorsque l’on refuse de se soumettre aux plus forts.\nSimon évitait de regarder dans leur direction, les yeux rivés sur les frondaisons du Parc Montsouris. Des arbres, de la pénombre et des milliards de recoins où il pourrait se dissimuler en attendant l’aube.\nS’il atteignait le jardin, il serait sauvé.\nMais, dans sa précipitation, il butta contre le trottoir. Le béton lui arracha une plainte. Un cri minuscule.\n\n - Il est là !\n\nPas assez minuscule, visiblement.\nSimon détala tandis que les faisceaux accrochaient sa silhouette.\n - Choppez-le ! Faut qu’il comprenne !\nQue je comprenne quoi ? Qu’il faut se laisser faire ? Pas question !\nSimon accéléra.\nIl essayait d’oublier que ses poumons le brûlaient, qu’il était épuisé par cette poursuite qui durait depuis des heures, et surtout que la peur menaçait de le paralyser à tout instant.\nIl traversa le boulevard, déclenchant le klaxon furieux d’un noctambule égaré. Puis il s’engouffra à l’abri des arbres. Son sac ballotait sur ses épaules et il pensa au pauvre Dark.\nSans réfléchir, il pénétra dans une petite allée. Il dépassa les angles du pavillon météo qui s’élevait dans la pénombre, puis il ralentit sa course.\nPas un bruit.\nRien d’autre que le vent dans les feuilles. Où étaient-ils passés ?\nSimon s’arrêta, s’accroupit derrière un banc scarifié de graffitis.\nLà ! Sur sa gauche.\nIl avait reconnu la démarche chaloupée de la Fouine, les pas lourds de l’Ours - seize ans, un QI inversement proportionnel à sa force - à ses côtés. Les deux autres suivaient la ligne de tramway qui longeait le parc, sur sa droite.\nLe groupe s’était séparé en deux et tentait de l’encercler.\nSimon réfléchit à toute allure.\nLe RER !\nLa station ne devait être qu’à quelques dizaines de mètres devant lui et, même en ces heures tardives, il y aurait sans doute un peu de monde.\nIl reprit sa progression, lentement, veillant à rester invisible.\nPlus que cinquante mètres.\nIl entendait déjà le crissement des rames sur les rails.\n\nQuarante.\n\n - Là sur le pont ! Il essaye de rejoindre la gare !\n - Merde! lâcha Simon en reprenant sa course.\n\nTrente.\n\nMais la meute, galvanisée par la proximité de sa proie, se rapprochait rapidement. Ils avaient de la lumière, ils évitaient les obstacles. Surtout ils étaient plus âgés, plus forts. Simon était éreinté, les jambes écorchées par les ronces, au bord de l’asphyxie. Les deux groupes gagnaient insensiblement du terrain. Bientôt ils se rejoindraient et ce serait l’hallali.\nSimon obliqua brutalement vers le nord pour essayer de rejoindre un bouquet d ’arbres denses. Avec un peu de chance, il pourrait les semer. Au pire, il grimperait sur l’un des troncs centenaires.\nIl se précipita dans le bosquet. Les branches basses fouettèrent son visage, lui arrachant des larmes. Mais il était presqu’à l’abri : l’obscurité était totale.\nIl ignorait vers quoi il courrait mais il s’en fichait. Il accéléra encore et…\nS’effondra brutalement, le souffle coupé, une violente douleur barrant sa poitrine. Il venait de heurter quelque chose de plein fouet.\nAbasourdi, Simon fouilla des yeux l’obscurité. Il entendait ses poursuivants battre les talus et les fourrés.\nIl tâtonna un instant dans son sac.\nSa torche.\nUn faible halo de lumière.\nUn grillage.\n\nPiégé !\n\nIl se redressa en grimaçant. S’approcha. Une dizaine de mètres en contrebas, le faisceau de sa lampe illumina les reliefs mangés de rouille d’une ligne de chemin de fer abandonnée.\nLa Petite Ceinture !\nUn éclat de voix derrière lui le fit sursauter.\n - On le tient !\nSimon fixa le puits de ténèbres qui s’étendait au-delà du grillage.\n - Alors, t’es enfin prêt à recevoir ta leçon ?\nKevin s’approcha dans la clarté de la lune. Il tendit le bras. Un bruit de ressort. Une lame apparut au bout de sa main.\n - Tu vas voir ce qu’il en coûte de nous provoquer.\nSimon sentait le sang battre contre ses tempes, l’adrénaline inonder son corps. Il voulait gagner du temps pour récupérer. Pour tenter quelque chose.\nIl se retourna face à ses adversaires.\n - Je n’ai fait que défendre Rachel. Vous n’aviez pas le droit de vous en prendre à elle.\n - T’as qu’à pas te mêler de nos affaires.\n - Quatre contre un, vous n’êtes que des lâches !\nSimon avait lancé ça tout en jetant un bref coup d’œil autour de lui. Il avait aperçu la grosse pierre au pied du grillage. Un bon tremplin…\nKevin fulminait.\n - Amenez-le moi !\nLes trois autres s’élancèrent. Mais, juste avant que leurs mains ne se referment sur lui, Simon s’était jeté sur le côté. D’une roulade il avait atteint la pierre. Il se redressa d’un bond, prit appui sur le rocher et entreprit l’escalade du grillage.\n - Il va s’échapper ! Faites quelque chose !\n - Mais… Il ne peut pas aller loin, il n’y a rien après.\nC’était vrai.\nIl n’y avait plus rien. Rien d’autre qu’un énorme trou de ténèbres.\nMais il était trop tard pour reculer.\nSimon s’élança dans le vide.</content>
+		
+		<obj type="obj" id="temp"><param><size>300,45</size></param></obj>
+		<obj type="txt" id="chapitre1" content="À suivre ..." styled="true">
+			<param>
+				<pos>150,0</pos>
+				<textBaseline>top</textBaseline>
+				<textAlign>center</textAlign>
+				<font>italic 40px Verdana</font>
+				<fillStyle>#FFF</fillStyle>
+			</param>
+		</obj>
+		
+		<obj type="obj" id="temp" phIndex="10"><param><size>300,15</size></param></obj>
+		<obj type="game" id="findSimon" class="FindSimon" depth="0" interru="article" phIndex="6">
+			<param><size>300,220</size><font>20px Verdana</font></param>
+		</obj>
+		<obj type="obj" id="temp" phIndex="6"><param><size>300,15</size></param></obj>
+		
+		<obj type="game" id="ratGame" class="RatGame" depth="5" parent="articlePage" interru="article" phIndex="-1">
+			<param><pos>220,0</pos><size>360,600</size></param>
+		</obj>
+		
+		<obj type="obj" id="temp" phIndex="30"><param><size>300,15</size></param></obj>
+		<obj type="img" id="temp" src="sim_run" phIndex="30">
+			<param><size>300,409</size></param>
+		</obj>
+		<obj type="obj" id="temp" phIndex="30"><param><size>300,15</size></param></obj>
+		
+		<obj type="obj" id="temp" phIndex="40"><param><size>300,15</size></param></obj>
+		<obj type="img" id="temp" src="sim_cache" phIndex="40">
+			<param><size>300,390</size></param>
+		</obj>
+		<obj type="obj" id="temp" phIndex="40"><param><size>300,15</size></param></obj>
+		
+		<link type="fb" src="La Meute" index="1"></link>
+		<link type="fb" src="foyer" index="2"></link>
+		<link type="wiki" src="cyclopes" index="4" link="wkCycPage"></link>
+		<link type="wiki" src="albinos" index="17"></link>
+		<link type="audio" src="accéléra" index="32" link="audCourir"></link>
+		<link type="audio" src="klaxon" index="34" link="audKlaxon"></link>
+		<link type="wiki" src="noctambule" index="34"></link>
+		<link type="audio" src="pas" index="40" link="audPas"></link>
+		<link type="audio" src="RER" index="43" link="audRER"></link>
+		<link type="wiki" src="La Petite Ceinture" index="64"></link>
+	</layer>
+	
+	
+	<anime id="showFouineMask" type="keyframe" tar="f_mask" repeat="1" immi="false">
+		<obj parent="illu" type="mask" id="f_mask">
+			<param><size>800,600</size><fillStyle>rgba(255,255,255,0.8)</fillStyle></param>
+		</obj>
+		<frame>[0, 1, 8, 12, 16]</frame>
+		<opacity>[1, 0, 1, 1, 0]</opacity>
+	</anime>
+	<anime id="showFouine" type="keyframe" tar="fouine" repeat="1" immi="false">
+		<obj parent="illu" type="img" id="fouine" src="fouine">
+			<param><pos>250,100</pos><size>300,409</size></param>
+		</obj>
+		<frame>[0, 1, 10, 18]</frame>
+		<opacity>[1, 0, 1, 0]</opacity>
+		<pos>[[250,100], [250,100], [250,100], [0,-200]]</pos>
+		<size>[[300,409], [300,409], [300,409], [800,1091]]</size>
+	</anime>
+	
+	<anime id="courAnim" type="frame" tar="simCours" repeat="1" interval="10" immi="false">
+		<obj parent="illu" type="sprite" id="simCours" src="sim_cours" fw="0" fh="0" sx="0" sy="0" sw="638" sh="256">
+			<frames>[[196,0,119,256],[395,0,243,256],[0,0,290,256],[315,0,185,256]]</frames>
+		</obj>
+		<frame>[0,0,1,2,3,3]</frame>
+	</anime>
+	<anime id="moveAnim" type="keyframe" tar="simCours" repeat="1" trans="false" immi="false">
+		<frame>[0, 20, 30, 41, 42]</frame>
+		<pos>[[220,335],[220,335],[290,335],[395,335],[395,335]]</pos>
+	</anime>
+	<anime id="opacAnim" type="keyframe" tar="simCours" repeat="1" immi="false">
+		<frame>[0, 10, 17, 20, 23, 27, 30, 33, 37, 41, 44, 56, 60]</frame>
+		<opacity>[0, 1,  1,  0,  1,  1,  0,  1,  1,  0,  1,  1,  0]</opacity>
+	</anime>
+	
+	<anime id="grillAnime" type="keyframe" tar="grillage" repeat="1" immi="false">
+		<obj parent="illu" type="img" id="grillage" src="grillage">
+			<param><size>&size;</size></param>
+		</obj>
+		<frame>[0, 10, 85]</frame>
+		<opacity>[0, 1, 1]</opacity>
+	</anime>
+	<anime id="piegeAnime" type="keyframe" tar="piege" repeat="1" immi="false">
+		<obj parent="illu" type="txt" id="piege" content="Piégé !!!" styled="true">
+			<param>
+				<pos>400,300</pos>
+				<textBaseline>middle</textBaseline>
+				<textAlign>center</textAlign>
+				<font>90px Verdana</font>
+				<fillStyle>#FFF</fillStyle>
+			</param>
+		</obj>
+		<frame>[0, 15, 35, 40, 70, 85]</frame>
+		<opacity>[0, 0, 0.8, 1, 1, 0]</opacity>
+		<fontSize>[180, 180, 130, 90, 90, 90]</fontSize>
+	</anime>
+</page>
+
+</root>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<?xml version="1.0"?>
+<wikis>
+<wiki>
+    <div xmlns="http://www.w3.org/1999/xhtml" class="wiki_card" style="width: 176px; height: 240px; ">
+        <h3 style="font-size: 13px; color: rgb(0, 0, 0); ">Road</h3>
+        <div class="sepline" style="font-size: 13px; color: rgb(0, 0, 0); "/>
+        <h4 style="font-size: 13px; color: rgb(0, 0, 0); ">I'm on the road!</h4>
+    </div>
+    <div xmlns="http://www.w3.org/1999/xhtml" class="wiki_card" style="width: 176px; height: 240px; ">
+        <img name="src0_image" src="" style="top:20px;"/>
+        <h5 style="top: 195px; ">Road</h5>
+    </div>
+</wiki>
+</wikis>
+
+
+
+
+
+
+wiki upload errors: array(3) {
+  [0]=>
+  object(stdClass)#10 (2) {
+    ["interval"]=>
+    int(3)
+    ["objs"]=>
+    object(stdClass)#11 (1) {
+      ["src7_image"]=>
+      object(stdClass)#12 (11) {
+        ["w"]=>
+        int(638)
+        ["h"]=>
+        int(256)
+        ["sx"]=>
+        float(434.6375)
+        ["sy"]=>
+        int(0)
+        ["dw"]=>
+        int(125)
+        ["dh"]=>
+        int(129)
+        ["sw"]=>
+        float(249.21875)
+        ["sh"]=>
+        int(258)
+        ["dx"]=>
+        int(362)
+        ["dy"]=>
+        int(214)
+        ["opacity"]=>
+        int(1)
+      }
+    }
+  }
+  [1]=>
+  object(stdClass)#13 (2) {
+    ["interval"]=>
+    int(2)
+    ["objs"]=>
+    object(stdClass)#14 (1) {
+      ["src7_image"]=>
+      object(stdClass)#15 (11) {
+        ["w"]=>
+        int(638)
+        ["h"]=>
+        int(256)
+        ["sx"]=>
+        float(315.0125)
+        ["sy"]=>
+        int(-2)
+        ["dw"]=>
+        int(125)
+        ["dh"]=>
+        int(129)
+        ["sw"]=>
+        float(249.21875)
+        ["sh"]=>
+        int(258)
+        ["dx"]=>
+        int(236)
+        ["dy"]=>
+        int(214)
+        ["opacity"]=>
+        int(1)
+      }
+    }
+  }
+  [2]=>
+  object(stdClass)#16 (2) {
+    ["interval"]=>
+    int(1)
+    ["objs"]=>
+    object(stdClass)#17 (1) {
+      ["src7_image"]=>
+      object(stdClass)#18 (11) {
+        ["w"]=>
+        int(638)
+        ["h"]=>
+        int(256)
+        ["sx"]=>
+        float(61.80625)
+        ["sy"]=>
+        int(-2)
+        ["dw"]=>
+        int(125)
+        ["dh"]=>
+        int(129)
+        ["sw"]=>
+        float(249.21875)
+        ["sh"]=>
+        int(258)
+        ["dx"]=>
+        int(111)
+        ["dy"]=>
+        int(214)
+        ["opacity"]=>
+        int(1)
+      }
+    }
+  }
+}
+
