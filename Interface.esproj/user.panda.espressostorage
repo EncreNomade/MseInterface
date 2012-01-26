@@ -82,12 +82,6 @@
 			</dict>
 			<dict>
 				<key>DocumentURL</key>
-				<string>file://localhost/Users/panda/Sites/MseInterface/projects/support/generator.js</string>
-				<key>StateType</key>
-				<string>DefaultTab</string>
-			</dict>
-			<dict>
-				<key>DocumentURL</key>
 				<string>file://localhost/Users/panda/Sites/MseInterface/projects/index.php</string>
 				<key>StateType</key>
 				<string>DefaultTab</string>
@@ -95,6 +89,12 @@
 			<dict>
 				<key>DocumentURL</key>
 				<string>file://localhost/Users/panda/Sites/MseInterface/projects/mse.js</string>
+				<key>StateType</key>
+				<string>DefaultTab</string>
+			</dict>
+			<dict>
+				<key>DocumentURL</key>
+				<string>file://localhost/Users/panda/Sites/MseInterface/generate_js.php</string>
 				<key>StateType</key>
 				<string>DefaultTab</string>
 			</dict>
