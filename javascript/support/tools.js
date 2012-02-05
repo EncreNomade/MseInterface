@@ -422,7 +422,7 @@ SourceManager.prototype = {
 	            break;
 	        case "audio":
 	            var ext = this.dataExtension(key);
-	            if(ext && audPath) src[key] = audPath + key + "." + ext;
+	            if(ext && audPath) src[key] = audPath + key;
 	            else src[key] = this.sources[key];
 	            break;
 	        case "game":
@@ -487,8 +487,8 @@ SourceManager.prototype = {
 	            data = "type=game&name="+this.sources[key].name+"&data="+this.sources[key].content;
 	            break;
 	        case "anime":
-	            var frames = this.sources[key].frames;
-	            data = "type=anime&name="+key+"&data="+JSON.stringify(frames);break;
+	            var anime = this.sources[key].anime;
+	            data = "type=anime&name="+key+"&data="+JSON.stringify(anime);break;
 	        }
 	        
 	        if(data)
@@ -745,8 +745,13 @@ StepManager.prototype = {
 
 
 // Animation system
-var Animation = function() {
-    this.frames = [];
+var Animation = function(name, repeat, statiq) {
+    this.anime = {};
+    this.anime.name = name;
+    this.anime.repeat = repeat;
+    this.anime.statiq = statiq;
+    this.anime.frames = [];
+    this.anime.objs = {};
 };
 Animation.prototype = {
     constructor: Animation,
@@ -759,25 +764,33 @@ Animation.prototype = {
             if(isNaN(frame.interval) || frame.interval > 64 || frame.interval <= 0) 
                 frame.interval = 1;
             frame.objs = {};
+            var objs = {};
             var content = framexpo.data('frame').children();
             content.each(function(){
-                var obj = {};
+                var params = {};
                 var container = $(this);
                 var img = container.children('img');
                 var name = img.attr('name');
+                // Add to objects array
+                if(!objs[name]) {
+                    objs[name] = {};
+                    objs[name].type = "img";
+                }
                 // Validity
                 if(container.children('canvas').length != 0 || !name || name == "") return;
                 // Recut
-                obj.w = img.attr('naturalWidth'); obj.h = img.attr('naturalHeight');
-                var ratiox = obj.w/img.width(), ratioy = obj.h/img.height();
-                obj.sx = -img.position().left * ratiox; obj.sy = -img.position().top * ratioy;
-                obj.dw = container.width(); obj.dh = container.height();
-                obj.sw = obj.dw * ratiox; obj.sh = obj.dh * ratioy;
+                params.w = img.attr('naturalWidth'); params.h = img.attr('naturalHeight');
+                var ratiox = params.w/img.width(), ratioy = params.h/img.height();
+                params.sx = -img.position().left * ratiox; params.sy = -img.position().top * ratioy;
+                params.dw = container.width(); params.dh = container.height();
+                params.sw = params.dw * ratiox; params.sh = params.dh * ratioy;
+                if(params.sx != 0 || params.sy != 0 || params.sw != params.w || params.sh != params.h)
+                    objs[name].type = "spriteRecut";
                 // parameters
-                obj.dx = container.position().left; obj.dy = container.position().top;
-                obj.opacity = parseFloat(container.css('opacity'));
+                params.dx = container.position().left; params.dy = container.position().top;
+                params.opacity = parseFloat(container.css('opacity'));
                 
-                frame.objs[name] = obj;
+                frame.objs[name] = params;
             });
             // Transition
             var trans = framexpo.children('div.motion');
@@ -788,7 +801,8 @@ Animation.prototype = {
             if(!isNaN(opac)) frame.trans.opac = opac;
             if(!isNaN(font)) frame.trans.font = font;
             
-            this.frames.push(frame);
+            this.anime.frames.push(frame);
+            this.anime.objs = objs;
         }
     }
 };

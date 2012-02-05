@@ -186,3 +186,167 @@ font-size: 10px; color: rgb(0, 0, 0); <br/>font-family: Times; font-size: 10px; 
         )
 
 )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+array(2) {
+  ["src4_image"]=>
+  array(2) {
+    ["params"]=>
+    array(11) {
+      ["w"]=>
+      int(500)
+      ["h"]=>
+      int(682)
+      ["sx"]=>
+      int(0)
+      ["sy"]=>
+      int(0)
+      ["dw"]=>
+      int(175)
+      ["dh"]=>
+      int(240)
+      ["sw"]=>
+      int(500)
+      ["sh"]=>
+      int(682)
+      ["dx"]=>
+      int(132)
+      ["dy"]=>
+      int(89)
+      ["opacity"]=>
+      float(0.60000002384186)
+    }
+    ["animes"]=>
+    &array(2) {
+      ["pos"]=>
+      array(3) {
+        [0]=>
+        array(2) {
+          [0]=>
+          int(132)
+          [1]=>
+          int(89)
+        }
+        [1]=>
+        array(2) {
+          [0]=>
+          int(220)
+          [1]=>
+          int(151)
+        }
+        [2]=>
+        array(2) {
+          [0]=>
+          int(220)
+          [1]=>
+          int(151)
+        }
+      }
+      ["opacity"]=>
+      &array(3) {
+        [0]=>
+        float(0.60000002384186)
+        [1]=>
+        int(1)
+        [2]=>
+        int(1)
+      }
+    }
+  }
+  ["opacity"]=>
+  array(1) {
+    ["params"]=>
+    array(11) {
+      ["w"]=>
+      int(500)
+      ["h"]=>
+      int(682)
+      ["sx"]=>
+      int(0)
+      ["sy"]=>
+      int(0)
+      ["dw"]=>
+      int(175)
+      ["dh"]=>
+      int(240)
+      ["sw"]=>
+      int(500)
+      ["sh"]=>
+      int(682)
+      ["dx"]=>
+      int(220)
+      ["dy"]=>
+      int(151)
+      ["opacity"]=>
+      int(1)
+    }
+  }
+}
+
+Notice: Undefined index: animes in /Users/panda/Sites/MseInterface/generate_js.php on line 193
+
+Warning: Invalid argument supplied for foreach() in /Users/panda/Sites/MseInterface/generate_js.php on line 194
+
+
+
+
+
+
+
+
+
+wiki upload errors: [{"interval":3,"objs":{"src7_image":{"w":638,"h":256,"sx":136,"sy":2,"dw":90,"dh":126,"sw":180,"sh":252,"dx":175,"dy":351,"opacity":0}},"trans":{"pos":2,"size":2,"opac":2,"font":2}},{"interval":10,"objs":{"src7_image":{"w":638,"h":256,"sx":136,"sy":2,"dw":90,"dh":126,"sw":180,"sh":252,"dx":167,"dy":350,"opacity":1}},"trans":{"pos":2,"size":2,"opac":2,"font":2}},{"interval":3,"objs":{"src7_image":{"w":638,"h":256,"sx":136,"sy":2,"dw":90,"dh":126,"sw":180,"sh":252,"dx":167,"dy":350,"opacity":1}},"trans":{"pos":2,"size":2,"opac":2,"font":2}},{"interval":5,"objs":{"src7_image":{"w":638,"h":256,"sx":136,"sy":2,"dw":90,"dh":126,"sw":180,"sh":252,"dx":167,"dy":350,"opacity":0}},"trans":{"pos":2,"size":2,"opac":2,"font":2}},{"interval":3,"objs":{"src7_image":{"w":638,"h":256,"sx":0,"sy":2,"dw":90,"dh":126,"sw":180,"sh":252,"dx":236,"dy":350,"opacity":0}},"trans":{"pos":2,"size":2,"opac":2,"font":2}},{"interval":10,"objs":{"src7_image":{"w":638,"h":256,"sx":0,"sy":2,"dw":90,"dh":126,"sw":180,"sh":252,"dx":236,"dy":350,"opacity":1}},"trans":{"pos":2,"size":2,"opac":2,"font":2}},{"interval":3,"objs":{"src7_image":{"w":638,"h":256,"sx":0,"sy":2,"dw":90,"dh":126,"sw":180,"sh":252,"dx":236,"dy":350,"opacity":1}},"trans":{"pos":2,"size":2,"opac":2,"font":2}},{"interval":5,"objs":{"src7_image":{"w":638,"h":256,"sx":0,"sy":2,"dw":90,"dh":126,"sw":180,"sh":252,"dx":236,"dy":350,"opacity":0}},"trans":{"pos":2,"size":2,"opac":2,"font":2}},{"interval":3,"objs":{"src7_image":{...:73,"dh":127,"sw":146,"sh":254,"dx":325,"dy":350,"opacity":0}},"trans":{"pos":2,"size":2,"opac":2,"font":2}},{"interval":10,"objs":{"src7_image":{"w":638,"h":256,"sx":488,"sy":0,"dw":73,"dh":127,"sw":146,"sh":254,"dx":325,"dy":350,"opacity":1}},"trans":{"pos":2,"size":2,"opac":2,"font":2}},{"interval":3,"objs":{"src7_image":{"w":638,"h":256,"sx":488,"sy":0,"dw":73,"dh":127,"sw":146,"sh":254,"dx":325,"dy":350,"opacity":1}},"trans":{"pos":2,"size":2,"opac":2,"font":2}},{"interval":5,"objs":{"src7_image":{"w":638,"h":256,"sx":488,"sy":0,"dw":73,"dh":127,"sw":146,"sh":254,"dx":325,"dy":350,"opacity":0}},"trans":{"pos":2,"size":2,"opac":2,"font":2}},{"interval":3,"objs":{"src7_image":{"w":638,"h":256,"sx":312.98113207547175,"sy":2,"dw":91,"dh":126,"sw":182.57232704402517,"sh":252,"dx":373,"dy":350,"opacity":0}},"trans":{"pos":2,"size":2,"opac":2,"font":2}},{"interval":10,"objs":{"src7_image":{"w":638,"h":256,"sx":312.98113207547175,"sy":2,"dw":91,"dh":126,"sw":182.57232704402517,"sh":252,"dx":373,"dy":350,"opacity":1}},"trans":{"pos":2,"size":2,"opac":2,"font":2}},{"interval":3,"objs":{"src7_image":{"w":638,"h":256,"sx":312.98113207547175,"sy":2,"dw":91,"dh":126,"sw":182.57232704402517,"sh":252,"dx":373,"dy":350,"opacity":1}},"trans":{"pos":2,"size":2,"opac":2,"font":2}},{"interval":1,"objs":{"src7_image":{"w":638,"h":256,"sx":312.98113207547175,"sy":2,"dw":91,"dh":126,"sw":182.57232704402517,"sh":252,"dx":373,"dy":350,"opacity":0}},"trans":{"pos":2,"size":2,"opac":2,"font":2}}]

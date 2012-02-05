@@ -40,30 +40,174 @@ class ProjectGenerator {
 
     function ProjectGenerator($project) {
         $this->pj = $project;
+    }
+    
+    function generateJS($xml){
+        $this->jstr = "";
+        // Initiale Mse system
+        $this->jstr .= "initMseConfig();";
+        $this->jstr .= "mse.init();";
         // Initiale root
-        $this->jstr = "var root = new mse.Root(\'".$project->getName()."\',".$project->getWidth().",".$project->getHeight().",\'".$project->getOrientation()."\');";
+        $this->jstr .= "var root = new mse.Root('".$this->pj->getName()."',".$this->pj->getWidth().",".$this->pj->getHeight().",'".$this->pj->getOrientation()."');";
         $this->autoid = 0;
         $startPageSet = false;
         
         // Add all ressources to xml structure
-        $srcs = $project->getAllSrcs();
+        $this->jstr .= "var animes={};";
+        $srcs = $this->pj->getAllSrcs();
         $types = array_keys($srcs);
         foreach( $types as $type ) {
             switch($type) {
             case "image": case "audio":
-                if($type == "image") {$type = "img";$preload = "true";}
-                else {$type = "aud";$preload = "false";}
+                if($type == "image") {$t = "img";$preload = "true";}
+                else {$t = "aud";$preload = "false";}
                 $names = array_keys($srcs[$type]);
                 foreach( $names as $name )
-                    $this->jstr .= "mse.src.addSource(\'".$name."\',\'".$srcs[$type][$name]."\',\'".$type."\',".$preload.");";
+                    $this->jstr .= "mse.src.addSource('$name','".$srcs[$type][$name]."','$t',$preload);";
             break;
             case "game":break;
             case "anime":
+                // Array of animes
+                foreach( $srcs[$type] as $name => $anime ){
+                    $repeat = $anime->repeat;
+                    $static = $anime->statiq;
+                    $animeFrs = $anime->frames;
+                    $animeObjs = get_object_vars($anime->objs);
+                    // Calcule total frame duration
+                    $duration = 0;
+                    // Frame table
+                    $frames = array();
+                    foreach( $animeFrs as $frame ) {
+                        array_push($frames, $duration);
+                        $duration += $frame->interval;
+                    }
+                    array_push($frames, $duration);
+                    // Initialisation of animation
+                    $this->jstr .= "animes.$name=new mse.Animation($duration,$repeat,$static);";
+                    // Obj list
+                    $objlist = array();
+                    $nbFr = count($animeFrs);
+                    // Array of frames
+                    for( $f = 0; $f < $nbFr; ++$f ){
+                        $frame = $animeFrs[$f];
+                        $objs = get_object_vars($frame->objs);
+                        $tranpos = $frame->trans->pos;
+                        $transize = $frame->trans->size;
+                        $tranopac = $frame->trans->opac;
+                        $tranfont = $frame->trans->font;
+                        // Array of objs
+                        foreach( $objs as $key=>$params ) {
+                            $w = $params->w; $h = $params->h;
+                            $sx = $params->sx; $sy = $params->sy;
+                            $sw = $params->sw; $sh = $params->sh;
+                            $dx = $params->dx; $dy = $params->dy;
+                            $dw = $params->dw; $dh = $params->dh;
+                            $opacity = $params->opacity;
+                            $t = $animeObjs[$key]->type;
+                            
+                            // First initialization of objet, add to objlist array
+                            if(!array_key_exists($key, $objlist)){
+                                switch($t) {
+                                case "img":
+                                    $this->jstr .= "animes.$name.addObj('$key',new mse.Image(null,{'pos':[$dx,$dy],'size':[$dw,$dh]},'$key'));";
+                                    $objlist[$key] = array("params"=>get_object_vars($params),"animes"=>array()); break;
+                                case "spriteRecut":
+                                    $this->jstr .= "animes.$name.addObj('$key',new mse.Sprite(null,{'pos':[$dx,$dy],'size':[$dw,$dh]},'$key',[[$sx,$sy,$sw,$sh]]));";
+                                    $spriteFrCount = 0;
+                                    $objlist[$key] = array("params"=>get_object_vars($params),"animes"=>array()); break;
+                                }
+                            }
+                            else {
+                                // Previous parameters
+                                $prevsx = $objlist[$key]["params"]['sx']; $prevsy = $objlist[$key]["params"]['sy'];
+                                $prevsw = $objlist[$key]["params"]['sw']; $prevsh = $objlist[$key]["params"]['sh'];
+                                $prevdx = $objlist[$key]["params"]['dx']; $prevdy = $objlist[$key]["params"]['dy'];
+                                $prevdw = $objlist[$key]["params"]['dw']; $prevdh = $objlist[$key]["params"]['dh'];
+                                $prevopac = $objlist[$key]["params"]['opacity'];
+                                // Analyse of animations
+                                $animes = &$objlist[$key]["animes"];
+                                
+                                if($t == 'spriteRecut') {
+                                    if($prevsx!=$sx || $prevsy!=$sy || $prevsw!=$sw || $prevsh!=$sh){
+                                        $this->jstr .= "temp.obj.appendFrame([$sx,$sy,$sw,$sh]);";
+                                        // spriteSeq
+                                        if(!array_key_exists('spriteSeq', $animes)) $animes['spriteSeq']=array();
+                                        // Fill the table of animation of spriteSeq before the current frame
+                                        for($i = count($animes['spriteSeq']); $i < $f; ++$i)
+                                            array_push($animes['spriteSeq'], $spriteFrCount);
+                                        $spriteFrCount++;
+                                    }
+                                }
+                                // Pos
+                                if($dx != $prevdx || $dy != $prevdy){
+                                    if(!array_key_exists('pos', $animes)) $animes['pos']=array();
+                                    $pos = $tranpos==2 ? array($prevdx,$prevdy)
+                                                       : array($prevdx,$prevdy,$tranpos);
+                                    for($i = count($animes['pos']); $i < $f; ++$i)
+                                        array_push($animes['pos'], $pos);
+                                }
+                                // Size
+                                if($dw != $prevdw || $dh != $prevdh){
+                                    if(!array_key_exists('size', $animes)) $animes['size']=array();
+                                    $size = $transize==2 ? array($prevdw,$prevdh)
+                                                         : array($prevdw,$prevdh,$transize);
+                                    for($i = count($animes['size']); $i < $f; ++$i)
+                                        array_push($animes['size'], $size);
+                                }
+                                // Opactiy
+                                if($opacity != $prevopac){
+                                    if(!array_key_exists('opacity', $animes)) $animes['opacity']=array();
+                                    $opac = $tranopac==2 ? $prevopac : array($prevopac,$tranopac);
+                                    for($i = count($animes['opacity']); $i < $f; ++$i)
+                                        array_push($animes['opacity'], $opac);
+                                }
+                            }
+                            
+                            // Last frame, complete animations
+                            if($f == $nbFr-1){
+                                foreach( $objlist[$key]["animes"] as $p=>$seq ) {
+                                    switch($p) {
+                                    case 'spriteSeq':
+                                        for($i = count($seq); $i <= $nbFr; ++$i)
+                                            array_push($seq, $spriteFrCount);
+                                    break;
+                                    case 'pos':
+                                        $pos = array($dx,$dy);
+                                        for($i = count($seq); $i <= $nbFr; ++$i)
+                                            array_push($seq, $pos);
+                                    break;
+                                    case 'size':
+                                        $size = array($dw,$dh);
+                                        for($i = count($seq); $i <= $nbFr; ++$i)
+                                            array_push($seq, $size);
+                                    break;
+                                    case 'opacity':
+                                        for($i = count($seq); $i <= $nbFr; ++$i)
+                                            array_push($seq, $opacity);
+                                    break;
+                                    }
+                                    $objlist[$key]["animes"][$p] = $seq;
+                                }
+                            }
+                            // Update previous parameters state
+                            $objlist[$key]["params"] = get_object_vars($params);
+                        }
+                    }
+                    // Generate animation
+                    foreach($objlist as $key=>$obj) {
+                        $this->jstr .= "animes.$name.addAnimation('$key',{'frame':JSON.parse('".json_encode($frames)."')";
+                        // All animations for this obj
+                        $animes = $obj['animes'];
+                        foreach($animes as $p=>$seq)
+                            $this->jstr .= ",'$p':JSON.parse('".json_encode($seq)."')";
+                        $this->jstr .= "});";
+                    }
+                }
             break;
             }
         }
         // Add all wikis to xml structure
-        $wikis = $project->getWikis();
+        $wikis = $this->pj->getWikis();
         $this->jstr .= "var wikis={};";
         foreach($wikis as $wiki) {
             $images = $wiki->getImages();
@@ -71,19 +215,30 @@ class ProjectGenerator {
             $this->jstr .= "wikis.".$wiki->getId()."=new mse.WikiLayer();";
             foreach($sections as $section) {
                 if($section['type'] == 'text')
-                    $this->jstr .= "wikis.".$wiki->getId().".addExplication(\'".$section['title']."\',\'".$section['content']."\');";
+                    $this->jstr .= "wikis.".$wiki->getId().".addExplication('".$section['title']."','".$section['content']."');";
                 else if($section['type'] == 'link')
-                    $this->jstr .= "wikis.".$wiki->getId().".addLink(\'".$section['title']."\',\'".$section['content']."\');";
+                    $this->jstr .= "wikis.".$wiki->getId().".addLink('".$section['title']."','".$section['content']."');";
             }
             foreach($images as $image) {
                 $legend = (array_key_exists('legend', $image) ? $image['legend'] : "");
-                $this->jstr .= "wikis.".$wiki->getId().".addImage(\'".$image['src']."\',\'".$legend."\');";
+                $this->jstr .= "wikis.".$wiki->getId().".addImage('".$image['src']."','$legend');";
             }
         }
         
         // Pages
         $this->jstr .= "var pages = {};";
         $this->jstr .= "var temp = {};";
+        
+        // Generate pages
+        $pages = $xml->pages->div;
+        foreach( $pages as $page ) {
+            $this->addPage($page);
+        }
+        
+        // Start the book
+        $this->jstr .= "mse.currTimeline.start();";
+        
+        return $this->jstr;
     }
  
     function addPage($pagenode) {
@@ -91,7 +246,7 @@ class ProjectGenerator {
         else $parent = "null";
         // Init page
         $page = "pages.".$pagenode['id'];
-        $this->jstr .= $page."=new mse.BaseContainer(".$parent.",{size:[".$this->pj->getWidth().",".$this->pj->getHeight()."]});";
+        $this->jstr .= $page."=new mse.BaseContainer($parent,{size:[".$this->pj->getWidth().",".$this->pj->getHeight()."]});";
         
         // Layers
         $layernodes = $pagenode->div;
@@ -104,45 +259,49 @@ class ProjectGenerator {
         // Traitement of info
         $id = $layernode['id'];
         $type = $layernode['type'];
+        $style = $layernode['style'];
         $depth = self::getDepthFromStyle($style);
-        $layer ＝ "temp.".$id;
+        $layer = "temp.".$id;
         
         if($type == 'Layer') {
-            $style = $layernode['style'];
             // Param
-            $params = $this->formatParams($style, $this->pj);
-            if(array_key_exists('size', $params))
+            $params = self::formatParams($style, $this->pj);
+            if(!array_key_exists('size', $params))
                 $params['size'] = array($this->pj->getWidth(), $this->pj->getHeight());
-            $this->jstr .= $layer."=new mse.Layer($page,$depth,JSON.parse(".json_encode($params)."));";
+            if(!array_key_exists('globalAlpha', $params))
+                $params['globalAlpha'] = 1;
+            $this->jstr .= "$layer=new mse.Layer($page,$depth,JSON.parse('".json_encode($params)."'));";
             // Obj
             $objs = $layernode->children();
             foreach( $objs as $objnode ) {
                 $this->addObject($objnode, $layer);
             }
         }
-
-        // Supplement
-        if($type == 'ArticleLayer') {
+        else if($type == 'ArticleLayer') {
             $layernode = $layernode->div[0];
             $style = $layernode['style'];
             // Param
-            $params = $this->formatParams($style, $this->pj);
-            if(array_key_exists('size', $params))
+            $params = self::formatParams($style, $this->pj);
+            if(!array_key_exists('size', $params))
                 $params['size'] = array($this->pj->getWidth(), $this->pj->getHeight());
-            $this->jstr .= $layer."=new mse.ArticleLayer($page,$depth,JSON.parse(".json_encode($params)."),null);";
-            $this->jstr .= $layer.".setDefile(1300);";
+            if(!array_key_exists('globalAlpha', $params))
+                $params['globalAlpha'] = 1;
+            $this->jstr .= "$layer=new mse.ArticleLayer($page,$depth,JSON.parse('".json_encode($params)."'),null);";
             
-            $width = (string)self::getWidthFromStyle($this->pj, $style);
+            $width = self::getWidthFromStyle($this->pj, $style);
             if(is_null($width)) $width = $this->pj->getWidth();
-            $lineHeight = (string)$param->lineHeight[0];
+            $lineHeight = $params['lineHeight'];
             // Objs
             $objs = $layernode->div;
+            $index = 0;
             foreach( $objs as $objnode ) {
-                $this->addArticleObject($objnode, $layer, $width, $lineHeight);
+                $this->addArticleObject($objnode, $layer, $width, $lineHeight, $index);
+                $index++;
             }
+            $this->jstr .= "$layer.setDefile(1300);";
         }
         
-        $this->jstr .= $page.".addLayer(\'".$id."\',".$layer.");";
+        $this->jstr .= "$page.addLayer('$id',$layer);";
     }
     
     function addObject($objnode, $layer) {
@@ -165,27 +324,27 @@ class ProjectGenerator {
         // Init attributes
         //$id = "autoid".$this->autoid;
         //$this->autoid++;
-        $params = json_encode($this->formatParams($objnode['style'], $this->pj));
+        $params = json_encode(self::formatParams($objnode['style'], $this->pj));
         
         switch($type) {
         case "img":
             // Src name can be found in image name attribute
-            $this->jstr .= "$obj=new mse.Image($layer,JSON.parse($params),\'".$objnode->img[0]['name']."\');";
+            $this->jstr .= "$obj=new mse.Image($layer,JSON.parse('$params'),'".$objnode->img[0]['name']."');";
             break;
         case "mask":
-            $this->jstr .= "$obj=new mse.Mask($layer,JSON.parse($params));";
+            $this->jstr .= "$obj=new mse.Mask($layer,JSON.parse('$params'));";
             break;
         case "txt":
             // Text content
-            $this->jstr .= "$obj=new mse.Text($layer,JSON.parse($params),\'".$objnode->p[0]."\',true);";
+            $this->jstr .= "$obj=new mse.Text($layer,JSON.parse('$params'),'".$objnode->p[0]."',true);";
             break;
         default:
-            $this->jstr .= "$obj=new mse.UIObject($layer,JSON.parse($params));";break;
+            $this->jstr .= "$obj=new mse.UIObject($layer,JSON.parse('$params'));";break;
         }
         
         $this->jstr .= "$layer.addObject($obj);";
     }
-    function addArticleObject($objnode, $layer, $width, $lineHeight) {
+    function addArticleObject($objnode, $layer, $width, $lineHeight, $index) {
         $class = $objnode['class'];
         if($class == "del_container") return;
         // Init Obj
@@ -197,8 +356,8 @@ class ProjectGenerator {
         $type = "unknown";
         if($class == 'illu') {
             $type = "img";
-            $params = json_encode($this->formatParams($objnode->img[0]['style'], $this->pj));
-            $this->jstr .= "$obj=new mse.Image($layer,JSON.parse($params),\'".$objnode->img[0]['name']."\');";
+            $params = json_encode(self::formatParams($objnode->img[0]['style'], $this->pj));
+            $this->jstr .= "$obj=new mse.Image($layer,JSON.parse('$params'),'".$objnode->img[0]['name']."');";
         }
         else if($class == 'game') {
             $type = "game";
@@ -208,46 +367,50 @@ class ProjectGenerator {
         else if(count($objnode->children()) == 0) {
             // Rectangle obj
             $type = "obj";
-            $params = json_encode($this->formatParams($objnode['style'], $this->pj));
-            $this->jstr .= "$obj=new mse.UIObject($layer,JSON.parse($params));";
+            $params = json_encode(self::formatParams($objnode['style'], $this->pj));
+            $this->jstr .= "$obj=new mse.UIObject($layer,JSON.parse('$params'));";
         }
         else if(count($objnode->p) > 0) {
             // Text obj
             $type = "txt";
-            $params = json_encode(array('size' => $width.",".$lineHeight));
+            $params = json_encode(array('size' => array($width, $lineHeight)));
             
             // Detect link
             $p = $objnode->p;
             if(count($p->span) > 0){
                 preg_match(self::$patterns['linkCutter'], $p[0]->asXML(), $content);
                 $content = $content[1].$content[2].$content[3];
-                $this->jstr .= "$obj=new mse.Text($layer,JSON.parse($params),\'$content\',true);";
+                $this->jstr .= "$obj=new mse.Text($layer,JSON.parse('$params'),'$content',true);";
                 foreach($p->span as $link)
-                    $this->addLink($link, $obj);
+                    $this->addLink($link, $obj, $index);
             }
             else {
                 $content = $p;
-                $this->jstr .= "$obj=new mse.Text($layer,JSON.parse($params),\'$content\',true);";
+                $this->jstr .= "$obj=new mse.Text($layer,JSON.parse('$params'),'$content',true);";
             }
         }
         
         if($type == "game") $this->jstr .= "$layer.addGame($obj);";
         else $this->jstr .= "$layer.addObject($obj);";
     }
-    function addLink($linknode, $obj) {
+    function addLink($linknode, $obj, $index) {
         $src = $linknode;
-        $index = count($layer->obj)-1;
+        $link = "null";
         switch($linknode['class']) {
         case "audiolink":
-            $type = 'audio';break;
+            $type = 'audio';
+            if($linknode['link']) $link = "mse.src.getSrc('".$linknode['link']."')";
+            break;
         case "wikilink":
-            $type = 'wiki';break;
+            $type = 'wiki';
+            if($linknode['link']) $link = "wikis.".$linknode['link'];
+            break;
         case "fblink":
-            $type = 'fb';break;
+            $type = 'fb';
+            if($linknode['link']) $link = "'".$linknode['link']."'";
+            break;
         }
-        if($linknode['link']) $link = $linknode['link'];
-        else $link = "null";
-        $this->jstr .= "$obj.addLink(new mse.Link($src,$index,$type,$link));";
+        $this->jstr .= "$obj.addLink(new mse.Link('$src',$index,'$type',$link));";
     }
     
     function getDoc() {
@@ -255,9 +418,10 @@ class ProjectGenerator {
     }
     
     public static function getDepthFromStyle($style) {
-        if(is_null($style)) return NULL;
+        if(is_null($style)) return 0;
         preg_match(self::$patterns['depth'], $style, $res);
-        return $res['depth'];
+        if(array_key_exists('depth', $res)) return $res['depth'];
+        else return 0;
     }
     public static function getWidthFromStyle($pj, $style) {
         if(is_null($style)) return NULL;
@@ -266,7 +430,7 @@ class ProjectGenerator {
         else return NULL;
     }
     
-    function formatParams($style, $pj){
+    private static function formatParams($style, $pj){
         if(is_null($style) || is_null($pj)) return;
         $param = array();
         preg_match(self::$patterns['width'], $style, $width);
@@ -324,18 +488,10 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
     // Initialisation of project
     $pj = $_SESSION['currPj'];
     $projet = new ProjectGenerator($pj);
+    $js = $projet->generateJS($xml);
     
-    //if(!$xml) echo "Parsing error\n";
-    //else echo "DOMDoc: ".$xml->asXML();
-    // Generate pages
-    $pages = $xml->pages->div;
-    foreach( $pages as $page ) {
-        $projet->addPage($page);
-    }
-    
-    $projet->getDoc()->asXML($pj->getRelatStructPath());
-    
-    //echo "Result: ".$projet->getDoc()->asXML();
+    $path = $pj->getRelatJSPath();
+    $res = file_put_contents($path, $js);
 }
 
 ?>

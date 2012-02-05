@@ -5,6 +5,9 @@
  * Site: pandamicro.co.cc
  * Octobre 2011
  */
+ 
+ini_set("display_errors","1");
+error_reporting(E_ALL);
 
 header("content-type:text/html; charset=utf8");
 session_start();
@@ -15,6 +18,8 @@ if($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('id', $_GET)) {
         $pj = $_SESSION['currPj'];
         $pjid = $pj->getName();
     }
+    $content = file_get_contents("./$pjid/content.js");
+    //$mse = file_get_contents("./mse.js");
 }
 
 ?>
@@ -65,7 +70,6 @@ onerror.num = 0;
 <script src="./support/Interaction.js"></script>
 <script src="./support/Tools.js"></script>
 <script src="./mse.js"></script>
-<script src="./support/generator.js"></script>
 
 </head>
 
@@ -75,15 +79,14 @@ onerror.num = 0;
 
 <script type="text/javascript">
 
-    <?php print("var pid = '".$pjid."';\n");?>
-
-	$("#debug").hide();
-	initMseConfig();
-	mse.init();
-	
+	$("#debug").hide(); 
 	$('body').css({'margin':'0px','padding':'0px'});
 	
-	$.post("./get_struct.php", {'id':pid}, handle_struct);
+	<?php 
+	    print("var pid = '".$pjid."';\n");
+	    print($content);
+	?>
+	//$.post("./get_struct.php", {'id':pid}, handle_struct);
 	
 </script>
 

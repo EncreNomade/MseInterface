@@ -199,6 +199,9 @@ class MseProject {
     function getRelatStructPath() {
         return './projects/'.$this->name.'/struct.xml';
     }
+    function getRelatJSPath(){
+        return './projects/'.$this->name.'/content.js';
+    }
     
     function addWiki($wiki) {
         if(!is_null($wiki)) array_push($this->wikis, $wiki);
@@ -214,6 +217,9 @@ class MseProject {
     
     public static function getRelatProjectPath($pjName) {
         return './projects/'.$pjName;
+    }
+    public static function relatJSPathFor($pjName){
+        return '/content.js';
     }
 
     public static function getExistProject($pjName) {

@@ -197,8 +197,8 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 	    $pj = $_SESSION['currPj'];
 	    print("var pjName = '".$pj->getName()."';");
 	    print("var imgPath = '".$pj->getSrcSavePath("image")."';");
-	    print("var audPath = '".$pj->getSrcSavePath("audio")."';");
-	    print("var gamePath = '".$pj->getSrcSavePath("game")."';");
+	    print("var audPath = '".$pj->getRelatSrcPath("audio")."';");
+	    print("var gamePath = '".$pj->getRelatSrcPath("game")."';");
 	    print("Config.init({width:".$pj->getWidth().", height:".$pj->getHeight()."});");
 	?>
 	$('#showProjet').click(function(){
@@ -226,7 +226,7 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 	            page.data('StepManager').addStepWithContent(sname, step);
 	            step.children().each(function(){
 	                var self = $(this);
-	                // Article 
+	                // Article
 	                if(self.hasClass('article')) {
 	                    self.deletable().configurable();
 	                    self.children('div').each(function(){

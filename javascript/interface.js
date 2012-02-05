@@ -113,7 +113,9 @@ function init() {
     $('.motion').live('click', transSetup);
 	$('#addFrame').click(addFrame);
 	$('#createAnime').click(function(){
-	    var anime = new Animation();
+	    var name = $("#animeName").val();
+	    var repeat = $("#animeRepeat").val();
+	    var anime = new Animation(name, repeat, true);
 	    anime.createAnimation($('#timeline').children('div'));
 	    srcMgr.addSource('anime', anime, $('#animeName').val());
 	});
@@ -1528,7 +1530,7 @@ function saveProject() {
 	
 	$.ajax({
 	   type: "POST",
-	   url: "generate_projet.php",
+	   url: "generate_js.php",
 	   contentType: "text/xml",
 	   processData: false,
 	   data: xmldata,
