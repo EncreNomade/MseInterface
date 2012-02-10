@@ -39,7 +39,7 @@ function init() {
 		var res = elems.deletable(false).clone();
 		res.each(function() {
 			srcMgr.addSource('obj', $(this));
-			$(this).deletable().configurable({text:true}).appendTo(curr.step);
+			$(this).selectable(null).deletable().configurable({text:true}).appendTo(curr.step);
 		});
 		elems.remove();
 	});
@@ -74,7 +74,7 @@ function init() {
 				res.append('<p style="margin:0px;padding:0px;">'+arr[i]+'</p>');
 			}
 			// Append all in current step
-			res.moveable().resizable().deletable().configurable().appendTo(curr.step);
+			res.selectable(null).moveable().resizable().deletable().configurable().appendTo(curr.step);
 			srcMgr.addSource('text', res);
 		});
 		elems.remove();
@@ -121,7 +121,6 @@ function init() {
 	});
 	
 	
-	
 	// Config change real time listener
 	$('#text_color').get(0).onchange = configChanged;
 	$('#text_font').get(0).onchange = configChanged;
@@ -152,20 +151,10 @@ function init() {
 	    var input = null;
 	    switch(type) {
 	    case "audio":
-	        input = $('<div id="audiolinkInput" class="drop_zone" style="width:80%;height:80px;"></div>');
-	        // Interaction with drop zone
-	        input.get(0).addEventListener('dragover', dragOverElemZone, false);
-	        input.get(0).addEventListener('dragleave', dragLeaveElemZone, false);
-	        input.get(0).addEventListener('drop', dropToAudioElemZone, false);
-	        input.mouseup(dragLeaveElemZone);
+	        input = (new DropZone(dropToAudioElemZone, {'width':'80%','height':'80px'}, "audiolinkInput")).jqObj;
 	        break;
 	    case "wiki":
-	        input = $('<div id="wikilinkInput" class="drop_zone" style="width:80%;height:80px;"></div>');
-	        // Interaction with drop zone
-	        input.get(0).addEventListener('dragover', dragOverElemZone, false);
-	        input.get(0).addEventListener('dragleave', dragLeaveElemZone, false);
-	        input.get(0).addEventListener('drop', dropToWikiElemZone, false);
-	        input.mouseup(dragLeaveElemZone);
+	        input = (new DropZone(dropToWikiElemZone, {'width':'80%','height':'80px'}, "wikilinkInput")).jqObj;
 	        break;
 	    case "fb":
 	        input = $('<input id="fblinkInput" type="text" size="20"></input>');break;
@@ -538,13 +527,7 @@ function insertElemDialog(e) {
 	};
 	dialog.annuler.click(closeF);
 	// Drop zone
-	var dzone = $('<div class="drop_zone" style="top:25px;width:250px;height:150px"></div>');
-	// Interaction with drop zone
-	dzone.get(0).addEventListener('dragover', dragOverElemZone, false);
-	dzone.get(0).addEventListener('dragleave', dragLeaveElemZone, false);
-	dzone.get(0).addEventListener('drop', dropToInsertZone, false);
-	dzone.mouseup(dragLeaveElemZone);
-	
+	var dzone = (new DropZone(dropToInsertZone, {'top':'25px','width':'250px','height':'150px'})).jqObj;
 	dialog.main.append(dzone);
 	
 	dialog.confirm.click(function() {
@@ -552,6 +535,9 @@ function insertElemDialog(e) {
 		for(var i = prepared.length-1; i >= 0; i--) {
 			var id = $(prepared.get(i)).data('srcId');
 			var elem = srcMgr.generateChildDomElem(id, dialog.caller.parent());
+			elem.selectable(selectP)
+			    .staticButton('./images/UI/insertbelow.png', insertElemDialog)
+			    .staticButton('./images/UI/addscript.jpg', addScriptForObj);
 			elem.insertAfter(dialog.caller);
 		}
 		dialog.close();
@@ -611,6 +597,62 @@ function transSetup(e){
     });
 };
 
+// Add script
+function addScriptForObj(e){
+    e.preventDefault();
+    e.stopPropagation();
+    var obj = $(this).parent().parent();
+    addScriptDialog(obj, "obj");
+};
+function addScriptDialog(src, type){
+    var name = "";
+    var tagName = src.attr('tagName');
+    if(type != "obj") {
+        // Page label event
+        if(tagName == "LI") {name = src.text(); type = "page";}
+        // Layer expo event
+        else if(src.hasClass('layer_expo')) {name = src.children('h1').text(); type = "layer";}
+        // Anime obj event
+        else if(src.hasClass('icon_src')) {name = src.children('p').text(); type = "anime";}
+        if(!type) return;
+    }
+    dialog.showPopup('Ajouter un script pour '+name, 400, 390, 'Confirmer', src);
+    dialog.main.append('<p><label>Ajout automatique:</label><input id="ajout_auto" type="checkbox" style="margin-top:12px;" checked></p>');
+    dialog.main.append('<p><label>Name:</label><input id="script_name" type="text" size="20"></p>');
+    dialog.main.append('<p><label>Action:</label>'+scriptMgr.actionSelectList(type)+'</p>');
+    dialog.main.append('<p><label>Réaction:</label>'+scriptMgr.reactionList(type)+'</p>');
+    dialog.main.append('<p><label>Cible de réaction:</label></p>');
+    $('#script_reaction').change(tarDynamic).blur(tarDynamic).change();
+};
+function tarDynamic(e){
+    var react = $(this).val();
+    var cible = $('.popup_body p:eq(4)');
+    cible.children('label').nextAll().remove();
+    switch(scriptMgr.reactionTarget(react)) {
+    case "page":
+        var select = '<select id="script_tar">';
+        $('.scene').each(function(){
+            select += '<option value="'+$(this).attr('id')+'">'+$(this).attr('id')+'</option>';});
+        select += '</select>';
+        cible.append(select);
+        break;
+    case "obj":
+        var objChooser = new ObjChooser("script_tar");
+        objChooser.appendTo(cible);
+        break;
+    case "anime":
+        
+        break;
+    case "img":break;
+    case "game":break;
+    case "audio":break;
+    case "script":break;
+    case "code":break;
+    case "effetname":break;
+    default:break;
+    }
+};
+
 
 
 // Source management====================================
@@ -654,7 +696,7 @@ function addImageElem(id, data, page, step) {
 	
 	// Listener to manipulate
 	// Choose Resize Move
-	container.resizable().moveable().configurable({text:true,stroke:true});
+	container.selectable(null).resizable().moveable().configurable({text:true,stroke:true});
 
 	step.append(container);
 }
@@ -662,7 +704,7 @@ function addImageElem(id, data, page, step) {
 function addPage(name) {
 	var page = $('<div id="'+name+'" class="scene"></div>');
 	page.width(config.swidth).height(config.sheight);
-	$('body').append(page);
+	$('#center_panel').append(page);
 	pages[name] = page;
 	
 	// Add step manager
@@ -672,7 +714,10 @@ function addPage(name) {
 	page.get(0).addEventListener('drop', dropToScene, false);
 	
 	var pageLabel = $('<li>'+name+'</li>');
-	pageLabel.click(activeBarLabel);
+	pageLabel.click(activeBarLabel).circleMenu({
+	        'test':['./images/UI/recut.png',null],
+	        'test1':['./images/UI/left.png',null],
+	        'addScript':['./images/UI/addscript.jpg',addScriptDialog]});
 	$('#newPage').before(pageLabel);
 	// Set active the label
 	var parent = $(this).parents().find('.tabBar');
@@ -756,7 +801,9 @@ function addArticle(name, params, content) {
 	// Content <p> params and functions: InsertAfter
 	article.children('div').each(function() {
 		$(this).css({'height':lh+'px'});
-		$(this).selectable(selectP).staticButton('./images/UI/insertbelow.png', insertElemDialog);
+		$(this).selectable(selectP)
+		       .staticButton('./images/UI/insertbelow.png', insertElemDialog)
+		       .staticButton('./images/UI/addscript.jpg', addScriptForObj);
 		$(this).children('.del_container').css({
 			'position': 'relative',
 			'top': ($(this).children('p').length == 0) ? '0%' : '-100%',
@@ -837,12 +884,8 @@ function addWikiCard(type) {
     case 'image':
         card.insertBefore('.wiki_card:last');
         card.deletable();
-        var img = $('<div class="drop_zone" style="top:20px;height:'+(h-90)+'px;"></div>');
+        var img = (new DropZone(dropImgToWikiCard, {'top':'20px','height':(h-90)+'px'}, "audiolinkInput")).jqObj;
         card.append(img);
-        // Interaction with drop zone
-        img.get(0).addEventListener('dragover', dragOverElemZone, false);
-        img.get(0).addEventListener('dragleave', dragLeaveElemZone, false);
-        img.get(0).addEventListener('drop', dropImgToWikiCard, false);
         var legend = $('<input type="text" placeholder="legend" style="top:'+(h-45)+'px;height:20px;font-style:italic;">');
         legend.blur(function(){
             var value = $(this).val();
@@ -920,18 +963,20 @@ function saveWiki() {
 // WikiEditor Interaction
 function dropImgToWikiCard(e) {
     e.stopPropagation();
+    if($(this).attr('tagName') == "DIV") $(this).css('border-style', 'dotted');
+    
     var id = e.dataTransfer.getData('Text');
     var data = srcMgr.getSource(id);
-    
     if(id.match(/\w*image/)) {
         if(data == null) return;
     }
     else return;
     
     var img = $('<img name="'+id+'" src="'+data+'" style="top:20px;">');
-    img.get(0).addEventListener('dragover', dragOverElemZone, false);
-    img.get(0).addEventListener('dragleave', dragLeaveElemZone, false);
+    img.get(0).addEventListener('dragover', DropZone.prototype.dragOverElemZone, false);
+    img.get(0).addEventListener('dragleave', DropZone.prototype.dragLeaveElemZone, false);
     img.get(0).addEventListener('drop', dropImgToWikiCard, false);
+    img.mouseup(DropZone.prototype.dragLeaveElemZone);
     // Append to elem zone
     $(this).replaceWith(img);
 };
@@ -1231,12 +1276,6 @@ function activeBarLabel() {
 	//$(this).editable();
 };
 
-// Drag the images from ressources
-function dragFromSrcs(e) {
-	e.dataTransfer.effectAllowed = 'copy'; // only dropEffect='copy' will be dropable
-	e.dataTransfer.setData('Text', $(this).data('srcId')); // required otherwise doesn't work
-};
-
 // Drag over
 function dragOverScene(e) {
 	e.preventDefault();
@@ -1297,20 +1336,12 @@ function insertElemAfter(e) {
 };
 
 // Drop zone interaction
-function dragOverElemZone(e) {
-	e.preventDefault();
-	e.dataTransfer.dropEffect = 'copy';
-	$(this).css('border-style', 'solid');
-	return false;
-};
-function dragLeaveElemZone(e) {
-	$(this).css('border-style', 'dotted');
-};
 function dropToInsertZone(e) {
 	e.stopPropagation();
+	$(this).css('border-style', 'dotted');
+	
 	var id = e.dataTransfer.getData('Text');
 	var data = srcMgr.getSource(id);
-	
 	if(id.match(/\w*image/)) {
 	    if(data == null) return;
 	}
@@ -1320,7 +1351,6 @@ function dropToInsertZone(e) {
 	else return;
 	// Append to elem zone
 	$(this).append(srcMgr.getExpo(id));
-	$(this).css('border-style', 'dotted');
 };
 
 // Select words to set link

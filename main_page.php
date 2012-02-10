@@ -90,7 +90,7 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 	<li id="animeicon"><img src="./images/tools/anime.png"></img></li>
 </ul>
 
-<nav id="center_panel">
+<div id="center_panel">
 	<ul id="pageBar" class="tabBar">
 		<li id="newPage" class="add">+</li>
 	</ul>
@@ -137,8 +137,10 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 	</ul>
 	<canvas id="rulerX" class="ruler"></canvas>
 	<canvas id="rulerY" class="ruler"></canvas>
-</nav>
-<div id="editor"></div>
+	
+	<div id="editor"></div>
+</div>
+
 <div id="timeline">
     <img id="addFrame" src="./images/UI/addframe.png">
 </div>
@@ -230,7 +232,10 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 	                if(self.hasClass('article')) {
 	                    self.deletable().configurable();
 	                    self.children('div').each(function(){
-	                        $(this).selectable(selectP).staticButton('./images/UI/insertbelow.png', insertElemDialog);
+	                        if($(this).hasClass('illu')) $(this).deletable(null, true);
+	                        $(this).selectable(selectP)
+	                               .staticButton('./images/UI/insertbelow.png', insertElemDialog)
+	                               .staticButton('./images/UI/addscript.jpg', addScriptForObj);
 	                        $(this).children('.del_container').css({
 	                        	'position': 'relative',
 	                        	'top': ($(this).children('p').length == 0) ? '0%' : '-100%',
@@ -238,7 +243,7 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 	                    });
 	                }
 	                // Other obj
-	                else self.deletable().configurable().resizable().moveable();
+	                else self.selectable(null).deletable().configurable().resizable().moveable();
 	            });
 	        }
 	        if(steps == 0) page.data('StepManager').addStep(pname+'default', null, true);

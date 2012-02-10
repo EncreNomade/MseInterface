@@ -63,13 +63,16 @@ body{
 
 .scene {
 	background:#fff;
-	position:fixed;
-	top:96px;
-	left:155px;
+	position:absolute;
+	top:36px;
+	left:15px;
 	margin:0px;
 	padding:0px;
 	border:1px solid #4d4d4d;
 	overflow:hidden;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	user-select: none;
 }
 
 .layer {
@@ -202,6 +205,7 @@ body{
 	margin:0px;
 	padding:0px;
 	border:0px;
+	z-index: 1;
 }
 
 .tabBar {
@@ -310,9 +314,9 @@ body{
 #editor {
 	background:#fff;
 	opacity:1;
-	position:fixed;
-	top:97px;
-	left:156px;
+	position:absolute;
+	top:37px;
+	left:16px;
 	width:640px;
 	height:480px;
 	overflow:hidden;
@@ -487,6 +491,7 @@ body{
 	margin:0px;
 	padding:0px;
 	border:0px;
+	z-index: 1;
 }
 #right_panel {
 	position:absolute; 
@@ -624,6 +629,9 @@ body{
 	width:15px;
 	height:15px;
 	float:left;
+	-webkit-border-radius: 6px;
+	-moz-border-radius: 6px;
+	border-radius: 6px;
 }
 
 .popup_back {
@@ -677,6 +685,7 @@ body{
 }
 .popup_close img {
 	position:absolute;
+	background:#efefef; 
 	top:0px;
 	left:-40px;
 	width:40px;
@@ -707,7 +716,7 @@ body{
     float:left;
     font-size:12px;
     height:16px;
-    margin-left:10px;
+    margin:0px;
     padding:0px;
 }
 .popup_body label{
@@ -716,7 +725,7 @@ body{
 	line-height:20px;
 	width:100px;
 	float:left;
-	margin-left:10px;
+	margin:0px 10px 0px 10px;
 }
 .popup_body span{
 	line-height:20px;
@@ -774,6 +783,50 @@ div.big_button {
 }
 .big_button:active {
 	border-style:groove;
+}
+
+#circleMenu {
+    position: fixed;
+    width: 115px;
+    height: 115px;
+    z-index:101;
+}
+#circleMenu img{
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    border-radius: 10px;
+    
+    -webkit-box-shadow: 0px 0px 5px #4d4d4d;
+    -moz-box-shadow: 0px 0px 5px #4d4d4d;
+    box-shadow: 0px 0px 5px #4d4d4d;
+}
+#objChooserMask {
+	position:fixed;
+	top:0px;
+	left:0px;
+	width:100%;
+	height:100%;
+	background:#4d4d4d;
+	opacity:.5;
+	z-index:105;
+}
+.objChooser {
+    position: relative;
+    float: left;
+    width: auto;
+    margin: 0px;
+    padding: 0px;
+}
+.objChooser img, .objChooser h5{
+    width: auto;
+    height: 100%;
+    float: left;
+    margin: 0px;
+    padding: 0px;
 }
 
 #debug {

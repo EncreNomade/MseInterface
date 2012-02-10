@@ -223,7 +223,42 @@ var TextUtil = function() {
 
 
 
+
+// Drop zone
+var DropZone = function(dropHandler, style, id){
+    this.dropHandler = dropHandler;
+    this.jqObj = $('<div class="drop_zone"/>');
+    if(style) this.jqObj.css(style);
+    if(id) this.jqObj.attr('id', id);
+    this.jqObj.data('typeChecker', this.typeChecker);
+    // Interaction with drop zone
+    this.jqObj.get(0).addEventListener('dragover', this.dragOverElemZone, false);
+    this.jqObj.get(0).addEventListener('dragleave', this.dragLeaveElemZone, false);
+    this.jqObj.get(0).addEventListener('drop', this.dropHandler, false);
+    this.jqObj.mouseup(this.dragLeaveElemZone);
+};
+DropZone.prototype = {
+    constructor: DropZone,
+    dragOverElemZone: function(e) {
+    	e.preventDefault();
+    	e.dataTransfer.dropEffect = 'copy';
+    	$(this).css('border-style', 'solid');
+    	return false;
+    },
+    dragLeaveElemZone: function(e) {
+    	$(this).css('border-style', 'dotted');
+    },
+    appendTo: function(parent){this.jqObj.appendTo(parent);}
+};
+
+
+
 // Sources manager
+// Drag the images from ressources
+function dragFromSrcs(e) {
+	e.dataTransfer.effectAllowed = 'copy'; // only dropEffect='copy' will be dropable
+	e.dataTransfer.setData('Text', $(this).data('srcId')); // required otherwise doesn't work
+};
 var SourceManager = function() {
     this.currId = 0;
 };
@@ -337,6 +372,7 @@ SourceManager.prototype = {
 		    }
 		    this.sources[id] = data;
 		    expo.append('<p>Anime: '+this.realName(id)+'</p>');
+		    expo.circleMenu({'addscript':['./images/UI/addscript.jpg',addScriptDialog]});
 		    expo.children().css('font','bold 8px Times');
 		    break;
 		}
@@ -363,7 +399,7 @@ SourceManager.prototype = {
 
 			var container = $('<div class="illu">');
 			container.append(img);
-			container.deletable();
+			container.deletable(null, true);
 
 			// Resize
 			var w = img.attr('width'), h = img.attr('height'), cw = parent.width()*0.9, ch = parent.height();
@@ -601,7 +637,7 @@ StepManager.prototype = {
 	    	curr.page.data('StepManager').activeStep($(this).data('stepN'));
 	    });
 	    // Del step button and Up down button
-	    expo.deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc);
+	    expo.deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc).circleMenu({'addscript':['./images/UI/addscript.jpg',addScriptDialog]});
 	    // Append expo to manager
 	    this.manager.prepend(expo);
 	    this.stepexpos[stepN] = expo;
@@ -635,7 +671,7 @@ StepManager.prototype = {
 			curr.page.data('StepManager').activeStep($(this).data('stepN'));
 		});
 		// Del step button and Up down button
-		expo.deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc);
+		expo.deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc).circleMenu();
 		// Append expo to manager
 		this.manager.prepend(expo);
 		this.stepexpos[this.currStepN] = expo;
@@ -809,6 +845,76 @@ Animation.prototype = {
 
 
 
+
+// Script system
+var Script = function(src, action, target, reaction){
+    this.src = src;
+    this.action = action;
+    this.reaction = reaction;
+    this.target = target;
+};
+Script.prototype = {
+    constructor: Script
+};
+
+var scriptMgr = function() {
+    return {
+        action: {
+            obj: ["click", "doubleClick", "firstShow", "show", "disappear"],
+            key: ["key"],
+            anime: ["start", "end"],
+            page: ["click", "doubleClick", "firstShow", "show", "drawover"],
+            layer: ["firstShow", "show"]
+        },
+        reaction: {
+            pageTrans: "page",
+            objTrans: "obj",
+            playAnime: "anime",
+            changeCursor: "img",
+            playVoice: "audio",
+            addScript: "script",
+            script: "code",
+            effet: "effetname",
+            playDefi: "",
+            pauseDefi: "",
+            loadGame: "game"
+        },
+        optionText: {
+            click: "Clique", doubleClick: "Double clique", firstShow: "Première apparition", show: "Apparition",
+            key: "Tape sur clavier", start: "Animation commence", end: "Animation termine", 
+            drawover: "Affichage d'un frame termine", 
+            pageTrans: "Transition entre deux pages", objTrans: "Transition entre deux objets",
+            playAnime: "Démarrer l'animation", changeCursor: "Changer le cursor de souris",
+            playVoice: "Lecture d'un son", addScript: "Ajout d'un script", script: "Ajout d'une suite de codes",
+            effet: "Démarrer un effet", playDefi: "Démarrer la lecture", pauseDefi: "Pauser la lecture",
+            loadGame: "Démarrer un jeu"
+        },
+        scripts: {},
+        reactionTarget: function(type) {return this.reaction[type];},
+        actionSelectList: function(type){
+            var actfortype = this.action[type];
+            if(!actfortype) return "";
+            var select = '<select id="script_action">';
+            for(var i in actfortype)
+                select += "<option value='"+actfortype[i]+"'>"+this.optionText[actfortype[i]]+"</option>";
+            select += '</select>';
+            return select;
+        },
+        reactionList: function(){
+            var select = '<select id="script_reaction">';
+            for(var i in this.reaction) select += "<option value='"+i+"'>"+this.optionText[i]+"</option>";
+            select += '</select>';
+            return select;
+        },
+        addScript: function(name, src, action, target, reaction){
+            this.scripts[name] = new Script(src, action, target, reaction);
+        }
+    };
+}();
+
+
+
+
 // Popup widgt
 var Popup = function() {
 	if(!this.inited) {
@@ -828,6 +934,14 @@ Popup.prototype = {
 	back: $('<div class="popup_back"></div>'),
 	caller: null,
 	
+	hide: function() {
+	    $('.popup_back').hide();
+	    $('#popup_dialog').hide();
+	},
+	show: function() {
+	    $('.popup_back').show();
+	    $('#popup_dialog').show();
+	},
 	close: function() {
 		$('.popup_back').hide();
 		$('#popup_dialog').hide();
@@ -873,10 +987,53 @@ Popup.prototype = {
 
 
 
+
+// Object chooser widgt
+var ObjChooser = function(id){
+    this.id = id;
+    this.jqObj = $('<div id="'+id+'" class="objChooser"><img src="./images/UI/objchooser.jpg"/><h5/></div>');
+    this.jqObj.data('chooser', this);
+    this.jqObj.click(function(){
+        $(this).data('chooser').startChoose();
+    });
+};
+ObjChooser.prototype = {
+    constructor: ObjChooser,
+    refObjId: 0,
+    appendTo: function(parent){
+        var h = parent.innerHeight();
+        this.jqObj.height(h);
+        this.jqObj.children('img').css({'width':h+'px','height':h+'px'});
+        this.jqObj.children('h5').css({'line-height':h+'px', 'font-size':h*0.8+'px'});
+        this.jqObj.appendTo(parent);
+    },
+    startChoose: function(){
+        curr.chooser = this;
+        $('body').append('<div id="objChooserMask"></div>');
+        $('#center_panel, #right').css('z-index', 106);
+    },
+    choosed: function(obj){
+        // Set referenced id for analyze in the server
+        if(!obj.attr('id') || obj.attr('id') == "") 
+            obj.attr('id', "referenced"+(ObjChooser.prototype.refObjId++));
+        this.jqObj.children('h5').text(obj.attr('id'));
+        $('#center_panel, #right').css('z-index', 1);
+        $('#objChooserMask').remove();
+    }
+};
+function objChoosed(e){
+    if(!curr.chooser) return;
+    e.preventDefault();
+    curr.chooser.choosed($(this));
+    curr.chooser = null;
+}
+
+
+
 // JQuery Plugin
 
 (function($) {
-	
+
 var tag = {
 	movestarted: false,
 	resizestarted: false,
@@ -886,6 +1043,7 @@ var tag = {
 var prevState = {};
 var curr = {};
 var editSupportTag = ['SPAN', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'];
+
 
 // Add top right hover icon
 var hoverIcon = function(elem, func, img, data) {
@@ -917,12 +1075,13 @@ function delParent(e) {e.preventDefault();e.stopPropagation();$(this).parent().p
 function hideParent(e) {e.preventDefault();e.stopPropagation();$(this).parent().parent().hide();}
 function configParent(e) {e.preventDefault();e.stopPropagation();showParameter($(this).parent().parent(), e.data.list);}
 
-$.fn.deletable = function(f) {
+$.fn.deletable = function(f, static) {
 	var del = this.find('img[src="./images/UI/del.png"]');
 	if(del.length > 0) del.remove();
 	if(f === false) return this;
 	var func = f || delParent;
-	hoverIcon(this, func, './images/UI/del.png');
+	if(static == true) staticIcon(this, func, './images/UI/del.png');
+	else hoverIcon(this, func, './images/UI/del.png');
 	return this;
 };
 $.fn.hideable = function(f) {
@@ -1012,6 +1171,11 @@ $.fn.moveable = function(supp) {
 
 // Choose event
 function chooseElem(e) {
+    e.preventDefault();
+    var elem = $(this);
+    curr.choosed = elem;
+}
+function chooseElemWithBorder(e) {
 	e.preventDefault();
 	var elem = $(this);
 	if(curr.choosed && curr.choosed != elem) {
@@ -1058,6 +1222,7 @@ function chooseElemWithCtrlPts(e) {
 	curr.rb = pts[3].css({'left':dx, 'top':dy});
 	curr.choosed = elem;
 }
+
 // Resize events
 function startResize(e) {
 	e.preventDefault();
@@ -1129,8 +1294,11 @@ $.fn.selectable = function(f) {
 		this.unbind('click');
 		return this;
 	}
-	var func = f || chooseElem;
+	if(arguments.length == 1 && !f) 
+	    var func = chooseElem;
+	else var func = f || chooseElemWithBorder;
 	this.click(func);
+	this.click(objChoosed);
 	return this;
 }
 
@@ -1167,6 +1335,37 @@ $.fn.editable = function(callback) {
 		});
 	});
 	return this;
+}
+
+
+// Circle menu
+$.fn.circleMenu = function(buttonmap) {
+    var tar = $(this);
+    tar.css('cursor', 'url("./images/UI/circlemenuptr.cur"), auto');
+    tar.data('circleMenu', buttonmap);
+    tar.dblclick(function(e){
+        $('#circleMenu').remove();
+        var x = e.clientX, y = e.clientY;
+        var rx = x, ry = (y<115) ? y : y-25, r = 90;
+        var alpha = (y<115) ? (Math.PI/180)*90/5 : -(Math.PI/180)*90/5;
+        $('body').append("<div id='circleMenu'></div>");
+        var buttonmap = $(this).data('circleMenu');
+        var count = 0;
+        for(var i in buttonmap){
+            var icon = $("<img src='"+buttonmap[i][0]+"'></img>");
+            if(buttonmap[i][1]) icon.click(function(){buttonmap[i][1].call(window, tar);});
+            icon.css({'left':rx,'top':ry,'opacity':0});
+            $('#circleMenu').append(icon);
+            // Animation
+            var iconx = r*Math.cos(alpha*count), icony = r*Math.sin(alpha*count);
+            icon.animate({'left':"+="+iconx+"px",'top':"+="+icony+"px",'opacity':1}, 'normal', 'swing');
+            count++;
+        }
+        
+        $('body').click(function(){
+            $('#circleMenu').fadeOut("normal", function(){$('#circleMenu').remove();});
+        });
+    });
 }
 
 })(jQuery);
