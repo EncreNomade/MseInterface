@@ -4,7 +4,9 @@ var tag = {
 	drawstarted: false
 };
 var prevState = {};
-var curr = {};
+var curr = {
+    objId: 0
+};
 var dialog, srcMgr;
 // Parameters' list with disable configuration, defaultly all false
 var paramdisablelist = {
@@ -37,8 +39,9 @@ function init() {
 		// Copy all in current step
 		var elems = $('#editor').children('div');
 		var res = elems.deletable(false).clone();
+		res.attr('id', 'obj'+(curr.objId++));
 		res.each(function() {
-			srcMgr.addSource('obj', $(this));
+			//srcMgr.addSource('obj', $(this));
 			$(this).selectable(null).deletable().configurable({text:true}).appendTo(curr.step);
 		});
 		elems.remove();
@@ -63,7 +66,7 @@ function init() {
 			var area = $(this).children('textarea');
 			var arr = area.val().split('\n');
 			if(arr.length == 1 && arr[0] == "") return;
-			var res = $('<div></div>');
+			var res = $('<div id="obj'+(curr.objId++)+'"></div>');
 			res.css({
 				'position':'absolute', 'left':$(this).css('left'), 'top':$(this).css('top'),
 				'font-size':area.css('font-size'), 'font-family':area.css('font-family'), 'font-weight':area.css('font-weight'),
@@ -412,7 +415,7 @@ function articleStepDialog(name, params) {
 	dialog.main.append('<p><textarea id="articleContent" rows="10" cols="49" placeholder="Coller ou deplacer le contenu ici"></textarea></p>');
 	
 	dialog.confirm.click(function() {
-		var defile = $('#defile').val();
+		params.defile = $('#defile').get(0).checked;
 		var x = parseInt($('#articlex').val()), y = parseInt($('#articley').val());
 		var lw = parseInt($('#linew').val()), lh = parseInt($('#lineh').val());
 		var font = $('#articleFont').val();
@@ -442,7 +445,6 @@ function articleStepDialog(name, params) {
 			params.lw = lw; params.lh = lh;
 			$('#linew').parent().css('color','BLACK');
 		}
-		params.defile = (defile == "on") ? true : false;
 		if(font != "") params.font = font;
 		if(!isNaN(fsize)) params.fsize = fsize;
 		params.fweight = weight;
@@ -521,20 +523,18 @@ function insertElemDialog(e) {
 	// show ressource panel
 	$('#bottom').css('z-index','110');
 	$('#bottom_panel').css('top','-180px');
-	var closeF = function() {
-		$('#bottom').css('z-index','6');
-		$('#bottom_panel').css('top','-20px');
-	};
-	dialog.annuler.click(closeF);
+	dialog.annuler.click(closeBottom);
 	// Drop zone
 	var dzone = (new DropZone(dropToInsertZone, {'top':'25px','width':'250px','height':'150px'})).jqObj;
 	dialog.main.append(dzone);
 	
 	dialog.confirm.click(function() {
+	    closeBottom();
 		var prepared = dzone.children();
 		for(var i = prepared.length-1; i >= 0; i--) {
 			var id = $(prepared.get(i)).data('srcId');
 			var elem = srcMgr.generateChildDomElem(id, dialog.caller.parent());
+			elem.attr('id', 'obj'+(curr.objId++));
 			elem.selectable(selectP)
 			    .staticButton('./images/UI/insertbelow.png', insertElemDialog)
 			    .staticButton('./images/UI/addscript.jpg', addScriptForObj);
@@ -604,31 +604,82 @@ function addScriptForObj(e){
     var obj = $(this).parent().parent();
     addScriptDialog(obj, "obj");
 };
-function addScriptDialog(src, type){
+function addScriptDialog(src, srcType){
     var name = "";
     var tagName = src.attr('tagName');
-    if(type != "obj") {
+    var srcid = "";
+    if(srcType != "obj") {
         // Page label event
-        if(tagName == "LI") {name = src.text(); type = "page";}
+        if(tagName == "LI") {srcid = name = src.text(); srcType = "page";}
         // Layer expo event
-        else if(src.hasClass('layer_expo')) {name = src.children('h1').text(); type = "layer";}
+        else if(src.hasClass('layer_expo')) {
+            name = src.children('h1').text(); 
+            srcType = "layer"; 
+            srcid = src.find('span').text();
+        }
         // Anime obj event
-        else if(src.hasClass('icon_src')) {name = src.children('p').text(); type = "anime";}
-        if(!type) return;
+        else if(src.hasClass('icon_src')) {
+            srcid = name = src.children('p').text(); 
+            srcType = "anime";
+        }
     }
+    else {
+        name = "Object";
+        srcid = src.attr('id');
+    }
+    if(!srcType || !srcid || srcid == "") return;
+    
     dialog.showPopup('Ajouter un script pour '+name, 400, 390, 'Confirmer', src);
     dialog.main.append('<p><label>Ajout automatique:</label><input id="ajout_auto" type="checkbox" style="margin-top:12px;" checked></p>');
     dialog.main.append('<p><label>Name:</label><input id="script_name" type="text" size="20"></p>');
-    dialog.main.append('<p><label>Action:</label>'+scriptMgr.actionSelectList(type)+'</p>');
-    dialog.main.append('<p><label>Réaction:</label>'+scriptMgr.reactionList(type)+'</p>');
+    dialog.main.append('<p><label>Action:</label>'+scriptMgr.actionSelectList('script_action', srcType)+'</p>');
+    dialog.main.append('<p><label>Réaction:</label>'+scriptMgr.reactionList('script_reaction')+'</p>');
     dialog.main.append('<p><label>Cible de réaction:</label></p>');
     $('#script_reaction').change(tarDynamic).blur(tarDynamic).change();
+    dialog.annuler.click(closeBottom);
+    dialog.confirm.click(function(){
+        var ajoutAuto = $('#ajout_auto').get(0).checked;
+        var name = $('#script_name').val();
+        var action = $('#script_action').val();
+        var reaction = $('#script_reaction').val();
+        if(name == "" || action == "" || reaction == ""){
+            alert('Information incomplete');
+            return;
+        }
+        
+        var tarType = scriptMgr.reactionTarget(reaction);
+        var tar = null, supp = null;
+        switch(tarType) {
+        case "page": case "script": tar = $('#script_tar').val();break;
+        case "obj": 
+            if($('#script_supp').children().length==0) {alert('Information incomplete');return;}
+            tar = $('#script_tar').data('chooser').val();
+            supp = $('#script_supp').attr('target');
+            break;
+        case "anime": case "image": case "game": case "audio":
+            tar = $('#script_tar').attr('target');break;
+        case "code": case "effetname": default:break;
+        }
+        if(tarType != 'code' && tarType != 'effetname' && (!tar || tar == "")) {
+            alert('Information incomplete');return;
+        }
+        scriptMgr.addScript(name, srcid, srcType, action, tar, reaction, ajoutAuto, supp);
+        closeBottom();
+        dialog.close();
+    });
+};
+var closeBottom = function() {
+	$('#bottom').css('z-index','6');
+	$('#bottom_panel').css('top','-20px');
 };
 function tarDynamic(e){
+    closeBottom();
     var react = $(this).val();
     var cible = $('.popup_body p:eq(4)');
     cible.children('label').nextAll().remove();
-    switch(scriptMgr.reactionTarget(react)) {
+    cible.nextAll().remove();
+    var type = scriptMgr.reactionTarget(react);
+    switch(type) {
     case "page":
         var select = '<select id="script_tar">';
         $('.scene').each(function(){
@@ -639,19 +690,45 @@ function tarDynamic(e){
     case "obj":
         var objChooser = new ObjChooser("script_tar");
         objChooser.appendTo(cible);
+        var dz = (new DropZone(dropToTargetZone, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "script_supp")).jqObj;
+        dz.data('type', 'image');
+        var supp = $('<p><label>Image après la transition:</label></p>');
+        supp.append(dz);
+        cible.after(supp);
+        // show ressource panel
+        $('#bottom').css('z-index','110');
+        $('#bottom_panel').css('top','-180px');
         break;
     case "anime":
-        
+    case "image":
+    case "game":
+    case "audio":
+        // show ressource panel
+        $('#bottom').css('z-index','110');
+        $('#bottom_panel').css('top','-180px');
+        var dz = (new DropZone(dropToTargetZone, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "script_tar")).jqObj;
+        dz.data('type', type);
+        cible.append(dz);
         break;
-    case "img":break;
-    case "game":break;
-    case "audio":break;
-    case "script":break;
-    case "code":break;
-    case "effetname":break;
-    default:break;
+    case "script":
+        cible.append(scriptMgr.scriptSelectList('script_tar'));
+        break;
+    case "code": case "effetname": default:break;
     }
 };
+// Drop event for all type of target
+function dropToTargetZone(e) {
+	e.stopPropagation();
+	$(this).css('border-style', 'dotted');
+	
+	var id = e.dataTransfer.getData('Text');
+	var regexp = new RegExp("\\w*"+$(this).data('type'));
+	if(!id || !id.match(regexp)) return;
+	// Place in the elem zone
+	$(this).html(srcMgr.getExpo(id));
+	$(this).attr('target', id);
+};
+
 
 
 
@@ -677,7 +754,7 @@ function addJsSrc(evt) {
 };
 
 function addImageElem(id, data, page, step) {
-	var img = $('<img name="'+ id +'">');
+	var img = $('<img id="obj'+(curr.objId++)+'" name="'+ id +'">');
 	img.attr('src', data);
 	img.css({'width':'100%','height':'100%'});
 	
@@ -758,7 +835,7 @@ function addArticle(name, params, content) {
     if(!params) params = {};
     params.type = 'ArticleLayer';
 	var step = curr.page.data('StepManager').addStep(name, params, true);
-	var article = $('<div class="article"></div>');
+	var article = $('<div class="article" defile="'+(params.defile?params.defile:"false")+'"></div>');
 	var lh = config.sceneY(params.lh);
 	article.css({'left':config.sceneX(params.x)+'px', 'top':config.sceneY(params.y)+'px', 
 				 'width':config.sceneX(params.lw)+'px', 'height':config.sheight-config.sceneY(params.y)+'px',
@@ -787,14 +864,14 @@ function addArticle(name, params, content) {
 	var sep = 0;
 	for(var i = 0; i < arr.length; i++) {
 		if(arr[i].length == 0) { // Separator paragraph
-			article.append('<div/>');
+			article.append('<div id="obj'+(curr.objId++)+'"/>');
 			sep++;continue;
 		}
 
 		for(var j = 0; j < arr[i].length;) {
 			// Find the index of next line
 			var next = TextUtil.checkNextline(arr[i].substr(j), maxM, params.lw);
-			article.append('<div><p>'+arr[i].substr(j, next)+'</p></div>');
+			article.append('<div id="obj'+(curr.objId++)+'"><p>'+arr[i].substr(j, next)+'</p></div>');
 			j += next;
 		}
 	}
@@ -1546,6 +1623,7 @@ function configChanged(e) {
 function saveProject() {
     // Save ressources
     srcMgr.uploadSrc('upload_src.php');
+    scriptMgr.upload('upload_src.php');
 
     // Save structure
 	var xmldata = (new DOMParser()).parseFromString("<root></root>", "text/xml");
@@ -1584,6 +1662,7 @@ function saveProject() {
 	    }
 	}
 	pjsave = srcMgr.saveSerializedSrc(pjsave);
+	pjsave.scripts = scriptMgr.saveLocal();
 	localStorage.setItem(pjName, JSON.stringify(pjsave));
 	// Local storage saving management, locally store only 5 projects for example, manager all projects with a json array of their name
     var pjs = localStorage.getItem('projects');

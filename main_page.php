@@ -213,54 +213,61 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 	var config = Config.getInstance();
 	init();
 	
-	// Retrieve the information of pages in local storage
-	if(localStorage) {
-	    var pjsavestr = localStorage.getItem(pjName);
-	    var pjsave = JSON.parse(pjsavestr);
-	    // Pages/Layers/Objects
-	    var pageseri = pjsave.pageSeri;
-	    for(var pname in pageseri) {
-	        var page = addPage(pname);
-	        var steps = 0;
-	        for(var sname in pageseri[pname]) {
-	            steps++;
-	            var step = $(pageseri[pname][sname]);
-	            page.data('StepManager').addStepWithContent(sname, step);
-	            step.children().each(function(){
-	                var self = $(this);
-	                // Article
-	                if(self.hasClass('article')) {
-	                    self.deletable().configurable();
-	                    self.children('div').each(function(){
-	                        if($(this).hasClass('illu')) $(this).deletable(null, true);
-	                        $(this).selectable(selectP)
-	                               .staticButton('./images/UI/insertbelow.png', insertElemDialog)
-	                               .staticButton('./images/UI/addscript.jpg', addScriptForObj);
-	                        $(this).children('.del_container').css({
-	                        	'position': 'relative',
-	                        	'top': ($(this).children('p').length == 0) ? '0%' : '-100%',
-	                        	'display':'none'});
-	                    });
-	                }
-	                // Other obj
-	                else self.selectable(null).deletable().configurable().resizable().moveable();
-	            });
+	function retrieveLocalInfo() {
+	    // Retrieve the information of pages in local storage
+	    if(localStorage) {
+	        var pjsavestr = localStorage.getItem(pjName);
+	        if(!pjsavestr) return;
+	        var pjsave = JSON.parse(pjsavestr);
+	        // Pages/Layers/Objects
+	        var pageseri = pjsave.pageSeri;
+	        for(var pname in pageseri) {
+	            var page = addPage(pname);
+	            var steps = 0;
+	            for(var sname in pageseri[pname]) {
+	                steps++;
+	                var step = $(pageseri[pname][sname]);
+	                page.data('StepManager').addStepWithContent(sname, step);
+	                step.children().each(function(){
+	                    var self = $(this);
+	                    // Article
+	                    if(self.hasClass('article')) {
+	                        self.deletable().configurable();
+	                        self.children('div').each(function(){
+	                            if($(this).hasClass('illu')) $(this).deletable(null, true);
+	                            $(this).selectable(selectP)
+	                                   .staticButton('./images/UI/insertbelow.png', insertElemDialog)
+	                                   .staticButton('./images/UI/addscript.jpg', addScriptForObj)
+	                                   .css({'z-index':'0','background':'none'});
+	                            $(this).children('.del_container').css({
+	                            	'position': 'relative',
+	                            	'top': ($(this).children('p').length == 0) ? '0%' : '-100%',
+	                            	'display':'none'});
+	                        });
+	                    }
+	                    // Other obj
+	                    else self.selectable(null).deletable().configurable().resizable().moveable();
+	                });
+	            }
+	            if(steps == 0) page.data('StepManager').addStep(pname+'default', null, true);
 	        }
-	        if(steps == 0) page.data('StepManager').addStep(pname+'default', null, true);
+	        // Ressources
+	        var src = pjsave.sources;
+	        for(var key in src) {
+	            var type = srcMgr.sourceType(key);
+	            if(type == "text" || type == "obj") continue;
+	            srcMgr.addSource(srcMgr.sourceType(key), src[key], key);
+	        }
+	        var wiki = pjsave.wikis;
+	        for(var key in wiki) {
+	            srcMgr.addSource('wiki', $(wiki[key]), key);
+	        }
+	        if(!isNaN(pjsave.srcCurrId)) srcMgr.currId = pjsave.srcCurrId;
+	        // Scripts
+	        scriptMgr.scripts = pjsave.scripts;
 	    }
-	    // Ressources
-	    var src = pjsave.sources;
-	    for(var key in src) {
-	        var type = srcMgr.sourceType(key);
-	        if(type == "text" || type == "obj") continue;
-	        srcMgr.addSource(srcMgr.sourceType(key), src[key], key);
-	    }
-	    var wiki = pjsave.wikis;
-	    for(var key in wiki) {
-	        srcMgr.addSource('wiki', $(wiki[key]), key);
-	    }
-	    if(!isNaN(pjsave.srcCurrId)) srcMgr.currId = pjsave.srcCurrId;
 	}
+	retrieveLocalInfo();
 </script>
 
 </body>

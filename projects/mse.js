@@ -201,11 +201,17 @@ mse.slideout = function(obj, t, movement, callback) {
 	slide.start();
 };
 mse.transition = function(obj1, obj2, t, callback) {
-	mse.fadeout(obj1, t);
+    var layer = obj1.parent;
+    if(layer instanceof mse.Layer) {
+        layer.insertBefore(obj2, obj1);
+    }
 	mse.fadein(obj2, t, callback);
+	mse.fadeout(obj1, t, new mse.Callback(layer.delObject, layer, obj1));
 };
 mse.setCursor = function(cursor) {
-	mse.root.jqObj.get(0).style.cursor = cursor;
+    if(cursor.indexOf(".") != -1) 
+        mse.root.jqObj.css('cursor', 'url("'+cursor+'"), auto');
+	else mse.root.jqObj.get(0).style.cursor = cursor;
 };
 
 mse.changePage = function(tar, quitonclick) {
@@ -357,7 +363,7 @@ mse.EventDelegateSystem = function() {
 		var arr = this.listeners[evtName];
 		if(arr) {
 			// No dominate listener
-			for(val in arr) {
+			for(var val in arr) {
 				if( (!this.domObj || this.domObj==arr[val].target || this.domObj==arr[val].target.parent) 
 					&& (!evt || arr[val].inObj(evt.offsetX, evt.offsetY)) ) {
 					var prev = arr[val].preventBubbling;
@@ -494,12 +500,29 @@ mse.UIObject.prototype = {
 	},
 	// Getter of position in Root Canvas object, chaining to the parent if not fixed
 	getX: function() {
-		if(this.parent) return (this.parent.getX() + (Math.abs(this.offx)<1 ? this.offx*this.parent.getWidth() : this.offx));
-		else return (Math.abs(this.offx)<1 ? this.offx*mse.root.width : this.offx);
+		if(this.parent) return (this.parent.getX() + this.offx);
+		else return this.offx;
 	},
 	getY: function() {
-		if(this.parent) return (this.parent.getY() + (Math.abs(this.offy)<1 ? this.offy*this.parent.getHeight() : this.offy));
-		else return (Math.abs(this.offy)<1 ? this.offy*mse.root.height : this.offy);
+		if(this.parent) return (this.parent.getY() + this.offy);
+		else return this.offy;
+	},
+	//
+	getCanvasX: function(){
+	    if(this.parent) return (this.parent.getCanvasX() + this.offx);
+	    else {
+	        var vx = 0;
+	        if(mse.root.viewport) vx = -mse.root.viewport.x;
+	        return vx+this.offx;
+	    }
+	},
+	getCanvasY: function(){
+	    if(this.parent) return (this.parent.getCanvasY() + this.offy);
+	    else {
+	        var vy = 0;
+	        if(mse.root.viewport) vy = -mse.root.viewport.y;
+	        return vy+this.offy;
+	    }
 	},
 	
 	// Setter for size
@@ -509,21 +532,19 @@ mse.UIObject.prototype = {
 	},
 	// Getter for size
 	getWidth: function() {
-		if(this.parent) return this.width<1 ? this.width*this.parent.getWidth() : this.width;
-		else return (this.width<1 ? this.width*mse.root.width : this.width);
+		return this.width;
 	},
 	getHeight: function() {
-		if(this.parent) return this.height<1 ? this.height*this.parent.getHeight() : this.height;
-		else return (this.height<1 ? this.height*mse.root.height : this.height);
+		return this.height;
 	},
 	
 	// Check if a point located in the bounding box
 	inObj: function(x,y) {
 		if(this.getAlpha() < 1) return false;
 		if(this.insideRec) {
-			var ox = this.getX()+this.insideRec[0], oy = this.getY()+this.insideRec[1], w = this.insideRec[2], h = this.insideRec[3];
+			var ox = this.getCanvasX()+this.insideRec[0], oy = this.getCanvasY()+this.insideRec[1], w = this.insideRec[2], h = this.insideRec[3];
 		}
-		else var ox = this.getX(), oy = this.getY(), w = this.getWidth(), h = this.getHeight();
+		else var ox = this.getCanvasX(), oy = this.getCanvasY(), w = this.getWidth(), h = this.getHeight();
 		
 		if(x>ox && x<ox+w && y>oy && y<oy+h) return true;
 		else return false;
@@ -593,7 +614,7 @@ mse.UIObject.prototype = {
 			ctx.textAlign = this.textAlign;
 		if(this.textBaseline)
 			ctx.textBaseline = this.textBaseline;
-		ctx.globalAlpha = ctx.globalAlpha * this.globalAlpha;
+		ctx.globalAlpha = this.getAlpha();
 	},
 	configCtx: function(ctx) {
 	    ctx.restore();
@@ -637,6 +658,13 @@ mse.Root = function(id, width, height, orientation) {
 			this.scale = scale;
 		}
 	};
+	this.setCenteredViewport = function(){
+	    this.viewport = {};
+	    this.viewport.x = (this.width - MseConfig.pageWidth)/2;
+	    this.viewport.y = (this.height - MseConfig.pageHeight)/2;
+	    this.jqObj.attr({'width':MseConfig.pageWidth, 'height':MseConfig.pageHeight});
+	    this.jqObj.css({'left':"0px",'top':"0px"});
+	};
 	
 	this.setContainer = function(container) {
 		// Reset first show state to prepare for calling the show event
@@ -651,7 +679,7 @@ mse.Root = function(id, width, height, orientation) {
 	this.transition = function(container) {
 		if(this.dest) return;
 		if(this.container) {
-			mse.fadeout(this.container, 20, new mse.Callback(this.setContainer, this, container) );
+			mse.fadeout( this.container, 20, new mse.Callback(this.setContainer, this, container) );
 			this.dest = container;
 		}
 		else this.setContainer(container);
@@ -666,19 +694,35 @@ mse.Root = function(id, width, height, orientation) {
 				// Delete finish animation
 				this.animations.splice(i,1);
 		
+		var block = false;
+		for(var i in this.animes) {
+			this.animes[i].logic(delta);
+			if(this.animes[i].block) block = true;
+		}
+		if(block) return;
+		
 		if(this.gamewindow.logic(delta)) return;
 		
 		if(this.container) this.container.logic(delta);
 	};
 	
 	this.draw = function() {
-		this.ctx.clearRect(0, 0, this.width, this.height);
-
-		if(this.container) {
-			this.container.draw(this.ctx);
-			this.gamewindow.draw(this.ctx);
+	    if(MseConfig.mobile)
+	        this.ctx.clearRect(0, 0, MseConfig.pageWidth, MseConfig.pageHeight);
+		else this.ctx.clearRect(0, 0, this.width, this.height);
+		
+        if(!(MseConfig.mobile && this.gamewindow.currGame && this.gamewindow.currGame.type == "INDEP")){
+		    if(this.container) this.container.draw(this.ctx);
+		    if(this.dest) this.dest.draw(this.ctx);
 		}
-		if(this.dest) this.dest.draw(this.ctx);
+		if(this.gamewindow.currGame) this.gamewindow.draw(this.ctx);
+		
+		for(var i in this.animes)
+			if(this.animes[i].draw(this.ctx))
+				// Delete finish animation
+				this.animes.splice(i,1);
+				
+		this.evtDistributor.rootEvt.eventNotif("drawover",this.ctx);
 	};
 	
 	// Timeline delegate
@@ -699,6 +743,7 @@ mse.Root = function(id, width, height, orientation) {
 		else mse.currTimeline.end = true;
 	};
 	
+	mse.root = this;
 	// Canvas obj parameters
 	this.jqObj = $('<canvas></canvas>');
 	this.jqObj.attr({'id':id});
@@ -709,11 +754,18 @@ mse.Root = function(id, width, height, orientation) {
 				  	  'left':x+'px',
 				  	   'top':'0px'});
 	$('body').css({'position':'relative'}).append(this.jqObj);
-	
 	this.scale = 1;
 	this.setSize(width, height);
 	this.interval = 40;
 	this.ctx = this.jqObj.get(0).getContext("2d");
+	
+	if(MseConfig.mobile) {
+	    this.setCenteredViewport();
+	    $(window).bind('orientationchange', 
+	    	function(e){
+	    		mse.root.setCenteredViewport();
+	    	});
+	}
 	
 	this.evtDistributor = new mse.EventDistributor(this, this.jqObj);
 	
@@ -721,6 +773,8 @@ mse.Root = function(id, width, height, orientation) {
 	this.end = false;
 	this.init = false;
 	this.animations = new Array();
+	// Animation complete
+	this.animes = [];
 	// Video element
 	var video = $('<div id="video">');
 	video.css({'position':'absolute',
@@ -737,7 +791,6 @@ mse.Root = function(id, width, height, orientation) {
 	
 	// Stack of containers
 	//this.stack = new Array();
-	mse.root = this;
 	//this.setScale(1.5);
 	
 	// Launch Timeline
@@ -781,7 +834,7 @@ $.extend(mse.BaseContainer.prototype, {
     	this.orientation = orien;
     },
     orientChange: function(orien) {
-    	__currContextOwner__ = null;
+    	__currContextOwner__ = mse.root;
     	// Normal state
     	if(orien == this.orientation) this.normal = true;
     	else this.normal = false;
@@ -868,6 +921,7 @@ $.extend(mse.BaseContainer.prototype, {
     		if(this.deleg) this.deleg.draw(ctx);
     		else {
     			this.configCtx(ctx);
+    			if(mse.root.viewport) ctx.translate(-mse.root.viewport.x, -mse.root.viewport.y);
     			for(var i in this._layers) {
     				this._layers[i].draw(ctx);
     			}
@@ -898,6 +952,23 @@ mse.Layer = function(container, z, param) {
 extend(mse.Layer, mse.UIObject);
 $.extend(mse.Layer.prototype, {
 	// Objects managerment
+	getObjectIndex: function(o){
+	    // Sauf IE
+	    if(this.objList.indexOf)
+	    	var id = this.objList.indexOf(o);
+	    // IE
+	    else {
+	    	for(var i in this.objList)
+	    		if(this.objList[i] === o) {
+	    			var id = i;
+	    			break;
+	    		}
+	    }
+	    // Found
+	    if(id != null && id != -1) return id;
+	    // Not found
+	    else return -1;
+	},
 	addObject: function(obj) {
 		if(obj instanceof mse.UIObject) {
 			this.objList.push(obj);
@@ -911,6 +982,17 @@ $.extend(mse.Layer.prototype, {
 			return true;
 		}
 		else return false;
+	},
+	insertBefore: function(obj, tar) {
+	    var index = this.getObjectIndex(tar);
+	    if(index != -1) this.insertObject(obj, index);
+	},
+	insertAfter: function(obj, tar) {
+	    var index = this.getObjectIndex(tar);
+	    if(index != -1) {
+	        if(index+1 == this.objList.length) this.addObject(obj);
+	        else this.insertObject(obj, index+1);
+	    }
 	},
 	delObject: function(o) {
 		// Index of object
@@ -970,7 +1052,7 @@ $.extend(mse.Layer.prototype, {
 	},
 	// Draw
 	draw: function(ctx) {
-		this.configCtxFlex(ctx);
+		this.configCtx(ctx);
 		for(var i = 0; i < this.objList.length; i++) {
 			this.objList[i].draw(ctx);
 		}
@@ -1011,6 +1093,13 @@ mse.Text = function(parent, param, text, styled) {
 	    			true, 
 	    			this);
 	    	break;
+	    case 'fb':
+	        this.getContainer().evtDeleg.addListener(
+	        		'click', 
+	        		new mse.Callback(window.open, window, linkObj.link,'_newtab'), 
+	        		true, 
+	        		this);
+	        break;
 	    }
 	    linkObj.offset = this.text.indexOf(linkObj.src);;
 	    linkObj.owner = this;
@@ -1027,7 +1116,7 @@ mse.Text = function(parent, param, text, styled) {
 	
 	this.inObj = function(x, y) {
 		if(this.link) {
-			if(x >= this.getX()+this.linkOffs && x <= this.getX()+this.endOffs+20 && y >= this.getY() && y <= this.getY()+20) return true;
+			if(x >= this.getCanvasX()+this.linkOffs && x <= this.getCanvasX()+this.endOffs+20 && y >= this.getCanvasY() && y <= this.getCanvasY()+20) return true;
 			else return false;
 		}
 		else return this.constructor.prototype.inObj.call(this, x, y);
@@ -1115,8 +1204,10 @@ mse.ArticleLayer = function(container, z, param, article) {
 		};
 		
 		this.ctrEffect = function(e) {
-			var ex = e.offsetX - this.ctrUI.offx;
-			var ey = e.offsetY - this.ctrUI.offy;
+		    var vx = 0, vy = 0;
+		    if(mse.root.viewport) {vx = mse.root.viewport.x;vy = mse.root.viewport.y;}
+			var ex = vx+e.offsetX - this.ctrUI.offx;
+			var ey = vy+e.offsetY - this.ctrUI.offy;
 			if(ey < 0 || ey > 50) return;
 			if(ex >= 0 && ex <= 30) {
 				// Left button clicked, Reduce the speed
@@ -1137,12 +1228,14 @@ mse.ArticleLayer = function(container, z, param, article) {
 			}
 			else return;
 			this.ctrUI.tip.globalAlpha = 1;
-			mse.slideout(this.ctrUI.tip, 10, [[e.offsetX, e.offsetY], [e.offsetX, e.offsetY-50]]);
+			mse.slideout(this.ctrUI.tip, 10, [[e.offsetX+vx, e.offsetY+vy], [e.offsetX+vx, e.offsetY+vy-50]]);
 		};
 		
 		this.upDownStart = function(e) {
-		    var ex = e.offsetX - this.ctrUI.offx;
-		    var ey = e.offsetY - this.ctrUI.offy;
+		    var vx = 0, vy = 0;
+		    if(mse.root.viewport) {vx = mse.root.viewport.x;vy = mse.root.viewport.y;}
+		    var ex = vx+e.offsetX - this.ctrUI.offx;
+		    var ey = vy+e.offsetY - this.ctrUI.offy;
 		    if(ex >= 40 && ex <= 70) {
 		        // Down button clicked, scroll up the layer
 		        this.scrollEvt.rolled = -10;
@@ -1379,7 +1472,7 @@ mse.ArticleLayer = function(container, z, param, article) {
 	};
 	
 	this.draw = function(ctx) {
-	    this.configCtxFlex(ctx);
+	    this.configCtx(ctx);
 		for(var i = this.startId; i <= this.endId; i++) {
 			this.objList[i].draw(ctx);
 		}
@@ -1467,7 +1560,7 @@ $.extend(mse.Image.prototype, {
     startEffect: function (dictEffectAndConfig) {
     	this.currentEffect = mse.initImageEffect(dictEffectAndConfig,this);
     },
-    endEffect: function () {
+    endEffect: function (){
     	this.currentEffect = null;
     },
     logic: function(delta){
@@ -1483,7 +1576,7 @@ $.extend(mse.Image.prototype, {
     	this.configCtxFlex(ctx);
     	if(isNaN(x) || isNaN(y)) {x = this.getX(); y = this.getY();}
     	
-    	if(this.currentEffect != null)this.currentEffect.draw(ctx,x,y);
+    	if(this.currentEffect != null) this.currentEffect.draw(ctx,x,y);
     	else ctx.drawImage(img, x, y, this.width, this.height);
     },
     toString: function() {
@@ -1511,13 +1604,12 @@ mse.Mask.prototype.constructor = mse.Mask;
 
 
 // Sprite
-mse.Sprite = function(parent, param, src, fw, fh, sx, sy, sw, sh, frames) {
-    this.init = function(){};
+mse.Sprite = function(parent, param, src, fw0frames, fh, sx, sy, sw, sh) {
 	mse.Image.call(this, parent, param, src);
-	if(frames) this.frames = frames;
+	if(arguments.length == 4) this.frames = fw0frames;
 	else {
 		// Frame width and height
-		this.fw = fw; this.fh = fh;
+		this.fw = fw0frames; this.fh = fh;
 		// Source region
 		if(arguments.length == 9) {
 			this.sx = sx; this.sy = sy; this.sw = sw; this.sh = sh;
@@ -1527,7 +1619,7 @@ mse.Sprite = function(parent, param, src, fw, fh, sx, sy, sw, sh, frames) {
 			this.sw = this.img.width; this.sh = this.img.height;
 		}
 		// Number of column and row in the sprite
-		if(fw < this.sw) this.col = Math.floor(this.sw/fw);
+		if(fw0frames < this.sw) this.col = Math.floor(this.sw/fw0frames);
 		else {
 			this.fw = this.sw; this.col = 1;
 		}
@@ -1542,26 +1634,33 @@ mse.Sprite = function(parent, param, src, fw, fh, sx, sy, sw, sh, frames) {
 		if(this.height==0) this.height = this.fh;
 	}
 	this.curr = 0;
-	
-	this.draw = function(ctx, ox, oy) {
-		this.configCtxFlex(ctx);
-		if(isNaN(ox)) var ox = this.getX();
-		if(isNaN(oy)) var oy = this.getY();
-		var img = mse.src.getSrc(this.img);
-		if(!this.frames) {
-			var x = this.sx + (this.curr % this.col) * this.fw;
-			var y = this.sy + (Math.floor(this.curr / this.col)) * this.fh;
-			ctx.drawImage(img, x, y, this.fw,this.fh, ox,oy, this.getWidth(), this.getHeight());
-		}
-		else {
-			var x = this.frames[this.curr][0]; var y = this.frames[this.curr][1];
-			var fw = this.frames[this.curr][2]; var fh = this.frames[this.curr][3];
-			ctx.drawImage(img, x, y, fw,fh, ox,oy, fw,fh);
-		}
-	};
 };
-mse.Sprite.prototype = new mse.Image();
-mse.Sprite.prototype.constructor = mse.Sprite;
+extend(mse.Sprite, mse.Image);
+$.extend(mse.Sprite.prototype, {
+    init: function(){},
+    appendFrames: function(frames){
+        if(this.frames) this.frames = this.frames.concat(frames);
+    },
+    appendFrame: function(frame){
+        if(this.frames) this.frames.push(frame);
+    },
+    draw: function(ctx, ox, oy) {
+    	this.configCtxFlex(ctx);
+    	if(isNaN(ox)) var ox = this.getX();
+    	if(isNaN(oy)) var oy = this.getY();
+    	var img = mse.src.getSrc(this.img);
+    	if(!this.frames) {
+    		var x = this.sx + (this.curr % this.col) * this.fw;
+    		var y = this.sy + (Math.floor(this.curr / this.col)) * this.fh;
+    		ctx.drawImage(img, x, y, this.fw,this.fh, ox,oy, this.getWidth(), this.getHeight());
+    	}
+    	else {
+    		var x = this.frames[this.curr][0]; var y = this.frames[this.curr][1];
+    		var fw = this.frames[this.curr][2]; var fh = this.frames[this.curr][3];
+    		ctx.drawImage(img, x, y, fw,fh, ox,oy, this.getWidth(), this.getHeight());
+    	}
+    }
+});
 
 
 
@@ -1573,6 +1672,7 @@ mse.Game = function() {
     this.offy = 0.2*mse.root.height;
     this.width = 0.6*mse.root.width;
     this.height = 0.6*mse.root.height;
+    this.type = "DEP";
 };
 extend(mse.Game, mse.UIObject);
 $.extend(mse.Game.prototype, {
@@ -1585,6 +1685,7 @@ $.extend(mse.Game.prototype, {
     },
     setExpose: function(expo) {
         this.expo = expo;
+        this.type = "INDEP";
     },
     addTo: function(layer) {
         this.parent = layer;
@@ -1593,8 +1694,7 @@ $.extend(mse.Game.prototype, {
         layer.addObject(this);
     },
     start: function() {
-        if(this.init) this.init();
-        mse.root.evtDistributor.setDominate(this);
+    	mse.root.container.evtDeleg.setDominate(this);
         if(!this.parent) mse.root.gamewindow.loadandstart(this);
     },
     draw: function(ctx) {},
@@ -1616,23 +1716,29 @@ mse.GameShower = function() {
 	this.currGame = null;
 	this.globalAlpha = 0;
 	this.state = "DESACTIVE";
-	mse.src.addSource('gameover', 'images/gameover.jpg', 'img', true);
-	this.loseimg = new mse.Image(this, {pos:[0,0]}, 'gameover');
+	this.losetext = new mse.Text(this, {font:'Bold 36px '+mse.configs.font,fillStyle:'#FFF',textBaseline:'middle',textAlign:'center'},'GAME OVER...',true);
+	this.losetext.evtDeleg.addListener('show', new mse.Callback(this.losetext.startEffect, this.losetext, {"typewriter":{speed:2}}));
 	this.passBn = new mse.Button(this, {size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je ne joue plus', 'aideBar');
+	this.firstShow = false;
 	
 	this.load = function(game) {
 	    if(!game || !(game instanceof mse.Game)) return;
 	    this.currGame = game;
-	    
-	    this.setPos(this.currGame.offx, this.currGame.offy);
-	    this.setSize(this.currGame.width, this.currGame.height);
-	    this.loseimg.setSize(this.currGame.width-5, this.currGame.height-5);
-	    this.passBn.setPos(this.currGame.width-115, this.currGame.height-50);
+	    this.firstShow = false;
+	    this.state = "LOAD";
+	    mse.fadein(this, 15);
+	    mse.fadein(this.currGame, 15);
 	};
 	this.start = function() {
 	    if(!this.currGame) return;
+	    // Init game shower size and pos
+	    this.setPos(this.currGame.offx, this.currGame.offy);
+	    this.setSize(this.currGame.width, this.currGame.height);
+	    this.losetext.setPos(this.width/2, this.height/2);
+	    this.passBn.setPos(this.currGame.width-115, this.currGame.height-50);
+	    // Init game
+	    if(this.currGame.init) this.currGame.init();
 	    this.state = "START";
-	    mse.fadein(this, 15);
 	};
 	this.loadandstart = function(game) {
 	    this.load(game);
@@ -1651,10 +1757,11 @@ mse.GameShower = function() {
 	var cbrestart = new mse.Callback(this.restart, this);
 	this.lose = function() {
 	    this.state = "LOSE";
-	    mse.fadein(this.loseimg, 5);
+	    this.losetext.evtDeleg.eventNotif('show');
 	    mse.root.evtDistributor.addListener('click', cbrestart, true, this.currGame);
 	};
 	this.end = function() {
+	    mse.fadeout(this.currGame, 25);
 	    mse.fadeout(this, 25, this.cbdesact);
 	};
 	this.desactive = function() {
@@ -1664,25 +1771,48 @@ mse.GameShower = function() {
 	this.cbdesact = new mse.Callback(this.desactive, this);
 	
 	this.logic = function(delta) {
-	    if(this.state != "START") return false;
+	    if(this.state == "LOSE") this.losetext.logic();
+	    if(this.state != "START" && this.state != "LOAD") return false;
+	    // Mobile orientation fault
+	    else if(MseConfig.mobile && MseConfig.orientation != "landscape") return true;
 	    else this.currGame.logic(delta);
 	    return true;
 	};
 	this.draw = function(ctx) {
 	    if(this.globalAlpha == 0) return;
 	    
-	    this.configCtxFlex(ctx);
+	    this.configCtx(ctx);
 	    
 	    // Border
-	    ctx.strokeStyle = 'rgb(188,188,188)';
-	    ctx.lineWidth = 5;
-	    ctx.strokeRect(this.offx-2.5, this.offy-2.5, this.width, this.height);
-	    ctx.lineWidth = 1;
+	    if(!MseConfig.mobile){
+	        ctx.strokeStyle = 'rgb(188,188,188)';
+	        ctx.lineWidth = 5;
+	        ctx.strokeRect(this.offx-2.5, this.offy-2.5, this.width, this.height);
+	        ctx.lineWidth = 1;
+	    }
 	    
-	    if(this.state == "START")
+	    if(this.currGame.type == "INDEP" && MseConfig.mobile && MseConfig.orientation != "landscape") {
+	        // Draw orientation change notification page
+	        ctx.drawImage(mse.src.getSrc('imgNotif'), (ctx.canvas.width-50)/2, (ctx.canvas.height-80)/2, 50, 80);
+	        return;
+	    }
+	    else if(this.state == "START") {
+	        if(!this.firstShow){
+	            this.firstShow = true;
+	            if(this.currGame.type == "INDEP") {
+	                this.evtDeleg.eventNotif("firstShow");
+	            }
+	            if(MseConfig.mobile){
+	                this.currGame.setPos(0,0);
+	                this.currGame.setSize(MseConfig.pageWidth, MseConfig.pageHeight);
+	            }
+	        }
     	    this.currGame.draw(ctx);
+    	}
     	else if(this.state == "LOSE") {
-    	    this.loseimg.draw(ctx);
+    	    ctx.fillStyle = "#000";
+    	    ctx.fillRect(this.getX(),this.getY(),this.width-5,this.height-5);
+    	    this.losetext.draw(ctx);
     	    this.passBn.draw(ctx);
     	}
 	};
@@ -1708,13 +1838,10 @@ mse.GameExpose = function(parent, param, game) {
     
     this.launchGame = function(e) {
         this.getContainer().evtDeleg.removeListener('click', this.launchcb);
-        if(this.passBn.inObj(e.offsetX, e.offsetY)) {
-            this.endGame();
-        }
+        if(this.passBn.inObj(e.offsetX, e.offsetY)) this.endGame();
         else this.game.start();
     };
     this.launchcb = new mse.Callback(this.launchGame, this);
-    this.getContainer().evtDeleg.addListener('click',  this.launchcb, true);
     
     this.endGame = function() {
         if(parent.play) parent.play();
@@ -1724,6 +1851,7 @@ mse.GameExpose = function(parent, param, game) {
         if(!this.firstShow) {
             this.firstShow = true;
             this.evtDeleg.eventNotif('firstShow');
+            this.getContainer().evtDeleg.addListener('click',  this.launchcb, true);
         }
         // Message changed
         if(this.msg != this.game.getMsg()) {
@@ -2031,8 +2159,8 @@ mse.Menu = function(parent, param, iwidth, iheight) {
 	
 	this.inObj = function(x, y) {
 		if(this.insideRec)
-			var ox = this.getX()-this.zonex+this.insideRec[0], oy = this.getY()+this.insideRec[1], w = this.insideRec[2], h = this.insideRec[3];
-		else var ox = this.getX()-this.zonex, oy = this.getY(), w = 2*this.getWidth(), h = 2*this.getHeight();
+			var ox = this.getCanvasX()-this.zonex+this.insideRec[0], oy = this.getCanvasY()+this.insideRec[1], w = this.insideRec[2], h = this.insideRec[3];
+		else var ox = this.getCanvasX()-this.zonex, oy = this.getCanvasY(), w = 2*this.getWidth(), h = 2*this.getHeight();
 		
 		if(x>ox && x<ox+w && y>oy && y<oy+h) return true;
 		else return false;
@@ -2335,8 +2463,8 @@ mse.WikiLayer = function() {
 };
 extend(mse.WikiLayer, mse.Layer);
 $.extend(mse.WikiLayer.prototype, {
-    cardw: 220,
-    cardh: 300,
+    cardw: 250,
+    cardh: 320,
     hide: function() {
         var container = this.getContainer();
         if(container) {
@@ -2377,7 +2505,7 @@ $.extend(mse.WikiLayer.prototype, {
         this.addObject(this.textCard);
     },
     addExplication: function(title, text) {
-        if(!this.textCard) this.addTextCard();
+        this.addTextCard();
         this.textCard.addSection(title, text);
     },
     addLink: function(title, link) {
@@ -2745,114 +2873,195 @@ mse.KeyFrameAnimation = function(elem, keyFrameMap, repeat) {
 	this.repeat = (repeat == null) ? 1 : repeat;
 	this.map = keyFrameMap;
 	
-	this.currId = 0;
-	this.currFr = 0;
-	this.nextKf = this.map['frame'][1];
-	this.currRp = 1;
+	this.resetAnimation();
 	this.evtDeleg = new mse.EventDelegateSystem();
 	
 	if(this.map['opacity']) // Avoid the bug of opacity in javacript
 		this.element.globalAlpha = this.map['opacity'][0]==0 ? 0.01 : this.map['opacity'][0];
-	
-	this.setNoTransition = function() {
-		this.notransition = true;
-	};
-	this.resetAnimation = function() {
-		this.currId = 0;
-		this.currFr = 0;
-		this.nextKf = this.map['frame'][1];
-		this.currRp = 1;
-	};
-	this.start = function() {
-		for(var i in mse.root.animations)
-			if(mse.root.animations[i] == this) return;
-		mse.root.animations.push(this);
-	};
-	
-	this.logic = function(delta) {
-		if(this.currFr <= this.duration) {
-			// Passed a timestamp, move to next
-			if(this.currFr > this.nextKf) {
-				// Update states
-				this.currId++;
-				this.nextKf = this.map['frame'][this.currId+1];
-			}
-			// No transition calculated between the frames
-			if(this.notransition){
-				for( var key in this.map ) {
-					switch(key) {
-					case 'frame': continue; // Ignore timestamps
-					case 'pos':
-						this.element.setPos(this.map[key][this.currId][0], this.map[key][this.currId][1]);break;
-					case 'size':
-						this.element.setSize(this.map[key][this.currId][0], this.map[key][this.currId][1]);break;
-					case 'opacity':
-						this.element.globalAlpha = this.map[key][this.currId];break;
-					case 'fontSize':
-						var size = this.map[key][this.currId];
-						var s = checkFontSize(this.element.font);
-						this.element.font=this.element.font.replace(s,size.toString());
-						break;
-					case 'scale':
-						this.element.scale = this.map[key][this.currId];break;
-					}
-				}
-			}
-			else {
-				// Play the transition between currFr and nextKf
-				var ratio = (this.currFr - this.map['frame'][this.currId]) / (this.nextKf - this.map['frame'][this.currId]);
-				// Iterate in attributes for animation
-				for( var key in this.map ) {
-					switch(key) {
-					case 'frame': continue; // Ignore timestamps
-					case 'pos':
-						var x = calTransition['Float'](ratio, this.map[key][this.currId][0], this.map[key][this.currId+1][0]);
-						var y = calTransition['Float'](ratio, this.map[key][this.currId][1], this.map[key][this.currId+1][1]);
-						this.element.setPos(x, y);break;
-					case 'size':
-						var w = calTransition['Float'](ratio, this.map[key][this.currId][0], this.map[key][this.currId+1][0]);
-						var h = calTransition['Float'](ratio, this.map[key][this.currId][1], this.map[key][this.currId+1][1]);
-						this.element.setSize(w, h);break;
-					case 'opacity':
-						this.element.globalAlpha = calTransition['Float'](ratio, this.map[key][this.currId], this.map[key][this.currId+1]);
-						break;
-					case 'fontSize':
-						var size = Math.floor(calTransition['Float'](ratio, this.map[key][this.currId], this.map[key][this.currId+1]));
-						var s = checkFontSize(this.element.font);
-						this.element.font=this.element.font.replace(s,size.toString());
-						break;
-					case 'scale':
-						this.element.scale = calTransition['Float'](ratio, this.map[key][this.currId], this.map[key][this.currId+1]);
-						break;
-					}
-				}
-			}
-			// Time increase
-			this.currFr++;
-		}
-		// Repeat or not
-		else if( this.repeat === 0 || this.currRp < this.repeat ) {
-			this.currRp++;
-			// Reset all states
-			this.currId = 0;
-			this.currFr = 0;
-			this.nextKf = this.map['frame'][1];
-		}
-		// Stop
-		else {
-			this.evtDeleg.eventNotif('end');
-			return true;
-		}
-		return false;
-	};
-	
-	
-	var calTransition = {
-		'Float'	: function(ratio, prevState, nextState) {
-				return prevState + ratio * (nextState-prevState);
-			}
-	};
 };
+mse.KeyFrameAnimation.prototype = {
+    construction: mse.KeyFrameAnimation,
+    setNoTransition: function() {
+    	this.notransition = true;
+    },
+    resetAnimation: function() {
+    	this.currId = -1;
+    	this.currFr = 0;
+    	this.nextKf = this.map['frame'][0];
+    	this.currRp = 1;
+    },
+    start: function() {
+    	for(var i in mse.root.animations)
+    		if(mse.root.animations[i] == this) return;
+    	mse.root.animations.push(this);
+    },
+    isEnd: function() {
+        if(this.currFr > this.duration && this.currRp == this.repeat) return true;
+        else return false;
+    },
+    
+    logic: function(delta) {
+    	if(this.currFr <= this.duration) {
+    		// Passed a timestamp, move to next
+    		if(this.currFr == this.nextKf) {
+    			// Update states
+    			this.currId++;
+    			this.nextKf = this.map['frame'][this.currId+1];
+    			
+    			for( var key in this.map ) {
+    			    var curr = this.map[key][this.currId];
+    				switch(key) {
+    				case 'frame': continue; // Ignore timestamps
+    				case 'pos':
+    					this.element.setPos(curr[0], curr[1]);break;
+    				case 'size':
+    					this.element.setSize(curr[0], curr[1]);break;
+    				case 'opacity':
+    					this.element.globalAlpha = curr;break;
+    				case 'fontSize':
+    					var size = curr;
+    					var s = checkFontSize(this.element.font);
+    					this.element.font=this.element.font.replace(s,size.toString());
+    					break;
+    				case 'scale':
+    					this.element.scale = curr;break;
+    				case 'spriteSeq':
+    				    this.element.curr = curr;break;
+    				}
+    			}
+    		}
+    		// No transition calculated between the frames
+    		else if(!this.notransition){
+    			// Play the transition between currFr and nextKf
+    			var ratio = (this.currFr - this.map['frame'][this.currId]) / (this.nextKf - this.map['frame'][this.currId]);
+    			// Iterate in attributes for animation
+    			for( var key in this.map ) {
+    			    var curr = this.map[key][this.currId];
+    			    var next = this.map[key][this.currId+1];
+    				switch(key) {
+    				case 'frame': case 'spriteSeq': continue; // Ignore timestamps and sprite sequences
+    				case 'pos':
+    				    var trans = curr[2] ? (this.calTrans[curr[2]] ? curr[2] : 2) : 2;
+    					var x = this.calTrans[trans](ratio, curr[0], next[0]);
+    					var y = this.calTrans[trans](ratio, curr[1], next[1]);
+    					this.element.setPos(x, y);break;
+    				case 'size':
+    				    var trans = curr[2] ? (this.calTrans[curr[2]] ? curr[2] : 2) : 2;
+    					var w = this.calTrans[trans](ratio, curr[0], next[0]);
+    					var h = this.calTrans[trans](ratio, curr[1], next[1]);
+    					this.element.setSize(w, h);break;
+    				case 'opacity':
+    				    var trans = curr[1] ? (this.calTrans[curr[1]] ? curr[1] : 2) : 2;
+    					this.element.globalAlpha = this.calTrans[trans](ratio, (curr[0]?curr[0]:curr), (next[0]?next[0]:next));
+    					break;
+    				case 'fontSize': 
+    				    var trans = curr[1] ? (this.calTrans[curr[1]] ? curr[1] : 2) : 2;
+    					var size = Math.floor(this.calTrans[trans](ratio, (curr[0]?curr[0]:curr), (next[0]?next[0]:next)));
+    					var s = checkFontSize(this.element.font);
+    					this.element.font=this.element.font.replace(s,size.toString());
+    					break;
+    				case 'scale':
+    				    var trans = curr[1] ? (this.calTrans[curr[1]] ? curr[1] : 2) : 2;
+    					this.element.scale = this.calTrans[trans](ratio, (curr[0]?curr[0]:curr), (next[0]?next[0]:next));
+    					break;
+    				}
+    			}
+    		}
+    		// Time increase
+    		this.currFr++;
+    	}
+    	// Repeat or not
+    	else if( this.repeat === 0 || this.currRp < this.repeat ) {
+    		this.currRp++;
+    		// Reset all states
+    		this.currId = 0;
+    		this.currFr = 0;
+    		this.nextKf = this.map['frame'][1];
+    	}
+    	// Stop
+    	else {
+    		this.evtDeleg.eventNotif('end');
+    		return true;
+    	}
+    	return false;
+    },
+    
+    calTrans: {
+        // No transition
+        1:function(ratio, prevState, nextState) {
+            return prevState;
+        },
+        // Float interpolation
+    	2:function(ratio, prevState, nextState) {
+    		return prevState + ratio * (nextState-prevState);
+    	}
+    }
+};
+
+
+mse.Animation = function(duration, repeat, statiq, container, param){
+    this.statiq = statiq ? true : false;
+    // Super constructor
+    if(this.statiq) mse.UIObject.call(this, null, {});
+	else mse.UIObject.call(this, container, param);
+	this.objs = {};
+	this.animes = [];
+	this.duration = duration;
+	this.repeat = repeat;
+	this.state = 0;
+	this.startCb = new mse.Callback(this.start, this);
+	this.block = false;
+};
+extend(mse.Animation, mse.UIObject);
+$.extend(mse.Animation.prototype, {
+    addObj: function(name, obj){
+        if(obj instanceof mse.UIObject){
+            this.objs[name] = obj;
+            obj.parent = this;
+        }
+    },
+    getObj: function(name){
+        return this.objs[name];
+    },
+    addAnimation: function(objname, keyFrameMap, notransition){
+        if(!this.objs[objname]) return;
+        var anime = new mse.KeyFrameAnimation(this.objs[objname], keyFrameMap, this.repeat);
+        if(anime) {
+            if(notransition) anime.setNoTransition();
+            this.animes.push(anime);
+        }
+    },
+    start: function(){
+        this.state = 1;
+        if(this.statiq && $.inArray(this, mse.root.animes) == -1) {
+            for(var i in this.animes)
+                this.animes[i].resetAnimation();
+            mse.root.animes.push(this);
+        }
+        this.evtDeleg.eventNotif('start');
+    },
+    pause: function(){
+        this.state = 0;
+    },
+    logic: function(delta){
+        if(this.state){
+            for(var i in this.animes)
+        	    this.animes[i].logic(delta);
+        }
+    },
+    draw: function(ctx){
+        for(var key in this.objs)
+            this.objs[key].draw(ctx);
+
+        for(var i in this.animes){
+            if(!this.animes[i].isEnd())
+                return false;
+        }
+        this.state = 0;
+        this.evtDeleg.eventNotif('end');
+        return true;
+    }
+});
 
 
 
@@ -3618,8 +3827,8 @@ mse.CardGraph = function(root, cardParam, txtParam, content, links) {
 		// Initialize script
 		for(var i in cds) {
 			var id = "c"+i;
-			sc.states[id] = cds[i].initial;
-			sc.expects[id] = cds[i].expect;
+			sc.states[id] = cds[i].initial ? cds[i].expect : "";
+			sc.expects[id] = cds[i].expect ? cds[i].expect : "everytime";
 			sc.success[id] = false;
 			sc.delay = (delay ? delay : 0);
 			cds[i].src.evtDeleg.addListener(cds[i].type, new mse.Callback(sc.conditionChanged, sc, [id]), false);

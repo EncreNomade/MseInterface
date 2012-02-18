@@ -10,6 +10,18 @@ function distance2Pts(x1,y1,x2,y2) {
     return Math.sqrt(Math.pow(x2-x1, 2)+Math.pow(y2-y1, 2));
 };
 
+function imgBoundingInBox(img, width, height) {
+    if(typeof(img) == 'string') img = mse.src.getSrc(img);
+    if(!img || !(img instanceof Image)) return {pos:[0,0],size:[0,0]};
+    var rx = width/img.width, ry = height/img.height;
+    var r = (rx < ry) ? rx : ry;
+    var iw = img.width * r;
+    var ih = img.height * r;
+    var ix = (width-iw)/2;
+    var iy = (height-ih)/2;
+    return {pos:[ix,iy],size:[iw,ih]};
+};
+
 
 function mseLog(name, msg) {
 	var err = new Error();

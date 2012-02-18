@@ -656,6 +656,7 @@ StepManager.prototype = {
 		step.css({'z-index':this.currStepN});
 		if(!params || !params.type) step.attr('type','Layer');
 		else step.attr('type',params.type);
+		step.attr('defile', (params&&params.defile)?true:false);
 		this.page.append(step);
 		// Indexing the Step
 		this.steps[this.currStepN] = step;
@@ -847,11 +848,14 @@ Animation.prototype = {
 
 
 // Script system
-var Script = function(src, action, target, reaction){
+var Script = function(src, srcType, action, target, reaction, immediate, supp){
     this.src = src;
+    this.srcType = srcType;
     this.action = action;
     this.reaction = reaction;
     this.target = target;
+    this.immediate = immediate;
+    if(supp) this.supp = supp;
 };
 Script.prototype = {
     constructor: Script
@@ -870,7 +874,7 @@ var scriptMgr = function() {
             pageTrans: "page",
             objTrans: "obj",
             playAnime: "anime",
-            changeCursor: "img",
+            changeCursor: "image",
             playVoice: "audio",
             addScript: "script",
             script: "code",
@@ -882,8 +886,8 @@ var scriptMgr = function() {
         optionText: {
             click: "Clique", doubleClick: "Double clique", firstShow: "Première apparition", show: "Apparition",
             key: "Tape sur clavier", start: "Animation commence", end: "Animation termine", 
-            drawover: "Affichage d'un frame termine", 
-            pageTrans: "Transition entre deux pages", objTrans: "Transition entre deux objets",
+            drawover: "Affichage d'un frame termine", disappear: "Disparition",
+            pageTrans: "Transition entre deux pages", objTrans: "Transition entre deux images",
             playAnime: "Démarrer l'animation", changeCursor: "Changer le cursor de souris",
             playVoice: "Lecture d'un son", addScript: "Ajout d'un script", script: "Ajout d'une suite de codes",
             effet: "Démarrer un effet", playDefi: "Démarrer la lecture", pauseDefi: "Pauser la lecture",
@@ -891,23 +895,45 @@ var scriptMgr = function() {
         },
         scripts: {},
         reactionTarget: function(type) {return this.reaction[type];},
-        actionSelectList: function(type){
+        actionSelectList: function(id, type){
             var actfortype = this.action[type];
             if(!actfortype) return "";
-            var select = '<select id="script_action">';
+            var select = '<select id="'+id+'">';
             for(var i in actfortype)
                 select += "<option value='"+actfortype[i]+"'>"+this.optionText[actfortype[i]]+"</option>";
             select += '</select>';
             return select;
         },
-        reactionList: function(){
-            var select = '<select id="script_reaction">';
+        reactionList: function(id){
+            var select = '<select id="'+id+'">';
             for(var i in this.reaction) select += "<option value='"+i+"'>"+this.optionText[i]+"</option>";
             select += '</select>';
             return select;
         },
-        addScript: function(name, src, action, target, reaction){
-            this.scripts[name] = new Script(src, action, target, reaction);
+        scriptSelectList: function(id){
+            var select = '<select id="'+id+'">';
+            for(var i in this.scripts) select += "<option value='"+i+"'>"+i+"</option>";
+            select += '</select>';
+            return select;
+        },
+        addScript: function(name, src, srcType, action, target, reaction, immediate, supp){
+            this.scripts[name] = new Script(src, srcType, action, target, reaction, immediate, supp);
+        },
+        saveLocal: function(){
+            return this.scripts;
+        },
+        upload: function(url){
+            var data = "type=scripts&data="+JSON.stringify(this.scripts);
+            
+            $.ajax({
+                type: "POST",
+                'url': url,
+                processData: false,
+                'data': data,
+                success: function(msg){
+                    if(msg && msg != "") alert("script upload errors: "+msg);
+                }
+            });
         }
     };
 }();
@@ -1006,6 +1032,9 @@ ObjChooser.prototype = {
         this.jqObj.children('img').css({'width':h+'px','height':h+'px'});
         this.jqObj.children('h5').css({'line-height':h+'px', 'font-size':h*0.8+'px'});
         this.jqObj.appendTo(parent);
+    },
+    val: function(){
+        return this.jqObj.children('h5').text();
     },
     startChoose: function(){
         curr.chooser = this;

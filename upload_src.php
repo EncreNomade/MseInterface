@@ -45,7 +45,7 @@ function saveBase64Src($name, $encodedStr, $pj) {
 if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && isset($_SESSION['currPj'])) {
     // Read the input from stdin
     $type = $_POST['type'];
-    $name = $_POST['name'];
+    $name = array_key_exists('name', $_POST) ? $_POST['name'] : "noname";
     $encodedStr = $_POST['data'];
     $pj = $_SESSION['currPj'];
     //$pj->resetSrcs();
@@ -61,7 +61,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
         }
         // Relative url link
         else if( strripos($encodedStr, "./") !== false ) {
-            if(strripos($encodedStr, "./projects/") == 0) $encodedStr = ".".substr($encodedStr, 10);
+            if(strripos($encodedStr, "./projects/") === 0) $encodedStr = ".".substr($encodedStr, 10);
             $pj->addSrc($name, $type, $encodedStr);
         }
         // File content coded
@@ -84,6 +84,13 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
         foreach($wikis as $wiki) {
             $elem = new MseWiki($wiki, $pj);
             $pj->addWiki($elem);
+        }
+    break;
+    case "scripts":
+        $scripts = json_decode($encodedStr);
+        if(!is_null($scripts)) {
+            foreach( $scripts as $key=>$script )
+                $pj->addSrc($key, "script", $script);
         }
     break;
     }
