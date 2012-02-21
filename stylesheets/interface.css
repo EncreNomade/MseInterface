@@ -256,7 +256,7 @@ body{
 }
 .tabBar li.add {
 	background:#4d4d4d;
-	top:1px;
+	top:0px;
 	width:30px;
 	height:19px;
 	
@@ -449,7 +449,7 @@ body{
 #timeline div.frameexpo h5{
     position:absolute;
     top:30px;
-    right:5px;
+    right:2px;
     height:20px;
     margin:0px;
     padding:0px;
@@ -457,7 +457,7 @@ body{
     text-baseline:center;
     line-height:20px;
     color:#000;
-    font-size:10px;
+    font-size:9px;
 }
 #timeline div.frameexpo h5 span{
     color:#00F;
@@ -558,7 +558,7 @@ body{
 }
 #bottom_panel {
 	position:relative;
-	top:-20px;
+	top:-180px;
 	left:0px;
 	width:100%;
 	height:180px;
@@ -568,9 +568,6 @@ body{
 	-moz-user-select: none;
 	-webkit-user-select: none;
 	user-select: none;
-}
-#bottom_panel:hover {
-	top:-180px;
 }
 .source {
 	background:#fff;
@@ -691,6 +688,9 @@ body{
 	width:40px;
 	height:40px;
 	border-left:1px solid #4d4d4d;
+	-webkit-border-top-right-radius: 12px;
+	-moz-border-radius-topright: 12px;
+	border-top-right-radius: 12px;
 }
 .popup_body {
 	position:relative;

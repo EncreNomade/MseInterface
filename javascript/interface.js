@@ -39,10 +39,10 @@ function init() {
 		// Copy all in current step
 		var elems = $('#editor').children('div');
 		var res = elems.deletable(false).clone();
-		res.attr('id', 'obj'+(curr.objId++));
 		res.each(function() {
 			//srcMgr.addSource('obj', $(this));
-			$(this).selectable(null).deletable().configurable({text:true}).appendTo(curr.step);
+			$(this).attr('id', 'obj'+(curr.objId++));
+			$(this).selectable(null).deletable().configurable({text:true}).hoverButton('./images/UI/addscript.jpg', addScriptForObj).appendTo(curr.step);
 		});
 		elems.remove();
 	});
@@ -77,8 +77,8 @@ function init() {
 				res.append('<p style="margin:0px;padding:0px;">'+arr[i]+'</p>');
 			}
 			// Append all in current step
-			res.selectable(null).moveable().resizable().deletable().configurable().appendTo(curr.step);
-			srcMgr.addSource('text', res);
+			res.selectable(null).moveable().resizable().deletable().configurable().hoverButton('./images/UI/addscript.jpg', addScriptForObj).appendTo(curr.step);
+			//srcMgr.addSource('text', res);
 		});
 		elems.remove();
 	});
@@ -93,7 +93,7 @@ function init() {
 	});
 	// Font configue in Wiki tools
 	$('#wiki_color').change(function(){
-	    $('#editor').find('h5, h3, h4').css('color', config.sceneY(this.value));
+	    $('#editor').find('h5, h3, h4').css('color', this.value);
 	});
 	$('#wiki_font').change(function(){
 	    $('#editor').find('h5, h3, h4').css('font-family', this.value);
@@ -111,6 +111,8 @@ function init() {
 	    $('#timeline').hide();
 	    $('#addFrame').prevAll().remove();
 	    $('#editor').css('background', '#ffffff');
+	    $('#animeName').val("");
+	    $('#animeRepeat').val(1);
 	});
 	// Set transition type
     $('.motion').live('click', transSetup);
@@ -133,10 +135,18 @@ function init() {
 	// Mouse event handler for the resize behavior
 	$('body').supportResize(); 
 	
-	$('#bottom_panel').hover(function(){
-		$(this).css('top','-180px');
-	}, function() {
-		$(this).css('top','-20px');
+	$('#bottom_panel .add').click(function(){
+	    var bottom = $('#bottom_panel');
+	    // Close
+	    if(bottom.css('top') == "-180px") {
+		    bottom.animate({'top':'-20px'}, 500, 'swing');
+		    $(this).text('⋀');
+		}
+		// Open
+		else {
+		    bottom.animate({'top':'-180px'}, 500, 'swing');
+		    $(this).text('⋁');
+		}
 	});
 	
 	// Init x and y rulers
@@ -522,7 +532,6 @@ function insertElemDialog(e) {
 	dialog.showPopup('Inserer les éléments dans l\'article', 400, 300, 'Inserer', $(this).parent().parent());
 	// show ressource panel
 	$('#bottom').css('z-index','110');
-	$('#bottom_panel').css('top','-180px');
 	dialog.annuler.click(closeBottom);
 	// Drop zone
 	var dzone = (new DropZone(dropToInsertZone, {'top':'25px','width':'250px','height':'150px'})).jqObj;
@@ -619,7 +628,8 @@ function addScriptDialog(src, srcType){
         }
         // Anime obj event
         else if(src.hasClass('icon_src')) {
-            srcid = name = src.children('p').text(); 
+            srcid = src.data('srcId');
+            name = src.children('p').text(); 
             srcType = "anime";
         }
     }
@@ -670,7 +680,6 @@ function addScriptDialog(src, srcType){
 };
 var closeBottom = function() {
 	$('#bottom').css('z-index','6');
-	$('#bottom_panel').css('top','-20px');
 };
 function tarDynamic(e){
     closeBottom();
@@ -697,7 +706,6 @@ function tarDynamic(e){
         cible.after(supp);
         // show ressource panel
         $('#bottom').css('z-index','110');
-        $('#bottom_panel').css('top','-180px');
         break;
     case "anime":
     case "image":
@@ -705,7 +713,6 @@ function tarDynamic(e){
     case "audio":
         // show ressource panel
         $('#bottom').css('z-index','110');
-        $('#bottom_panel').css('top','-180px');
         var dz = (new DropZone(dropToTargetZone, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "script_tar")).jqObj;
         dz.data('type', type);
         cible.append(dz);
@@ -754,11 +761,11 @@ function addJsSrc(evt) {
 };
 
 function addImageElem(id, data, page, step) {
-	var img = $('<img id="obj'+(curr.objId++)+'" name="'+ id +'">');
+	var img = $('<img name="'+ id +'">');
 	img.attr('src', data);
 	img.css({'width':'100%','height':'100%'});
 	
-	var container = $('<div>');
+	var container = $('<div id="obj'+(curr.objId++)+'">');
 	container.append(img);
 	container.deletable();
 	
@@ -773,7 +780,7 @@ function addImageElem(id, data, page, step) {
 	
 	// Listener to manipulate
 	// Choose Resize Move
-	container.selectable(null).resizable().moveable().configurable({text:true,stroke:true});
+	container.selectable(null).resizable().moveable().configurable({text:true,stroke:true}).hoverButton('./images/UI/addscript.jpg', addScriptForObj);
 
 	step.append(container);
 }
@@ -942,7 +949,6 @@ function showTextEditor() {
 }
 // Wiki editor
 function addWikiCard(type) {
-    if($('#wikiTools').css('display') != 'block') return;
     var w = config.wikiWidth;
     var h = config.wikiHeight;
     var card = $('<div class="wiki_card"></div>');
@@ -961,7 +967,7 @@ function addWikiCard(type) {
     case 'image':
         card.insertBefore('.wiki_card:last');
         card.deletable();
-        var img = (new DropZone(dropImgToWikiCard, {'top':'20px','height':(h-90)+'px'}, "audiolinkInput")).jqObj;
+        var img = (new DropZone(dropImgToWikiCard, {'top':'20px','height':(h-90)+'px'}, "wikiImgInput")).jqObj;
         card.append(img);
         var legend = $('<input type="text" placeholder="legend" style="top:'+(h-45)+'px;height:20px;font-style:italic;">');
         legend.blur(function(){
@@ -981,6 +987,7 @@ function addWikiCard(type) {
         addSect.click(addSectionDialog);
     break;
     }
+    return card;
 };
 function showWikiEditor() {
     // Trigger close event if center panel is showing up
@@ -1032,8 +1039,12 @@ function saveWiki() {
     // Copy all in current step to src
     var cards = $('#editor').children('div:last-child').prevAll();
     if(cards.length == 0) return false;
-    var res = cards.clone(true);
-    srcMgr.addSource('wiki', res, name);
+    // Other parameters
+    var font = $('#wiki_font').val();
+    var fsize = $('#wiki_size').val();
+    var fcolor = $('#wiki_color').val();
+    var wiki = new Wiki(name, cards.clone(), font, fsize, fcolor);
+    srcMgr.addSource('wiki', wiki, name);
     return true;
 };
 
@@ -1076,7 +1087,7 @@ function showAnimeEditor() {
     editor.addEventListener('drop', dropToAnimeEditor, false);
     
     // Create new frame
-    $('#addFrame').click();
+    if($('#timeline .frameexpo').length == 0) $('#addFrame').click();
 };
 function showFrame(frame) {
     $('#editor').children().css('z-index', 1).removeClass('active');
@@ -1095,8 +1106,9 @@ function delFrame(e) {
     // Delete frame expo
     target.remove();
 };
-function addFrame() {
-    var frameexpo = $('<div class="frameexpo"><h4>Frame</h4><h5><span>1</span>frame</h5><div class="motion"/></div>');
+function addFrame(interval, empty) {
+    if(isNaN(interval) || interval <= 0) var interval = 0.5;
+    var frameexpo = $('<div class="frameexpo"><h4>Frame</h4><h5>durée: <span>'+interval+'</span>s</h5><div class="motion"/></div>');
     frameexpo.find('span').editable();
     // Set default transition
     frameexpo.children('div.motion').data('pos','2').data('size','2').data('opac','2').data('font','2');
@@ -1113,7 +1125,7 @@ function addFrame() {
     frameexpo.data('frame', frame);
     // Copy content in previous frame to the new frame
     var prev = frameexpo.prev();
-    if(prev.length == 1) {
+    if(empty!==true && prev.length == 1) {
         var content = prev.data('frame').children().clone(true);
         frame.append(content);
         content.find('.del_container').remove();
@@ -1127,10 +1139,10 @@ function addFrame() {
         $('#addFrame').prevAll().removeClass('active');
         $(this).addClass('active');
         showFrame($(this).data('frame'));
-    });
-    frameexpo.click();
+    }).click();
     // Deletable
     frameexpo.deletable(delFrame);
+    return frameexpo;
 };
 function redrawAnimeObj(canvas) {
     // Draw image
@@ -1293,8 +1305,7 @@ function recutAnimeObj(e) {
     canvas.mouseup(endRecut).mouseout(endRecut);
 };
 function addAnimeObj(e, id, data) {
-    var img = $('<img name="'+ id +'">');
-	img.attr('src', data);
+    var img = $('<img name="'+ id +'" src="'+ data +'">');
 	img.css({'width':'100%','height':'100%'});
 	
 	var container = $('<div>');
@@ -1651,6 +1662,9 @@ function saveProject() {
 	if(!localStorage) return;
 	var serializer = new XMLSerializer();
 	var pjsave = {};
+	// Save Obj CurrID
+	pjsave.objCurrId = curr.objId;
+	// Save Pages
 	pjsave.pageSeri = {};
 	for(var key in pages) {
 	    pjsave.pageSeri[key] = {};

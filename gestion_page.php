@@ -107,6 +107,22 @@ var rightFunc = function() {
 	// Insert target after the right page
 	tar.insertAfter(right);
 };
+
+    if(localStorage) var pjsavestr = localStorage.getItem(pjName);
+    if(pjsavestr) {
+        var pjsave = JSON.parse(pjsavestr);
+        if(pjsave.pageSeri) {
+            for(var pname in pjsave.pageSeri) {
+                var newpage = $('<div class="page"><h5>'+pname+'</h5></div>');
+                $('#new_page').before(newpage);
+                newpage.children('h5').editable();
+            }
+        }
+    }
+    else {
+        var pjsave = {};
+        pjsave.pageSeri = {};
+    }
 	
 	// Del page button and Up down button
 	$('.page').each(function(){
@@ -122,11 +138,9 @@ var rightFunc = function() {
 	});
 	
 	$('#confirm').click(function() {
-	    var pjsave = {};
-	    pjsave.pageSeri = {};
 		$('.page').each(function() {
 		    var pname = $(this).children('h5').html();
-			pjsave.pageSeri[pname] = {};
+			if(!pjsave.pageSeri[pname]) pjsave.pageSeri[pname] = {};
 		});
 		
 		// Local storage

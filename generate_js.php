@@ -56,6 +56,7 @@ class ProjectGenerator {
         // Add all ressources to xml structure
         $this->jstr .= "var animes={};";
         $this->jstr .= "var games={};";
+        $this->jstr .= "var wikis={};";
         $srcs = $this->pj->getAllSrcs();
         $types = array_keys($srcs);
         foreach( $types as $type ) {
@@ -84,8 +85,10 @@ class ProjectGenerator {
                     // Frame table
                     $frames = array();
                     foreach( $animeFrs as $frame ) {
+                        // Transform second to frame
+                        $interval = round($frame->interval*25);
                         array_push($frames, $duration);
-                        $duration += $frame->interval;
+                        $duration += $interval;
                     }
                     array_push($frames, $duration);
                     // Initialisation of animation
@@ -114,7 +117,7 @@ class ProjectGenerator {
                             // First initialization of objet, add to objlist array
                             if(!array_key_exists($key, $objlist)){
                                 switch($t) {
-                                case "img":
+                                case "image":
                                     $this->jstr .= "temp.obj=new mse.Image(null,{'pos':[$dx,$dy],'size':[$dw,$dh]},'$key');";
                                     $this->jstr .= "animes.$name.addObj('$key',temp.obj);";
                                     $objlist[$key] = array("params"=>get_object_vars($params),"animes"=>array()); break;
@@ -211,26 +214,28 @@ class ProjectGenerator {
                         $this->jstr .= "});";
                     }
                 }
-            break;
+                break;
             case "script":break;
-            }
-        }
-        // Add all wikis to xml structure
-        $wikis = $this->pj->getWikis();
-        $this->jstr .= "var wikis={};";
-        foreach($wikis as $wiki) {
-            $images = $wiki->getImages();
-            $sections = $wiki->getSections();
-            $this->jstr .= "wikis.".$wiki->getId()."=new mse.WikiLayer();";
-            foreach($sections as $section) {
-                if($section['type'] == 'text')
-                    $this->jstr .= "wikis.".$wiki->getId().".addExplication('".$section['title']."','".$section['content']."');";
-                else if($section['type'] == 'link')
-                    $this->jstr .= "wikis.".$wiki->getId().".addLink('".$section['title']."','".$section['content']."');";
-            }
-            foreach($images as $image) {
-                $legend = (array_key_exists('legend', $image) ? $image['legend'] : "");
-                $this->jstr .= "wikis.".$wiki->getId().".addImage('".$image['src']."','$legend');";
+            case "wiki":
+                // Array of animes
+                foreach( $srcs[$type] as $name => $wiki ){
+                    $this->jstr .= "wikis.$name=new mse.WikiLayer();";
+                    foreach( $wiki->cards as $card ){
+                        if( $card->type == "text" ) {
+                            $this->jstr .= "wikis.$name.addTextCard();";
+                            foreach($card->sections as $section) {
+                                if($section->type == "link")
+                                    $this->jstr .= "wikis.$name.textCard.addLink('$section->title', '$section->content');";
+                                else if($section->type == "text")
+                                    $this->jstr .= "wikis.$name.textCard.addSection('$section->title', '$section->content');";
+                            }
+                        }
+                        else if( $card->type == "img" ){
+                            $this->jstr .= "wikis.$name.addImage('$card->image', '$card->legend');";
+                        }
+                    }
+                }
+                break;
             }
         }
         
@@ -351,6 +356,7 @@ class ProjectGenerator {
                 $params['size'] = array($this->pj->getWidth(), $this->pj->getHeight());
             if(!array_key_exists('globalAlpha', $params))
                 $params['globalAlpha'] = 1;
+            $params['textBaseline'] = 'top';
             $this->jstr .= "$layer=new mse.ArticleLayer($page,$depth,JSON.parse('".json_encode($params)."'),null);";
             
             $width = self::getWidthFromStyle($this->pj, $style);

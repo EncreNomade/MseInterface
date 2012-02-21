@@ -359,7 +359,7 @@ mse.EventDelegateSystem = function() {
 			}
 		break;
 		}
-        
+
 		var arr = this.listeners[evtName];
 		if(arr) {
 			// No dominate listener
@@ -3794,8 +3794,9 @@ mse.CardGraph = function(root, cardParam, txtParam, content, links) {
 
 
 // System of script
-(function (mse) {
+(function (mse, $) {
 
+    var defaultEvents = ['click', 'doubleClick', 'longPress', 'move', 'swipe', 'gestureStart', 'gestureUpdate', 'gestureEnd', 'gestureSingle', 'keydown', 'keypress', 'keyup', 'scroll', 'swipeleft', 'swiperight'];
 
 	mse.Script = function() {
 		this.script = null;
@@ -3831,13 +3832,19 @@ mse.CardGraph = function(root, cardParam, txtParam, content, links) {
 			sc.expects[id] = cds[i].expect ? cds[i].expect : "everytime";
 			sc.success[id] = false;
 			sc.delay = (delay ? delay : 0);
-			cds[i].src.evtDeleg.addListener(cds[i].type, new mse.Callback(sc.conditionChanged, sc, [id]), false);
+			var src = cds[i].src;
+			if($.inArray(cds[i].type, defaultEvents)!=-1 && !(cds[i].src instanceof mse.BaseContainer)) {
+			    src = src.getContainer();
+			    src.evtDeleg.addListener(cds[i].type, new mse.Callback(sc.conditionChanged, sc, [id]), false, cds[i].src);
+			}
+			else 
+			    src.evtDeleg.addListener(cds[i].type, new mse.Callback(sc.conditionChanged, sc, [id]), false);
 		}
 		sc.script = script;
 	}
 
 
-})(mse);
+})(mse, $);
 
 
 

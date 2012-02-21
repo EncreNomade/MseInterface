@@ -78,12 +78,9 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
         }
     break;
     case "wiki":
-        // Parse to xml doc
-        $xml = simplexml_load_string($encodedStr, "SimpleXMLElement", LIBXML_PARSEHUGE);
-        $wikis = $xml->wiki;
-        foreach($wikis as $wiki) {
-            $elem = new MseWiki($wiki, $pj);
-            $pj->addWiki($elem);
+        $wiki = json_decode($encodedStr);
+        if(!is_null($wiki)) {
+            $pj->addSrc($name, $type, $wiki);
         }
     break;
     case "scripts":

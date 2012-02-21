@@ -98,6 +98,13 @@ function base64_encode (data) {
     return (r ? enc.slice(0, r - 3) : enc) + '==='.slice(r || 3);
 }
 
+function objToClass(obj, classn) {
+    var o = new classn(); 
+    for(var key in obj) 
+        o[key] = obj[key]; 
+    return o;
+}
+
 var Callback = function(func, caller) {
     if(!func) return null; 
 	this.func = func;
@@ -265,7 +272,6 @@ var SourceManager = function() {
 SourceManager.prototype = {
 	constructor: SourceManager,
 	sources: {},
-	wikis: {},
 	expos: {},
 	acceptType: new Array('image', 'audio', 'game', 'anime', 'wiki'),
 	idRegExp: /(\w+)_(\w+)/,
@@ -287,7 +293,7 @@ SourceManager.prototype = {
 	    return res[1];
 	},
 	isExist: function(id) {
-	    return ($.inArray(id, Object.keys(this.sources)) != -1 || $.inArray(id, Object.keys(this.wikis)) != -1);
+	    return ($.inArray(id, Object.keys(this.sources)) != -1);
 	},
 	addSource: function(type, data, id) {
 		if($.inArray(type, this.acceptType) == -1) return;
@@ -357,13 +363,16 @@ SourceManager.prototype = {
 			expo.append(content);
 			break;*/
 		case 'wiki':
-		    if(this.wikis[id]) {
-		        this.wikis[id] = data;
+		    if(this.sources[id]) {
+		        this.sources[id] = data;
 		        return;
 		    }
-		    this.wikis[id] = data;
+		    this.sources[id] = data;
 		    expo.append('<p>WIKI: '+this.realName(id)+'</p>');
 		    expo.children().css('font','bold 8px Times');
+		    expo.click(function(){
+		        srcMgr.editWiki($(this).data('srcId'));
+		    });
 		    break;
 		case 'anime':
 		    if(this.sources[id]) {
@@ -373,6 +382,9 @@ SourceManager.prototype = {
 		    this.sources[id] = data;
 		    expo.append('<p>Anime: '+this.realName(id)+'</p>');
 		    expo.circleMenu({'addscript':['./images/UI/addscript.jpg',addScriptDialog]});
+		    expo.click(function(){
+		        srcMgr.getSource($(this).data('srcId')).showAnimeOnEditor();
+		    });
 		    expo.children().css('font','bold 8px Times');
 		    break;
 		}
@@ -385,8 +397,6 @@ SourceManager.prototype = {
 	getSource: function(id) {
 	    if(this.sources[id])
     		return this.sources[id];
-    	else if(this.wikis[id])
-    	    return this.wikis[id];
     	else return null;
 	},
 	generateChildDomElem: function(id, parent) {
@@ -442,9 +452,11 @@ SourceManager.prototype = {
 	delSource: function(id) {
 	    if(this.sources[id])
     		delete this.sources[id];
-    	else if(this.wikis[id])
-    	    delete this.wikis[id];
 		delete this.expos[id];
+	},
+	editWiki: function(id) {
+	    if(!this.sources[id] || !(this.sources[id] instanceof Wiki)) return;
+	    this.sources[id].showWikiOnEditor();
 	},
 	saveSerializedSrc: function(pjsave) {
 	    var serializer = new XMLSerializer();
@@ -468,50 +480,18 @@ SourceManager.prototype = {
 	            src[key] = serializer.serializeToString(this.sources[key].get(0));
 	            break;*/
 	        case "anime":
-	            src[key] = this.sources[key];
-	            break;
+	            src[key] = this.sources[key];break;
+	        case "wiki":
+	            src[key] = this.sources[key];break;
 	        }
-	    }
-	    var wiki = {};
-	    for(var key in this.wikis) {
-	        wiki[key] = "";
-	        this.wikis[key].each(function(){
-	            wiki[key] = wiki[key] + serializer.serializeToString(this);
-	        });
 	    }
 	    
 	    // Store srcs in local storage
 	    pjsave.sources = src;
-	    // Store wikis in local storage
-	    pjsave.wikis = wiki;
 	    pjsave.srcCurrId = this.currId;
 	    return pjsave;
 	},
 	uploadSrc: function(url) {
-	    var xmldata = (new DOMParser()).parseFromString("<wikis></wikis>", "text/xml");
-	    for(var key in this.wikis) {
-	        var cards = this.wikis[key];
-	        cards.find('input, .del_container, .sepline').remove();
-	        cards.find('img').attr('src', '');
-	        var wiki = xmldata.createElement("wiki");
-	        wiki.setAttribute('id', key);
-	        
-	        for(var i = 0; i < cards.length; i++) {
-	            wiki.appendChild(cards.get(i));
-	        }
-	        xmldata.documentElement.appendChild(wiki);
-	    }
-	    var data = (new XMLSerializer()).serializeToString(xmldata);
-	    $.ajax({
-	        type: "POST",
-	        'url': url,
-	        processData: false,
-	        'data': "type=wiki&name="+key+"&data="+data,
-	        success: function(msg){
-	            if(msg && msg != "") alert("wiki upload errors: "+msg);
-	        }
-	    });
-	    
 	    for(var key in this.sources) {
 	        var data = null;
 	        switch(this.sourceType(key)) {
@@ -520,11 +500,11 @@ SourceManager.prototype = {
 	        case "audio":
 	            data = "type=audio&name="+key+"&data="+this.sources[key];break;
 	        case "game":
-	            data = "type=game&name="+this.sources[key].name+"&data="+this.sources[key].content;
-	            break;
+	            data = "type=game&name="+this.sources[key].name+"&data="+this.sources[key].content;break;
 	        case "anime":
-	            var anime = this.sources[key].anime;
-	            data = "type=anime&name="+key+"&data="+JSON.stringify(anime);break;
+	            data = "type=anime&name="+key+"&data="+JSON.stringify(this.sources[key]);break;
+	        case "wiki":
+	            data = "type=wiki&name="+key+"&data="+JSON.stringify(this.sources[key]);break;
 	        }
 	        
 	        if(data)
@@ -534,7 +514,7 @@ SourceManager.prototype = {
 	                processData: false,
 	                'data': data,
 	                success: function(msg){
-	                    if(msg && msg != "") alert("wiki upload errors: "+msg);
+	                    if(msg && msg != "") alert("source upload errors: "+msg);
 	                }
 	            });
 	    }
@@ -781,14 +761,98 @@ StepManager.prototype = {
 
 
 
+// Wiki system
+var Wiki = function(name, cardsDom, font, fontsize, color) {
+    if(font) this.font = font;
+    if(fontsize) this.fsize = fontsize;
+    if(color) this.fcolor = color;
+    
+    if(!name || !cardsDom) return;
+    this.name = name;
+    this.cards = [];
+    cardsDom.find('input, .del_container, .sepline').remove();
+    cardsDom.find('img').attr('src', '');
+    // Analyze the cards
+    for(var i = 0; i < cardsDom.length; i++) {
+        var card = {};
+        var cardDom = $(cardsDom.get(i));
+        if(cardDom.children('h5').length > 0) card.type = "img";
+        else card.type = "text";
+        switch(card.type){
+        case "img":
+            card.image = cardDom.children('img').attr('name');
+            card.legend = cardDom.children('h5').text();
+            break;
+        case "text":
+            card.sections = [];
+            // Sections titles
+            var titles = cardDom.children('h3');
+            for(var j = 0; j < titles.length; j++){
+                var title = $(titles.get(j));
+                var section = {};
+                section.title = title.text();
+                // Link section
+                if(title.next().attr('tagName') == 'IMG') {
+                    section.type = 'link';
+                    section.content = title.next().attr('value');
+                }
+                // Text section
+                else {
+                    section.type = 'text';
+                    section.content = (title.next().attr('tagName')=='H4') ? title.next().text() : "";
+                }
+                card.sections.push(section);
+            }
+            break;
+        }
+        this.cards.push(card);
+    }
+};
+Wiki.prototype = {
+    constructor: Wiki,
+    showWikiOnEditor: function(){
+        showWikiEditor();
+        $('#wiki_name').val(this.name);
+        if(this.font) $('#wiki_font').val(this.font);
+        if(this.fsize) $('#wiki_size').val(this.fsize);
+        if(this.fcolor) $('#wiki_color').val(this.fcolor);
+        for(var i in this.cards){
+            var card = this.cards[i];
+            if(card.type == "img"){
+                var jqCard = addWikiCard("image");
+                // Change image
+                var img = $('<img name="'+card.image+'" src="'+srcMgr.getSource(card.image)+'" style="top:20px;">');
+                img.get(0).addEventListener('dragover', DropZone.prototype.dragOverElemZone, false);
+                img.get(0).addEventListener('dragleave', DropZone.prototype.dragLeaveElemZone, false);
+                img.get(0).addEventListener('drop', dropImgToWikiCard, false);
+                img.mouseup(DropZone.prototype.dragLeaveElemZone);
+                jqCard.children(".drop_zone").replaceWith(img);
+                // Change legend
+                var newlegend = $('<h5>'+card.legend+'</h5>');
+                newlegend.css({'top':(config.wikiHeight-45)+'px'});
+                jqCard.children("input").replaceWith(newlegend);
+                newlegend.editable();
+            }
+            else if(this.cards[i].type == "text"){
+                var jqCard = addWikiCard("description");
+                for(var j in card.sections){
+                    addSectionWiki(jqCard.children("input"), card.sections[j].title, card.sections[j].type, card.sections[j].content);
+                }
+            }
+        }
+    }
+};
+
+
+
 // Animation system
 var Animation = function(name, repeat, statiq) {
-    this.anime = {};
-    this.anime.name = name;
-    this.anime.repeat = repeat;
-    this.anime.statiq = statiq;
-    this.anime.frames = [];
-    this.anime.objs = {};
+    //this.anime = {};
+    this.name = name;
+    this.repeat = repeat;
+    this.statiq = statiq;
+    this.frames = [];
+    this.objs = {};
 };
 Animation.prototype = {
     constructor: Animation,
@@ -798,8 +862,8 @@ Animation.prototype = {
             var framexpo = $(frames.get(i));
             frame.interval = parseFloat(framexpo.find('span').text());
             // Valid interval
-            if(isNaN(frame.interval) || frame.interval > 64 || frame.interval <= 0) 
-                frame.interval = 1;
+            if(isNaN(frame.interval) || frame.interval > 20 || frame.interval <= 0) 
+                frame.interval = 0.5;
             frame.objs = {};
             var objs = {};
             var content = framexpo.data('frame').children();
@@ -811,7 +875,7 @@ Animation.prototype = {
                 // Add to objects array
                 if(!objs[name]) {
                     objs[name] = {};
-                    objs[name].type = "img";
+                    objs[name].type = "image";
                 }
                 // Validity
                 if(container.children('canvas').length != 0 || !name || name == "") return;
@@ -838,9 +902,51 @@ Animation.prototype = {
             if(!isNaN(opac)) frame.trans.opac = opac;
             if(!isNaN(font)) frame.trans.font = font;
             
-            this.anime.frames.push(frame);
-            this.anime.objs = objs;
+            this.frames.push(frame);
+            this.objs = objs;
         }
+    },
+    showAnimeOnEditor: function(){
+        var editor = $('#editor');
+        editor.html("");
+        var timeline = $('#timeline');
+        $('#animeRepeat').val(this.repeat);
+        $('#animeName').val(this.name);
+        for(var i = 0; i < this.frames.length; i++){
+            var frame = this.frames[i];
+            var frameexpo = addFrame(frame.interval, true);
+            var framelayer = frameexpo.data('frame');
+            // Transition
+            var trans = frameexpo.children('div.motion');
+            if(!isNaN(frame.trans.pos)) trans.data('pos', frame.trans.pos);
+            if(!isNaN(frame.trans.size)) trans.data('size', frame.trans.size);
+            if(!isNaN(frame.trans.opac)) trans.data('opac', frame.trans.opac);
+            if(!isNaN(frame.trans.font)) trans.data('font', frame.trans.font);
+            // Objects
+            for(var key in frame.objs){
+                var container = $('<div>');
+                var param = frame.objs[key];
+                var type = this.objs[key].type;
+                if(type == "spriteRecut" || type == "sprite" || type == "image") {
+                    var img = $('<img name="'+ key +'" src="'+srcMgr.getSource(key)+'">');
+                    switch(type) {
+                    case "sprite":
+                    case "spriteRecut":
+                        img.css({'position':'relative', 'left':-100*param.sx/param.w+'%', 'top':-100*param.sy/param.h+'%', 'width':100*param.w/param.sw+'%', 'height':100*param.h/param.sh+'%'});break;
+                    case "image":
+                        img.css({'position':'relative', 'left':'0%', 'top':'0%', 'width':'100%', 'height':'100%'});break;
+                    }
+                    container.css({'position':'absolute', 'top':param.dy+'px', 'left':param.dx+'px', 'width':param.dw+'px', 'height':param.dh+'px', 'border-style':'solid', 'border-color':'#4d4d4d', 'border-width':'0px', 'overflow':'hidden', 'opacity':param.opacity});
+                    container.html(img);
+                    container.deletable().resizable().moveable().configurable({text:true,stroke:true});
+                    container.hoverButton('./images/UI/recut.png', recutAnimeObj);
+                }
+                else if(type == "text"){
+                }
+                framelayer.append(container);
+            }
+        }
+        showAnimeEditor();
     }
 };
 
@@ -1349,7 +1455,8 @@ $.fn.editable = function(callback) {
 	var name = $(this).html();
 	$(this).click(function() {
 		var editfield = $('<input type="text" size="10" value="'+ name +'"></input>');
-		editfield.css({'color':$(this).css('color'), 'top':$(this).css('top'), 'left':$(this).css('left'), 'position':$(this).css('position'), 'font-family':$(this).css('font-family'), 'font-size':$(this).css('font-size')});
+		var color = $(this).css('color');
+		editfield.css({'color':color, 'background':'rgba(255,255,255,0.3)', 'top':$(this).css('top'), 'left':$(this).css('left'), 'position':$(this).css('position'), 'font-family':$(this).css('font-family'), 'font-size':$(this).css('font-size')});
 		$(this).replaceWith(editfield);
 		editfield.blur(function() {
 			var newname = $(this).attr('value');

@@ -30,28 +30,6 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 <head>
   <title>Interface d'édition</title>
 
-  <script type="text/javascript">
-  // Debug
-  var debugMsgAppend = window.debugMsgAppend = function(message) {
-	$("#debug").append(message);
-	$("#debug").fadeIn("1000");
-  };
-
-  var debugMsgRefresh = window.debugMsgRefresh = function(message) {
-	$("#debug").text("Debug: " + message);
-	$("#debug").fadeIn("1000");
-  };
-
-  window.onerror = function(msg, url, line){
-	if(onerror.num++ < onerror.max) {
-		alert("Error: " + msg + "\n" + url + ":" + line);
-		return true;
-	}
-  }
-  onerror.max = 3;
-  onerror.num = 0;
-  </script>
-
 <script src="./javascript/support/jquery-latest.js"></script>
 <script src="./javascript/interface.js"></script>
 <script src="./javascript/support/tools.js"></script>
@@ -133,7 +111,7 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 		<li><h5>Paramètres: </h5></li>
 		<li><h5>Boucle:</h5><input id="animeRepeat" size="2" type="number" value="1"></li>
 		<li><h5>Nom:</h5><input id="animeName" size="5" type="text"></li>
-		<li><input type="button" id="createAnime" value="Créer"></input></li>
+		<li><input type="button" id="createAnime" value="Sauvegarder"></input></li>
 	</ul>
 	<canvas id="rulerX" class="ruler"></canvas>
 	<canvas id="rulerY" class="ruler"></canvas>
@@ -154,6 +132,7 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 <div id="bottom_panel">
 	<ul class="tabBar">
 		<li class="active">Ressources</li>
+		<li class="add">⋁</li>
 	</ul>
 
 	<div id="Ressources" class="source">
@@ -172,8 +151,6 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
     </select>
     <input id="addLinkBn" type="button" value="Ajouter ce lien" style="position:absolute;left:60px;top:120px;"/>
 </div>
-
-<h5 id="debug">Debug: </h5>
 
 
 <script type="text/javascript">
@@ -220,6 +197,8 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 	        if(!pjsavestr) return;
 	        var pjsave = JSON.parse(pjsavestr);
 	        // Pages/Layers/Objects
+	        var obj = null;
+	        var maxid = 0, id = 0;
 	        var pageseri = pjsave.pageSeri;
 	        for(var pname in pageseri) {
 	            var page = addPage(pname);
@@ -229,11 +208,11 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 	                var step = $(pageseri[pname][sname]);
 	                page.data('StepManager').addStepWithContent(sname, step);
 	                step.children().each(function(){
-	                    var self = $(this);
+	                    obj = $(this);
 	                    // Article
-	                    if(self.hasClass('article')) {
-	                        self.deletable().configurable();
-	                        self.children('div').each(function(){
+	                    if(obj.hasClass('article')) {
+	                        obj.deletable().configurable();
+	                        obj.children('div').each(function(){
 	                            if($(this).hasClass('illu')) $(this).deletable(null, true);
 	                            $(this).selectable(selectP)
 	                                   .staticButton('./images/UI/insertbelow.png', insertElemDialog)
@@ -244,9 +223,15 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 	                            	'top': ($(this).children('p').length == 0) ? '0%' : '-100%',
 	                            	'display':'none'});
 	                        });
+	                        id = parseInt(obj.attr('id').substring(3));
+	                        if(id > maxid) maxid = id;
 	                    }
 	                    // Other obj
-	                    else self.selectable(null).deletable().configurable().resizable().moveable();
+	                    else {
+	                        obj.selectable(null).deletable().configurable().resizable().moveable().hoverButton('./images/UI/addscript.jpg', addScriptForObj);
+	                        id = parseInt(obj.attr('id').substring(3));
+	                        if(id > maxid) maxid = id;
+	                    }
 	                });
 	            }
 	            if(steps == 0) page.data('StepManager').addStep(pname+'default', null, true);
@@ -256,13 +241,13 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 	        for(var key in src) {
 	            var type = srcMgr.sourceType(key);
 	            if(type == "text" || type == "obj") continue;
-	            srcMgr.addSource(srcMgr.sourceType(key), src[key], key);
-	        }
-	        var wiki = pjsave.wikis;
-	        for(var key in wiki) {
-	            srcMgr.addSource('wiki', $(wiki[key]), key);
+	            else if(type == "anime") src[key] = objToClass(src[key], Animation);
+	            else if(type == "wiki") src[key] = objToClass(src[key], Wiki);
+	            srcMgr.addSource(type, src[key], key);
 	        }
 	        if(!isNaN(pjsave.srcCurrId)) srcMgr.currId = pjsave.srcCurrId;
+	        if(!isNaN(pjsave.objCurrId)) curr.objId = pjsave.objCurrId;
+	        else if(!isNaN(maxid)) curr.objId = maxid+1;
 	        // Scripts
 	        scriptMgr.scripts = pjsave.scripts;
 	    }
