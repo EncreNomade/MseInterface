@@ -399,6 +399,13 @@ SourceManager.prototype = {
     		return this.sources[id];
     	else return null;
 	},
+	getImgSrcIDs: function(){
+	    var res = [];
+	    for(var id in this.sources) {
+	        if(this.sourceType(id) == "image") res.push(id);
+	    }
+	    return res;
+	},
 	generateChildDomElem: function(id, parent) {
 		var type = this.sourceType(id);
 		switch(type) {
@@ -517,6 +524,16 @@ SourceManager.prototype = {
 	                    if(msg && msg != "") alert("source upload errors: "+msg);
 	                }
 	            });
+	    }
+	    
+	    for(var key in this.sources) {
+	        switch(this.sourceType(key)) {
+	        case "image": 
+	            var ext = this.dataExtension(key);
+	            if(ext && imgPath) this.sources[key] = imgPath + key + "." + ext;break;
+	        case "audio":
+	            if(ext && audPath) this.sources[key] = audPath + key;break;
+	        }
 	    }
 	}
 };

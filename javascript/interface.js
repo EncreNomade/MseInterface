@@ -1664,6 +1664,11 @@ function saveProject() {
 	var pjsave = {};
 	// Save Obj CurrID
 	pjsave.objCurrId = curr.objId;
+	// Replace img src with relative Path on server
+	var imgids = srcMgr.getImgSrcIDs();
+	for(var i in imgids) {
+	    $(".scene img[name='"+imgids[i]+"']").attr('src', srcMgr.getSource(imgids[i]));
+	}
 	// Save Pages
 	pjsave.pageSeri = {};
 	for(var key in pages) {
