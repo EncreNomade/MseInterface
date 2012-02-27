@@ -10,8 +10,9 @@ header("content-type:text/html; charset=utf8");
 include 'project.php';
 
 session_start();
-
-if( $_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists("pjName", $_GET) ) {
+if( !isset($_SESSION['uid']) )
+    header("Location: index.php");
+else if( $_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists("pjName", $_GET) ) {
     $pj = MseProject::getExistProject($_GET["pjName"]);
     if(isset($pj)) {
         $_SESSION['currPj'] = $pj;
@@ -31,9 +32,10 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
   <title>Interface d'édition</title>
 
 <script src="./javascript/support/jquery-latest.js"></script>
-<script src="./javascript/interface.js"></script>
 <script src="./javascript/support/tools.js"></script>
+<script src="./javascript/interface.js"></script>
 
+<link rel="stylesheet" type="text/css" href="./stylesheets/menu.css" />
 <link rel="stylesheet" type="text/css" href="./stylesheets/interface.css" />
 
 </head>
@@ -59,6 +61,7 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 			<li><a id="newCalque">Nouvelle étape</a></li>
 		</ul>
 	</li>
+	<li class="id">Connexion</li>
 	<div id="menu_mask"></div>
 </nav>
 <ul id="tools">
@@ -155,8 +158,6 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 
 <script type="text/javascript">
 	
-	$('#debug').hide();
-	
 	$('#center_panel.tabBar li').click(activeBarLabel);
 	
 	$('#newPage, #createPage').click(createPageDialog);
@@ -179,7 +180,15 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 	    print("var audPath = '".$pj->getRelatSrcPath("audio")."';");
 	    print("var gamePath = '".$pj->getRelatSrcPath("game")."';");
 	    print("Config.init({width:".$pj->getWidth().", height:".$pj->getHeight()."});");
-	?>
+    
+        if(isset($_SESSION["uid"]) && $_SESSION["uid"] != "") {
+            echo "uid = '".$_SESSION["uid"]."';";
+        }
+    ?>
+    if(uid && uid != "") {
+        $(".menu li.id").text(uid);
+    }
+	
 	$('#showProjet').click(function(){
 	    window.open('./projects/index.php?id='+pjName, '_newtab');
 	});

@@ -42,7 +42,8 @@ class ProjectGenerator {
         $this->pj = $project;
     }
     
-    function generateJS($xml){
+    function generateJS(){
+        if(is_null($this->pj) || is_null($this->pj->getStruct())) return "alert('JS Generation failed')";
         $this->jstr = "";
         // Initiale Mse system
         $this->jstr .= "initMseConfig();";
@@ -244,6 +245,8 @@ class ProjectGenerator {
         $this->jstr .= "var layers = {};";
         $this->jstr .= "var objs = {};";
         
+        // Parse to xml doc
+        $xml = simplexml_load_string($this->pj->getStruct(), "SimpleXMLElement", LIBXML_PARSEHUGE);
         // Generate pages
         $pages = $xml->pages->div;
         foreach( $pages as $page ) {
@@ -557,13 +560,12 @@ class ProjectGenerator {
 if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && isset($_SESSION['currPj'])) {
     // Read the input from stdin
     $xmlstr = file_get_contents('php://input');
-    // Parse to xml doc
-    $xml = simplexml_load_string($xmlstr, "SimpleXMLElement", LIBXML_PARSEHUGE);
     
     // Initialisation of project
     $pj = $_SESSION['currPj'];
+    $pj->setStruct($xmlstr);
     $projet = new ProjectGenerator($pj);
-    $js = $projet->generateJS($xml);
+    $js = $projet->generateJS();
     
     $path = $pj->getRelatJSPath();
     $res = file_put_contents($path, $js);

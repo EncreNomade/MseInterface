@@ -18,6 +18,7 @@ class MseProject {
     private $orientation;
     private $sources;
     private $ratio;
+    private $struct;
 
     function MseProject($pjName, $bkName, $width = 800, $height = 600, $orient = 'portrait') {
         $this->name = $pjName;
@@ -43,6 +44,12 @@ class MseProject {
         return $coor / $this->ratio;
     }
     
+    function setStruct($structStr){
+        $this->struct = $structStr;
+    }
+    function getStruct(){
+        return $this->struct;
+    }
     function addSrc($name, $type, $src) {
         if(!array_key_exists($type, $this->sources))
             $this->sources[$type] = array();
@@ -90,17 +97,13 @@ class MseProject {
 
     public static function getExistProject($pjName) {
         if( !file_exists(MseProject::getRelatProjectPath($pjName)) ) return null;
-        // Load structure
-        $structPath = './projects/'.$pjName.'/struct.xml';
-        $struct = simplexml_load_file($structPath, "SimpleXMLElement", LIBXML_PARSEHUGE);
-        if(is_null($struct)) return null;
         
-        $bkName = (string)$struct['book'];
-        $width = (string)$struct['width'];
-        $height = (string)$struct['height'];
-        $orient = (string)$struct['orient'];
+        $bkName = "";//(string)$struct['book'];
+        $width = 800;//(string)$struct['width'];
+        $height = 600;//(string)$struct['height'];
+        //$orient = (string)$struct['orient'];
         
-        $pj = new MseProject($pjName, $bkName, $width, $height, $orient);
+        $pj = new MseProject($pjName, $bkName, $width, $height);
         return $pj;
     }
 }

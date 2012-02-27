@@ -13,7 +13,8 @@ ini_set("display_errors","1");
 error_reporting(E_ALL);
 
 session_start();
-if( !isset($_SESSION['currPj']) ) header("Location: index.php");
+if( !isset($_SESSION['currPj']) || !isset($_SESSION['uid']) )
+    header("Location: index.php");
 
 ?>
 
@@ -46,12 +47,18 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 
 <script src="./javascript/support/jquery-latest.js"></script>
 <script src="./javascript/support/tools.js"></script>
+<script src="./javascript/interface.js"></script>
 
+<link rel="stylesheet" type="text/css" href="./stylesheets/menu.css" />
 <link rel="stylesheet" type="text/css" href="./stylesheets/interface.css" />
 <link rel="stylesheet" type="text/css" href="./stylesheets/gestion_page.css" />
 
 </head>
 <body>
+
+<nav class="menu">
+	<li class="id">Connexion</li>
+</nav>
 
 <div style="width:100%;top:50%;left:0px;position:absolute;overflow:visible;margin:0px;padding:0px">
 	<div id="pagesbanner">
@@ -62,16 +69,20 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
 	<input id="confirm" type="button" value="Poursuivre"></input>
 </div>
 
-<h5 id="debug">Debug: </h5>
-
 <script type="text/javascript">
 	
-	$('#debug').hide();
-	
+	var uid = null;
 	<?php
 	    $pj = $_SESSION['currPj'];
 	    print("var pjName = '".$pj->getName()."';");
+	    
+	    if(isset($_SESSION["uid"]) && $_SESSION["uid"] != "") {
+	        echo "uid = '".$_SESSION["uid"]."';";
+	    }
 	?>
+	if(uid && uid != "") {
+	    $(".menu li.id").text(uid);
+	}
 	
 var initPageButton = function(elem) {
 	elem.deletable().hoverButton('./images/UI/left.png', leftFunc).hoverButton('./images/UI/right.png', rightFunc);

@@ -48,7 +48,6 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
     $name = array_key_exists('name', $_POST) ? $_POST['name'] : "noname";
     $encodedStr = $_POST['data'];
     $pj = $_SESSION['currPj'];
-    //$pj->resetSrcs();
     
     switch($type) {
     case "image":
