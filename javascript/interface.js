@@ -1649,7 +1649,7 @@ function saveProject() {
 	
 	$.ajax({
 	   type: "POST",
-	   url: "generate_js.php",
+	   url: "save_project.php",
 	   contentType: "text/xml",
 	   processData: false,
 	   data: xmldata,

@@ -8,11 +8,13 @@
 
 header("content-type:text/html; charset=utf8");
 include 'project.php';
+include 'dbconn.php';
 
 session_start();
 if( !isset($_SESSION['uid']) )
     header("Location: index.php");
 else if( $_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists("pjName", $_GET) ) {
+    ConnectDB();
     $pj = MseProject::getExistProject($_GET["pjName"]);
     if(isset($pj)) {
         $_SESSION['currPj'] = $pj;
@@ -190,7 +192,10 @@ if( !isset($_SESSION['currPj']) ) header("Location: index.php");
     }
 	
 	$('#showProjet').click(function(){
-	    window.open('./projects/index.php?id='+pjName, '_newtab');
+	    $.post("generate_js.php", function(msg) {
+	           if(msg && msg != "") alert(msg);
+	           window.open('./projects/index.php?id='+pjName, '_newtab');
+	       });
 	});
 	$('#newProjet').click(function(){
 	    window.open('./index.php', '_newtab');

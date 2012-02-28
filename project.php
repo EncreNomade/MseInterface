@@ -9,7 +9,6 @@
 ini_set("display_errors","1");
 error_reporting(E_ALL);
 
-
 class MseProject {
     private $name;
     private $bookName;
@@ -88,6 +87,52 @@ class MseProject {
         return './projects/'.$this->name.'/content.js';
     }
     
+    function saveToDB() {
+        if(!isset($_SESSION['uid'])) return;
+        else $owner = $_SESSION['uid'];
+        $id = $owner."_".$this->name;
+        $modif = time();
+        
+        $resp = mysql_query("SELECT * FROM Projects WHERE id='$id' LIMIT 1");
+        $exist = mysql_fetch_array($resp);
+        
+        if($exist) {
+            $query = sprintf("UPDATE Projects SET name='%s', width='%s', height='%s', struct='%s', sources='%s', lastModif='%s' WHERE id='%s'", 
+                mysql_real_escape_string($this->name), 
+                mysql_real_escape_string($this->width), 
+                mysql_real_escape_string($this->height), 
+                mysql_real_escape_string($this->struct), 
+                mysql_real_escape_string(json_encode($this->sources)), 
+                mysql_real_escape_string($modif), 
+                mysql_real_escape_string($id));
+            $resp = mysql_query($query);
+            if(!$resp) {
+                die("Fail to update the project record: ".mysql_error());
+                return FALSE;
+            }
+        }
+        else {
+            $query = sprintf("INSERT INTO Projects(id,owner,creation,folder,name,width,height,orientation,struct,sources,scripts,lastModif) Value('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','','%s')",
+                mysql_real_escape_string($id), 
+                mysql_real_escape_string($owner), 
+                mysql_real_escape_string($modif),
+                mysql_real_escape_string($this->bookName),
+                mysql_real_escape_string($this->name),
+                mysql_real_escape_string($this->width),
+                mysql_real_escape_string($this->height),
+                mysql_real_escape_string($this->orientation),
+                mysql_real_escape_string($this->struct),
+                mysql_real_escape_string(json_encode($this->sources)),
+                mysql_real_escape_string($modif));
+            $resp = mysql_query($query);
+            if(!$resp) {
+                die("Fail to add the project record to database: ".mysql_error());
+                return FALSE;
+            }
+        }
+        return TRUE;
+    }
+    
     public static function getRelatProjectPath($pjName) {
         return './projects/'.$pjName;
     }
@@ -98,10 +143,14 @@ class MseProject {
     public static function getExistProject($pjName) {
         if( !file_exists(MseProject::getRelatProjectPath($pjName)) ) return null;
         
-        $bkName = "";//(string)$struct['book'];
-        $width = 800;//(string)$struct['width'];
-        $height = 600;//(string)$struct['height'];
-        //$orient = (string)$struct['orient'];
+        $owner = $_SESSION['uid'];
+        $resp = mysql_query("SELECT * FROM Projects WHERE name='$pjName' AND owner='$owner' LIMIT 1");
+        $pj = mysql_fetch_array($resp);
+        
+        $bkName = $pj['folder'];
+        $width = $pj['width'];
+        $height = $pj['height'];
+        $orient = $pj['orientation'];
         
         $pj = new MseProject($pjName, $bkName, $width, $height);
         return $pj;
