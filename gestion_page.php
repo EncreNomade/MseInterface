@@ -123,11 +123,13 @@ var rightFunc = function() {
     if(pjsavestr) {
         var pjsave = JSON.parse(pjsavestr);
         if(pjsave.pageSeri) {
+            /*
             for(var pname in pjsave.pageSeri) {
                 var newpage = $('<div class="page"><h5>'+pname+'</h5></div>');
                 $('#new_page').before(newpage);
                 newpage.children('h5').editable();
-            }
+            }*/
+            window.location = "./main_page.php";
         }
     }
     else {

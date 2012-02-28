@@ -87,7 +87,7 @@ function init() {
 	    // Unbind event handler
 	    $('#editor').unbind();
 	    $('#wikiTools').hide();
-	    $('#editor').hide();
+	    $('#editor').css('overflow','hidden').hide();
 	    $('#editor').children('div').remove();
 		//saveWiki();
 	});
@@ -995,7 +995,7 @@ function showWikiEditor() {
     	$('.central_tools:visible').find('.del_container img:first').click();
     $('#menu_mask').show();
     $('#wikiTools').show();
-    $('#editor').show();
+    $('#editor').css('overflow','auto').show();
     addWikiCard('generator');
 };
 function addSectionWiki(button, title, type, content) {

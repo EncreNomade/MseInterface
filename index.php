@@ -159,7 +159,13 @@ function showCreatePj(){
         var name = $('#pjName').val();
         if(!name || name == "") return;
         
-        window.location = "./main_page.php?pjName="+name;
+        var pjsavestr = null;
+        if(localStorage) pjsavestr = localStorage.getItem(pjName);
+        if(pjsavestr) {
+            window.location = "./main_page.php?pjName="+name;
+        }
+        else {alert("Projet n'existe pas."); return;}
+        
     });
 }
 	

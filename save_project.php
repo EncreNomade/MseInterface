@@ -20,7 +20,6 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
     // Read the input from stdin
     $xmlstr = file_get_contents('php://input');
     
-    // Initialisation of project
     $pj = $_SESSION['currPj'];
     $pj->setStruct($xmlstr);
     $pj->saveToDB();

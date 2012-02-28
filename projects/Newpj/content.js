@@ -1,0 +1,1 @@
+alert('JS Generation failed')

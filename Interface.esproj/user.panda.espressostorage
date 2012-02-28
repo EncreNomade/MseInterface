@@ -13,7 +13,7 @@
 		<key>StateType</key>
 		<string>ProjectWindow</string>
 		<key>TopLeftPoint</key>
-		<string>{-75, 878}</string>
+		<string>{1, 878}</string>
 	</dict>
 	<key>com.macrabbit.Espresso.FileManager.DisclosureCollapsed</key>
 	<false/>
@@ -22,7 +22,7 @@
 		<key>ExpandedURLs</key>
 		<array>
 			<string>file://localhost/Users/panda/Sites/MseInterface/javascript</string>
-			<string>file://localhost/Users/panda/Sites/MseInterface/projects/support</string>
+			<string>file://localhost/Users/panda/Sites/MseInterface/projects</string>
 			<string>file://localhost/Users/panda/Sites/MseInterface/stylesheets</string>
 		</array>
 	</dict>
@@ -83,6 +83,12 @@
 			<dict>
 				<key>DocumentURL</key>
 				<string>file://localhost/Users/panda/Sites/MseInterface/project.php</string>
+				<key>StateType</key>
+				<string>DefaultTab</string>
+			</dict>
+			<dict>
+				<key>DocumentURL</key>
+				<string>file://localhost/Users/panda/Sites/MseInterface/save_project.php</string>
 				<key>StateType</key>
 				<string>DefaultTab</string>
 			</dict>

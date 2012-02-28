@@ -20,11 +20,12 @@ else if( $_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists("pjName", $_GE
         $_SESSION['currPj'] = $pj;
     }
     else {
-        $_SESSION['currPj'] = null;
+        unset($_SESSION['currPj']);
         echo '<script type="text/javascript">alert("Projet n\'existe pas encore, vous pouvez le créez.");</script>';
+        header("Location: index.php");
     }
 }
-if( !isset($_SESSION['currPj']) ) header("Location: index.php");
+else header("Location: index.php");
 
 ?>
 
