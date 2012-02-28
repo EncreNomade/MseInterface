@@ -16,6 +16,7 @@ class MseProject {
     private $height;
     private $orientation;
     private $sources;
+    private $scripts;
     private $ratio;
     private $struct;
 
@@ -27,6 +28,7 @@ class MseProject {
         $this->ratio = 480/$this->height;
         $this->orientation = $orient;
         $this->sources = array();
+        $this->scripts = array();
         // Make directories in project folder
         if( !file_exists('projects/'.$this->name.'/images') ) mkdir('projects/'.$this->name.'/images');
         if( !file_exists('projects/'.$this->name.'/audios') ) mkdir('projects/'.$this->name.'/audios');
@@ -57,12 +59,25 @@ class MseProject {
     function getSrc($name, $type) {
         if(array_key_exists($type, $this->sources) && array_key_exists($name, $this->sources[$type]))
             return $this->sources[$type][$name];
+        else return null;
     }
     function getAllSrcs() {
         return $this->sources;
     }
     function resetSrcs() {
         array_splice($this->sources, 0, count($this->sources));
+    }
+    
+    function addScript($name, $script){
+        $this->scripts[$name] = $script;
+    }
+    function getScript($name){
+        if(array_key_exists($name, $this->scripts))
+            return $this->scripts[$name];
+        else return null;
+    }
+    function getAllScripts() {
+        return $this->scripts;
     }
     
     function getSrcSavePath($type) {
@@ -97,12 +112,13 @@ class MseProject {
         $exist = mysql_fetch_array($resp);
         
         if($exist) {
-            $query = sprintf("UPDATE Projects SET name='%s', width='%s', height='%s', struct='%s', sources='%s', lastModif='%s' WHERE id='%s'", 
+            $query = sprintf("UPDATE Projects SET name='%s', width='%s', height='%s', struct='%s', sources='%s', scripts='%s', lastModif='%s' WHERE id='%s'", 
                 mysql_real_escape_string($this->name), 
                 mysql_real_escape_string($this->width), 
                 mysql_real_escape_string($this->height), 
                 mysql_real_escape_string($this->struct), 
                 mysql_real_escape_string(json_encode($this->sources)), 
+                mysql_real_escape_string(json_encode($this->scripts)), 
                 mysql_real_escape_string($modif), 
                 mysql_real_escape_string($id));
             $resp = mysql_query($query);
@@ -112,7 +128,7 @@ class MseProject {
             }
         }
         else {
-            $query = sprintf("INSERT INTO Projects(id,owner,creation,folder,name,width,height,orientation,struct,sources,scripts,lastModif) Value('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','','%s')",
+            $query = sprintf("INSERT INTO Projects(id,owner,creation,folder,name,width,height,orientation,struct,sources,scripts,lastModif) Value('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')",
                 mysql_real_escape_string($id), 
                 mysql_real_escape_string($owner), 
                 mysql_real_escape_string($modif),
@@ -123,6 +139,7 @@ class MseProject {
                 mysql_real_escape_string($this->orientation),
                 mysql_real_escape_string($this->struct),
                 mysql_real_escape_string(json_encode($this->sources)),
+                mysql_real_escape_string(json_encode($this->scripts)), 
                 mysql_real_escape_string($modif));
             $resp = mysql_query($query);
             if(!$resp) {

@@ -216,7 +216,6 @@ class ProjectGenerator {
                     }
                 }
                 break;
-            case "script":break;
             case "wiki":
                 // Array of animes
                 foreach( $srcs[$type] as $name => $wiki ){
@@ -256,58 +255,56 @@ class ProjectGenerator {
         $this->jstr .= "var action={};";
         $this->jstr .= "var reaction={};";
         // Register scripts
-        if(array_key_exists('script', $srcs)){
-            foreach( $srcs['script'] as $name => $script ){
-                $src = "";
-                if(!property_exists($script, 'src') || !property_exists($script, 'target') || !property_exists($script, 'srcType') || !property_exists($script, 'action') || !property_exists($script, 'reaction')) continue;
-                switch($script->srcType) {
-                case "obj": $src = 'objs.'.$script->src;break;
-                case "page": $src = 'pages.'.$script->src;break;
-                case "layer": $src = 'layers.'.$script->src;break;
-                case "anime": $src = 'animes.'.$script->src;break;
-                }
-                if($src == "") continue;
-                $tar = $script->target;
-                $action  = $script->action;
-                $reaction = $script->reaction;
-                $immediate = property_exists($script, 'immediate') ? $script->immediate : true;
-                $supp = property_exists($script, 'supp') ? $script->supp : NULL;
-                
-                $codeReact = "";
-                $error = false;
-                switch($reaction) {
-                case "pageTrans": 
-                    $codeReact = "root.transition(pages.$tar);";break;
-                case "objTrans": 
-                    if(is_null($supp)) continue;
-                    $codeReact = "temp.width=objs.$tar.getWidth();temp.height=objs.$tar.getHeight();";
-                    $codeReact .= "temp.boundingbox=imgBoundingInBox('$supp',temp.width,temp.height);";
-                    $codeReact .= "temp.obj=new mse.Image(objs.$tar.parent,temp.boundingbox,'$supp');";
-                    $codeReact .= "mse.transition(objs.$tar,temp.obj,25);";
-                    break;
-                case "playAnime": 
-                    $codeReact = "animes.$tar.start();";break;
-                case "changeCursor": 
-                    $codeReact .= "mse.setCursor(mse.src.getSrc('$tar').src);";break;
-                case "playVoice": 
-                    $codeReact = "mse.src.getSrc('$tar').play();";break;
-                case "addScript": 
-                    $codeReact = "mse.Script.register(action.$tar,reaction.$tar);";break;
-                case "script": 
-//!!! Danger of security of not???
-                    $codeReact = $tar;break;
-                case "effet": break;
-                case "playDefi": 
-                    $codeReact = "layers.$tar.play();";break;
-                case "pauseDefi": 
-                    $codeReact = "layers.$tar.interrupt();";break;
-                case "loadGame": 
-                    $codeReact = "games.$tar.start();";break;
-                }
-                $this->jstr .= "action.$name=[{src:$src,type:'$action'}];";
-                $this->jstr .= "reaction.$name=function(){ $codeReact };";
-                if($immediate) $this->jstr .= "mse.Script.register(action.$name,reaction.$name);";
+        foreach( $this->pj->getAllScripts() as $name => $script ){
+            $src = "";
+            if(!property_exists($script, 'src') || !property_exists($script, 'target') || !property_exists($script, 'srcType') || !property_exists($script, 'action') || !property_exists($script, 'reaction')) continue;
+            switch($script->srcType) {
+            case "obj": $src = 'objs.'.$script->src;break;
+            case "page": $src = 'pages.'.$script->src;break;
+            case "layer": $src = 'layers.'.$script->src;break;
+            case "anime": $src = 'animes.'.$script->src;break;
             }
+            if($src == "") continue;
+            $tar = $script->target;
+            $action  = $script->action;
+            $reaction = $script->reaction;
+            $immediate = property_exists($script, 'immediate') ? $script->immediate : true;
+            $supp = property_exists($script, 'supp') ? $script->supp : NULL;
+            
+            $codeReact = "";
+            $error = false;
+            switch($reaction) {
+            case "pageTrans": 
+                $codeReact = "root.transition(pages.$tar);";break;
+            case "objTrans": 
+                if(is_null($supp)) continue;
+                $codeReact = "temp.width=objs.$tar.getWidth();temp.height=objs.$tar.getHeight();";
+                $codeReact .= "temp.boundingbox=imgBoundingInBox('$supp',temp.width,temp.height);";
+                $codeReact .= "temp.obj=new mse.Image(objs.$tar.parent,temp.boundingbox,'$supp');";
+                $codeReact .= "mse.transition(objs.$tar,temp.obj,25);";
+                break;
+            case "playAnime": 
+                $codeReact = "animes.$tar.start();";break;
+            case "changeCursor": 
+                $codeReact .= "mse.setCursor(mse.src.getSrc('$tar').src);";break;
+            case "playVoice": 
+                $codeReact = "mse.src.getSrc('$tar').play();";break;
+            case "addScript": 
+                $codeReact = "mse.Script.register(action.$tar,reaction.$tar);";break;
+            case "script": 
+//!!! Danger of security of not???
+                $codeReact = $tar;break;
+            case "effet": break;
+            case "playDefi": 
+                $codeReact = "layers.$tar.play();";break;
+            case "pauseDefi": 
+                $codeReact = "layers.$tar.interrupt();";break;
+            case "loadGame": 
+                $codeReact = "games.$tar.start();";break;
+            }
+            $this->jstr .= "action.$name=[{src:$src,type:'$action'}];";
+            $this->jstr .= "reaction.$name=function(){ $codeReact };";
+            if($immediate) $this->jstr .= "mse.Script.register(action.$name,reaction.$name);";
         }
         
         // Start the book
