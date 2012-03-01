@@ -14,18 +14,16 @@ session_start();
 if( !isset($_SESSION['uid']) )
     header("Location: index.php");
 else if( $_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists("pjName", $_GET) ) {
-    ConnectDB();
-    $pj = MseProject::getExistProject($_GET["pjName"]);
-    if(isset($pj)) {
-        $_SESSION['currPj'] = $pj;
+    // Pj existance in session check
+    $pjName = $_GET["pjName"];
+    if(array_key_exists($pjName, $_SESSION)){
+        $pj = $_SESSION[$pjName];
     }
     else {
-        unset($_SESSION['currPj']);
-        echo '<script type="text/javascript">alert("Projet n\'existe pas encore, vous pouvez le créez.");</script>';
-        header("Location: index.php");
+        header("Location: index.php", true);
     }
 }
-else header("Location: index.php");
+else header("Location: index.php", true);
 
 ?>
 
@@ -177,11 +175,11 @@ else header("Location: index.php");
 	$('#saveProjet').click(saveProject);
 	
 	<?php
-	    $pj = $_SESSION['currPj'];
 	    print("var pjName = '".$pj->getName()."';");
 	    print("var imgPath = '".$pj->getSrcSavePath("image")."';");
 	    print("var audPath = '".$pj->getRelatSrcPath("audio")."';");
 	    print("var gamePath = '".$pj->getRelatSrcPath("game")."';");
+	    print("var lastModServer = ".$pj->getLastModTS().";");
 	    print("Config.init({width:".$pj->getWidth().", height:".$pj->getHeight()."});");
     
         if(isset($_SESSION["uid"]) && $_SESSION["uid"] != "") {
@@ -205,69 +203,103 @@ else header("Location: index.php");
 	var config = Config.getInstance();
 	init();
 	
-	function retrieveLocalInfo() {
-	    // Retrieve the information of pages in local storage
-	    if(localStorage) {
-	        var pjsavestr = localStorage.getItem(pjName);
-	        if(!pjsavestr) return;
-	        var pjsave = JSON.parse(pjsavestr);
-	        // Pages/Layers/Objects
-	        var obj = null;
-	        var maxid = 0, id = 0;
-	        var pageseri = pjsave.pageSeri;
-	        for(var pname in pageseri) {
-	            var page = addPage(pname);
-	            var steps = 0;
-	            for(var sname in pageseri[pname]) {
-	                steps++;
-	                var step = $(pageseri[pname][sname]);
-	                page.data('StepManager').addStepWithContent(sname, step);
-	                step.children().each(function(){
-	                    obj = $(this);
-	                    // Article
-	                    if(obj.hasClass('article')) {
-	                        obj.deletable().configurable();
-	                        obj.children('div').each(function(){
-	                            if($(this).hasClass('illu')) $(this).deletable(null, true);
-	                            $(this).selectable(selectP)
-	                                   .staticButton('./images/UI/insertbelow.png', insertElemDialog)
-	                                   .staticButton('./images/UI/addscript.jpg', addScriptForObj)
-	                                   .css({'z-index':'0','background':'none'});
-	                            $(this).children('.del_container').css({
-	                            	'position': 'relative',
-	                            	'top': ($(this).children('p').length == 0) ? '0%' : '-100%',
-	                            	'display':'none'});
-	                        });
-	                        id = parseInt(obj.attr('id').substring(3));
-	                        if(id > maxid) maxid = id;
-	                    }
-	                    // Other obj
-	                    else {
-	                        obj.selectable(null).deletable().configurable().resizable().moveable().hoverButton('./images/UI/addscript.jpg', addScriptForObj);
-	                        id = parseInt(obj.attr('id').substring(3));
-	                        if(id > maxid) maxid = id;
-	                    }
-	                });
-	            }
-	            if(steps == 0) page.data('StepManager').addStep(pname+'default', null, true);
-	        }
-	        // Ressources
-	        var src = pjsave.sources;
-	        for(var key in src) {
-	            var type = srcMgr.sourceType(key);
-	            if(type == "text" || type == "obj") continue;
-	            else if(type == "anime") src[key] = objToClass(src[key], Animation);
-	            else if(type == "wiki") src[key] = objToClass(src[key], Wiki);
-	            srcMgr.addSource(type, src[key], key);
-	        }
-	        if(!isNaN(pjsave.srcCurrId)) srcMgr.currId = pjsave.srcCurrId;
-	        if(!isNaN(pjsave.objCurrId)) curr.objId = pjsave.objCurrId;
-	        else if(!isNaN(maxid)) curr.objId = maxid+1;
-	        // Scripts
-	        scriptMgr.scripts = pjsave.scripts;
+function retrieveLocalInfo(pjsave) {
+    // Pages/Layers/Objects
+    var obj = null;
+    var maxid = 0, id = 0;
+    var pageseri = pjsave.pageSeri;
+    for(var pname in pageseri) {
+        var page = addPage(pname);
+        var steps = 0;
+        for(var sname in pageseri[pname]) {
+            steps++;
+            var step = $(pageseri[pname][sname]);
+            page.data('StepManager').addStepWithContent(sname, step);
+            step.children().each(function(){
+                obj = $(this);
+                // Article
+                if(obj.hasClass('article')) {
+                    obj.deletable().configurable();
+                    obj.children('div').each(function(){
+                        if($(this).hasClass('illu')) $(this).deletable(null, true);
+                        $(this).selectable(selectP)
+                               .staticButton('./images/UI/insertbelow.png', insertElemDialog)
+                               .staticButton('./images/UI/addscript.jpg', addScriptForObj)
+                               .css({'z-index':'0','background':'none'});
+                        $(this).children('.del_container').css({
+                        	'position': 'relative',
+                        	'top': ($(this).children('p').length == 0) ? '0%' : '-100%',
+                        	'display':'none'});
+                    });
+                    id = parseInt(obj.attr('id').substring(3));
+                    if(id > maxid) maxid = id;
+                }
+                // Other obj
+                else {
+                    obj.selectable(null).deletable().configurable().resizable().moveable().hoverButton('./images/UI/addscript.jpg', addScriptForObj);
+                    id = parseInt(obj.attr('id').substring(3));
+                    if(id > maxid) maxid = id;
+                }
+            });
+        }
+        if(steps == 0) page.data('StepManager').addStep(pname+'default', null, true);
+    }
+    // Ressources
+    var src = pjsave.sources;
+    for(var key in src) {
+        var type = srcMgr.sourceType(key);
+        if(type == "text" || type == "obj") continue;
+        else if(type == "anime") src[key] = objToClass(src[key], Animation);
+        else if(type == "wiki") src[key] = objToClass(src[key], Wiki);
+        srcMgr.addSource(type, src[key], key);
+    }
+    if(!isNaN(pjsave.srcCurrId)) srcMgr.currId = pjsave.srcCurrId;
+    if(!isNaN(pjsave.objCurrId)) curr.objId = pjsave.objCurrId;
+    else if(!isNaN(maxid)) curr.objId = maxid+1;
+    if(isNaN(pjsave.lastModif)) curr.lastModif = lastModServer;
+    else curr.lastModif = pjsave.lastModif;
+    // Scripts
+    scriptMgr.scripts = pjsave.scripts;
+}
+	
+	// Compare server and local last modification info for Synchronization
+	var norecord = false;
+	var lastModLocal = -1;
+	var pjsavestr = localStorage.getItem(pjName);
+	if(!pjsavestr) norecord = true;
+	else {
+	    var pjsave = JSON.parse(pjsavestr);
+	    if(!pjsave) norecord = true;
+	    else {
+	        if(pjsave.lastMod) lastModLocal = pjsave.lastMod;
 	    }
 	}
-	retrieveLocalInfo();
+	
+	// Update server with local storage
+	if(lastModLocal > lastModServer) {
+	    $.post("updateWithLocal.php", {"pj":pjName, "localStorage":pjsavestr}, function(msg){
+                var modif = parseInt(msg);
+                if(!isNaN(modif)) pjsave.lastModif = modif;
+                else if(msg != "") alert(msg);
+                
+                // Retrieve the information of pages in local storage
+                if(pjsave) retrieveLocalInfo(pjsave);
+            });
+	}
+	// Update local with server storage
+	else if(norecord || lastModLocal == -1 || lastModLocal < lastModServer) {
+	    $.get("updateFromServer.php", {'pj':pjName}, function(msg){
+	        var pjsave = JSON.parse(msg);
+	        if(pjsave) {
+	            saveToLocalStorage(pjName, msg);
+	            retrieveLocalInfo(pjsave);
+	        }
+	    });
+	}
+	else {
+	    // Retrieve the information of pages in local storage
+	    if(pjsave) retrieveLocalInfo(pjsave);
+	}
 </script>
 
 </body>

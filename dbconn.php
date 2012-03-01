@@ -16,12 +16,29 @@ function ConnectDB(){
 
 function userLogin($uid, $mdp){
     //$mdp = md5($mdp);
-    $identify = mysql_query("SELECT * FROM User WHERE id='$uid' AND mdp='$mdp' LIMIT 1;");
-    $resp = mysql_fetch_array($identify);
-    if($resp) {
+    $identite = mysql_query("SELECT * FROM User WHERE id='$uid' AND mdp='$mdp' LIMIT 1;");
+    if($identite) {
         $_SESSION['uid'] = $uid;
         return true;
     }
+    else return false;
+}
+
+function checkPjExist($pj) {
+    if(!isset($_SESSION['uid'])) return false;
+    $pid = $_SESSION['uid']."_".$pj;
+    $resp = mysql_query("SELECT COUNT(*) AS n FROM Projects WHERE id='$pid' LIMIT 1;");
+    $count = mysql_fetch_array($resp);
+    if(!$count || $count['n'] == 0) return false;
+    else return true;
+}
+
+function checkPjStruct($pj){
+    if(!isset($_SESSION['uid'])) return false;
+    $pid = $_SESSION['uid']."_".$pj;
+    $resp = mysql_query("SELECT struct FROM Projects WHERE id='$pid' LIMIT 1;");
+    $struct = mysql_fetch_array($resp);
+    if($struct) return $struct['struct'];
     else return false;
 }
 

@@ -327,9 +327,8 @@ SourceManager.prototype = {
 		    break;
 		case 'game':
 		    // Add game source
-		    var encoded = base64_encode(data.content);
-		    data.content = "data:game/js;base64,"+encoded;
-		    this.sources[id] = data;
+		    var encoded = base64_encode(data);
+		    this.sources[id] = "data:game/js;base64,"+encoded;
 		    expo.css('background', 'url("./images/UI/HTML5game.png") center center no-repeat');
 		    break;
 		/*case 'text': 
@@ -465,53 +464,25 @@ SourceManager.prototype = {
 	    if(!this.sources[id] || !(this.sources[id] instanceof Wiki)) return;
 	    this.sources[id].showWikiOnEditor();
 	},
-	saveSerializedSrc: function(pjsave) {
-	    var serializer = new XMLSerializer();
-	    var src = {};
-	    for(var key in this.sources) {
-	        switch(this.sourceType(key)) {
-	        case "image": 
-	            var ext = this.dataExtension(key);
-	            if(ext && imgPath) src[key] = imgPath + key + "." + ext;
-	            else src[key] = this.sources[key];
-	            break;
-	        case "audio":
-	            var ext = this.dataExtension(key);
-	            if(ext && audPath) src[key] = audPath + key;
-	            else src[key] = this.sources[key];
-	            break;
-	        case "game":
-	            if(gamePath) src[key] = gamePath + this.sources[key].name + ".js";
-	            break;
-	        /*case "text": case "obj":
-	            src[key] = serializer.serializeToString(this.sources[key].get(0));
-	            break;*/
-	        case "anime":
-	            src[key] = this.sources[key];break;
-	        case "wiki":
-	            src[key] = this.sources[key];break;
-	        }
-	    }
-	    
-	    // Store srcs in local storage
-	    pjsave.sources = src;
-	    pjsave.srcCurrId = this.currId;
-	    return pjsave;
-	},
-	uploadSrc: function(url) {
+	uploadSrc: function(url, pjName) {
 	    for(var key in this.sources) {
 	        var data = null;
 	        switch(this.sourceType(key)) {
 	        case "image":
-	            data = "type=image&name="+key+"&data="+this.sources[key];break;
+	            data = "pj="+pjName+"&type=image&name="+key+"&data="+this.sources[key];
+	            break;
 	        case "audio":
-	            data = "type=audio&name="+key+"&data="+this.sources[key];break;
+	            data = "pj="+pjName+"&type=audio&name="+key+"&data="+this.sources[key];
+	            break;
 	        case "game":
-	            data = "type=game&name="+this.sources[key].name+"&data="+this.sources[key].content;break;
+	            data = "pj="+pjName+"&type=game&name="+this.realName(key)+"&data="+this.sources[key];
+	            break;
 	        case "anime":
-	            data = "type=anime&name="+key+"&data="+JSON.stringify(this.sources[key]);break;
+	            data = "pj="+pjName+"&type=anime&name="+key+"&data="+JSON.stringify(this.sources[key]);
+	            break;
 	        case "wiki":
-	            data = "type=wiki&name="+key+"&data="+JSON.stringify(this.sources[key]);break;
+	            data = "pj="+pjName+"&type=wiki&name="+key+"&data="+JSON.stringify(this.sources[key]);
+	            break;
 	        }
 	        
 	        if(data)
@@ -527,12 +498,14 @@ SourceManager.prototype = {
 	    }
 	    
 	    for(var key in this.sources) {
+	        var ext = this.dataExtension(key);
 	        switch(this.sourceType(key)) {
 	        case "image": 
-	            var ext = this.dataExtension(key);
 	            if(ext && imgPath) this.sources[key] = imgPath + key + "." + ext;break;
 	        case "audio":
 	            if(ext && audPath) this.sources[key] = audPath + key;break;
+	        case "game":
+	            if(ext && gamePath) this.sources[key] = gamePath + this.realName(key) + ".js";break;
 	        }
 	    }
 	}
@@ -1045,8 +1018,8 @@ var scriptMgr = function() {
         saveLocal: function(){
             return this.scripts;
         },
-        upload: function(url){
-            var data = "type=scripts&data="+JSON.stringify(this.scripts);
+        upload: function(url, pjName){
+            var data = "pj="+pjName+"&type=scripts&data="+JSON.stringify(this.scripts);
             
             $.ajax({
                 type: "POST",

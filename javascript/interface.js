@@ -750,12 +750,11 @@ function addAudioSrc(evt) {
 function addJsSrc(evt) {
     // No game class name, can't add a game
     if(!curr.gamename) return;
-    var game = {};
-    game.content = evt.target.result;
-    game.name = curr.gamename;
-    var exp = "/"+curr.gamename+"\\s*=\\s*function/";
+    var content = evt.target.result;
+    var name = curr.gamename;
+    var exp = "/"+name+"\\s*=\\s*function/";
     if(game.content.search(eval(exp)) >= 0) {
-        srcMgr.addSource('game', game);
+        srcMgr.addSource('game', content, name);
     }
     else alert("Échec d'ajouter le jeu car il n'est pas trouvé dans le fichier.");
 };
@@ -1630,74 +1629,78 @@ function configChanged(e) {
 
 // Management of project =====================================
 
-// save project
-function saveProject() {
-    // Save ressources
-    srcMgr.uploadSrc('upload_src.php');
-    scriptMgr.upload('upload_src.php');
-
-    // Save structure
-	var xmldata = (new DOMParser()).parseFromString("<root></root>", "text/xml");
-	xmldata.documentElement.appendChild(xmldata.createElement("pages"));
-	var scenes = $('.scene').clone();
-	// Remove all contral tools
-	scenes.find('.del_container, .ctrl_pt').remove();
-	// Remove all img src, they have been already uploaded
-	scenes.find('img').attr('src', '');
-	for(var i = 0; i < scenes.length; i++)
-	    xmldata.getElementsByTagName('pages')[0].appendChild(scenes.get(i));
-	
-	$.ajax({
-	   type: "POST",
-	   url: "save_project.php",
-	   contentType: "text/xml",
-	   processData: false,
-	   data: xmldata,
-	   success: function(msg){
-	       if(msg && msg != "") alert(msg);
-	   }
-	});
-	
-	// Save local storage
-	if(!localStorage) return;
-	var serializer = new XMLSerializer();
-	var pjsave = {};
-	// Save Obj CurrID
-	pjsave.objCurrId = curr.objId;
-	// Replace img src with relative Path on server
-	var imgids = srcMgr.getImgSrcIDs();
-	for(var i in imgids) {
-	    $(".scene img[name='"+imgids[i]+"']").attr('src', srcMgr.getSource(imgids[i]));
-	}
-	// Save Pages
-	pjsave.pageSeri = {};
-	for(var key in pages) {
-	    pjsave.pageSeri[key] = {};
-	    steps = managers[key].steps;
-	    for(var i in steps) {
-	        var step = steps[i].clone();
-	        step.find('.del_container, .ctrl_pt').remove();
-	        pjsave.pageSeri[key][steps[i].attr('id')] = serializer.serializeToString(step.get(0));
-	    }
-	}
-	pjsave = srcMgr.saveSerializedSrc(pjsave);
-	pjsave.scripts = scriptMgr.saveLocal();
-	localStorage.setItem(pjName, JSON.stringify(pjsave));
-	// Local storage saving management, locally store only 5 projects for example, manager all projects with a json array of their name
+function saveToLocalStorage(name, jsonstr){
+    // Save to localStorage
+    localStorage.setItem(name, JSON.stringify(jsonstr));
+    
+    // Local storage saving management, locally store only 5 projects for example, manager all projects with a json array of their name
     var pjs = localStorage.getItem('projects');
     if(!pjs) pjs = [];
     else pjs = JSON.parse(pjs);
-    var pjindex = $.inArray(pjName, pjs);
+    var pjindex = $.inArray(name, pjs);
     // Exist already locally, slice from array and push it at the end
     if(pjindex >= 0) pjs.splice(pjindex, 1);
-    pjs.push(pjName);
+    pjs.push(name);
     // Too much projects in local, remove the oldest used project
     while(pjs.length > 5) {
         pjs.reverse();
-        var name = pjs.pop();
+        var pname = pjs.pop();
         pjs.reverse();
-        localStorage.removeItem(name);
+        localStorage.removeItem(pname);
     }
     // Restore locally
-	localStorage.setItem('projects', JSON.stringify(pjs));
+    localStorage.setItem('projects', JSON.stringify(pjs));
+}
+
+// save project
+function saveProject() {
+    if(!pjName) return;
+    // Save ressources
+    srcMgr.uploadSrc('upload_src.php', pjName);
+    scriptMgr.upload('upload_src.php', pjName);
+
+    // Save structure
+    var serializer = new XMLSerializer();
+    // Replace img src with relative Path on server
+    var imgids = srcMgr.getImgSrcIDs();
+    for(var i in imgids) {
+        $(".scene img[name='"+imgids[i]+"']").attr('src', srcMgr.getSource(imgids[i]));
+    }
+    // Save Pages
+    var struct = {};
+    for(var key in pages) {
+        struct[key] = {};
+        steps = managers[key].steps;
+        for(var i in steps) {
+            var step = steps[i].clone();
+            step.find('.del_container, .ctrl_pt').remove();
+            struct[key][step.attr('id')] = serializer.serializeToString(step.get(0));
+        }
+    }
+    var structStr = JSON.stringify(struct);
+    
+	// Upload structure to server
+	$.post("save_project.php", {"pj":pjName, "struct":structStr}, function(msg){
+	       var modif = parseInt(msg);
+	       if(!isNaN(modif)) curr.lastModif = modif;
+	       else if(msg != "") alert(msg);
+	       
+	       // Save local storage
+	       if(!localStorage) return;
+	       var pjsave = {};
+	       // Save Obj CurrID
+	       pjsave.objCurrId = curr.objId;
+	       // Save Pages
+	       pjsave.pageSeri = struct;
+	       // Save sources
+	       pjsave.sources = srcMgr.sources;
+	       pjsave.srcCurrId = srcMgr.currId;
+	       // Save scripts
+	       pjsave.scripts = scriptMgr.saveLocal();
+	       // Save modify time
+	       pjsave.lastModif = curr.lastModif;
+	       var pjsavestr = JSON.stringify(pjsave);
+	       
+	       saveToLocalStorage(pjName, pjsavestr);
+	   });
 }

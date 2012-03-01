@@ -42,53 +42,57 @@ function saveBase64Src($name, $encodedStr, $pj) {
 }
 
 // AJAX POST check
-if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && isset($_SESSION['currPj'])) {
-    // Read the input from stdin
-    $type = $_POST['type'];
-    $name = array_key_exists('name', $_POST) ? $_POST['name'] : "noname";
-    $encodedStr = $_POST['data'];
-    $pj = $_SESSION['currPj'];
-    
-    switch($type) {
-    case "image":
-    case "audio":
-    case "game":
-        // Direct url link
-        if( strripos($encodedStr, "http://") !== false ) {
-            // Add source to project
-            $pj->addSrc($name, $type, $encodedStr);
+if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && array_key_exists('pj', $_POST)) {
+    $pjname = $_POST['pj'];
+    // If project doesn't exist in session, abondon
+    if( array_key_exists($pjname, $_SESSION) && array_key_exists('type', $_POST) && array_key_exists('data', $_POST) ) {
+        // Read the input from stdin
+        $type = $_POST['type'];
+        $name = array_key_exists('name', $_POST) ? $_POST['name'] : "noname";
+        $encodedStr = $_POST['data'];
+        $pj = $_SESSION[$pjname];
+        
+        switch($type) {
+        case "image":
+        case "audio":
+        case "game":
+            // Direct url link
+            if( strripos($encodedStr, "http://") !== false ) {
+                // Add source to project
+                $pj->addSrc($name, $type, $encodedStr);
+            }
+            // Relative url link
+            else if( strripos($encodedStr, "./") !== false ) {
+                if(strripos($encodedStr, "./projects/") === 0) $encodedStr = ".".substr($encodedStr, 10);
+                $pj->addSrc($name, $type, $encodedStr);
+            }
+            // File content coded
+            else {
+                $filename = saveBase64Src($name, $encodedStr, $pj);
+                // Add source to project
+                if(!is_null($filename)) $pj->addSrc($name, $type, $pj->getRelatSrcPath($type).$filename);
+            }
+        break;
+        case "anime":
+            $anime = json_decode($encodedStr);
+            if(!is_null($anime)) {
+                $pj->addSrc($name, $type, $anime);
+            }
+        break;
+        case "wiki":
+            $wiki = json_decode($encodedStr);
+            if(!is_null($wiki)) {
+                $pj->addSrc($name, $type, $wiki);
+            }
+        break;
+        case "scripts":
+            $scripts = json_decode($encodedStr);
+            if(!is_null($scripts)) {
+                foreach( $scripts as $key=>$script )
+                    $pj->addScript($key, $script);
+            }
+        break;
         }
-        // Relative url link
-        else if( strripos($encodedStr, "./") !== false ) {
-            if(strripos($encodedStr, "./projects/") === 0) $encodedStr = ".".substr($encodedStr, 10);
-            $pj->addSrc($name, $type, $encodedStr);
-        }
-        // File content coded
-        else {
-            $filename = saveBase64Src($name, $encodedStr, $pj);
-            // Add source to project
-            if(!is_null($filename)) $pj->addSrc($name, $type, $pj->getRelatSrcPath($type).$filename);
-        }
-    break;
-    case "anime":
-        $anime = json_decode($encodedStr);
-        if(!is_null($anime)) {
-            $pj->addSrc($name, $type, $anime);
-        }
-    break;
-    case "wiki":
-        $wiki = json_decode($encodedStr);
-        if(!is_null($wiki)) {
-            $pj->addSrc($name, $type, $wiki);
-        }
-    break;
-    case "scripts":
-        $scripts = json_decode($encodedStr);
-        if(!is_null($scripts)) {
-            foreach( $scripts as $key=>$script )
-                $pj->addScript($key, $script);
-        }
-    break;
     }
 }
 

@@ -12,8 +12,6 @@ include 'project.php';
 include 'dbconn.php';
 session_start();
 
-//if( isset($_SESSION['currPj']) ) header("Location: main_page.php");
-
 function checkSize($w, $h) {
     if(!isset($w) || !isset($h)) return false;
     if($w < 100 || $h < 100) return false;
@@ -21,21 +19,19 @@ function checkSize($w, $h) {
     return true;
 }
 
-$db = ConnectDB();
-
 if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
+    ConnectDB();
     if( array_key_exists("pjName", $_POST) ) {
-        $_SESSION['currPj'] = null;
-        $pjPath = MseProject::getRelatProjectPath($_POST["pjName"]);
-        if( file_exists($pjPath) )
+        $pjName = $_POST["pjName"];
+        if( checkPjExist($pjName) )
             echo '<script type="text/javascript">alert("Projet existe déjà.");</script>';
         else if(!checkSize($_POST['width'], $_POST['height']))
             echo '<script type="text/javascript">alert("Erreur de taille de projet.");</script>';
         else {
-            mkdir($pjPath);
             $project = new MseProject($_POST['pjName'], "", $_POST['width'], $_POST['height']);
-            $_SESSION['currPj'] = $project;
-            header("Location: gestion_page.php");
+            $_SESSION[$pjName] = $project;
+            
+            header("Location: gestion_page.php?pjName=$pjName", true);
         }
     }
     else if( array_key_exists("uid", $_POST) ) {
@@ -90,8 +86,6 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 </nav>
 
 <script type="text/javascript">
-	
-	$('#debug').hide();
 	
 	dialog = new Popup();
 	
@@ -159,13 +153,11 @@ function showCreatePj(){
         var name = $('#pjName').val();
         if(!name || name == "") return;
         
-        var pjsavestr = null;
-        if(localStorage) pjsavestr = localStorage.getItem(pjName);
-        if(pjsavestr) {
-            window.location = "./main_page.php?pjName="+name;
-        }
-        else {alert("Projet n'existe pas."); return;}
-        
+        $.post("load_project.php", {'pjName':name}, function(msg){
+            if(msg && msg == "SUCCESS") 
+                window.location = "./main_page.php?pjName="+name;
+            else if(msg && msg != "") alert(msg);
+        });
     });
 }
 	
@@ -180,7 +172,11 @@ function showCreatePj(){
 	    showLogin();
 	}
 	else {
-	    $(".menu li.id").text(uid);
+	    $(".menu li.id").text(uid).click(function(){
+	        $.get("deconnect.php", function(){
+	            $(".menu li.id").text('Connexion').click(showLogin);
+	        });
+	    });
 	    showCreatePj();
 	}
 	

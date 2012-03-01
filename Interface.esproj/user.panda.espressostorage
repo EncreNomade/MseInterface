@@ -13,7 +13,7 @@
 		<key>StateType</key>
 		<string>ProjectWindow</string>
 		<key>TopLeftPoint</key>
-		<string>{1, 878}</string>
+		<string>{-1, 878}</string>
 	</dict>
 	<key>com.macrabbit.Espresso.FileManager.DisclosureCollapsed</key>
 	<false/>
@@ -22,7 +22,6 @@
 		<key>ExpandedURLs</key>
 		<array>
 			<string>file://localhost/Users/panda/Sites/MseInterface/javascript</string>
-			<string>file://localhost/Users/panda/Sites/MseInterface/projects</string>
 			<string>file://localhost/Users/panda/Sites/MseInterface/stylesheets</string>
 		</array>
 	</dict>
@@ -88,19 +87,25 @@
 			</dict>
 			<dict>
 				<key>DocumentURL</key>
+				<string>file://localhost/Users/panda/Sites/MseInterface/updateFromServer.php</string>
+				<key>StateType</key>
+				<string>DefaultTab</string>
+			</dict>
+			<dict>
+				<key>DocumentURL</key>
+				<string>file://localhost/Users/panda/Sites/MseInterface/updateWithLocal.php</string>
+				<key>StateType</key>
+				<string>DefaultTab</string>
+			</dict>
+			<dict>
+				<key>DocumentURL</key>
 				<string>file://localhost/Users/panda/Sites/MseInterface/save_project.php</string>
 				<key>StateType</key>
 				<string>DefaultTab</string>
 			</dict>
 			<dict>
 				<key>DocumentURL</key>
-				<string>file://localhost/Users/panda/Sites/MseInterface/upload_src.php</string>
-				<key>StateType</key>
-				<string>DefaultTab</string>
-			</dict>
-			<dict>
-				<key>DocumentURL</key>
-				<string>file://localhost/Users/panda/Sites/MseInterface/generate_js.php</string>
+				<string>file://localhost/Users/panda/Sites/MseInterface/chapitre1.xml</string>
 				<key>StateType</key>
 				<string>DefaultTab</string>
 			</dict>

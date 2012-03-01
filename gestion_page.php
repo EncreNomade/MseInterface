@@ -13,8 +13,24 @@ ini_set("display_errors","1");
 error_reporting(E_ALL);
 
 session_start();
-if( !isset($_SESSION['currPj']) || !isset($_SESSION['uid']) )
-    header("Location: index.php");
+// User login check
+if( !isset($_SESSION['uid']) )
+    header("Location: index.php", true);
+// Request check
+else if( $_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists("pjName", $_GET) ) {
+    // Pj existance in session check
+    $pjName = $_GET["pjName"];
+    if(array_key_exists($pjName, $_SESSION)){
+        $pj = $_SESSION[$pjName];
+        // Page editable only if structure of project has never been initialized
+        if(!$pj->isStructEmpty()) 
+            header("Location: main_page.php?pjName=".$pjName, true);
+    }
+    else {
+        header("Location: index.php", true);
+    }
+}
+else header("Location: index.php", true);
 
 ?>
 
@@ -73,8 +89,7 @@ if( !isset($_SESSION['currPj']) || !isset($_SESSION['uid']) )
 	
 	var uid = null;
 	<?php
-	    $pj = $_SESSION['currPj'];
-	    print("var pjName = '".$pj->getName()."';");
+	    print("var pjName = '".$pjName."';");
 	    
 	    if(isset($_SESSION["uid"]) && $_SESSION["uid"] != "") {
 	        echo "uid = '".$_SESSION["uid"]."';";
@@ -122,15 +137,16 @@ var rightFunc = function() {
     if(localStorage) var pjsavestr = localStorage.getItem(pjName);
     if(pjsavestr) {
         var pjsave = JSON.parse(pjsavestr);
-        if(pjsave.pageSeri) {
+        if(pjsave.pageSeri && !jQuery.isEmptyObject(pjsave.pageSeri)) {
             /*
             for(var pname in pjsave.pageSeri) {
                 var newpage = $('<div class="page"><h5>'+pname+'</h5></div>');
                 $('#new_page').before(newpage);
                 newpage.children('h5').editable();
             }*/
-            window.location = "./main_page.php";
+            window.location = "./main_page.php?pjName="+pjName;
         }
+        else pjsave.pageSeri = {};
     }
     else {
         var pjsave = {};
@@ -158,7 +174,7 @@ var rightFunc = function() {
 		
 		// Local storage
 		localStorage.setItem(pjName, JSON.stringify(pjsave));
-		window.location = "./main_page.php";
+		window.location = "./main_page.php?pjName="+pjName;
 	});
 
 </script>
