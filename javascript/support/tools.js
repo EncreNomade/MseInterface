@@ -277,6 +277,7 @@ SourceManager.prototype = {
 	idRegExp: /(\w+)_(\w+)/,
 	idCheck: /\w+_[(image)|(audio)|(game)|(anime)|(wiki)]/,
 	extCheck: /data:\s*(\w+)\/(\w+);/,
+	pathCheck: /^(\.\/)?(\w+\/)*(\w+)\.(\w+)/,
 	
 	sourceType: function(id) {
 		var res = id.match(this.idRegExp);
@@ -392,6 +393,7 @@ SourceManager.prototype = {
 		// Set expo
 		expo.data('srcId', id);
 		this.expos[id] = expo;
+		this.uploaded = 0;
 	},
 	getSource: function(id) {
 	    if(this.sources[id])
@@ -459,15 +461,27 @@ SourceManager.prototype = {
 	    if(this.sources[id])
     		delete this.sources[id];
 		delete this.expos[id];
+		this.uploaded = 0;
 	},
 	editWiki: function(id) {
 	    if(!this.sources[id] || !(this.sources[id] instanceof Wiki)) return;
 	    this.sources[id].showWikiOnEditor();
 	},
 	uploadSrc: function(url, pjName) {
+	    this.uploaded = 0;
 	    for(var key in this.sources) {
 	        var data = null;
-	        switch(this.sourceType(key)) {
+	        var type = this.sourceType(key);
+	        // Check if data is original content or the relative path
+	        var ext = this.dataExtension(key);
+	        // relative path
+	        if((type == "image" || type == "game" || type == "audio") && (!ext || ext == "")) {
+	            ++this.uploaded;
+	            srcMgr.updateSrcs(pjName);
+	            continue;
+	        }
+	        // Original content, upload it
+	        switch(type) {
 	        case "image":
 	            data = "pj="+pjName+"&type=image&name="+key+"&data="+this.sources[key];
 	            break;
@@ -492,22 +506,26 @@ SourceManager.prototype = {
 	                processData: false,
 	                'data': data,
 	                success: function(msg){
-	                    if(msg && msg != "") alert("source upload errors: "+msg);
+	                    if(msg == "SUCCESS"){
+	                        ++srcMgr.uploaded;
+	                        srcMgr.updateSrcs(pjName);
+	                    }
+	                    else if(srcMgr.pathCheck.test(msg)) {
+	                        srcMgr.sources[key] = msg;
+	                        ++srcMgr.uploaded;
+	                        srcMgr.updateSrcs(pjName);
+	                    }
+	                    else alert("Source upload errors: "+msg);
 	                }
 	            });
 	    }
-	    
-	    for(var key in this.sources) {
-	        var ext = this.dataExtension(key);
-	        switch(this.sourceType(key)) {
-	        case "image": 
-	            if(ext && imgPath) this.sources[key] = imgPath + key + "." + ext;break;
-	        case "audio":
-	            if(ext && audPath) this.sources[key] = audPath + key;break;
-	        case "game":
-	            if(ext && gamePath) this.sources[key] = gamePath + this.realName(key) + ".js";break;
-	        }
-	    }
+	},
+	updateSrcs: function(pjName){
+	    var count = Object.keys(this.sources).length;
+	    if(this.uploaded < count) return;
+	    $.post("update_srcs.php", {"pj":pjName,"srcs":this.sources}, function(msg){
+	            if(msg && msg != "") alert(msg);
+	        });
 	}
 };
 

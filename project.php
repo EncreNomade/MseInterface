@@ -142,6 +142,7 @@ class MseProject {
     }
     function resetSrcs($srcs) {
         if($srcs) $this->sources = $srcs;
+        else $this->sources = array();
     }
     function typeForSrc($key){
         preg_match(self::$typeRegExp, $key, $res);
@@ -162,6 +163,7 @@ class MseProject {
     }
     function resetScripts($scripts){
         if($scripts) $this->scripts = $scripts;
+        else $this->scripts = array();
     }
     
     function getSrcSavePath($type) {

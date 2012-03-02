@@ -55,7 +55,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
         switch($type) {
         case "image":
         case "audio":
-        case "game":
+        case "game":/*
             // Direct url link
             if( strripos($encodedStr, "http://") !== false ) {
                 $pj->addSrc($name, $type, $encodedStr);
@@ -65,25 +65,29 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
                 $pj->addSrc($name, $type, $encodedStr);
             }
             // File content coded
-            else {
-                $filename = saveBase64Src($name, $encodedStr, $pj);
-                if(!is_null($filename)) $pj->addSrc($name, $type, $pj->getRelatSrcPath($type).$filename);
-            }
+            else {*/
+            $filename = saveBase64Src($name, $encodedStr, $pj);
+            if(!is_null($filename))
+                echo $pj->getSrcSavePath($type).$filename;
+                //if(!is_null($filename)) $pj->addSrc($name, $type, $pj->getRelatSrcPath($type).$filename);
+            //}
         break;
         case "anime":
-            $anime = json_decode($encodedStr);
+            $anime = json_decode(stripslashes($encodedStr));
             if(!is_null($anime)) {
                 $pj->addSrc($name, $type, $anime);
+                echo "SUCCESS";
             }
         break;
         case "wiki":
-            $wiki = json_decode($encodedStr);
+            $wiki = json_decode(stripslashes($encodedStr));
             if(!is_null($wiki)) {
                 $pj->addSrc($name, $type, $wiki);
+                echo "SUCCESS";
             }
         break;
         case "scripts":
-            $scripts = json_decode($encodedStr);
+            $scripts = json_decode(stripslashes($encodedStr));
             if(!is_null($scripts)) {
                 foreach( $scripts as $key=>$script )
                     $pj->addScript($key, $script);
