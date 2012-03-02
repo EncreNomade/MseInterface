@@ -23,6 +23,7 @@ class MseProject {
     private $lastModif;
     private $currObjId;
     private $currSrcId;
+    private static $typeRegExp = "/\w+_[(image)|(audio)|(game)|(anime)|(wiki)]/";
 
     function MseProject($pjName, $bkName="", $width = 800, $height = 600, $orient = 'portrait') {
         $numargs = func_num_args();
@@ -137,6 +138,11 @@ class MseProject {
     }
     function resetSrcs($srcs) {
         if($srcs) $this->sources = $srcs;
+    }
+    function typeForSrc($key){
+        preg_match(self::$typeRegExp, $key, $res);
+        if(array_key_exists(1, $res)) return $res[1];
+        else return "";
     }
     
     function addScript($name, $script){

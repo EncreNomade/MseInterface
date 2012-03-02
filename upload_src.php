@@ -63,7 +63,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
             }
             // Relative url link
             else if( strripos($encodedStr, "./") !== false ) {
-                if(strripos($encodedStr, "./projects/") === 0) $encodedStr = ".".substr($encodedStr, 10);
+                //if(strripos($encodedStr, "./projects/") === 0) $encodedStr = ".".substr($encodedStr, 10);
                 $pj->addSrc($name, $type, $encodedStr);
             }
             // File content coded
