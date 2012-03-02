@@ -23,7 +23,7 @@ class MseProject {
     private $lastModif;
     private $currObjId;
     private $currSrcId;
-    private static $typeRegExp = "/\w+_[(image)|(audio)|(game)|(anime)|(wiki)]/";
+    private static $typeRegExp = "/\w+_((image)|(audio)|(game)|(anime)|(wiki))/";
 
     function MseProject($pjName, $bkName="", $width = 800, $height = 600, $orient = 'portrait') {
         $numargs = func_num_args();
@@ -74,6 +74,10 @@ class MseProject {
         if( !file_exists('projects/'.$this->name.'/images') ) mkdir('projects/'.$this->name.'/images');
         if( !file_exists('projects/'.$this->name.'/audios') ) mkdir('projects/'.$this->name.'/audios');
         if( !file_exists('projects/'.$this->name.'/games') ) mkdir('projects/'.$this->name.'/games');
+        // Copy index to destination folder
+        if( !file_exists("projects/".$this->name."/index.php") ) {
+            copy("projects/index.php", "projects/".$this->name."/index.php");
+        }
         
         if(checkPjExist($this->name)) {echo "Fail to create project. Project already exist";return FALSE;}
         

@@ -298,3 +298,63 @@
 
 
 
+array(11) {
+  ["src0_image"]=>
+  string(38) "./projects/Test/images/src0_image.jpeg"
+  ["src1_image"]=>
+  string(38) "./projects/Test/images/src1_image.jpeg"
+  ["src2_image"]=>
+  string(38) "./projects/Test/images/src2_image.jpeg"
+  ["src3_image"]=>
+  string(37) "./projects/Test/images/src3_image.png"
+  ["src4_image"]=>
+  string(37) "./projects/Test/images/src4_image.png"
+  ["sac_wiki"]=>
+  object(stdClass)#2 (4) {
+    ["fsize"]=>
+    string(2) "16"
+    ["fcolor"]=>
+    string(4) "#000"
+    ["name"]=>
+    string(3) "sac"
+    ["cards"]=>
+    array(2) {
+      [0]=>
+      object(stdClass)#3 (2) {
+        ["type"]=>
+        string(4) "text"
+        ["sections"]=>
+        array(1) {
+          [0]=>
+          object(stdClass)#4 (3) {
+            ["title"]=>
+            string(3) "Sac"
+            ["type"]=>
+            string(4) "text"
+            ["content"]=>
+            string(9) "Sac a dos"
+          }
+        }
+      }
+      [1]=>
+      object(stdClass)#5 (3) {
+        ["type"]=>
+        string(3) "img"
+        ["image"]=>
+        string(10) "src3_image"
+        ["legend"]=>
+        string(3) "sac"
+      }
+    }
+  }
+  ["src5_image"]=>
+  string(38) "./projects/Test/images/src5_image.jpeg"
+  ["src6_image"]=>
+  string(38) "./projects/Test/images/src6_image.jpeg"
+  ["src7_image"]=>
+  string(38) "./projects/Test/images/src7_image.jpeg"
+  ["src8_image"]=>
+  string(29) "./Test/images/src8_image.jpeg"
+  ["src9_image"]=>
+  string(38) "./projects/Test/images/src9_image.jpeg"
+}

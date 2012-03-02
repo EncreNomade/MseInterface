@@ -59,180 +59,179 @@ class ProjectGenerator {
         $this->jstr .= "var games={};";
         $this->jstr .= "var wikis={};";
         $srcs = $this->pj->getAllSrcs();
-        $types = array_keys($srcs);
-        foreach( $types as $type ) {
-            switch($type) {
+        foreach( $srcs as $name=>$src ) {
+            $type = $this->pj->typeForSrc($name);
+            switch($type){
             case "image": case "audio":
-                if($type == "image") {$t = "img";$preload = "true";}
+                if($type == "image") {
+                    $t = "img";
+                    $preload = "true";
+                    // Change path with relative in folder of project
+                    $src = preg_replace("/\S+(\/images\/)/", '.$1', $src, 1);
+                }
                 else {$t = "aud";$preload = "false";}
-                $names = array_keys($srcs[$type]);
-                foreach( $names as $name )
-                    $this->jstr .= "mse.src.addSource('$name','".$srcs[$type][$name]."','$t',$preload);";
-            break;
+                $this->jstr .= "mse.src.addSource('$name','".$src."','$t',$preload);";
+                break;
+                
             case "game":
-                foreach( $srcs[$type] as $name => $game ){
-                    $this->jstr .= "games.$name=new $name();";
-                }
+// ADD source js file to html
+                $this->jstr .= "games.$name=new $name();";
                 break;
+                
             case "anime":
-                // Array of animes
-                foreach( $srcs[$type] as $name => $anime ){
-                    $repeat = $anime->repeat;
-                    $static = $anime->statiq;
-                    $animeFrs = $anime->frames;
-                    $animeObjs = get_object_vars($anime->objs);
-                    // Calcule total frame duration
-                    $duration = 0;
-                    // Frame table
-                    $frames = array();
-                    foreach( $animeFrs as $frame ) {
-                        // Transform second to frame
-                        $interval = round($frame->interval*25);
-                        array_push($frames, $duration);
-                        $duration += $interval;
-                    }
+                $repeat = $src->repeat;
+                $static = $src->statiq;
+                $animeFrs = $src->frames;
+                $animeObjs = get_object_vars($src->objs);
+                // Calcule total frame duration
+                $duration = 0;
+                // Frame table
+                $frames = array();
+                foreach( $animeFrs as $frame ) {
+                    // Transform second to frame
+                    $interval = round($frame->interval*25);
                     array_push($frames, $duration);
-                    // Initialisation of animation
-                    $this->jstr .= "animes.$name=new mse.Animation($duration,$repeat,$static);";
-                    // Obj list
-                    $objlist = array();
-                    $nbFr = count($animeFrs);
-                    // Array of frames
-                    for( $f = 0; $f < $nbFr; ++$f ){
-                        $frame = $animeFrs[$f];
-                        $objs = get_object_vars($frame->objs);
-                        $tranpos = $frame->trans->pos;
-                        $transize = $frame->trans->size;
-                        $tranopac = $frame->trans->opac;
-                        $tranfont = $frame->trans->font;
-                        // Array of objs
-                        foreach( $objs as $key=>$params ) {
-                            $w = $params->w; $h = $params->h;
-                            $sx = $params->sx; $sy = $params->sy;
-                            $sw = $params->sw; $sh = $params->sh;
-                            $dx = $params->dx; $dy = $params->dy;
-                            $dw = $params->dw; $dh = $params->dh;
-                            $opacity = $params->opacity;
-                            $t = $animeObjs[$key]->type;
-                            
-                            // First initialization of objet, add to objlist array
-                            if(!array_key_exists($key, $objlist)){
-                                switch($t) {
-                                case "image":
-                                    $this->jstr .= "temp.obj=new mse.Image(null,{'pos':[$dx,$dy],'size':[$dw,$dh]},'$key');";
-                                    $this->jstr .= "animes.$name.addObj('$key',temp.obj);";
-                                    $objlist[$key] = array("params"=>get_object_vars($params),"animes"=>array()); break;
-                                case "spriteRecut":
-                                    $this->jstr .= "temp.obj=new mse.Sprite(null,{'pos':[$dx,$dy],'size':[$dw,$dh]},'$key',[[$sx,$sy,$sw,$sh]]);";
-                                    $this->jstr .= "animes.$name.addObj('$key',temp.obj);";
-                                    $spriteFrCount = 0;
-                                    $objlist[$key] = array("params"=>get_object_vars($params),"animes"=>array()); break;
-                                }
+                    $duration += $interval;
+                }
+                array_push($frames, $duration);
+                // Initialisation of animation
+                $this->jstr .= "animes.$name=new mse.Animation($duration,$repeat,$static);";
+                // Obj list
+                $objlist = array();
+                $nbFr = count($animeFrs);
+                // Array of frames
+                for( $f = 0; $f < $nbFr; ++$f ){
+                    $frame = $animeFrs[$f];
+                    $objs = get_object_vars($frame->objs);
+                    $tranpos = $frame->trans->pos;
+                    $transize = $frame->trans->size;
+                    $tranopac = $frame->trans->opac;
+                    $tranfont = $frame->trans->font;
+                    // Array of objs
+                    foreach( $objs as $key=>$params ) {
+                        $w = $params->w; $h = $params->h;
+                        $sx = $params->sx; $sy = $params->sy;
+                        $sw = $params->sw; $sh = $params->sh;
+                        $dx = $params->dx; $dy = $params->dy;
+                        $dw = $params->dw; $dh = $params->dh;
+                        $opacity = $params->opacity;
+                        $t = $animeObjs[$key]->type;
+                        
+                        // First initialization of objet, add to objlist array
+                        if(!array_key_exists($key, $objlist)){
+                            switch($t) {
+                            case "image":
+                                $this->jstr .= "temp.obj=new mse.Image(null,{'pos':[$dx,$dy],'size':[$dw,$dh]},'$key');";
+                                $this->jstr .= "animes.$name.addObj('$key',temp.obj);";
+                                $objlist[$key] = array("params"=>get_object_vars($params),"animes"=>array()); break;
+                            case "spriteRecut":
+                                $this->jstr .= "temp.obj=new mse.Sprite(null,{'pos':[$dx,$dy],'size':[$dw,$dh]},'$key',[[$sx,$sy,$sw,$sh]]);";
+                                $this->jstr .= "animes.$name.addObj('$key',temp.obj);";
+                                $spriteFrCount = 0;
+                                $objlist[$key] = array("params"=>get_object_vars($params),"animes"=>array()); break;
                             }
-                            else {
-                                // Previous parameters
-                                $prevsx = $objlist[$key]["params"]['sx']; $prevsy = $objlist[$key]["params"]['sy'];
-                                $prevsw = $objlist[$key]["params"]['sw']; $prevsh = $objlist[$key]["params"]['sh'];
-                                $prevdx = $objlist[$key]["params"]['dx']; $prevdy = $objlist[$key]["params"]['dy'];
-                                $prevdw = $objlist[$key]["params"]['dw']; $prevdh = $objlist[$key]["params"]['dh'];
-                                $prevopac = $objlist[$key]["params"]['opacity'];
-                                // Analyse of animations
-                                $animes = &$objlist[$key]["animes"];
-                                
-                                if($t == 'spriteRecut') {
-                                    if($prevsx!=$sx || $prevsy!=$sy || $prevsw!=$sw || $prevsh!=$sh){
-                                        $this->jstr .= "temp.obj.appendFrame([$sx,$sy,$sw,$sh]);";
-                                        // spriteSeq
-                                        if(!array_key_exists('spriteSeq', $animes)) $animes['spriteSeq']=array();
-                                        // Fill the table of animation of spriteSeq before the current frame
-                                        for($i = count($animes['spriteSeq']); $i < $f; ++$i)
-                                            array_push($animes['spriteSeq'], $spriteFrCount);
-                                        $spriteFrCount++;
-                                    }
-                                }
-                                // Pos
-                                if($dx != $prevdx || $dy != $prevdy){
-                                    if(!array_key_exists('pos', $animes)) $animes['pos']=array();
-                                    $pos = $tranpos==2 ? array($prevdx,$prevdy)
-                                                       : array($prevdx,$prevdy,$tranpos);
-                                    for($i = count($animes['pos']); $i < $f; ++$i)
-                                        array_push($animes['pos'], $pos);
-                                }
-                                // Size
-                                if($dw != $prevdw || $dh != $prevdh){
-                                    if(!array_key_exists('size', $animes)) $animes['size']=array();
-                                    $size = $transize==2 ? array($prevdw,$prevdh)
-                                                         : array($prevdw,$prevdh,$transize);
-                                    for($i = count($animes['size']); $i < $f; ++$i)
-                                        array_push($animes['size'], $size);
-                                }
-                                // Opactiy
-                                if($opacity != $prevopac){
-                                    if(!array_key_exists('opacity', $animes)) $animes['opacity']=array();
-                                    $opac = $tranopac==2 ? $prevopac : array($prevopac,$tranopac);
-                                    for($i = count($animes['opacity']); $i < $f; ++$i)
-                                        array_push($animes['opacity'], $opac);
-                                }
-                            }
-                            
-                            // Last frame, complete animations
-                            if($f == $nbFr-1){
-                                foreach( $objlist[$key]["animes"] as $p=>$seq ) {
-                                    switch($p) {
-                                    case 'spriteSeq':
-                                        for($i = count($seq); $i <= $nbFr; ++$i)
-                                            array_push($seq, $spriteFrCount);
-                                    break;
-                                    case 'pos':
-                                        $pos = array($dx,$dy);
-                                        for($i = count($seq); $i <= $nbFr; ++$i)
-                                            array_push($seq, $pos);
-                                    break;
-                                    case 'size':
-                                        $size = array($dw,$dh);
-                                        for($i = count($seq); $i <= $nbFr; ++$i)
-                                            array_push($seq, $size);
-                                    break;
-                                    case 'opacity':
-                                        for($i = count($seq); $i <= $nbFr; ++$i)
-                                            array_push($seq, $opacity);
-                                    break;
-                                    }
-                                    $objlist[$key]["animes"][$p] = $seq;
-                                }
-                            }
-                            // Update previous parameters state
-                            $objlist[$key]["params"] = get_object_vars($params);
                         }
-                    }
-                    // Generate animation
-                    foreach($objlist as $key=>$obj) {
-                        $this->jstr .= "animes.$name.addAnimation('$key',{'frame':JSON.parse('".json_encode($frames)."')";
-                        // All animations for this obj
-                        $animes = $obj['animes'];
-                        foreach($animes as $p=>$seq)
-                            $this->jstr .= ",'$p':JSON.parse('".json_encode($seq)."')";
-                        $this->jstr .= "});";
+                        else {
+                            // Previous parameters
+                            $prevsx = $objlist[$key]["params"]['sx']; $prevsy = $objlist[$key]["params"]['sy'];
+                            $prevsw = $objlist[$key]["params"]['sw']; $prevsh = $objlist[$key]["params"]['sh'];
+                            $prevdx = $objlist[$key]["params"]['dx']; $prevdy = $objlist[$key]["params"]['dy'];
+                            $prevdw = $objlist[$key]["params"]['dw']; $prevdh = $objlist[$key]["params"]['dh'];
+                            $prevopac = $objlist[$key]["params"]['opacity'];
+                            // Analyse of animations
+                            $animes = &$objlist[$key]["animes"];
+                            
+                            if($t == 'spriteRecut') {
+                                if($prevsx!=$sx || $prevsy!=$sy || $prevsw!=$sw || $prevsh!=$sh){
+                                    $this->jstr .= "temp.obj.appendFrame([$sx,$sy,$sw,$sh]);";
+                                    // spriteSeq
+                                    if(!array_key_exists('spriteSeq', $animes)) $animes['spriteSeq']=array();
+                                    // Fill the table of animation of spriteSeq before the current frame
+                                    for($i = count($animes['spriteSeq']); $i < $f; ++$i)
+                                        array_push($animes['spriteSeq'], $spriteFrCount);
+                                    $spriteFrCount++;
+                                }
+                            }
+                            // Pos
+                            if($dx != $prevdx || $dy != $prevdy){
+                                if(!array_key_exists('pos', $animes)) $animes['pos']=array();
+                                $pos = $tranpos==2 ? array($prevdx,$prevdy)
+                                                   : array($prevdx,$prevdy,$tranpos);
+                                for($i = count($animes['pos']); $i < $f; ++$i)
+                                    array_push($animes['pos'], $pos);
+                            }
+                            // Size
+                            if($dw != $prevdw || $dh != $prevdh){
+                                if(!array_key_exists('size', $animes)) $animes['size']=array();
+                                $size = $transize==2 ? array($prevdw,$prevdh)
+                                                     : array($prevdw,$prevdh,$transize);
+                                for($i = count($animes['size']); $i < $f; ++$i)
+                                    array_push($animes['size'], $size);
+                            }
+                            // Opactiy
+                            if($opacity != $prevopac){
+                                if(!array_key_exists('opacity', $animes)) $animes['opacity']=array();
+                                $opac = $tranopac==2 ? $prevopac : array($prevopac,$tranopac);
+                                for($i = count($animes['opacity']); $i < $f; ++$i)
+                                    array_push($animes['opacity'], $opac);
+                            }
+                        }
+                        
+                        // Last frame, complete animations
+                        if($f == $nbFr-1){
+                            foreach( $objlist[$key]["animes"] as $p=>$seq ) {
+                                switch($p) {
+                                case 'spriteSeq':
+                                    for($i = count($seq); $i <= $nbFr; ++$i)
+                                        array_push($seq, $spriteFrCount);
+                                break;
+                                case 'pos':
+                                    $pos = array($dx,$dy);
+                                    for($i = count($seq); $i <= $nbFr; ++$i)
+                                        array_push($seq, $pos);
+                                break;
+                                case 'size':
+                                    $size = array($dw,$dh);
+                                    for($i = count($seq); $i <= $nbFr; ++$i)
+                                        array_push($seq, $size);
+                                break;
+                                case 'opacity':
+                                    for($i = count($seq); $i <= $nbFr; ++$i)
+                                        array_push($seq, $opacity);
+                                break;
+                                }
+                                $objlist[$key]["animes"][$p] = $seq;
+                            }
+                        }
+                        // Update previous parameters state
+                        $objlist[$key]["params"] = get_object_vars($params);
                     }
                 }
+                // Generate animation
+                foreach($objlist as $key=>$obj) {
+                    $this->jstr .= "animes.$name.addAnimation('$key',{'frame':JSON.parse('".json_encode($frames)."')";
+                    // All animations for this obj
+                    $animes = $obj['animes'];
+                    foreach($animes as $p=>$seq)
+                        $this->jstr .= ",'$p':JSON.parse('".json_encode($seq)."')";
+                    $this->jstr .= "});";
+                }
                 break;
+                
             case "wiki":
-                // Array of animes
-                foreach( $srcs[$type] as $name => $wiki ){
-                    $this->jstr .= "wikis.$name=new mse.WikiLayer();";
-                    foreach( $wiki->cards as $card ){
-                        if( $card->type == "text" ) {
-                            $this->jstr .= "wikis.$name.addTextCard();";
-                            foreach($card->sections as $section) {
-                                if($section->type == "link")
-                                    $this->jstr .= "wikis.$name.textCard.addLink('$section->title', '$section->content');";
-                                else if($section->type == "text")
-                                    $this->jstr .= "wikis.$name.textCard.addSection('$section->title', '$section->content');";
-                            }
+                $this->jstr .= "wikis.$name=new mse.WikiLayer();";
+                foreach( $src->cards as $card ){
+                    if( $card->type == "text" ) {
+                        $this->jstr .= "wikis.$name.addTextCard();";
+                        foreach($card->sections as $section) {
+                            if($section->type == "link")
+                                $this->jstr .= "wikis.$name.textCard.addLink('$section->title', '$section->content');";
+                            else if($section->type == "text")
+                                $this->jstr .= "wikis.$name.textCard.addSection('$section->title', '$section->content');";
                         }
-                        else if( $card->type == "img" ){
-                            $this->jstr .= "wikis.$name.addImage('$card->image', '$card->legend');";
-                        }
+                    }
+                    else if( $card->type == "img" ){
+                        $this->jstr .= "wikis.$name.addImage('$card->image', '$card->legend');";
                     }
                 }
                 break;
@@ -244,67 +243,68 @@ class ProjectGenerator {
         $this->jstr .= "var layers = {};";
         $this->jstr .= "var objs = {};";
         
-        // Parse to xml doc
-        $xml = simplexml_load_string($this->pj->getStruct(), "SimpleXMLElement", LIBXML_PARSEHUGE);
         // Generate pages
-        $pages = $xml->pages->div;
-        foreach( $pages as $page ) {
-            $this->addPage($page);
+        $pages = get_object_vars($this->pj->getStruct());
+        foreach( $pages as $id => $page ) {
+            $this->addPage($id, $page);
         }
         
         $this->jstr .= "var action={};";
         $this->jstr .= "var reaction={};";
-        // Register scripts
-        foreach( $this->pj->getAllScripts() as $name => $script ){
-            $src = "";
-            if(!property_exists($script, 'src') || !property_exists($script, 'target') || !property_exists($script, 'srcType') || !property_exists($script, 'action') || !property_exists($script, 'reaction')) continue;
-            switch($script->srcType) {
-            case "obj": $src = 'objs.'.$script->src;break;
-            case "page": $src = 'pages.'.$script->src;break;
-            case "layer": $src = 'layers.'.$script->src;break;
-            case "anime": $src = 'animes.'.$script->src;break;
-            }
-            if($src == "") continue;
-            $tar = $script->target;
-            $action  = $script->action;
-            $reaction = $script->reaction;
-            $immediate = property_exists($script, 'immediate') ? $script->immediate : true;
-            $supp = property_exists($script, 'supp') ? $script->supp : NULL;
-            
-            $codeReact = "";
-            $error = false;
-            switch($reaction) {
-            case "pageTrans": 
-                $codeReact = "root.transition(pages.$tar);";break;
-            case "objTrans": 
-                if(is_null($supp)) continue;
-                $codeReact = "temp.width=objs.$tar.getWidth();temp.height=objs.$tar.getHeight();";
-                $codeReact .= "temp.boundingbox=imgBoundingInBox('$supp',temp.width,temp.height);";
-                $codeReact .= "temp.obj=new mse.Image(objs.$tar.parent,temp.boundingbox,'$supp');";
-                $codeReact .= "mse.transition(objs.$tar,temp.obj,25);";
-                break;
-            case "playAnime": 
-                $codeReact = "animes.$tar.start();";break;
-            case "changeCursor": 
-                $codeReact .= "mse.setCursor(mse.src.getSrc('$tar').src);";break;
-            case "playVoice": 
-                $codeReact = "mse.src.getSrc('$tar').play();";break;
-            case "addScript": 
-                $codeReact = "mse.Script.register(action.$tar,reaction.$tar);";break;
-            case "script": 
+        $scripts = $this->pj->getAllScripts();
+        if( isset($scripts) ) {
+            // Register scripts
+            foreach( $scripts as $name => $script ){
+                $src = "";
+                if(!property_exists($script, 'src') || !property_exists($script, 'target') || !property_exists($script, 'srcType') || !property_exists($script, 'action') || !property_exists($script, 'reaction')) continue;
+                switch($script->srcType) {
+                case "obj": $src = 'objs.'.$script->src;break;
+                case "page": $src = 'pages.'.$script->src;break;
+                case "layer": $src = 'layers.'.$script->src;break;
+                case "anime": $src = 'animes.'.$script->src;break;
+                }
+                if($src == "") continue;
+                $tar = $script->target;
+                $action  = $script->action;
+                $reaction = $script->reaction;
+                $immediate = property_exists($script, 'immediate') ? $script->immediate : true;
+                $supp = property_exists($script, 'supp') ? $script->supp : NULL;
+                
+                $codeReact = "";
+                $error = false;
+                switch($reaction) {
+                case "pageTrans": 
+                    $codeReact = "root.transition(pages.$tar);";break;
+                case "objTrans": 
+                    if(is_null($supp)) continue;
+                    $codeReact = "temp.width=objs.$tar.getWidth();temp.height=objs.$tar.getHeight();";
+                    $codeReact .= "temp.boundingbox=imgBoundingInBox('$supp',temp.width,temp.height);";
+                    $codeReact .= "temp.obj=new mse.Image(objs.$tar.parent,temp.boundingbox,'$supp');";
+                    $codeReact .= "mse.transition(objs.$tar,temp.obj,25);";
+                    break;
+                case "playAnime": 
+                    $codeReact = "animes.$tar.start();";break;
+                case "changeCursor": 
+                    $codeReact .= "mse.setCursor(mse.src.getSrc('$tar').src);";break;
+                case "playVoice": 
+                    $codeReact = "mse.src.getSrc('$tar').play();";break;
+                case "addScript": 
+                    $codeReact = "mse.Script.register(action.$tar,reaction.$tar);";break;
+                case "script": 
 //!!! Danger of security of not???
-                $codeReact = $tar;break;
-            case "effet": break;
-            case "playDefi": 
-                $codeReact = "layers.$tar.play();";break;
-            case "pauseDefi": 
-                $codeReact = "layers.$tar.interrupt();";break;
-            case "loadGame": 
-                $codeReact = "games.$tar.start();";break;
+                    $codeReact = $tar;break;
+                case "effet": break;
+                case "playDefi": 
+                    $codeReact = "layers.$tar.play();";break;
+                case "pauseDefi": 
+                    $codeReact = "layers.$tar.interrupt();";break;
+                case "loadGame": 
+                    $codeReact = "games.$tar.start();";break;
+                }
+                $this->jstr .= "action.$name=[{src:$src,type:'$action'}];";
+                $this->jstr .= "reaction.$name=function(){ $codeReact };";
+                if($immediate) $this->jstr .= "mse.Script.register(action.$name,reaction.$name);";
             }
-            $this->jstr .= "action.$name=[{src:$src,type:'$action'}];";
-            $this->jstr .= "reaction.$name=function(){ $codeReact };";
-            if($immediate) $this->jstr .= "mse.Script.register(action.$name,reaction.$name);";
         }
         
         // Start the book
@@ -313,16 +313,20 @@ class ProjectGenerator {
         return $this->jstr;
     }
  
-    function addPage($pagenode) {
+    function addPage($id, $pagenode) {
         if(!$this->startPageSet) {$this->startPageSet = true;$parent = "root";}
         else $parent = "null";
         // Init page
-        $page = "pages.".$pagenode['id'];
+        $page = "pages.$id";
         $this->jstr .= $page."=new mse.BaseContainer($parent,{size:[".$this->pj->getWidth().",".$this->pj->getHeight()."]});";
         
         // Layers
-        $layernodes = $pagenode->div;
-        foreach( $layernodes as $layernode ) {
+        foreach( $pagenode as $layer ) {
+            $layer = stripslashes($layer);
+            $layer = preg_replace("/<\/img>/", "", $layer);
+            $layer = preg_replace("/(<img[^>]*)(>)/", "$1/>", $layer);
+            $layer = preg_replace("/[^\$]nbsp;/", '$nbsp;', $layer);
+            $layernode = simplexml_load_string($layer, "SimpleXMLElement", LIBXML_PARSEHUGE);
             $this->addLayer($layernode, $page);
         }
     }
@@ -554,14 +558,21 @@ class ProjectGenerator {
 }
 
 // AJAX POST check
-if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && isset($_SESSION['currPj'])) {
+if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && array_key_exists('pj', $_POST)) {
     // Initialisation of project
-    $pj = $_SESSION['currPj'];
-    $projet = new ProjectGenerator($pj);
-    $js = $projet->generateJS();
-    
-    $path = $pj->getRelatJSPath();
-    $res = file_put_contents($path, $js);
+    $pjName = $_POST['pj'];
+    if(array_key_exists($pjName, $_SESSION)) {
+        $pj = $_SESSION[$pjName];
+        $generator = new ProjectGenerator($pj);
+        $js = $generator->generateJS();
+        
+        $path = $pj->getRelatJSPath();
+        // System mse
+        file_put_contents($path, file_get_contents("projects/mse.js"));
+        // Project content
+        file_put_contents($path, $js, FILE_APPEND);
+    }
+    else echo "Fail to generate project.";
 }
 
 ?>

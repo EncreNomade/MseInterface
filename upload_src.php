@@ -58,18 +58,15 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
         case "game":
             // Direct url link
             if( strripos($encodedStr, "http://") !== false ) {
-                // Add source to project
                 $pj->addSrc($name, $type, $encodedStr);
             }
             // Relative url link
             else if( strripos($encodedStr, "./") !== false ) {
-                //if(strripos($encodedStr, "./projects/") === 0) $encodedStr = ".".substr($encodedStr, 10);
                 $pj->addSrc($name, $type, $encodedStr);
             }
             // File content coded
             else {
                 $filename = saveBase64Src($name, $encodedStr, $pj);
-                // Add source to project
                 if(!is_null($filename)) $pj->addSrc($name, $type, $pj->getRelatSrcPath($type).$filename);
             }
         break;
