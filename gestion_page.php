@@ -151,6 +151,8 @@ var rightFunc = function() {
     else {
         var pjsave = {};
         pjsave.pageSeri = {};
+        pjsave.objCurrId = 0;
+        pjsave.srcCurrId = 0;
     }
 	
 	// Del page button and Up down button

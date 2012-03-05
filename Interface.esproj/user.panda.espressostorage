@@ -22,6 +22,7 @@
 		<key>ExpandedURLs</key>
 		<array>
 			<string>file://localhost/Users/panda/Sites/MseInterface/javascript</string>
+			<string>file://localhost/Users/panda/Sites/MseInterface/projects</string>
 			<string>file://localhost/Users/panda/Sites/MseInterface/stylesheets</string>
 		</array>
 	</dict>

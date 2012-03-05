@@ -275,8 +275,18 @@ function retrieveLocalInfo(pjsave) {
 	    }
 	}
 	
+	// Update local with server storage
+	if(norecord || (lastModLocal < lastModServer && lastModLocal != -1)) {
+	    $.get("updateFromServer.php", {'pj':pjName}, function(msg){
+	        var pjsave = JSON.parse(msg);
+	        if(pjsave) {
+	            saveToLocalStorage(pjName, msg);
+	            retrieveLocalInfo(pjsave);
+	        }
+	    });
+	}
 	// Update server with local storage
-	if(lastModLocal > lastModServer) {
+	else if(lastModLocal > lastModServer || lastModLocal == -1) {
 	    $.post("updateWithLocal.php", {"pj":pjName, "localStorage":pjsavestr}, function(msg){
                 var modif = parseInt(msg);
                 if(!isNaN(modif)) pjsave.lastModif = modif;
@@ -285,16 +295,6 @@ function retrieveLocalInfo(pjsave) {
                 // Retrieve the information of pages in local storage
                 if(pjsave) retrieveLocalInfo(pjsave);
             });
-	}
-	// Update local with server storage
-	else if(norecord || lastModLocal == -1 || lastModLocal < lastModServer) {
-	    $.get("updateFromServer.php", {'pj':pjName}, function(msg){
-	        var pjsave = JSON.parse(msg);
-	        if(pjsave) {
-	            saveToLocalStorage(pjName, msg);
-	            retrieveLocalInfo(pjsave);
-	        }
-	    });
 	}
 	else {
 	    // Retrieve the information of pages in local storage

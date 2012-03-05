@@ -125,7 +125,7 @@ class MseProject {
         return $this->struct;
     }
     function isStructEmpty(){
-        if(!is_null($this->struct)) return false;
+        if(count($this->struct) != 0) return false;
         else return true;
     }
     
@@ -193,7 +193,7 @@ class MseProject {
         $pjsave['objCurrId'] = $this->currObjId;
         $pjsave['srcCurrId'] = $this->currSrcId;
         $pjsave['lastModif'] = $this->lastModif;
-        return json_encode($pjsave);
+        return stripslashes(json_encode($pjsave));
     }
     
     function saveToDB() {
