@@ -779,7 +779,7 @@ function addImageElem(id, data, page, step) {
 	
 	// Listener to manipulate
 	// Choose Resize Move
-	container.selectable(null).resizable().moveable().configurable({text:true,stroke:true}).hoverButton('./images/UI/addscript.jpg', addScriptForObj);
+	container.resizable().moveable().configurable({text:true,stroke:true}).hoverButton('./images/UI/addscript.jpg', addScriptForObj);
 
 	step.append(container);
 }
@@ -1631,7 +1631,7 @@ function configChanged(e) {
 
 function saveToLocalStorage(name, jsonstr){
     // Save to localStorage
-    localStorage.setItem(name, JSON.stringify(jsonstr));
+    localStorage.setItem(name, jsonstr);
     
     // Local storage saving management, locally store only 5 projects for example, manager all projects with a json array of their name
     var pjs = localStorage.getItem('projects');

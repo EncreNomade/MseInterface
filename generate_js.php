@@ -19,6 +19,7 @@ class ProjectGenerator {
     private $autoid;
     private $startPageSet;
     private $jstr;
+    private $coords;
     
     private static $patterns = array(
         "depth" => "/z\-index:\s*(?P<depth>[\.\-\d]+)/",
@@ -34,12 +35,27 @@ class ProjectGenerator {
         "fweight" => "/font\-weight:\s*(\w+);/",
         "font" => "/font:\s*([\.\-\s\w]+);/",
         "textAlign" => "/text\-align:\s*(\w+);/",
+        "textBaseline" => "/vertical\-align:\s*(\w+);/",
         "lineHeight" => "/line\-height:\s*([\.\-\d]+)px/",
         "linkCutter" => "/<p>([\W\w]*)<span[\W\w]*>([\W\w]*)<\/span>([\W\w]*)<\/p>/"
     );
 
     function ProjectGenerator($project) {
         $this->pj = $project;
+        $this->coords = array();
+    }
+    
+    function encodedCoord($number){
+        if(is_numeric($number)) {
+            $key = array_search($number, $this->coords);
+            // Not exist
+            if($key === FALSE){
+                $key = "cid".count($this->coords);
+                $this->coords[$key] = $number;
+            }
+            return "coords.$key";
+        }
+        return '0';
     }
     
     function generateJS(){
@@ -49,7 +65,7 @@ class ProjectGenerator {
         $this->jstr .= "initMseConfig();";
         $this->jstr .= "mse.init();";
         // Initiale root
-        $this->jstr .= "var root = new mse.Root('".$this->pj->getName()."',".$this->pj->getWidth().",".$this->pj->getHeight().",'".$this->pj->getOrientation()."');";
+        $this->jstr .= "var root = new mse.Root('".$this->pj->getName()."',".$this->encodedCoord($this->pj->getWidth()).",".$this->encodedCoord($this->pj->getHeight()).",'".$this->pj->getOrientation()."');";
         $this->autoid = 0;
         $startPageSet = false;
         $this->jstr .= "var temp = {};";
@@ -117,15 +133,20 @@ class ProjectGenerator {
                         $opacity = $params->opacity;
                         $t = $animeObjs[$key]->type;
                         
+                        $dxvar = $this->encodedCoord($dx);
+                        $dyvar = $this->encodedCoord($dy);
+                        $dwvar = $this->encodedCoord($dw);
+                        $dhvar = $this->encodedCoord($dh);
+                        
                         // First initialization of objet, add to objlist array
                         if(!array_key_exists($key, $objlist)){
                             switch($t) {
                             case "image":
-                                $this->jstr .= "temp.obj=new mse.Image(null,{'pos':[$dx,$dy],'size':[$dw,$dh]},'$key');";
+                                $this->jstr .= "temp.obj=new mse.Image(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar]},'$key');";
                                 $this->jstr .= "animes.$name.addObj('$key',temp.obj);";
                                 $objlist[$key] = array("params"=>get_object_vars($params),"animes"=>array()); break;
                             case "spriteRecut":
-                                $this->jstr .= "temp.obj=new mse.Sprite(null,{'pos':[$dx,$dy],'size':[$dw,$dh]},'$key',[[$sx,$sy,$sw,$sh]]);";
+                                $this->jstr .= "temp.obj=new mse.Sprite(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar]},'$key',[[$sx,$sy,$sw,$sh]]);";
                                 $this->jstr .= "animes.$name.addObj('$key',temp.obj);";
                                 $spriteFrCount = 0;
                                 $objlist[$key] = array("params"=>get_object_vars($params),"animes"=>array()); break;
@@ -155,16 +176,16 @@ class ProjectGenerator {
                             // Pos
                             if($dx != $prevdx || $dy != $prevdy){
                                 if(!array_key_exists('pos', $animes)) $animes['pos']=array();
-                                $pos = $tranpos==2 ? array($prevdx,$prevdy)
-                                                   : array($prevdx,$prevdy,$tranpos);
+                                $pos = $tranpos==2 ? array($this->encodedCoord($prevdx),$this->encodedCoord($prevdy))
+                                                   : array($this->encodedCoord($prevdx),$this->encodedCoord($prevdy),$tranpos);
                                 for($i = count($animes['pos']); $i < $f; ++$i)
                                     array_push($animes['pos'], $pos);
                             }
                             // Size
                             if($dw != $prevdw || $dh != $prevdh){
                                 if(!array_key_exists('size', $animes)) $animes['size']=array();
-                                $size = $transize==2 ? array($prevdw,$prevdh)
-                                                     : array($prevdw,$prevdh,$transize);
+                                $size = $transize==2 ? array($this->encodedCoord($prevdw),$this->encodedCoord($prevdh))
+                                                     : array($this->encodedCoord($prevdw),$this->encodedCoord($prevdh),$transize);
                                 for($i = count($animes['size']); $i < $f; ++$i)
                                     array_push($animes['size'], $size);
                             }
@@ -186,12 +207,12 @@ class ProjectGenerator {
                                         array_push($seq, $spriteFrCount);
                                 break;
                                 case 'pos':
-                                    $pos = array($dx,$dy);
+                                    $pos = array($this->encodedCoord($dx),$this->encodedCoord($dy));
                                     for($i = count($seq); $i <= $nbFr; ++$i)
                                         array_push($seq, $pos);
                                 break;
                                 case 'size':
-                                    $size = array($dw,$dh);
+                                    $size = array($this->encodedCoord($dw),$this->encodedCoord($dh));
                                     for($i = count($seq); $i <= $nbFr; ++$i)
                                         array_push($seq, $size);
                                 break;
@@ -212,26 +233,39 @@ class ProjectGenerator {
                     $this->jstr .= "animes.$name.addAnimation('$key',{'frame':JSON.parse('".json_encode($frames)."')";
                     // All animations for this obj
                     $animes = $obj['animes'];
-                    foreach($animes as $p=>$seq)
-                        $this->jstr .= ",'$p':JSON.parse('".json_encode($seq)."')";
+                    foreach($animes as $p=>$seq) {
+                        // Manuel transform in pos and size, because they use coord variable which can't be correctly parsed
+                        if($p=="pos" || $p=="size") {
+                            $this->jstr .= ",'$p':[";
+                            for($fr = 0; $fr < count($seq); ++$fr){
+                                if($fr != 0) $this->jstr .= ",";
+                                $this->jstr .= "[".$seq[$fr][0].",".$seq[$fr][1];
+                                if(array_key_exists(2, $seq[$fr])) $this->jstr .= ",".$seq[$fr][2];
+                                $this->jstr .= "]";
+                            }
+                            $this->jstr .= "]";
+                        }
+                        // JSON structure
+                        else $this->jstr .= ",'$p':JSON.parse('".json_encode($seq)."')";
+                    }
                     $this->jstr .= "});";
                 }
                 break;
                 
             case "wiki":
                 $this->jstr .= "wikis.$name=new mse.WikiLayer();";
-                foreach( $src->cards as $card ){
-                    if( $card->type == "text" ) {
+                foreach( $src['cards'] as $card ){
+                    if( $card['type'] == "text" ) {
                         $this->jstr .= "wikis.$name.addTextCard();";
-                        foreach($card->sections as $section) {
-                            if($section->type == "link")
-                                $this->jstr .= "wikis.$name.textCard.addLink('$section->title', '$section->content');";
-                            else if($section->type == "text")
-                                $this->jstr .= "wikis.$name.textCard.addSection('$section->title', '$section->content');";
+                        foreach($card['sections'] as $section) {
+                            if($section['type'] == "link")
+                                $this->jstr .= "wikis.$name.textCard.addLink('".$section['title']."', '".$section['content']."');";
+                            else if($section['type'] == "text")
+                                $this->jstr .= "wikis.$name.textCard.addSection('".$section['title']."', '".$section['content']."');";
                         }
                     }
-                    else if( $card->type == "img" ){
-                        $this->jstr .= "wikis.$name.addImage('$card->image', '$card->legend');";
+                    else if( $card['type'] == "img" ){
+                        $this->jstr .= "wikis.$name.addImage('".$card['image']."', '".$card['legend']."');";
                     }
                 }
                 break;
@@ -310,6 +344,9 @@ class ProjectGenerator {
         // Start the book
         $this->jstr .= "mse.currTimeline.start();";
         
+        // Join the coords array in the beginning
+        $this->jstr = "var coords = JSON.parse('".json_encode($this->coords)."');".$this->jstr;
+        
         return $this->jstr;
     }
  
@@ -318,7 +355,7 @@ class ProjectGenerator {
         else $parent = "null";
         // Init page
         $page = "pages.$id";
-        $this->jstr .= $page."=new mse.BaseContainer($parent,{size:[".$this->pj->getWidth().",".$this->pj->getHeight()."]});";
+        $this->jstr .= $page."=new mse.BaseContainer($parent,{size:[".$this->encodedCoord($this->pj->getWidth()).",".$this->encodedCoord($this->pj->getHeight())."]});";
         
         // Layers
         foreach( $pagenode as $layer ) {
@@ -339,14 +376,21 @@ class ProjectGenerator {
         $depth = self::getDepthFromStyle($style);
         $layer = "layers.".$id;
         
+        if($type == 'ArticleLayer') {
+            $layernode = $layernode->div[0];
+            $style = $layernode['style'];
+            $style .= "vertical-align: top;";
+        }
+        // Param
+        $style .= "opacity: 1;";
+        $params = $this->formatParams($style);
+        if(!array_key_exists('size', $params[0])) {
+            $params[1] = substr($params[1], 0, -1);
+            $params[1] .= ',"size":['.$this->encodedCoord($this->pj->getWidth()).','.$this->encodedCoord($this->pj->getHeight()).']}';
+        }
+        
         if($type == 'Layer') {
-            // Param
-            $params = self::formatParams($style, $this->pj);
-            if(!array_key_exists('size', $params))
-                $params['size'] = array($this->pj->getWidth(), $this->pj->getHeight());
-            if(!array_key_exists('globalAlpha', $params))
-                $params['globalAlpha'] = 1;
-            $this->jstr .= "$layer=new mse.Layer($page,$depth,JSON.parse('".json_encode($params)."'));";
+            $this->jstr .= "$layer=new mse.Layer($page,$depth,".$params[1].");";
             // Obj
             $objs = $layernode->children();
             foreach( $objs as $objnode ) {
@@ -354,25 +398,16 @@ class ProjectGenerator {
             }
         }
         else if($type == 'ArticleLayer') {
-            $layernode = $layernode->div[0];
-            $style = $layernode['style'];
-            // Param
-            $params = self::formatParams($style, $this->pj);
-            if(!array_key_exists('size', $params))
-                $params['size'] = array($this->pj->getWidth(), $this->pj->getHeight());
-            if(!array_key_exists('globalAlpha', $params))
-                $params['globalAlpha'] = 1;
-            $params['textBaseline'] = 'top';
-            $this->jstr .= "$layer=new mse.ArticleLayer($page,$depth,JSON.parse('".json_encode($params)."'),null);";
+            $this->jstr .= "$layer=new mse.ArticleLayer($page,$depth,".$params[1].",null);";
             
-            $width = self::getWidthFromStyle($this->pj, $style);
-            if(is_null($width)) $width = $this->pj->getWidth();
-            $lineHeight = $params['lineHeight'];
+            if(array_key_exists('size', $params[0])) $width = $params[0]['size'][0];
+            else $width = $this->pj->getWidth();
+            $lineHeight = $params[0]['lineHeight'];
             // Objs
             $objs = $layernode->div;
             $index = 0;
             foreach( $objs as $objnode ) {
-                $this->addArticleObject($objnode, $layer, $width, $lineHeight, $index);
+                $this->addArticleObject($objnode, $layer, $this->encodedCoord($width), $this->encodedCoord($lineHeight), $index);
                 $index++;
             }
             if($layernode['defile'] == "true") {
@@ -405,22 +440,22 @@ class ProjectGenerator {
         // Init attributes
         //$id = "autoid".$this->autoid;
         //$this->autoid++;
-        $params = json_encode(self::formatParams($objnode['style'], $this->pj));
+        $params = $this->formatParams($objnode['style']);
         
         switch($type) {
         case "img":
             // Src name can be found in image name attribute
-            $this->jstr .= "$obj=new mse.Image($layer,JSON.parse('$params'),'".$objnode->img[0]['name']."');";
+            $this->jstr .= "$obj=new mse.Image($layer,".$params[1].",'".$objnode->img[0]['name']."');";
             break;
         case "mask":
-            $this->jstr .= "$obj=new mse.Mask($layer,JSON.parse('$params'));";
+            $this->jstr .= "$obj=new mse.Mask($layer,".$params[1].");";
             break;
         case "txt":
             // Text content
-            $this->jstr .= "$obj=new mse.Text($layer,JSON.parse('$params'),'".$objnode->p[0]."',true);";
+            $this->jstr .= "$obj=new mse.Text($layer,".$params[1].",'".$objnode->p[0]."',true);";
             break;
         default:
-            $this->jstr .= "$obj=new mse.UIObject($layer,JSON.parse('$params'));";break;
+            $this->jstr .= "$obj=new mse.UIObject($layer,".$params[1].");";break;
         }
         
         $this->jstr .= "$layer.addObject($obj);";
@@ -435,8 +470,8 @@ class ProjectGenerator {
         $type = "unknown";
         if($class == 'illu') {
             $type = "img";
-            $params = json_encode(self::formatParams($objnode->img[0]['style'], $this->pj));
-            $this->jstr .= "$obj=new mse.Image($layer,JSON.parse('$params'),'".$objnode->img[0]['name']."');";
+            $params = $this->formatParams($objnode->img[0]['style']);
+            $this->jstr .= "$obj=new mse.Image($layer,".$params[1].",'".$objnode->img[0]['name']."');";
         }
         else if($class == 'game') {
             $type = "game";
@@ -446,26 +481,26 @@ class ProjectGenerator {
         else if(count($objnode->children()) == 0) {
             // Rectangle obj
             $type = "obj";
-            $params = json_encode(self::formatParams($objnode['style'], $this->pj));
-            $this->jstr .= "$obj=new mse.UIObject($layer,JSON.parse('$params'));";
+            $params = $this->formatParams($objnode['style']);
+            $this->jstr .= "$obj=new mse.UIObject($layer,".$params[1].");";
         }
         else if(count($objnode->p) > 0) {
             // Text obj
             $type = "txt";
-            $params = json_encode(array('size' => array($width, $lineHeight)));
+            $params = "{size:[$width,$lineHeight]}";
             
             // Detect link
             $p = $objnode->p;
             if(count($p->span) > 0){
                 preg_match(self::$patterns['linkCutter'], $p[0]->asXML(), $content);
                 $content = $content[1].$content[2].$content[3];
-                $this->jstr .= "$obj=new mse.Text($layer,JSON.parse('$params'),'$content',true);";
+                $this->jstr .= "$obj=new mse.Text($layer,$params,'$content',true);";
                 foreach($p->span as $link)
                     $this->addLink($link, $obj, $index);
             }
             else {
                 $content = $p;
-                $this->jstr .= "$obj=new mse.Text($layer,JSON.parse('$params'),'$content',true);";
+                $this->jstr .= "$obj=new mse.Text($layer,$params,'$content',true);";
             }
         }
         
@@ -502,16 +537,12 @@ class ProjectGenerator {
         if(array_key_exists('depth', $res)) return $res['depth'];
         else return 0;
     }
-    public static function getWidthFromStyle($pj, $style) {
-        if(is_null($style)) return NULL;
-        preg_match(self::$patterns['width'], $style, $width);
-        if( array_key_exists(2, $width) ) return $pj->realCoor($width[2]);
-        else return NULL;
-    }
     
-    private static function formatParams($style, $pj){
-        if(is_null($style) || is_null($pj)) return;
+    private function formatParams($style){
+        if(is_null($style)) return;
+        $pj = $this->pj;
         $param = array();
+        $paramStr = "{";
         preg_match(self::$patterns['width'], $style, $width);
         preg_match(self::$patterns['height'], $style, $height);
         preg_match(self::$patterns['left'], $style, $left);
@@ -524,20 +555,31 @@ class ProjectGenerator {
         preg_match(self::$patterns['fweight'], $style, $fweight);
         preg_match(self::$patterns['font'], $style, $font);
         preg_match(self::$patterns['textAlign'], $style, $textAlign);
+        preg_match(self::$patterns['textBaseline'], $style, $textBaseline);
         preg_match(self::$patterns['lineHeight'], $style, $lineHeight);
-        if( array_key_exists(2, $width) && array_key_exists(2, $height) )
+        if( array_key_exists(2, $width) && array_key_exists(2, $height) ) {
             $param['size'] = array($pj->realCoor($width[2]), $pj->realCoor($height[2]));
-        if( array_key_exists(2, $left) && array_key_exists(2, $top) )
+            $paramStr .= '"size":['.$this->encodedCoord($param['size'][0]).','.$this->encodedCoord($param['size'][1]).'],';
+        }
+        if( array_key_exists(2, $left) && array_key_exists(2, $top) ) {
             $param['pos'] = array($pj->realCoor($left[2]), $pj->realCoor($top[2]));
-        if( array_key_exists(1, $color) )
+            $paramStr .= '"pos":['.$this->encodedCoord($param['pos'][0]).','.$this->encodedCoord($param['pos'][1]).'],';
+        }
+        if( array_key_exists(1, $color) ) {
             $param['fillStyle'] = $color[1];
-        else if( array_key_exists(1, $bgColor) )
+            $paramStr .= '"fillStyle":"'.$param['fillStyle'].'",';
+        }
+        else if( array_key_exists(1, $bgColor) ) {
             $param['fillStyle'] = $bgcolor[1];
-        if( array_key_exists(1, $alpha) )
+            $paramStr .= '"fillStyle":"'.$param['fillStyle'].'",';
+        }
+        if( array_key_exists(1, $alpha) ) {
             $param['globalAlpha'] = $alpha[1];
+            $paramStr .= '"globalAlpha":'.$param['globalAlpha'].',';
+        }
         $fontSetted = false;
         if( array_key_exists(1, $fsize) ) {
-            $fsize[1] = $pj->realCoor($fsize[1])."px";
+            $fsize[1] = $pj->realCoor($fsize[1]);
             $fontSetted = true;
         }
         else $fsize[1] = "";
@@ -545,15 +587,36 @@ class ProjectGenerator {
         else $ffamily[1] = "";
         if( array_key_exists(1, $fweight) ) $fontSetted = true;
         else $fweight[1] = "";
-        if( $fontSetted ) $param['font'] = $fweight[1]." ".$fsize[1]." ".$ffamily[1];
-        if( array_key_exists(1, $font) )
+        if( $fontSetted ) {
+            if(array_key_exists(1, $fsize)) {
+                $paramStr .= '"font":"'.$fweight[1].' "+'.$this->encodedCoord($fsize[1]).'+"px '.$ffamily[1].'",';
+                $fsize[1] = $fsize[1]."px";
+            }
+            else $paramStr .= '"font":"'.$fweight[1].' '.$ffamily[1].'",';
+            $param['font'] = $fweight[1].' '.$fsize[1].' '.$ffamily[1];
+        }
+        if( array_key_exists(1, $font) ) {
             $param['font'] = $font[1];
-        if( array_key_exists(1, $textAlign) )
+            $paramStr .= '"font":"'.$param['font'].'",';
+        }
+        if( array_key_exists(1, $textAlign) ) {
             $param['textAlign'] = $textAlign[1];
-        if( array_key_exists(1, $lineHeight) )
+            $paramStr .= '"textAlign":"'.$param['textAlign'].'",';
+        }
+        if( array_key_exists(1, $textBaseline) ) {
+            $param['textBaseline'] = $textBaseline[1];
+            $paramStr .= '"textBaseline":"'.$param['textBaseline'].'",';
+        }
+        if( array_key_exists(1, $lineHeight) ) {
             $param['lineHeight'] = $pj->realCoor($lineHeight[1]);
+            $paramStr .= '"lineHeight":'.$this->encodedCoord($param['lineHeight']).',';
+        }
+        if(count($param) > 0)
+            // Trim last , in paramStr
+            $paramStr = substr($paramStr, 0, -1);
+        $paramStr .= "}";
             
-        return $param;
+        return array($param, $paramStr);
     }
 }
 

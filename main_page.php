@@ -271,16 +271,17 @@ function retrieveLocalInfo(pjsave) {
 	    var pjsave = JSON.parse(pjsavestr);
 	    if(!pjsave) norecord = true;
 	    else {
-	        if(pjsave.lastMod) lastModLocal = pjsave.lastMod;
+	        if(pjsave.lastModif) lastModLocal = pjsave.lastModif;
 	    }
 	}
 	
 	// Update local with server storage
 	if(norecord || (lastModLocal < lastModServer && lastModLocal != -1)) {
 	    $.get("updateFromServer.php", {'pj':pjName}, function(msg){
+	        //alert(msg);
 	        var pjsave = JSON.parse(msg);
 	        if(pjsave) {
-	            saveToLocalStorage(pjName, msg);
+	            //saveToLocalStorage(pjName, msg);
 	            retrieveLocalInfo(pjsave);
 	        }
 	    });

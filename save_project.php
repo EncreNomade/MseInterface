@@ -22,7 +22,6 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
         // Read the input from stdin
         $structStr = stripslashes($_POST['struct']);
         $struct = json_decode($structStr);
-        echo json_last_error();
         if(!is_null($struct)) {
             $pj = $_SESSION[$pjname];
             $pj->setStruct($struct);

@@ -1318,6 +1318,9 @@ function chooseElem(e) {
     var elem = $(this);
     curr.choosed = elem;
 }
+function unchoose(e) {
+    
+}
 function chooseElemWithBorder(e) {
 	e.preventDefault();
 	var elem = $(this);
@@ -1429,6 +1432,8 @@ $.fn.supportResize = function() {
 }
 $.fn.resizable = function(supp) {
 	this.unbind('click', chooseElemWithCtrlPts);
+	this.unbind('click', chooseElem);
+	this.unbind('click', chooseElemWithBorder);
 	if(supp !== false) this.click(chooseElemWithCtrlPts);
 	return this;
 }

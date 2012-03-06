@@ -34,12 +34,6 @@
 		<array>
 			<dict>
 				<key>DocumentURL</key>
-				<string>file://localhost/Users/panda/Sites/MseInterface/stylesheets/menu.css</string>
-				<key>StateType</key>
-				<string>DefaultTab</string>
-			</dict>
-			<dict>
-				<key>DocumentURL</key>
 				<string>file://localhost/Users/panda/Sites/MseInterface/stylesheets/interface.css</string>
 				<key>StateType</key>
 				<string>DefaultTab</string>
@@ -82,13 +76,7 @@
 			</dict>
 			<dict>
 				<key>DocumentURL</key>
-				<string>file://localhost/Users/panda/Sites/MseInterface/upload_src.php</string>
-				<key>StateType</key>
-				<string>DefaultTab</string>
-			</dict>
-			<dict>
-				<key>DocumentURL</key>
-				<string>file://localhost/Users/panda/Sites/MseInterface/update_srcs.php</string>
+				<string>file://localhost/Users/panda/Sites/MseInterface/generate_js.php</string>
 				<key>StateType</key>
 				<string>DefaultTab</string>
 			</dict>

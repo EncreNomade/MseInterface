@@ -48,7 +48,7 @@ class MseProject {
             $this->lastModif = $pj['lastModif'];
             
             $struct = json_decode($pj['struct']);
-            if($struct) $this->struct = $struct;
+            if($struct) $this->struct = get_object_vars($struct);
             $sources = json_decode($pj['sources']);
             if($sources) $this->sources = get_object_vars($sources);
             $scripts = json_decode($pj['scripts']);
@@ -193,7 +193,7 @@ class MseProject {
         $pjsave['objCurrId'] = $this->currObjId;
         $pjsave['srcCurrId'] = $this->currSrcId;
         $pjsave['lastModif'] = $this->lastModif;
-        return stripslashes(json_encode($pjsave));
+        return json_encode($pjsave);
     }
     
     function saveToDB() {
