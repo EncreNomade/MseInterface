@@ -100,8 +100,9 @@ function base64_encode (data) {
 
 function objToClass(obj, classn) {
     var o = new classn(); 
-    for(var key in obj) 
-        o[key] = obj[key]; 
+    for(var key in obj) {
+        if(obj[key] && obj[key] != "undefined") o[key] = obj[key];
+    } 
     return o;
 }
 

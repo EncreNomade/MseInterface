@@ -136,7 +136,7 @@ mse.src	= new mse.Ressource();
 function changeCoords() {
     var ratio = MseConfig.pageHeight / coords['cid1'];
     for(var i in coords) {
-        coords[i] = new Number(ratio * coords[i]).toFixed(2);
+        coords[i] = parseFloat(new Number(ratio * coords[i]).toFixed(2));
     }
 }
 
@@ -150,6 +150,7 @@ mse.autoFitToWindow = function() {
 mse.init = function(configs) {
 	$.extend(cfs, configs);
 
+    mse.src.init();
 	mse.src.addSource('imgNotif', '../images/turn_comp.png', 'img');
 	mse.src.addSource('fbBar', '../images/barre/fb.png', 'img');
 	mse.src.addSource('wikiBar', '../images/barre/wiki.png', 'img');

@@ -68,7 +68,7 @@ class ProjectGenerator {
         // Initiale Mse system
         $this->jstr .= "initMseConfig();";
         $this->jstr .= "mse.init();";
-        //$this->jstr .= "mse.autoFitToWindow();";
+        $this->jstr .= "mse.autoFitToWindow();";
         // Initiale root
         $this->jstr .= "var root = new mse.Root('".$this->pj->getName()."',".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight).",'".$this->pj->getOrientation()."');";
         $this->autoid = 0;

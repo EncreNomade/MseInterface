@@ -249,8 +249,10 @@ function retrieveLocalInfo(pjsave) {
     for(var key in src) {
         var type = srcMgr.sourceType(key);
         if(type == "text" || type == "obj") continue;
-        else if(type == "anime") src[key] = objToClass(src[key], Animation);
-        else if(type == "wiki") src[key] = objToClass(src[key], Wiki);
+        else if(type == "anime") 
+            src[key] = objToClass(src[key], Animation);
+        else if(type == "wiki") 
+            src[key] = objToClass(src[key], Wiki);
         srcMgr.addSource(type, src[key], key);
     }
     if(!isNaN(pjsave.srcCurrId)) srcMgr.currId = pjsave.srcCurrId;
