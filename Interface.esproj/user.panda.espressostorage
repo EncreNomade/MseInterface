@@ -7,13 +7,13 @@
 	<key>ESProjectWindowState</key>
 	<dict>
 		<key>ContentSize</key>
-		<string>{1100, 784}</string>
+		<string>{1181, 784}</string>
 		<key>ProjectURL</key>
 		<string>file://localhost/Users/panda/Sites/MseInterface/Interface.esproj/</string>
 		<key>StateType</key>
 		<string>ProjectWindow</string>
 		<key>TopLeftPoint</key>
-		<string>{-1, 878}</string>
+		<string>{15, 878}</string>
 	</dict>
 	<key>com.macrabbit.Espresso.FileManager.DisclosureCollapsed</key>
 	<false/>

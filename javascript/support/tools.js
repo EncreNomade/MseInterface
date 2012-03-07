@@ -491,11 +491,14 @@ SourceManager.prototype = {
 	        case "game":
 	            data = "pj="+pjName+"&type=game&name="+this.realName(key)+"&data="+this.sources[key];
 	            break;
-	        case "anime":
-	            data = "pj="+pjName+"&type=anime&name="+key+"&data="+JSON.stringify(this.sources[key]);
-	            break;
 	        case "wiki":
-	            data = "pj="+pjName+"&type=wiki&name="+key+"&data="+JSON.stringify(this.sources[key]);
+	            //data = "pj="+pjName+"&type=anime&name="+key+"&data="+JSON.stringify(this.sources[key]);
+	            //break;
+	        case "animes":
+	            ++this.uploaded;
+	            srcMgr.updateSrcs(pjName);
+	            continue;
+	            //data = "pj="+pjName+"&type=wiki&name="+key+"&data="+JSON.stringify(this.sources[key]);
 	            break;
 	        }
 	        
@@ -523,7 +526,7 @@ SourceManager.prototype = {
 	updateSrcs: function(pjName){
 	    var count = Object.keys(this.sources).length;
 	    if(this.uploaded < count) return;
-	    $.post("update_srcs.php", {"pj":pjName,"srcs":this.sources}, function(msg){
+	    $.post("update_srcs.php", {"pj":pjName,"srcs":JSON.stringify(this.sources)}, function(msg){
 	            if(msg && msg != "") alert(msg);
 	        });
 	}

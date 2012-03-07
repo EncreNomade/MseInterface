@@ -21,7 +21,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
         ConnectDB();
         // Read the input from stdin
         $structStr = stripslashes($_POST['struct']);
-        $struct = json_decode($structStr);
+        $struct = get_object_vars(json_decode($structStr));
         if(!is_null($struct)) {
             $pj = $_SESSION[$pjname];
             $pj->setStruct($struct);

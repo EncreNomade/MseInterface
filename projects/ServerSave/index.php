@@ -31,8 +31,8 @@ addEventListener("load", function(){
 }, false);
 </script>
 
-<link rel="stylesheet" href="./support/flarevideo/flarevideo.css" type="text/css">
-<link rel="stylesheet" href="./support/flarevideo/flarevideo.default.css" type="text/css">
+<link rel="stylesheet" href="../support/flarevideo/flarevideo.css" type="text/css">
+<link rel="stylesheet" href="../support/flarevideo/flarevideo.default.css" type="text/css">
 <script src="../support/jquery-latest.js"></script>
 <script src="../support/BrowserDetect.js"></script>
 <script src="../support/flarevideo/jquery.ui.slider.js" type="text/javascript"></script>

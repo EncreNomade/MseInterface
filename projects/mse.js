@@ -1,5 +1,5 @@
 /*!
- * Mse Canvas JavaScript Library v0.1
+ * Mse Canvas JavaScript Library v0.85
  * MseEdition
  *
  * Author: LING Huabin - lphuabin@gmail.com
@@ -133,24 +133,37 @@ mse.Ressource.prototype = {
 };
 mse.src	= new mse.Ressource();
 
+function changeCoords() {
+    var ratio = MseConfig.pageHeight / coords['cid1'];
+    for(var i in coords) {
+        coords[i] = new Number(ratio * coords[i]).toFixed(2);
+    }
+}
+
+mse.autoFitToWindow = function() {
+    if(coords && coords['cid1']) {
+        if(MseConfig.pageHeight > 250) changeCoords();
+        else setTimeout(autoFitToWindow, 1000);
+    }
+}
+
 mse.init = function(configs) {
 	$.extend(cfs, configs);
 
-	mse.src.init();
-	mse.src.addSource('imgNotif', 'images/turn_comp.png', 'img');
-	mse.src.addSource('fbBar', 'images/barre/fb.png', 'img');
-	mse.src.addSource('wikiBar', 'images/barre/wiki.png', 'img');
-	mse.src.addSource('wikiBn', 'images/button/wiki.png', 'img');
-	mse.src.addSource('bookBn', 'images/button/book.png', 'img');
-	mse.src.addSource('illuBn', 'images/button/illu.png', 'img');
-	mse.src.addSource('audBn', 'images/button/audIcon.png', 'img');
-	mse.src.addSource('accelerBn', 'images/button/accelere.png', 'img', true);
-	mse.src.addSource('upBn', 'images/button/monter.png', 'img', true);
-	mse.src.addSource('ralentiBn', 'images/button/ralenti.png', 'img', true);
-	mse.src.addSource('downBn', 'images/button/descend.png', 'img', true);
-	mse.src.addSource('playBn', 'images/button/play.png', 'img', true);
-	mse.src.addSource('pauseBn', 'images/button/pause.png', 'img', true);
-	mse.src.addSource('ratImg', 'images/rat.png', 'img');
+	mse.src.addSource('imgNotif', '../images/turn_comp.png', 'img');
+	mse.src.addSource('fbBar', '../images/barre/fb.png', 'img');
+	mse.src.addSource('wikiBar', '../images/barre/wiki.png', 'img');
+	mse.src.addSource('wikiBn', '../images/button/wiki.png', 'img');
+	mse.src.addSource('bookBn', '../images/button/book.png', 'img');
+	mse.src.addSource('illuBn', '../images/button/illu.png', 'img');
+	mse.src.addSource('audBn', '../images/button/audIcon.png', 'img');
+	mse.src.addSource('accelerBn', '../images/button/accelere.png', 'img', true);
+	mse.src.addSource('upBn', '../images/button/monter.png', 'img', true);
+	mse.src.addSource('ralentiBn', '../images/button/ralenti.png', 'img', true);
+	mse.src.addSource('downBn', '../images/button/descend.png', 'img', true);
+	mse.src.addSource('playBn', '../images/button/play.png', 'img', true);
+	mse.src.addSource('pauseBn', '../images/button/pause.png', 'img', true);
+	mse.src.addSource('ratImg', '../images/rat.png', 'img');
 };
 
 
@@ -359,7 +372,7 @@ mse.EventDelegateSystem = function() {
 			}
 		break;
 		}
-
+        
 		var arr = this.listeners[evtName];
 		if(arr) {
 			// No dominate listener
@@ -1458,7 +1471,7 @@ mse.ArticleLayer = function(container, z, param, article) {
 					if(focusy > mse.root.height/2) {
 						var move = new mse.KeyFrameAnimation(this, {
 								frame	: [0, 15],
-								pos		: [[this.offx,this.offy], [this.offx, mse.root.height/2-focusy]]
+								pos		: [[this.offx,this.offy], [this.offx, this.height/2-focusy]]
 							}, 1);
 						move.start();
 					}
@@ -1695,7 +1708,7 @@ $.extend(mse.Game.prototype, {
     },
     start: function() {
     	mse.root.container.evtDeleg.setDominate(this);
-        if(!this.parent) mse.root.gamewindow.loadandstart(this);
+        mse.root.gamewindow.loadandstart(this);
     },
     draw: function(ctx) {},
     end: function() {
@@ -1716,6 +1729,8 @@ mse.GameShower = function() {
 	this.currGame = null;
 	this.globalAlpha = 0;
 	this.state = "DESACTIVE";
+	mse.src.addSource('gameover', '../images/gameover.jpg', 'img', true);
+	this.loseimg = new mse.Image(this, {pos:[0,0]}, 'gameover');
 	this.losetext = new mse.Text(this, {font:'Bold 36px '+mse.configs.font,fillStyle:'#FFF',textBaseline:'middle',textAlign:'center'},'GAME OVER...',true);
 	this.losetext.evtDeleg.addListener('show', new mse.Callback(this.losetext.startEffect, this.losetext, {"typewriter":{speed:2}}));
 	this.passBn = new mse.Button(this, {size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je ne joue plus', 'aideBar');
@@ -1734,6 +1749,7 @@ mse.GameShower = function() {
 	    // Init game shower size and pos
 	    this.setPos(this.currGame.offx, this.currGame.offy);
 	    this.setSize(this.currGame.width, this.currGame.height);
+	    this.loseimg.setSize(this.width-5, this.height-5);
 	    this.losetext.setPos(this.width/2, this.height/2);
 	    this.passBn.setPos(this.currGame.width-115, this.currGame.height-50);
 	    // Init game
@@ -1757,6 +1773,7 @@ mse.GameShower = function() {
 	var cbrestart = new mse.Callback(this.restart, this);
 	this.lose = function() {
 	    this.state = "LOSE";
+	    //mse.fadein(this.loseimg, 5);
 	    this.losetext.evtDeleg.eventNotif('show');
 	    mse.root.evtDistributor.addListener('click', cbrestart, true, this.currGame);
 	};
@@ -1810,6 +1827,7 @@ mse.GameShower = function() {
     	    this.currGame.draw(ctx);
     	}
     	else if(this.state == "LOSE") {
+    	    //this.loseimg.draw(ctx);
     	    ctx.fillStyle = "#000";
     	    ctx.fillRect(this.getX(),this.getY(),this.width-5,this.height-5);
     	    this.losetext.draw(ctx);
@@ -3796,8 +3814,8 @@ mse.CardGraph = function(root, cardParam, txtParam, content, links) {
 // System of script
 (function (mse, $) {
 
-    var defaultEvents = ['click', 'doubleClick', 'longPress', 'move', 'swipe', 'gestureStart', 'gestureUpdate', 'gestureEnd', 'gestureSingle', 'keydown', 'keypress', 'keyup', 'scroll', 'swipeleft', 'swiperight'];
-
+	var defaultEvents = ['click', 'doubleClick', 'longPress', 'move', 'swipe', 'gestureStart', 'gestureUpdate', 'gestureEnd', 'gestureSingle', 'keydown', 'keypress', 'keyup', 'scroll', 'swipeleft', 'swiperight'];
+	
 	mse.Script = function() {
 		this.script = null;
 		this.states = {};

@@ -19,9 +19,9 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
     // If project doesn't exist in session, abondon
     if( array_key_exists($pjname, $_SESSION) && array_key_exists('srcs', $_POST) ) {
         // Read the input from stdin
-        $srcs = $_POST['srcs'];
+        $srcs = stripslashes($_POST['srcs']);
         $pj = $_SESSION[$pjname];
-        $pj->resetSrcs($srcs);
+        $pj->resetSrcs( get_object_vars(json_decode($srcs)) );
     }
 }
 

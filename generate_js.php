@@ -20,6 +20,8 @@ class ProjectGenerator {
     private $startPageSet;
     private $jstr;
     private $coords;
+    private $pjWidth;
+    private $pjHeight;
     
     private static $patterns = array(
         "depth" => "/z\-index:\s*(?P<depth>[\.\-\d]+)/",
@@ -60,12 +62,15 @@ class ProjectGenerator {
     
     function generateJS(){
         if(is_null($this->pj) || is_null($this->pj->getStruct())) return "alert('JS Generation failed')";
+        $this->pjWidth = (int)$this->pj->getWidth();
+        $this->pjHeight = (int)$this->pj->getHeight();
         $this->jstr = "";
         // Initiale Mse system
         $this->jstr .= "initMseConfig();";
         $this->jstr .= "mse.init();";
+        //$this->jstr .= "mse.autoFitToWindow();";
         // Initiale root
-        $this->jstr .= "var root = new mse.Root('".$this->pj->getName()."',".$this->encodedCoord($this->pj->getWidth()).",".$this->encodedCoord($this->pj->getHeight()).",'".$this->pj->getOrientation()."');";
+        $this->jstr .= "var root = new mse.Root('".$this->pj->getName()."',".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight).",'".$this->pj->getOrientation()."');";
         $this->autoid = 0;
         $startPageSet = false;
         $this->jstr .= "var temp = {};";
@@ -254,7 +259,7 @@ class ProjectGenerator {
                 
             case "wiki":
                 $this->jstr .= "wikis.$name=new mse.WikiLayer();";
-                foreach( $src['cards'] as $card ){
+                /*foreach( $src['cards'] as $card ){
                     if( $card['type'] == "text" ) {
                         $this->jstr .= "wikis.$name.addTextCard();";
                         foreach($card['sections'] as $section) {
@@ -267,6 +272,20 @@ class ProjectGenerator {
                     else if( $card['type'] == "img" ){
                         $this->jstr .= "wikis.$name.addImage('".$card['image']."', '".$card['legend']."');";
                     }
+                }*/
+                foreach( $src->cards as $card ){
+                    if( $card->type == "text" ) {
+                        $this->jstr .= "wikis.$name.addTextCard();";
+                        foreach($card->sections as $section) {
+                            if($section->type == "link")
+                                $this->jstr .= "wikis.$name.textCard.addLink('".$section->title."', '".$section->content."');";
+                            else if($section->type == "text")
+                                $this->jstr .= "wikis.$name.textCard.addSection('".$section->title."', '".$section->content."');";
+                        }
+                    }
+                    else if( $card->type == "img" ){
+                        $this->jstr .= "wikis.$name.addImage('".$card->image."', '".$card->legend."');";
+                    }
                 }
                 break;
             }
@@ -278,7 +297,7 @@ class ProjectGenerator {
         $this->jstr .= "var objs = {};";
         
         // Generate pages
-        $pages = get_object_vars($this->pj->getStruct());
+        $pages = $this->pj->getStruct();
         foreach( $pages as $id => $page ) {
             $this->addPage($id, $page);
         }
@@ -355,7 +374,7 @@ class ProjectGenerator {
         else $parent = "null";
         // Init page
         $page = "pages.$id";
-        $this->jstr .= $page."=new mse.BaseContainer($parent,{size:[".$this->encodedCoord($this->pj->getWidth()).",".$this->encodedCoord($this->pj->getHeight())."]});";
+        $this->jstr .= $page."=new mse.BaseContainer($parent,{size:[".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight)."]});";
         
         // Layers
         foreach( $pagenode as $layer ) {
@@ -386,7 +405,7 @@ class ProjectGenerator {
         $params = $this->formatParams($style);
         if(!array_key_exists('size', $params[0])) {
             $params[1] = substr($params[1], 0, -1);
-            $params[1] .= ',"size":['.$this->encodedCoord($this->pj->getWidth()).','.$this->encodedCoord($this->pj->getHeight()).']}';
+            $params[1] .= ',"size":['.$this->encodedCoord($this->pjWidth).','.$this->encodedCoord($this->pjHeight).']}';
         }
         
         if($type == 'Layer') {
@@ -401,7 +420,7 @@ class ProjectGenerator {
             $this->jstr .= "$layer=new mse.ArticleLayer($page,$depth,".$params[1].",null);";
             
             if(array_key_exists('size', $params[0])) $width = $params[0]['size'][0];
-            else $width = $this->pj->getWidth();
+            else $width = $this->pjWidth;
             $lineHeight = $params[0]['lineHeight'];
             // Objs
             $objs = $layernode->div;
