@@ -55,22 +55,18 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
         switch($type) {
         case "image":
         case "audio":
-        case "game":/*
+        case "game":
             // Direct url link
-            if( strripos($encodedStr, "http://") !== false ) {
-                $pj->addSrc($name, $type, $encodedStr);
-            }
-            // Relative url link
-            else if( strripos($encodedStr, "./") !== false ) {
-                $pj->addSrc($name, $type, $encodedStr);
+            if( strripos($encodedStr, "http://") !== false || strripos($encodedStr, "./") !== false ) {
+                echo "SUCCESS";
             }
             // File content coded
-            else {*/
-            $filename = saveBase64Src($name, $encodedStr, $pj);
-            if(!is_null($filename))
-                echo $pj->getSrcSavePath($type).$filename;
+            else {
+                $filename = saveBase64Src($name, $encodedStr, $pj);
+                if(!is_null($filename))
+                    echo $pj->getSrcSavePath($type).$filename;
                 //if(!is_null($filename)) $pj->addSrc($name, $type, $pj->getRelatSrcPath($type).$filename);
-            //}
+            }
         break;
         case "anime":
             $anime = json_decode(stripslashes($encodedStr));

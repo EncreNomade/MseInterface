@@ -22,6 +22,7 @@ class ProjectGenerator {
     private $coords;
     private $pjWidth;
     private $pjHeight;
+    private $scriptExt;
     
     private static $patterns = array(
         "depth" => "/z\-index:\s*(?P<depth>[\.\-\d]+)/",
@@ -45,6 +46,21 @@ class ProjectGenerator {
     function ProjectGenerator($project) {
         $this->pj = $project;
         $this->coords = array();
+        $this->scriptExt = array();
+    }
+    
+    function putAllinContentJS() {
+        $path = $this->pj->getRelatJSPath();
+        $js = $this->generateJS();
+        // System mse
+        file_put_contents($path, file_get_contents("projects/mse.js"));
+        // External js (game)
+        foreach($this->scriptExt as $extjs) {
+            if(file_exists($extjs))
+                file_put_contents($path, file_get_contents($extjs), FILE_APPEND);
+        }
+        // Project content
+        file_put_contents($path, $js, FILE_APPEND);
     }
     
     function encodedCoord($number){
@@ -91,12 +107,11 @@ class ProjectGenerator {
                     $src = preg_replace("/\S+(\/images\/)/", '.$1', $src, 1);
                 }
                 else {$t = "aud";$preload = "false";}
-                $this->jstr .= "mse.src.addSource('$name','".$src."','$t',$preload);";
+                $this->jstr .= "mse.src.addSource('$name','$src','$t',$preload);";
                 break;
                 
             case "game":
-// ADD source js file to html
-                $this->jstr .= "games.$name=new $name();";
+                array_push($this->scriptExt, $src);
                 break;
                 
             case "anime":
@@ -648,13 +663,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
     if(array_key_exists($pjName, $_SESSION)) {
         $pj = $_SESSION[$pjName];
         $generator = new ProjectGenerator($pj);
-        $js = $generator->generateJS();
-        
-        $path = $pj->getRelatJSPath();
-        // System mse
-        file_put_contents($path, file_get_contents("projects/mse.js"));
-        // Project content
-        file_put_contents($path, $js, FILE_APPEND);
+        $generator->putAllinContentJS();
     }
     else echo "Fail to generate project.";
 }

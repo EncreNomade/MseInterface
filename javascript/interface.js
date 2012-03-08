@@ -753,7 +753,7 @@ function addJsSrc(evt) {
     var content = evt.target.result;
     var name = curr.gamename;
     var exp = "/"+name+"\\s*=\\s*function/";
-    if(game.content.search(eval(exp)) >= 0) {
+    if(content.search(eval(exp)) >= 0) {
         srcMgr.addSource('game', content, name);
     }
     else alert("Échec d'ajouter le jeu car il n'est pas trouvé dans le fichier.");
@@ -1429,11 +1429,8 @@ function dropToInsertZone(e) {
 	
 	var id = e.dataTransfer.getData('Text');
 	var data = srcMgr.getSource(id);
-	if(id.match(/\w*image/)) {
-	    if(data == null) return;
-	}
-	else if(id.match(/\w*game/)) {
-	    if(!data || !data.name || !data.content) return;
+	if(id.match(/\w*image/) || id.match(/\w*game/)) {
+	    if(!data) return;
 	}
 	else return;
 	// Append to elem zone

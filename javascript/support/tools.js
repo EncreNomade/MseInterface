@@ -287,7 +287,8 @@ SourceManager.prototype = {
 	dataExtension: function(id) {
 	    if(!this.sources[id] || typeof this.sources[id] != "string") return null;
 	    var res = this.sources[id].match(this.extCheck);
-	    if(res != null && (res[1] == "image" || res[1] == "audio")) return res[2];
+	    if(res != null && (res[1] == "image" || res[1] == "audio" || res[1] == "game")) 
+	        return res[2];
 	    else return null;
 	},
 	realName: function(id) {
@@ -441,7 +442,7 @@ SourceManager.prototype = {
 					'top': 2-res.height()+'px'});
 			return res;*/
 		case 'game':
-		    var name = this.sources[id].name;
+		    var name = this.realName(id);
 			var game = $('<div class="game" name="'+name+'">');
 			game.deletable();
 

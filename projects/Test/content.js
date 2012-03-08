@@ -574,7 +574,7 @@ mse.UIObject.prototype = {
 	
 	// Container
 	getContainer: function() {
-		if(this instanceof mse.BaseContainer || this instanceof mse.CardContainer) return this;
+		if(this instanceof mse.BaseContainer) return this;
 		else if(this.parent) return this.parent.getContainer();
 		else return mse.root.container;
 	},
@@ -1051,7 +1051,7 @@ $.extend(mse.Layer.prototype, {
 		return null;
 	},
 	delSelf: function() {
-		if(this.parent instanceof mse.BaseContainer || this.parent instanceof mse.CardContainer) this.parent.delLayer(this.name);
+		if(this.parent instanceof mse.BaseContainer) this.parent.delLayer(this.name);
 	},
 	
 	// Activate or desactivate the layer
@@ -1125,7 +1125,7 @@ mse.Text = function(parent, param, text, styled) {
 		
 	this.startEffect = function (dictEffectAndConfig) {
 		this.styled = true;
-		this.currentEffect = mse.initTextEffect(dictEffectAndConfig,this);
+		if(mse.initTextEffect) this.currentEffect = mse.initTextEffect(dictEffectAndConfig,this);
 	};
 	this.endEffect = function (){
 		this.currentEffect = null;
@@ -1575,7 +1575,7 @@ $.extend(mse.Image.prototype, {
         }
     },
     startEffect: function (dictEffectAndConfig) {
-    	this.currentEffect = mse.initImageEffect(dictEffectAndConfig,this);
+    	if(mse.initImageEffect) this.currentEffect = mse.initImageEffect(dictEffectAndConfig,this);
     },
     endEffect: function (){
     	this.currentEffect = null;
@@ -3091,730 +3091,6 @@ window.mse = mse;
 
 })(window, $);
 
-
-
-
-(function (mse) {
-
-var cfs = mse.configs;
-
-var tTransition = 20;
-
-// Root object for card system on mobile, a canvas Dom element
-mse.CardRootMob = function(id, width, height, orientation) {
-	// Super constructor
-	mse.Root.call(this, id, width, height, orientation);
-	
-	this.precBg = null;
-	
-	// Move event handler
-	this.gestStartHandler = function(e) {this.dir = 'undefined';};
-	this.gestEndHandler = function(e) {
-		var dest;
-		switch(this.dir){
-		case 'left':
-			if(e.listX[0]-e.listX[e.listX.length-1] > 150)
-				dest = this.container.right;
-			break;
-		case 'right':
-			if(e.listX[e.listX.length-1]-e.listX[0] > 150)
-				dest = this.container.left;
-			break;
-		case 'up':
-			if(e.listY[0]-e.listY[e.listY.length-1] > 150)
-				dest = this.container.down;
-			break;
-		case 'down':
-			if(e.listY[e.listY.length-1]-e.listY[0] > 150)
-				dest = this.container.up;
-			break;
-		}
-		this.dir = 'undefined';
-		if(!dest) {
-			// Return animation
-			var x = this.container.getX();
-			var y = this.container.getY();
-			var ffeedback = new mse.KeyFrameAnimation(this.container, {
-					frame	: [0, 12],
-					pos		: [[x,y], [0,0]]
-				}, 1);
-			ffeedback.start();
-		}
-		else {
-			// Switch animation
-			this.setContainer(dest);
-			var switchAnim = new mse.KeyFrameAnimation(dest, {
-					frame	: [0, 12],
-					pos		: [[dest.getX(),dest.getY()], [0,0]]
-				}, 1);
-			switchAnim.start();
-		}
-	};
-	this.gestUpdateHandler = function(e) {
-		var length = e.listX.length;
-		// Direction detection
-		if(length == 5) {
-			// Calcul angle between p(length-1) and p0, angle [-180, 180]
-			var angle = mseAngleForLine(e.listX[0], e.listY[0], e.offsetX, e.offsetY);
-			// Direction detection gluton
-			if(angle>-45 && angle<45) this.dir = 'right';
-			else if(angle>45 && angle<135) this.dir = 'down';
-			else if(angle<-45 && angle>-135) this.dir = 'up';
-			else this.dir = 'left';
-			for(var i = 1; i < length; i++){
-				switch(this.dir) {
-				case 'right':
-					if(e.listX[i] < e.listX[i-1]) this.dir = 'undefined';break;
-				case 'left':
-					if(e.listX[i] > e.listX[i-1]) this.dir = 'undefined';break;
-				case 'up':
-					if(e.listY[i] > e.listY[i-1]) this.dir = 'undefined';break;
-				case 'down':
-					if(e.listY[i] < e.listY[i-1]) this.dir = 'undefined';break;
-				}
-			}
-		}
-		// Move
-		else if(this.dir!='undefined' && length > 5) {
-			switch(this.dir) {
-			case 'right':case 'left':
-				this.container.setPos(e.offsetX-e.listX[0], 0);break;
-			case 'up':case 'down':
-				this.container.setPos(0, e.offsetY-e.listY[0]);break;
-			}
-		}
-	};
-	
-	// Switch by move event of container Version realtime
-	this.evtDistributor.addListener('gestureStart', new mse.Callback(this.gestStartHandler, this));
-	this.evtDistributor.addListener('gestureUpdate', new mse.Callback(this.gestUpdateHandler, this));
-	this.evtDistributor.addListener('gestureEnd', new mse.Callback(this.gestEndHandler, this));
-	
-	this.transOver = function() {
-		this.transOrigin = null;
-	};
-	
-	this.draw = function() {
-		this.ctx.clearRect(0, 0, this.width, this.height);
-		if(this.container) {
-			if(this.container.bg != this.precBg) {
-				this.transOrigin = this.precBg;
-				mse.transition(this.precBg,this.container.bg,20,
-							   new mse.Callback(this.transOver,this));
-			}
-			if(this.container.bg) this.container.bg.draw(this.ctx);
-			if(this.transOrigin) this.transOrigin.draw(this.ctx);
-			// Draw neighbor
-			var x = this.container.getX();
-			var y = this.container.getY();
-			if(x<-20 && this.container.right) {
-				this.container.right.setX(x+20+this.container.getWidth());
-				this.container.right.draw(this.ctx);
-			}
-			else if(x>20 && this.container.left){
-				this.container.left.setX(x-20-this.container.left.getWidth());
-				this.container.left.draw(this.ctx);
-			}
-			else if(y<-20 && this.container.down) {
-				this.container.down.setY(y+20+this.container.getHeight());
-				this.container.down.draw(this.ctx);
-			}
-			else if(y>20 && this.container.up) {
-				this.container.up.setY(y-20-this.container.up.getHeight());
-				this.container.up.draw(this.ctx);
-			}
-			this.container.draw(this.ctx);
-			this.precBg = this.container.bg;
-		}
-	};
-};
-
-
-// Root object for card system on desktop, a canvas Dom element
-mse.CardRoot = function(id, width, height) {
-	// Super constructor
-	mse.Root.call(this, id, width, height);
-	this.anime = false;
-	this.precBg = null;
-	
-	this.setAnime = function(a){this.anime = a;};
-	this.clickHandler = function(e) {
-		if(!this.container || this.anime) return;
-		var x=e.offsetX, y=e.offsetY, w=this.container.width, h=this.container.height;
-		if(this.container.inObj(x, y)) return;
-		// Switch Container
-		else if(y > this.height/2-0.25*h && y < this.height/2+0.25*h){
-			if(this.container.right && x>this.width/2+w/2 && x<this.width/2+w) {
-				this.anime = true;
-				var menu = this.container.getLayer('menu');
-				if(menu) {
-					menu.hide();
-					menu.parent = this.container.right;
-				}
-				this.setContainer(this.container.right);
-				// Original right card
-				var middle = new mse.KeyFrameAnimation(this.container, {
-					frame	: [0, tTransition],
-					scale	: [0.5, 1],
-					pos		: [[this.rightx, this.sidey], [this.middlex, this.middley]],
-					opacity	: [0.5, 1]
-					}, 1);
-				// Original middle card
-				var left = new mse.KeyFrameAnimation(this.container.left, {
-					frame	: [0, tTransition],
-					scale	: [1, 0.5],
-					pos		: [[this.middlex, this.middley], [this.leftx, this.sidey]],
-					opacity	: [1, 0.5]
-					}, 1);
-				// Original at the right of the right card
-				if(this.container.right) {
-					this.container.right.setPos(this.rightx, this.sidey);
-					this.container.right.scale = 0.5;
-					var right = new mse.KeyFrameAnimation(this.container.right, {
-							frame	: [0, tTransition],
-							opacity	: [0, 0.5]
-						}, 1);
-					right.start();
-				}
-				left.evtDeleg.addListener('end', new mse.Callback(this.setAnime, this, false), false);
-				middle.start();
-				left.start();
-			}
-			else if(this.container.left && x<this.width/2-w/2 && x>this.width/2-w) {
-				this.anime = true;
-				var menu = this.container.getLayer('menu');
-				if(menu) {
-					menu.hide();
-					menu.parent = this.container.left;
-				}
-				this.setContainer(this.container.left);
-				// Original middle card, move to right
-				var right = new mse.KeyFrameAnimation(this.container.right, {
-					frame	: [0, tTransition],
-					scale	: [1, 0.5],
-					pos		: [[this.middlex, this.middley], [this.rightx, this.sidey]],
-					opacity	: [1, 0.5]
-					}, 1);
-				// Original left card, move to middle
-				var middle = new mse.KeyFrameAnimation(this.container, {
-					frame	: [0, tTransition],
-					scale	: [0.5, 1],
-					pos		: [[this.leftx, this.sidey], [this.middlex, this.middley]],
-					opacity	: [0.5, 1]
-					}, 1);
-				if(this.container.left) {
-					this.container.left.setPos(this.leftx, this.sidey);
-					this.container.left.scale = 0.5;
-					var left = new mse.KeyFrameAnimation(this.container.left, {
-							frame	: [0, tTransition],
-							opacity	: [0, 0.5]
-						}, 1);
-					left.start();
-				}
-				right.evtDeleg.addListener('end', new mse.Callback(this.setAnime, this, false), false);
-				middle.start();
-				right.start();
-			}
-		}
-	};
-	
-	this.evtDistributor.addListener('click', new mse.Callback(this.clickHandler, this));
-
-	this.initContainer = function(container) {
-		this.pleftx = this.leftx; this.pmiddlex = this.middlex; this.prightx = this.rightx; this.pmiddley = this.middley; this.psidey = this.sidey;
-		this.leftx = this.width-1.8*container.width;
-		this.middlex = (this.width-container.width)/2;
-		this.rightx = this.width+0.8*container.width;
-		this.middley = (this.height-container.height)/2;
-		this.sidey = this.height-0.5*container.height;
-		
-		container.setPos(this.middlex, this.middley);
-		container.scale = 1;
-		container.globalAlpha = 1;
-		if(container.right) {
-			container.right.setPos(this.rightx, this.sidey);
-			container.right.scale = 0.5;
-			container.right.globalAlpha = 0.5;
-		}
-		if(container.left){
-			container.left.setPos(this.leftx, this.sidey);
-			container.left.scale = 0.5;
-			container.left.globalAlpha = 0.5;
-		}
-	};
-	this.poseCard = function(card) {
-		if(this.dest) return;
-		mse.slidein(card, 20, 
-			[[this.width,this.middley],[this.middlex,this.middley]],
-			new mse.Callback(this.setContainer, this, card));
-		mse.fadeout(this.container, 20);
-		if(this.container.left) mse.fade(this.container.left, 20, 0.5, 0);
-		if(this.container.right) mse.fade(this.container.right, 20, 0.5, 0);
-		this.dest = card;
-	};
-	this.revealCard = function(card) {
-		if(this.dest) return;
-		mse.slideout(this.container, 20, 
-			[[this.middlex,this.middley],[-this.container.width,this.middley]],
-			new mse.Callback(this.setContainer, this, card));
-		mse.fadein(card, 20);
-		if(card.left) mse.fade(card.left, 20, 0, 0.5);
-		if(card.right) mse.fade(card.right, 20, 0, 0.5);
-		this.dest = card;
-	};
-	this.dropdown = function() {
-		if(this.dest || !this.container.up) return;
-		this.initContainer(this.container.up);
-		mse.slidein(this.container.up, 20,
-			[[this.middlex,-this.container.height],[this.middlex,this.middley]],
-			new mse.Callback(this.setContainer, this, this.container.up));
-		mse.slideout(this.container, 20,
-			[[this.pmiddlex,this.pmiddley],[this.pmiddlex,this.height]]);
-		if(this.container.left) mse.slideout(this.container.left, 20,
-			[[this.pleftx,this.psidey],[this.pleftx,this.height]]);
-		if(this.container.right) mse.slideout(this.container.right, 20,
-			[[this.prightx,this.psidey],[this.prightx,this.height]]);
-		this.dest = this.container.up;
-	};
-	this.pullup = function() {
-		if(this.dest || !this.container.down) return;
-		this.initContainer(this.container.down);
-		mse.slidein(this.container.down, 20,
-			[[this.middlex,this.height],[this.middlex,this.middley]],
-			new mse.Callback(this.setContainer, this, this.container.down));
-		mse.slideout(this.container, 20,
-			[[this.pmiddlex,this.pmiddley],[this.pmiddlex,-this.container.height]]);
-		if(this.container.left) mse.slideout(this.container.left, 20,
-			[[this.pleftx,this.psidey],[this.pleftx,-this.container.height]]);
-		if(this.container.right) mse.slideout(this.container.right, 20,
-			[[this.prightx,this.psidey],[this.prightx,-this.container.height]]);
-		this.dest = this.container.down;
-	};
-	this.transOver = function() {
-		this.transOrigin = null;
-	};
-	
-	this.draw = function() {
-	    this.ctx.globalAlpha = 1;
-		this.ctx.clearRect(0, 0, this.width, this.height);
-		if(this.container) {
-			if(this.container.bg != this.precBg) {
-				this.transOrigin = this.precBg;
-				mse.transition(this.precBg,this.container.bg,20,
-							   new mse.Callback(this.transOver,this));
-			}
-			if(this.container.bg) this.container.bg.draw(this.ctx);
-			if(this.transOrigin) this.transOrigin.draw(this.ctx);
-			
-			this.ctx.save();
-			// Draw neighbor
-			if(this.container.right) this.container.right.draw(this.ctx);
-			if(this.container.left) this.container.left.draw(this.ctx);
-			
-			this.container.draw(this.ctx);
-			
-			if(this.dest) {
-				// Draw neighbor
-				if(this.dest.right) this.dest.right.draw(this.ctx);
-				if(this.dest.left) this.dest.left.draw(this.ctx);
-				this.dest.draw(this.ctx);
-			}
-			this.ctx.restore();
-			this.precBg = this.container.bg;
-		}
-	};
-};
-
-
-
-mse.CardContainer = function(root, param, orientation) {
-	// Super constructor
-	mse.BaseContainer.call(this, root, param, orientation);
-	
-	// Add Card back mask
-	this.addLayer('back', new mse.Mask(this, {pos:[15,15], size:[this.width-30,this.height-30], cornerRatio:5, fillStyle:'rgba(48,48,48,0.85)'}, 1));
-	
-	this.up = null;
-	this.down = null;
-	this.right = null;
-	this.left = null;
-	this.front = null;
-	this.end = null;
-	
-	this.firstShow = false;
-};
-extend(mse.CardContainer, mse.BaseContainer);
-$.extend(mse.CardContainer.prototype, {
-    logic: function(delta) {
-    	if(!this.firstShow) {
-    		this.firstShow = true;
-    		this.evtDeleg.eventNotif('show', null);
-    		for(var i in this._layers) 
-    			this._layers[i].evtDeleg.eventNotif('show');
-    	}
-    	
-    	if(MseConfig.mobile) {
-    		if(this.normal && MseConfig.orientation!=this.orientation)
-    			this.orientChange(MseConfig.orientation);
-    		else if(!this.normal && MseConfig.orientation==this.orientation)
-    			this.orientChange(MseConfig.orientation);
-    	}
-    	if(this.normal) {
-    		if(this.deleg) this.deleg.logic(delta);
-    		else {
-    			for(var i in this._layers) {
-    				this._layers[i].logic(delta);
-    			}
-    		}
-    	}
-    },
-    toString: function() {
-    	return "[object CardContainer]";
-    }
-});
-
-
-mse.createLink = function(relation, begin, end) {
-	if( !(begin instanceof mse.CardContainer) || !(end instanceof mse.CardContainer) )
-		return;
-	switch(relation) {
-	case 'leftright':
-		begin.right = end;
-		end.left = begin;
-		break;
-	case 'updown':
-		begin.down = end;
-		end.up = begin;
-		break;
-	case 'down': begin.down = end;break;
-	case 'up': begin.up = end;break;
-	/*
-	case 'frontback':
-		begin.back = end;
-		end.front = begin;
-		begin.evtDeleg.addListener('dblClick', begin.switchTo, begin);
-		break;
-		*/
-	}
-};
-
-
-
-mse.ArticleContent = function(content, param, links) {
-	if(!param.font) {mseLog('Parameter Error', 'No font defined!');return null;}
-	//this.phraseIndexs = [];
-	this.list = [];
-	
-	// Links index
-	var curr = 0;
-	
-	var ctx = mse.root.ctx;
-	ctx.font = param.font;
-	var maxM = Math.floor( param.size[0]/ctx.measureText('A').width );
-	var arr = content.split('\n');
-	for(var i = 0; i < arr.length; i++) {
-		//this.phraseIndexs[i] = this.list.length;
-		var begin = this.list.length;
-		for(var j = 0; j < arr[i].length;) {
-			// Find the index of next line
-			var next = checkNextLine(ctx, arr[i].substr(j), maxM, param.size[0]);
-			this.list.push( new mse.Text( null, {size:[param.size[0], param.lineHeight]}, arr[i].substr(j, next) ) );
-			j += next;
-		}
-		// Find the link
-		while(curr < links.length && links[curr].index == i) {
-			if(links[curr].src) {
-				for(j = begin; j < this.list.length; j++) {
-					var offset = this.list[j].text.indexOf(links[curr].src);
-					if( offset >= 0 ) {
-						links[curr].index = j;
-						links[curr].offset = offset;
-						this.list[j].link = links[curr];
-						break;
-					}
-				}
-			}
-			else links[curr].index = this.list.length-1;
-	
-			curr++;
-		}
-		this.list.push( new mse.UIObject(null, {size:[this.width, param.lineHeight*0.6]}) );
-	}
-	links.splice(curr, links.length-curr);
-};
-
-
-
-mse.CardUILayer = function(container, z, param) {
-	param.pos = [0,0], param.size = [container.width, container.height];
-	mse.Layer.call(this, container, z, param);
-	
-	var border = new mse.UIObject(this, param);
-	border.draw = function(ctx) {
-		var x = this.getX(), y = this.getY(), w = this.width, h = this.height;
-		ctx.strokeStyle = '#ececec';
-		ctx.lineWidth = 5;
-		ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0; 
-		ctx.shadowBlur = 10; ctx.shadowColor = '#000000';
-		ctx.strokeRoundRect(x+12.5,y+12.5, w-25,h-25, 10);
-	};
-	this.addObject(border);
-	
-	// Button wiki
-	if(param.wiki) {
-		var w = new mse.Image(this, param.wiki, 'wikiBn');
-		this.getContainer().evtDeleg.addListener(
-				'click', 
-				new mse.Callback(this.getWiki, this), 
-				true, w);
-		this.addObject(w);
-	}
-	// Button book
-	if(param.book) {
-		var b = new mse.Image(this, param.book, 'bookBn');
-		this.getContainer().evtDeleg.addListener(
-				'click', 
-				new mse.Callback((param.up?this.getBookUp:this.getBookDown), this), 
-				true, b);
-		this.addObject(b);
-	}
-	// Button illustration
-	if(param.illu) {
-		var i = new mse.Image(this,param.illu,'illuBn');
-		this.getContainer().evtDeleg.addListener(
-				'click', 
-				new mse.Callback(this.getIllu, this), 
-				true, i);
-		this.addObject(i);
-	}
-};
-extend(mse.CardUILayer, mse.Layer);
-$.extend(mse.CardUILayer.prototype, {
-    getBookDown: function() {mse.root.pullup();},
-    getBookUp: function() {mse.root.dropdown();},
-    getIllu: function() {mse.root.pullup();},
-    getWiki: function() {mse.root.dropdown();},
-    toString: function() {
-	    return "[object mse.CardUILayer]";
-    }
-});
-
-
-
-mse.TextLayer = function(container, z, param, content, begin, end) {
-	mse.Layer.call(this, container, z, param);
-	
-	this.content = content; this.begin = begin; this.end = end;
-};
-extend(mse.TextLayer, mse.Layer);
-$.extend(mse.TextLayer.prototype, {
-    draw: function(ctx){
-    	this.configCtx(ctx);
-    	
-    	var x = this.getX();
-    	var y = this.getY();
-    	for(var i = this.begin; i < this.end; i++) {
-    		this.content.list[i].draw(ctx, x, y);
-    		y += this.content.list[i].height;
-    	}
-    }
-});
-
-
-
-mse.CardGraph = function(root, cardParam, txtParam, content, links) {
-	if(!txtParam.lineHeight) txtParam.lineHeight = Math.round(1.4*checkFontSize(txtParam.font));
-	// Init
-	var width = cardParam.size[0], height = cardParam.size[1];
-	txtParam.pos = [25,55]; txtParam.size = [width-50,height-80];
-	var maxW = width*1.5, maxH = height*1.1;
-	this.textCards = new Array();
-	this.gameCards = new Array();
-	this.illuCards = new Array();
-	this.wikiCards = new Array();
-	var illuBnParam = {pos:[width-55,height-45],size:[40,30]};
-	var bookUpParam = {pos:[15,15],size:[40,30]};
-	var wikiBnParam = {pos:[width-55,15],size:[40,30]};
-	this.currbg = null;
-	
-	// List of line of text
-	this.content = new mse.ArticleContent(content, txtParam, links);
-	// Number of lines in one card
-	var lines = Math.floor(0.9 * height / txtParam.lineHeight);
-	// Create card graph of article pages
-	var nbline = this.content.list.length;
-	var prev = null; var begin = 0;
-	// Links index
-	var l = 0;
-	while(begin < nbline) {
-		// Create Cards
-		var curr = new mse.CardContainer(null, cardParam, 'portrait');
-		if(begin == 0) this.entry = curr;
-		
-		var end = (begin+lines>nbline) ? nbline-1 : begin+lines;
-		for(var i = end; i > begin; i--) {
-			if(!this.content.list[i].text) {
-				end = i+1; break;
-			}
-		}
-		
-		// Solve Links
-		var wiki = false, illu = false, game = false;
-		var lastWiki = null, lastIllu = null;
-		while(l < links.length && end > links[l].index) {
-			var lk = links[l].link;
-			switch(links[l].type) {
-			case 'fb':
-				break;
-			case 'wiki':
-				if(!lk) break;
-				lk.bg = this.currbg;
-				// Link wiki card
-				if(!wiki) mse.createLink('updown', lk, curr);   // Link to up
-				else {
-					mse.createLink('leftright', lastWiki, lk);	// Link to right
-					mse.createLink('down', lk, curr);			// Link down to book
-				}
-				lastWiki = lk;
-				wiki = true;
-				this.wikiCards.push(lk);break;
-			case 'illu':
-				// Create illu card
-				var imgw = links[l].width, imgh = links[l].height;
-				// Find the right scale
-				if(maxW*imgh/imgw > maxH) var scale = maxH/imgh;
-				else var scale = maxW/imgw;
-				// Container
-				var c = new mse.CardContainer(null, {size:[scale*imgw+30, scale*imgh+30]}, 'portrait');
-				// UI Layer
-				c.addLayer('ui', new mse.CardUILayer(c, 5, {book:bookUpParam,up:true}));
-				// Image Layer
-				var img = new mse.Image(c, {pos:[15,15],size:[scale*imgw, scale*imgh]}, lk);
-				img.zid = 2;
-				c.addLayer('illu', img);
-				links[l].link = lk = c;
-				// Back
-				lk.bg = this.currbg;
-				// Link illu card
-				if(!illu) mse.createLink('updown', curr, lk);   // Link to bottom
-				else {
-					mse.createLink('leftright', lastIllu, lk);	// Link to right
-					mse.createLink('up', lk, curr);			// Link down to book
-				}
-				lastIllu = lk;
-				illu = true;
-				this.illuCards.push(lk);break;
-			case 'game':
-				// Break the text
-				end = links[l].index+1;
-				game = true;
-				// Card
-				var gameCard = new mse.CardContainer(null, cardParam, 'portrait');
-				// UI Layer
-				gameCard.addLayer('ui', new mse.CardUILayer(gameCard, 5, {}));
-				// Game Layer
-				gameLayer = new mse.Layer(gameCard, 3, {size:cardParam.size});
-				gameCard.addLayer('game', gameLayer);
-				lk.addTo(gameLayer);
-				// Back
-				gameCard.bg = this.currbg;
-				// Insert Card
-				mse.createLink('leftright', curr, gameCard);
-				this.gameCards.push(gameCard);break;
-			case 'anime':
-				// Add anime layer to top of current container
-				curr.addLayer('anime', lk);
-				lk.parent = curr;
-				break;
-			case 'audio':
-				// Link the audio button click listener to container
-				curr.evtDeleg.addListener('click', new mse.Callback(lk.play, lk), true, this.content.list[links[l].index]);
-				break;
-			case 'background':
-				this.currbg = lk;
-				break;
-			}
-			l++;
-		}
-		// Add UI layer
-		curr.addLayer('ui', new mse.CardUILayer(curr, 5, {'wiki':(wiki?wikiBnParam:null),'illu':(illu?illuBnParam:null)}));
-		// Add text layer
-		curr.addLayer('txt', new mse.TextLayer(curr, 2, txtParam, this.content, begin, end));
-		// Set background
-		curr.bg = this.currbg;
-		
-		if(prev) mse.createLink('leftright', prev, curr);
-		this.textCards.push(curr);
-		if(game) prev = gameCard;
-		else prev = curr;
-		begin = end;
-	}
-	
-	// Page A suivre
-	var suivre = new mse.CardContainer(null, cardParam, 'portrait');
-	// UI Layer
-	suivre.addLayer('ui', new mse.CardUILayer(suivre, 5, {}));
-	// Text
-	var txtLayer = new mse.Layer(suivre, 2, {pos:[0,0],size:cardParam.size});
-	txtLayer.addObject(new mse.Text(txtLayer, {pos:[width/2, height/2],textBaseline:'middle',textAlign:'center',font:'italic 28px '+cfs.font,fillStyle:'#FFF'}, 'À Suivre...', true));
-	suivre.addLayer('1', txtLayer);
-	suivre.bg = curr.bg;
-	mse.createLink('leftright', curr, suivre);
-	
-	this.enter = function() {
-		mse.root.initContainer(this.entry);
-		mse.root.setContainer(this.entry);
-	};
-	this.insertToLeft = function(nouveau, exist) {
-		if(exist == this.entry)
-			this.entry = nouveau;
-		else if(exist.left)
-			mse.createLink('leftright', exist.left, nouveau);
-		mse.createLink('leftright', nouveau, exist);
-	};
-	
-	this.search = function(nb) {
-		if(nb < 0) return null;
-		for(var i = 0; i < this.textCards.length; i++) {
-			if(this.textCards[i].getLayer('txt').begin > nb)
-				return i-1;
-		}
-		return null;
-	};
-	// Set the back of the text cards between begin and end(end exclus)
-	this.setBackground = function(back, begin, end) {
-		if(begin < 0) return;
-		if(!end || end < begin || end > this.textCards.length) 
-			end = this.textCards.length;
-		var card, tmp;
-		for(var i = begin; i < end; i++) {
-			card = this.textCards[i];
-			card.bg = back;
-			tmp = card.up;
-			if(tmp) {
-				tmp.bg = back;
-				while(tmp = tmp.right) tmp.bg = back;
-			}
-			tmp = card.down;
-			if(tmp) {
-				tmp.bg = back;
-				while(tmp = tmp.right) tmp.bg = back;
-			}
-		}
-		for(i = 0; i < this.gameCards.length; i++)
-			if(tmp = this.gameCards[i].left) this.gameCards[i].bg = tmp.bg;
-	};
-};
-
-
-
-})(mse);
-
-
-
-
-
-
 // System of script
 (function (mse, $) {
 
@@ -3885,4 +3161,576 @@ mse.CardGraph = function(root, cardParam, txtParam, content, links) {
     }
 
 
-})(window, mse);var coords = JSON.parse('{"cid0":800,"cid1":600,"cid2":-1.25,"cid3":-2.5,"cid4":20,"cid5":360,"cid6":220,"cid7":0,"cid8":151.25,"cid9":188.75,"cid10":66.25,"cid11":61.25,"cid12":330,"cid13":235,"cid14":27.5,"cid15":187.5,"cid16":245,"cid17":16.5,"cid18":231.25,"cid19":181.25,"cid20":366.25,"cid21":51.25}');initMseConfig();mse.init();function createbook(){var root = new mse.Root('Test',coords.cid0,coords.cid1,'portrait');var temp = {};var animes={};var games={};var wikis={};mse.src.addSource('src0_image','./images/src0_image.jpeg','img',true);mse.src.addSource('src1_image','./images/src1_image.jpeg','img',true);mse.src.addSource('src2_image','./images/src2_image.jpeg','img',true);mse.src.addSource('src3_image','./images/src3_image.png','img',true);mse.src.addSource('src4_image','./images/src4_image.png','img',true);wikis.sac_wiki=new mse.WikiLayer();wikis.sac_wiki.addTextCard();wikis.sac_wiki.textCard.addSection('Sac', 'Sac a dos');wikis.sac_wiki.textCard.addSection('like', 'jki ghjy guyghf iug tyfd');wikis.sac_wiki.addImage('src3_image', 'sac');mse.src.addSource('src5_image','./images/src5_image.jpeg','img',true);mse.src.addSource('src6_image','./images/src6_image.jpeg','img',true);mse.src.addSource('src9_image','./images/src9_image.jpeg','img',true);var pages = {};var layers = {};var objs = {};pages.back=new mse.BaseContainer(root,{size:[coords.cid0,coords.cid1]});layers.backdefault=new mse.Layer(pages.back,1,{"globalAlpha":1,"size":[coords.cid0,coords.cid1]});objs.obj200=new mse.Image(layers.backdefault,{"size":[coords.cid0,coords.cid1],"pos":[coords.cid2,coords.cid3],"fillStyle":"rgb(0, 0, 0)","globalAlpha":1,"font":"normal "+coords.cid4+"px Times","textAlign":"left"},'src5_image');layers.backdefault.addObject(objs.obj200);pages.back.addLayer('backdefault',layers.backdefault);layers.mask=new mse.Layer(pages.back,2,{"globalAlpha":1,"size":[coords.cid0,coords.cid1]});objs.obj201=new mse.Mask(layers.mask,{"size":[coords.cid5,coords.cid1],"pos":[coords.cid6,coords.cid7],"fillStyle":"rgb(0, 0, 0)","globalAlpha":0.69,"font":"normal "+coords.cid4+"px Times","textAlign":"left"});layers.mask.addObject(objs.obj201);objs.obj203=new mse.Image(layers.mask,{"size":[coords.cid8,coords.cid9],"pos":[coords.cid10,coords.cid11]},'src4_image');layers.mask.addObject(objs.obj203);pages.back.addLayer('mask',layers.mask);layers.art=new mse.ArticleLayer(pages.back,3,{"size":[coords.cid12,coords.cid1],"pos":[coords.cid13,coords.cid7],"fillStyle":"rgb(255, 255, 255)","globalAlpha":1,"font":"normal "+coords.cid4+"px Helvetical","textAlign":"left","textBaseline":"top","lineHeight":coords.cid14},null);objs.obj202=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Durant quelques instants, Simon resta ',true);layers.art.addObject(objs.obj202);objs.obj203=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'suspendu dans les airs. Une sensation ',true);layers.art.addObject(objs.obj203);objs.obj204=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'unique, enivrante. Comme s’il volait.',true);layers.art.addObject(objs.obj204);objs.obj205=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il est malade$nbsp;ce type !',true);layers.art.addObject(objs.obj205);objs.obj206=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Et soudain, la chute. Interminable. ',true);layers.art.addObject(objs.obj206);objs.obj207=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il se mit à paniquer. Devant lui, il n’y ',true);layers.art.addObject(objs.obj207);objs.obj208=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'avait qu’un trou noir, béant, une porte ',true);layers.art.addObject(objs.obj208);objs.obj209=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'de ténèbres ouverte sur les Enfers.',true);layers.art.addObject(objs.obj209);objs.obj210=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Après tout ce n’était peut-être pas une ',true);layers.art.addObject(objs.obj210);objs.obj211=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'bonne idée.',true);layers.art.addObject(objs.obj211);objs.obj404=new mse.Image(layers.art,{"size":[coords.cid15,coords.cid16],"pos":[coords.cid17,coords.cid4]},'src3_image');layers.art.addObject(objs.obj404);objs.obj212=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'On fait le tour et on le récupère en bas.',true);layers.art.addObject(objs.obj212);objs.obj213=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Ce fut la dernière chose qu’il entendit ',true);layers.art.addObject(objs.obj213);objs.obj214=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'avant d’atterrir avec violence dans un ',true);layers.art.addObject(objs.obj214);objs.obj215=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'épais taillis. Le choc lui arracha un cri. ',true);layers.art.addObject(objs.obj215);objs.obj216=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Tout son corps lui faisait mal, ses bras ',true);objs.obj216.addLink(new mse.Link('lui',15,'wiki',wikis.sac_wiki));layers.art.addObject(objs.obj216);objs.obj217=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'zébrés d’écorchures, le souffle ',true);layers.art.addObject(objs.obj217);objs.obj218=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'définitivement coupé. ',true);layers.art.addObject(objs.obj218);objs.obj219=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il n’était pas tombé sur le sol. Il était ',true);objs.obj219.addLink(new mse.Link('tombé',18,'fb','http://www.facebook.com/pandamicro'));layers.art.addObject(objs.obj219);objs.obj220=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'suspendu juste au-dessus de la voie ',true);layers.art.addObject(objs.obj220);objs.obj221=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'ferrée, sauvé par un buisson ',true);layers.art.addObject(objs.obj221);objs.obj222=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'providentiel qui poussait dans le vide. ',true);layers.art.addObject(objs.obj222);objs.obj223=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Waouh, songea-t-il en essayant de se ',true);layers.art.addObject(objs.obj223);objs.obj224=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'dégager, je l’ai échappé belle…',true);layers.art.addObject(objs.obj224);objs.obj225=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Mais, alors qu’il pensait s’en être sorti, ',true);layers.art.addObject(objs.obj225);objs.obj226=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'les racines du taillis cédèrent d’un seul ',true);layers.art.addObject(objs.obj226);objs.obj227=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'coup, propulsant Simon deux mètres ',true);layers.art.addObject(objs.obj227);objs.obj228=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'plus bas. ',true);layers.art.addObject(objs.obj228);objs.obj229=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Ne pas atterrir sur mon sac, surtout ne ',true);layers.art.addObject(objs.obj229);objs.obj230=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'pas atterrir sur mon sac, fut sa seule ',true);layers.art.addObject(objs.obj230);objs.obj231=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'pensée avant de rejoindre le ballast. ',true);layers.art.addObject(objs.obj231);objs.obj232=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Les angles aigus des pierres pénétrèrent ',true);layers.art.addObject(objs.obj232);objs.obj233=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'dans ses côtes et sa tête heurta le métal ',true);layers.art.addObject(objs.obj233);objs.obj234=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'de la voie abandonnée. ',true);layers.art.addObject(objs.obj234);objs.obj235=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il était allongé sur une traverse, son ',true);layers.art.addObject(objs.obj235);objs.obj236=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'regard bleu inondé par la lueur de la ',true);layers.art.addObject(objs.obj236);objs.obj237=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'pleine lune. Il n’avait plus envie de ',true);layers.art.addObject(objs.obj237);objs.obj238=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'bouger, absorbé par les dessins ',true);layers.art.addObject(objs.obj238);objs.obj239=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'mystérieux que traçaient les étoiles ',true);layers.art.addObject(objs.obj239);objs.obj240=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'dans le ciel.',true);layers.art.addObject(objs.obj240);objs.obj241=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Une étrange sensation – humide et ',true);layers.art.addObject(objs.obj241);objs.obj242=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'râpeuse à la fois - le tira de sa rêverie. ',true);layers.art.addObject(objs.obj242);objs.obj243=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'C’était la minuscule langue de Dark. ',true);layers.art.addObject(objs.obj243);objs.obj244=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Dark$nbsp;! Tu n’as rien$nbsp;! s’exclama Simon ',true);layers.art.addObject(objs.obj244);objs.obj245=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'en se redressant.',true);layers.art.addObject(objs.obj245);objs.obj246=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Aussitôt le rat se lova dans son cou, ',true);layers.art.addObject(objs.obj246);objs.obj247=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'rassuré à son tour par l’état de santé de ',true);layers.art.addObject(objs.obj247);objs.obj248=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'son maître.  ',true);layers.art.addObject(objs.obj248);objs.obj249=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il est là. Vivant$nbsp;!',true);layers.art.addObject(objs.obj249);objs.obj250=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'La Fouine$nbsp;! ',true);layers.art.addObject(objs.obj250);objs.obj251=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'La Meute n’avait pas mis bien ',true);layers.art.addObject(objs.obj251);objs.obj252=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'longtemps pour le retrouver. La traque ',true);layers.art.addObject(objs.obj252);objs.obj253=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'allait recommencer. Mais l’adolescent ',true);layers.art.addObject(objs.obj253);objs.obj254=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'était fourbu, perclus de douleurs et il se ',true);layers.art.addObject(objs.obj254);objs.obj255=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'voyait mal fuir encore une fois. ',true);layers.art.addObject(objs.obj255);objs.obj256=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il se releva, fouillant  l’obscurité ',true);layers.art.addObject(objs.obj256);objs.obj257=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'alentour. ',true);layers.art.addObject(objs.obj257);objs.obj258=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'A droite, le danger...',true);layers.art.addObject(objs.obj258);objs.obj259=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'A gauche, l’œil béant d’un tunnel ',true);layers.art.addObject(objs.obj259);objs.obj260=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'ferroviaire qui plongeait sous le Parc.',true);layers.art.addObject(objs.obj260);objs.obj261=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il n’y avait pas à hésiter.',true);layers.art.addObject(objs.obj261);objs.obj262=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il ramassa sa besace et se remit en ',true);layers.art.addObject(objs.obj262);objs.obj263=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'route. Il avait faim, il avait froid et sa ',true);layers.art.addObject(objs.obj263);objs.obj264=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'cheville le faisait affreusement souffrir. ',true);layers.art.addObject(objs.obj264);objs.obj265=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il extirpa la lampe de son sac et caressa ',true);layers.art.addObject(objs.obj265);objs.obj266=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'la fourrure de Dark.',true);layers.art.addObject(objs.obj266);objs.obj267=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Eh bien, mon vieux, je crois que nous ',true);layers.art.addObject(objs.obj267);objs.obj268=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'sommes en bien mauvaise posture. ',true);layers.art.addObject(objs.obj268);objs.obj269=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Désolé de t’avoir entraîné là-dedans. ',true);layers.art.addObject(objs.obj269);objs.obj270=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Le rongeur l’écoutait d’un air attentif, ',true);layers.art.addObject(objs.obj270);objs.obj271=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'dressé sur ses pattes postérieures, le nez ',true);layers.art.addObject(objs.obj271);objs.obj272=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'tendu. ',true);layers.art.addObject(objs.obj272);objs.obj273=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Voilà que je me mets à parler à mon rat ',true);layers.art.addObject(objs.obj273);objs.obj274=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'comme s’il comprenait quelque chose$nbsp;!',true);layers.art.addObject(objs.obj274);objs.obj275=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Dans la pénombre, l’entrée du tunnel ',true);layers.art.addObject(objs.obj275);objs.obj276=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'ressemblait au porche d’un temple ',true);layers.art.addObject(objs.obj276);objs.obj277=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'mystérieux. ',true);layers.art.addObject(objs.obj277);objs.obj278=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Indiana Jones. ',true);layers.art.addObject(objs.obj278);objs.obj279=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Sauf que l’adolescent ne possédait ni ',true);layers.art.addObject(objs.obj279);objs.obj280=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'chapeau, ni fouet. ',true);layers.art.addObject(objs.obj280);objs.obj281=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Simon … Simon … Reviens…',true);layers.art.addObject(objs.obj281);objs.obj282=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'La voix de Kevin s’élevait dans la nuit. ',true);layers.art.addObject(objs.obj282);objs.obj283=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Mielleuse, sournoise. ',true);layers.art.addObject(objs.obj283);objs.obj284=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Simon, tu as gagné. Si tu t’ rends ',true);layers.art.addObject(objs.obj284);objs.obj285=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'maintenant, j’te promets qu’on t’fera ',true);layers.art.addObject(objs.obj285);objs.obj286=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'pas trop souffrir, ajouta-t-il en raclant la ',true);layers.art.addObject(objs.obj286);objs.obj287=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'lame de son couteau contre les pierres ',true);layers.art.addObject(objs.obj287);objs.obj288=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'d’un muret.',true);layers.art.addObject(objs.obj288);objs.obj289=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Un bruit affreux, qui fit dresser les poils ',true);layers.art.addObject(objs.obj289);objs.obj290=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'de l’adolescent. ',true);layers.art.addObject(objs.obj290);objs.obj291=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Hors de question de tomber entre leurs ',true);layers.art.addObject(objs.obj291);objs.obj292=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'mains! Il s’avança dans les ténèbres du ',true);layers.art.addObject(objs.obj292);objs.obj293=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'tunnel, guidé par le minuscule halo de ',true);layers.art.addObject(objs.obj293);objs.obj294=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'sa lampe torche. ',true);layers.art.addObject(objs.obj294);objs.obj295=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'La voûte minérale répercutait le bruit de ',true);layers.art.addObject(objs.obj295);objs.obj296=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'ses pas. ',true);layers.art.addObject(objs.obj296);objs.obj297=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Simon balaya les murs et… hurla$nbsp;!',true);layers.art.addObject(objs.obj297);objs.obj298=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Là, dans la lueur blafarde, était apparu ',true);layers.art.addObject(objs.obj298);objs.obj299=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'un visage. Démesuré. Grimaçant.',true);layers.art.addObject(objs.obj299);objs.obj300=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Une fresque.',true);layers.art.addObject(objs.obj300);objs.obj301=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Quel idiot$nbsp;! songea-t’il.',true);layers.art.addObject(objs.obj301);objs.obj302=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'L’œuvre représentait une créature ',true);layers.art.addObject(objs.obj302);objs.obj303=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'démoniaque qui semblait vouloir ',true);layers.art.addObject(objs.obj303);objs.obj304=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'dévorer l’intrus. Une sorte ',true);layers.art.addObject(objs.obj304);objs.obj305=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'d’avertissement.',true);layers.art.addObject(objs.obj305);objs.obj306=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Impressionné, Simon trébucha et s’étala ',true);layers.art.addObject(objs.obj306);objs.obj307=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'de tout son long. ',true);layers.art.addObject(objs.obj307);objs.obj308=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Et merde$nbsp;!',true);layers.art.addObject(objs.obj308);objs.obj309=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Une chute sans gravité. Sauf que Dark, ',true);layers.art.addObject(objs.obj309);objs.obj310=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'sans doute agacé d’être de nouveau ',true);layers.art.addObject(objs.obj310);objs.obj311=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'balloté, avait disparu$nbsp;!',true);layers.art.addObject(objs.obj311);objs.obj312=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Dark$nbsp;! Dark$nbsp;!',true);layers.art.addObject(objs.obj312);objs.obj313=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'L’adolescent avait presque crié. ',true);layers.art.addObject(objs.obj313);objs.obj314=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Les conséquences ne se firent pas ',true);layers.art.addObject(objs.obj314);objs.obj315=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'attendre. ',true);layers.art.addObject(objs.obj315);objs.obj316=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Venez les gars, il est là$nbsp;! Tout prêt$nbsp;!',true);layers.art.addObject(objs.obj316);objs.obj317=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Simon entendit un bruit de cavalcade ',true);layers.art.addObject(objs.obj317);objs.obj318=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'dans sa direction. Il balaya la surface du ',true);layers.art.addObject(objs.obj318);objs.obj319=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'tunnel. Mais il n’y avait rien qui ',true);layers.art.addObject(objs.obj319);objs.obj320=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'ressembla à une cachette. Pas la ',true);layers.art.addObject(objs.obj320);objs.obj321=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'moindre anfractuosité, pas le moindre ',true);layers.art.addObject(objs.obj321);objs.obj322=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'bloc où se dissimuler. ',true);layers.art.addObject(objs.obj322);objs.obj323=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Juste la queue de Dark qui disparaissait ',true);layers.art.addObject(objs.obj323);objs.obj324=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'dans le mur, quelques mètres devant lui. ',true);layers.art.addObject(objs.obj324);objs.obj325=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Simon se précipita.',true);layers.art.addObject(objs.obj325);objs.obj326=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Derrière lui, les prédateurs se ',true);layers.art.addObject(objs.obj326);objs.obj327=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'regroupaient.',true);layers.art.addObject(objs.obj327);objs.obj328=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'On se met en ligne et on avance. Il n’a ',true);layers.art.addObject(objs.obj328);objs.obj329=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'aucune chance de nous échapper.',true);layers.art.addObject(objs.obj329);objs.obj330=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Une sueur froide inondait le dos de ',true);layers.art.addObject(objs.obj330);objs.obj331=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'l’adolescent. La peur.',true);layers.art.addObject(objs.obj331);objs.obj332=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Dark$nbsp;?',true);layers.art.addObject(objs.obj332);objs.obj333=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Un couinement, juste devant lui. ',true);layers.art.addObject(objs.obj333);objs.obj334=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Simon s’approcha et découvrit un trou, ',true);layers.art.addObject(objs.obj334);objs.obj335=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'de la taille de son poing, qui semblait ',true);layers.art.addObject(objs.obj335);objs.obj336=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'avoir été creusé à hauteur d’homme. Le ',true);layers.art.addObject(objs.obj336);objs.obj337=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'rat l’attendait là, comme pour l’inviter à ',true);layers.art.addObject(objs.obj337);objs.obj338=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'le suivre.',true);layers.art.addObject(objs.obj338);objs.obj339=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Et comment veux-tu que je rentre ',true);layers.art.addObject(objs.obj339);objs.obj340=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'là-dedans$nbsp;? ',true);layers.art.addObject(objs.obj340);objs.obj341=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'La Meute se rapprochait encore. ',true);layers.art.addObject(objs.obj341);objs.obj342=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Ll’adolescent plongea ses mains dans ',true);layers.art.addObject(objs.obj342);objs.obj343=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'l’orifice et s’aperçut que les parois ',true);layers.art.addObject(objs.obj343);objs.obj344=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'étaient friables. Sans doute une chatière ',true);layers.art.addObject(objs.obj344);objs.obj345=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'que l’on avait dissimulée à la hâte. En ',true);layers.art.addObject(objs.obj345);objs.obj346=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'quelques gestes, il dégagea un espace ',true);layers.art.addObject(objs.obj346);objs.obj347=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'suffisant pour qu’il puisse s’y engager. ',true);layers.art.addObject(objs.obj347);objs.obj348=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Dark, tu es un génie, murmura Simon en ',true);layers.art.addObject(objs.obj348);objs.obj349=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'songeant à cette vieille comptine que lui ',true);layers.art.addObject(objs.obj349);objs.obj350=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'chantait sa mère, jadis$nbsp;: «$nbsp;Muruzé, ',true);layers.art.addObject(objs.obj350);objs.obj351=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Troussifée, Rassimais$nbsp;». ',true);layers.art.addObject(objs.obj351);objs.obj352=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Des mots magiques, qu’il avait mis des ',true);layers.art.addObject(objs.obj352);objs.obj353=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'années à comprendre$nbsp;: «$nbsp;Mur usé, trou ',true);layers.art.addObject(objs.obj353);objs.obj354=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'s’y fait, rat s’y met…$nbsp;».',true);layers.art.addObject(objs.obj354);objs.obj355=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il sourit un instant puis plongea le ',true);layers.art.addObject(objs.obj355);objs.obj356=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'faisceau de sa lampe dans le minuscule ',true);layers.art.addObject(objs.obj356);objs.obj357=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'passage. Impossible d’en apercevoir le ',true);layers.art.addObject(objs.obj357);objs.obj358=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'bout. Impossible de savoir où il allait. ',true);layers.art.addObject(objs.obj358);objs.obj359=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Des bruits de pas sur le gravier, juste ',true);layers.art.addObject(objs.obj359);objs.obj360=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'derrière lui. Pas le choix$nbsp;!',true);layers.art.addObject(objs.obj360);objs.obj361=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il se faufila entre les étroites parois, les ',true);layers.art.addObject(objs.obj361);objs.obj362=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'bras en avant, poussant son sac. Il ',true);layers.art.addObject(objs.obj362);objs.obj363=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'n’avait même pas la place de ramper, ',true);layers.art.addObject(objs.obj363);objs.obj364=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'contraint d’onduler à la manière d’un ',true);layers.art.addObject(objs.obj364);objs.obj365=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'serpent. ',true);layers.art.addObject(objs.obj365);objs.obj366=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'La poussière l’aveuglait, de la boue ',true);layers.art.addObject(objs.obj366);objs.obj367=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'s’engouffrait dans sa bouche et il ',true);layers.art.addObject(objs.obj367);objs.obj368=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'commençait à suffoquer.',true);layers.art.addObject(objs.obj368);objs.obj369=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},' Le salaud, il essaye encore de nous ',true);layers.art.addObject(objs.obj369);objs.obj370=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'échapper$nbsp;!',true);layers.art.addObject(objs.obj370);objs.obj371=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Repéré$nbsp;!',true);layers.art.addObject(objs.obj371);objs.obj372=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'L’adolescent tenta d’accélérer le ',true);layers.art.addObject(objs.obj372);objs.obj373=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'mouvement. Mais plus il avançait, plus ',true);layers.art.addObject(objs.obj373);objs.obj374=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'il avait l’impression que le boyau allait ',true);layers.art.addObject(objs.obj374);objs.obj375=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'l’avaler, qu’il allait mourir là. Il aurait ',true);layers.art.addObject(objs.obj375);objs.obj376=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'voulu hurler mais sa cage thoracique ',true);layers.art.addObject(objs.obj376);objs.obj377=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'était trop oppressée.',true);layers.art.addObject(objs.obj377);objs.obj378=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Vas-y$nbsp;! Suis-le$nbsp;! hurlait Kevin.',true);layers.art.addObject(objs.obj378);objs.obj379=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Mais…',true);layers.art.addObject(objs.obj379);objs.obj380=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Discute pas la Fouine, vas-y$nbsp;!',true);layers.art.addObject(objs.obj380);objs.obj381=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Simon tremblait, la sueur collait à son ',true);layers.art.addObject(objs.obj381);objs.obj382=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'front tandis que l’autre se faufilait déjà ',true);layers.art.addObject(objs.obj382);objs.obj383=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'à sa poursuite. Il était mince, agile et ',true);layers.art.addObject(objs.obj383);objs.obj384=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'surtout il avait encore plus peur de ',true);layers.art.addObject(objs.obj384);objs.obj385=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Kevin que lui. ',true);layers.art.addObject(objs.obj385);objs.obj386=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Cette fois, Simon était bel et bien foutu.',true);layers.art.addObject(objs.obj386);objs.obj387=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Soudain, un éclair blanc le fit sursauter. ',true);layers.art.addObject(objs.obj387);objs.obj388=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Une silhouette spectrale venait de ',true);layers.art.addObject(objs.obj388);objs.obj389=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'passer entre son corps et la paroi.',true);layers.art.addObject(objs.obj389);objs.obj390=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Dans les secondes qui suivirent, un ',true);layers.art.addObject(objs.obj390);objs.obj391=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'hurlement ébranla le tunnel. ',true);layers.art.addObject(objs.obj391);objs.obj392=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Mais l’adolescent n’eut pas le temps de ',true);layers.art.addObject(objs.obj392);objs.obj393=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'s’y intéresser car il venait, enfin, de ',true);layers.art.addObject(objs.obj393);objs.obj394=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'déboucher sur un espace plus grand. ',true);layers.art.addObject(objs.obj394);objs.obj395=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il s’assit un instant pour reprendre son ',true);layers.art.addObject(objs.obj395);objs.obj396=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'souffle tandis que Dark lissait ses ',true);layers.art.addObject(objs.obj396);objs.obj397=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'moustaches à ses côtés. Quelques ',true);layers.art.addObject(objs.obj397);objs.obj398=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'gouttes de sang poissaient son museau. ',true);layers.art.addObject(objs.obj398);objs.obj399=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Le visage de Simon s’éclaira : l’éclair ',true);layers.art.addObject(objs.obj399);objs.obj400=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'blanc, le hurlement.',true);layers.art.addObject(objs.obj400);objs.obj401=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Sacré Dark$nbsp;! Sans toi, je n’avais aucune ',true);layers.art.addObject(objs.obj401);objs.obj402=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'chance… Maintenant, la question est de ',true);layers.art.addObject(objs.obj402);objs.obj403=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'savoir où nous avons atterri$nbsp;!',true);layers.art.addObject(objs.obj403);layers.art.setDefile(1300);temp.layerDefile=layers.art;pages.back.addLayer('art',layers.art);pages.back2=new mse.BaseContainer(null,{size:[coords.cid0,coords.cid1]});layers.back2default=new mse.Layer(pages.back2,1,{"globalAlpha":1,"size":[coords.cid0,coords.cid1]});objs.obj405=new mse.Image(layers.back2default,{"size":[coords.cid0,coords.cid1],"pos":[coords.cid7,coords.cid7]},'src6_image');layers.back2default.addObject(objs.obj405);objs.obj406=new mse.Image(layers.back2default,{"size":[coords.cid18,coords.cid19],"pos":[coords.cid20,coords.cid21]},'src9_image');layers.back2default.addObject(objs.obj406);pages.back2.addLayer('back2default',layers.back2default);var action={};var reaction={};mse.currTimeline.start();};mse.autoFitToWindow(createbook);
+})(window, mse);// Game : Find Simon
+function angleFor2Point(p1, p2) {
+	var angle = 0;
+	var dx = p2.x - p1.x;
+	var dy = p2.y - p1.y;
+	angle = Math.atan2(dy, dx);
+	return Math.round(180 * angle/(Math.PI));
+};
+
+function distance2Pts(x1,y1,x2,y2) {
+    return Math.sqrt(Math.pow(x2-x1, 2)+Math.pow(y2-y1, 2));
+};
+
+function inrect(x, y, rect) {
+    if(x >= rect[0] && x <= rect[0]+rect[2] && y >= rect[1] && y <= rect[1]+rect[3]) return true;
+    else return false;
+};
+function xRelatRect(x, rect) {
+    if(x < rect[0]) return -1;
+    else if(x >= rect[0] && x <= rect[0]+rect[2]) return 0;
+    else return 1;
+};
+function yRelatRect(y, rect) {
+    if(y < rect[1]) return -1;
+    else if(y >= rect[1] && y <= rect[1]+rect[3]) return 0;
+    else return 1;
+};
+
+var NPC = function(sprite, course, dir) {
+    if(course.length < 2) {mseLog('Array Error', 'Array \'course\' demande minimum 2 elements');}
+    if(course.length != dir.length) {mseLog('Array Error', 'Array \'course\' have to be the same size of array \'dir\'');}
+    this.sprite = sprite;
+    this.animes = new Array();
+    // Animations
+    this.animes['run'] = new mse.FrameAnimation(sprite, [0,1,2,3,4,5], 0, 5);
+    this.animes['stand'] = new mse.FrameAnimation(sprite, [6], 0, 1000);
+    // Velocity
+    this.v = 6;
+    // Vision
+    this.visiond = 180;
+    this.visiona = 40;
+    // Start and end angle of view
+    this.startAngle = this.visiona*Math.PI/180;
+    this.endAngle = -this.startAngle;
+    this.startP = crePoint2(Math.cos(this.startAngle)*this.visiond, Math.sin(this.startAngle)*this.visiond);
+    // Course predefined
+    this.course = course;
+    // Direction of view
+    this.dir = dir;
+    // Position
+    this.pos = new mse.Point2(course[0].x, course[0].y);
+    this.currStep = 0;
+    this.nextStep = 1;
+    // Orientation
+    this.direction = angleFor2Point(this.course[0], this.course[1]);
+    if(dir[this.currStep].length != 0) {
+        this.currDir = 0;
+        this.tarDir = this.dir[this.currStep][this.currDir];
+        this.state = 1;
+        this.animes['run'].stop();
+        this.animes['stand'].start();
+    }
+    else {
+        this.tarDir = this.direction;
+        this.state = 0;
+        this.animes['run'].start();
+        this.animes['stand'].stop();
+    }
+    
+    this.logic = function(delta) {
+        switch(this.state) {
+        case 0:// Run
+            // Direction not right
+            //if(this.direction != this.tarDir) {
+              //  this.state = 1;
+              //  return;
+            //}
+            
+            var dx = this.course[this.nextStep].x - this.pos.x;
+            var dy = this.course[this.nextStep].y - this.pos.y;
+            if(dx == 0) {
+                // Movement vertical
+                if(dy < -this.v) {this.pos.y -= this.v;return;}
+                else if(dy > this.v) {this.pos.y += this.v;return;}
+            }
+            else {
+                // Movement horizontal
+                if(dx < -this.v) {this.pos.x -= this.v;return;}
+                else if(dx > this.v) {this.pos.x += this.v;return;}
+            }
+            // Movement over
+            this.pos = new mse.Point2(this.course[this.nextStep].x, this.course[this.nextStep].y);
+            if(this.currStep < this.nextStep) {
+                this.currStep = this.nextStep;
+                this.nextStep = (this.nextStep == this.course.length-1) ? this.nextStep-1 : this.nextStep+1;
+            }
+            else {
+                this.currStep = this.nextStep;
+                this.nextStep = (this.nextStep == 0) ? 1 : this.nextStep-1;
+            }
+            // Change to turn state
+            this.state = 1;
+            this.animes['run'].stop();
+            this.animes['stand'].start();
+            if(this.dir[this.currStep].length != 0) this.tarDir = this.dir[this.currStep][this.currDir];
+            else {
+                this.currDir = -1;
+                this.tarDir = angleFor2Point(this.course[this.currStep], this.course[this.nextStep]);
+            }
+        break;
+        case 1:// Turn
+            var dis = this.tarDir - this.direction;
+            // Turning
+            if(dis < -2) this.direction -= 2;
+            else if(dis > 2) this.direction += 2;
+            else {
+            // Turn over
+                this.direction = this.tarDir;
+                // CurrDir is marked, start to run
+                if(this.currDir == -1) {
+                    this.state = 0;
+                    this.currDir = 0;
+                    this.animes['run'].start();
+                    this.animes['stand'].stop();
+                    return;
+                }
+                // Found next turn target
+                if(this.currDir < this.dir[this.currStep].length-1) {
+                    this.currDir++;
+                    this.tarDir = this.dir[this.currStep][this.currDir];
+                }
+                // No more turn target, turn to the run direction
+                else {
+                    this.tarDir = angleFor2Point(this.course[this.currStep], this.course[this.nextStep]);
+                    // Mark the currDir to ignore the verification
+                    this.currDir = -1;
+                }
+            }
+        break;
+        case 2:// Notice
+        break;
+        case 3:// Stand
+        break;
+        }
+    };
+    this.draw = function(ctx, x, y) {
+        ctx.save();
+        // To center point
+        ctx.translate(x + this.pos.x,  y + this.pos.y);
+        ctx.rotate(this.direction*Math.PI/180);
+        // Draw view
+        ctx.fillStyle = 'rgba(200,0,0,0.5)';
+        ctx.beginPath();
+        ctx.lineTo(this.startP.x, this.startP.y);
+        ctx.arc(0,0, this.visiond, this.startAngle,this.endAngle, true);
+        ctx.lineTo(0, 0);
+        ctx.fill();
+        // Draw sprite
+        ctx.translate(-20,-18);
+        this.sprite.draw(ctx);
+        ctx.restore();
+    };
+};
+
+var FindSimon = function() {
+    mse.Game.call(this);
+    this.msg = {
+        "INIT": "Clique pour aider Simon à échapper à la Meute.",//Utilise les flèches de direction pour diriger Simon dans le parc.
+        "WIN": "Bravo!!! Simon est sauvé."
+    };
+    this.state = "INIT";
+    
+    mse.src.addSource('parc', 'Parc/Parc.jpg', 'img', true);
+    mse.src.addSource('perso_parc', 'Parc/personnages.png', 'img', true);
+    mse.src.addSource('notice_parc', 'Parc/points-persos.png', 'img', true);
+    //var parc = new mse.Image(null, {pos:[0, 0]}, 'parc');
+    var mechants = new Array();
+    mechants[0] = new mse.Sprite(null, {}, 'perso_parc', 40,37, 0,37,280,37);
+    mechants[1] = new mse.Sprite(null, {}, 'perso_parc', 40,37, 0,74,280,37);
+    mechants[2] = new mse.Sprite(null, {}, 'perso_parc', 40,37, 0,111,280,37);
+    mechants[3] = new mse.Sprite(null, {}, 'perso_parc', 40,37, 0,148,280,37);
+    
+    // Possible movement area
+    var freerect = {
+        vertical:  [[190,250,60,650],
+                    [390,250,60,650],
+                    [580,250,60,320],
+                    [640,960,60,190],
+                    [830,570,60,390],
+                    [1030,320,60,380],
+                    [1350,320,60,770],
+                    [1660,190,60,960]],
+        horizontal:[[190,190,450,60],
+                    [1090,320,260,60],
+                    [640,510,390,60],
+                    [1410,570,250,60],
+                    [890,700,460,60],
+                    [190,900,640,60],
+                    [700,1090,960,60]]
+    };
+    
+    // Course of NPC
+    var courses = [
+        [crePoint2(415,925), crePoint2(415,225)],
+        [crePoint2(810,925), crePoint2(675,925), crePoint2(675,1115)],
+        [crePoint2(1695,335), crePoint2(1695,605), crePoint2(1695,840)],
+        [crePoint2(1060,335), crePoint2(1060,540), crePoint2(1060,735), crePoint2(1370,735)]
+    ];
+
+    // Direction of vision
+    var dirs = [
+        [[180,0],[0,180]],
+        [[90],[],[0]],
+        [[180],[180],[180]],
+        [[0],[180],[],[90,-90]]
+    ];
+    
+    // Init NPCs
+    this.npc = new Array();
+    for(var i = 0; i < 4; i++) {
+        this.npc[i] = new NPC(mechants[i], courses[i], dirs[i]);
+    }
+    // Init Simon
+    this.simon = new mse.Sprite(null, {}, 'perso_parc', 40,37, 0,0,280,37);
+    this.simonrun = new mse.FrameAnimation(this.simon, [0,1,2,3,4,5], 0, 7);
+    this.simonstand = new mse.FrameAnimation(this.simon, [6], 0, 1000);
+    // Spark frequence
+    this.spark = 0;
+    
+    this.init = function() {
+        this.npc[3].v = 3;
+        
+        this.simondir = 0;
+        this.simonrun.stop();
+        this.simonstand.start();
+        this.onmove = false;
+        // Init Parc draw parameters
+        this.sx = this.sy = this.sw = this.sh = this.dx = this.dy = this.dw = this.dh = 0;
+        
+        // Position of parc
+        this.sp = new mse.Point2(225,725);
+        this.pos = new mse.Point2(this.width/2-this.sp.x,this.height/2-this.sp.y);
+        this.disx = this.disy = 0;
+    	
+    	// Key event listener
+    	mse.root.evtDistributor.addListener('keydown', this.movecb, true, this);
+    	mse.root.evtDistributor.addListener('keyup', this.moveovercb, true, this);
+    	if(MseConfig.mobile){
+    	    mse.root.evtDistributor.addListener('gestureUpdate', this.touchMovecb, true, this);
+    	    mse.root.evtDistributor.addListener('gestureEnd', this.moveovercb, true, this);
+    	}
+    };
+    
+    this.draw = function(ctx) {
+        ctx.save();
+        ctx.translate(this.offx, this.offy);
+		// Clip masque for NPCs
+		ctx.beginPath();
+		ctx.moveTo(0,0);
+		ctx.lineTo(this.width-5,0);
+		ctx.lineTo(this.width-5,this.height-5);
+		ctx.lineTo(0,this.height-5);
+		ctx.closePath();
+		ctx.clip();
+		// Background
+		ctx.drawImage(mse.src.getSrc('parc'), this.sx, this.sy, this.sw, this.sh, this.dx, this.dy, this.dw, this.dh);
+		// Simon
+		ctx.save();
+		ctx.translate(this.width/2, this.height/2);
+		ctx.rotate(this.simondir*Math.PI/180);
+		ctx.translate(-20,-18);
+		this.simon.draw(ctx);
+		ctx.restore();
+		// NPCs
+		for(var i = 0; i < 4; i++) {
+		    this.npc[i].draw(ctx, this.pos.x, this.pos.y);
+		}
+		// Plan
+		ctx.globalAlpha = 0.7;
+		ctx.drawImage(mse.src.getSrc('parc'), 5,5,192,128);
+		// Simon on plan
+		ctx.globalAlpha = 1;
+		ctx.fillStyle = 'rgb(0,200,0)';
+		ctx.fillRect(4+this.sp.x/10, 4+this.sp.y/10, 2,2);
+		// Destination
+		ctx.fillStyle = 'rgba(250,230,200,0.8)';
+		if(this.spark == 10) {
+		    this.spark = 0;
+		    ctx.beginPath();
+		    ctx.arc(174,34, 3, 0,Math.PI*2, true);
+		    ctx.fill();
+		}
+		else this.spark++;
+		ctx.restore();
+	};
+	
+	this.logic = function(delta) {
+		// Parc visible part
+		if(this.pos.x > 0) {
+		    this.sx = 0;
+		    this.sw = this.width - this.pos.x;
+		    this.dx = this.pos.x;
+		}
+		else {
+		    this.sx = -this.pos.x;
+		    if(this.pos.x + 1920 < this.width) this.sw = 1920 + this.pos.x;
+		    else this.sw = this.width;
+		    this.dx = 0;
+		}
+		if(this.pos.y > 0) {
+		    this.sy = 0;
+		    this.sh = this.height - this.pos.y;
+		    this.dy = this.pos.y;
+		}
+		else {
+		    this.sy = -this.pos.y;
+		    if(this.pos.y + 1280 < this.height) this.sh = 1280 + this.pos.y;
+		    else this.sh = this.height;
+		    this.dy = 0;
+		}
+		this.dw = this.sw;
+		this.dh = this.sh;
+		
+		// Simon
+		this.pos.x += this.disx;
+		this.pos.y += this.disy;
+		// Ignore thé movement if collision
+		if(this.colliDetect()) {this.pos.x -= this.disx; this.pos.y -= this.disy;}
+		
+		this.sp.x = this.width/2 - this.pos.x;
+		this.sp.y = this.height/2 - this.pos.y;
+		
+		// Win check
+		if(Math.abs(this.sp.x - 1690) <= 60 && Math.abs(this.sp.y - 290) <= 10) {
+		    mse.root.evtDistributor.removeListener('keydown', this.movecb);
+		    mse.root.evtDistributor.removeListener('keyup', this.moveoverc);
+		    if(MseConfig.mobile){
+		        mse.root.evtDistributor.removeListener('gestureUpdate', this.touchMovecb);
+		        mse.root.evtDistributor.removeListener('gestureEnd', this.moveovercb);
+		    }
+		    this.state = "WIN";
+		    this.end();
+		}
+		
+		// NPCs
+		for(var i = 0; i < 4; i++) {
+		    var n = this.npc[i];
+		    n.logic(delta);
+		    
+		    // Detect if simon is found
+		    var dis = Math.round(distance2Pts(this.sp.x,this.sp.y,n.pos.x,n.pos.y));
+		    var angle = angleFor2Point(n.pos,this.sp);
+		    var adis = Math.abs(angle-n.direction);
+		    if(adis > 180) adis = 360-adis;
+		    if(dis <= 170 && adis <= n.visiona) {
+		    // Simon is found!!!
+		        // Remove Key event listener
+		        mse.root.evtDistributor.removeListener('keydown', this.movecb);
+		        mse.root.evtDistributor.removeListener('keyup', this.moveovercb);
+		        if(MseConfig.mobile){
+		            mse.root.evtDistributor.removeListener('gestureUpdate', this.touchMovecb);
+		            mse.root.evtDistributor.removeListener('gestureEnd', this.moveovercb);
+		        }
+		        this.lose();
+		    }
+		}
+	};
+	
+	this.colliDetect = function() {
+	    var x = this.width/2 - this.pos.x;
+	    var y = this.height/2 - this.pos.y;
+	    for(var i = 0; i < freerect.vertical.length; i++) {
+	        var xRelat = xRelatRect(x, freerect.vertical[i]);
+	        if(xRelat == -1) break;
+	        // In free rect, no collision
+	        else if(xRelat == 0 && yRelatRect(y, freerect.vertical[i]) == 0) return false;
+        }
+        for(var i = 0; i < freerect.horizontal.length; i++) {
+            var yRelat = yRelatRect(y, freerect.horizontal[i]);
+            // In none of the free rect, collision
+            if(yRelat == -1) return true;
+            // In free rect, no collision
+            else if(yRelat == 0 && xRelatRect(x, freerect.horizontal[i]) == 0) return false;
+        }
+        return true;
+	};
+	
+	this.move = function(e) {
+	    var valid = false;
+	    switch(e.keyCode) {
+	    case __KEY_LEFT:
+	        this.disx = 4; this.disy = 0;
+	        this.simondir = 180;
+	        valid = true;
+	    	break;
+	    case __KEY_RIGHT:
+	        this.disx = -4; this.disy = 0;
+	        this.simondir = 0;
+	        valid = true;
+	    	break;
+	    case __KEY_UP:
+	        this.disy = 4; this.disx = 0;
+	        this.simondir = -90;
+	        valid = true;
+	    	break;
+	    case __KEY_DOWN:
+	        this.disy = -4; this.disx = 0;
+	        this.simondir = 90;
+	        valid = true;
+	    	break;
+	    }
+	    if(valid && !this.onmove) {
+	        this.onmove = true;
+	        this.simonrun.start();
+	        this.simonstand.stop();
+	    }
+	};
+	this.touchMove = function(e) {
+	    var valid = true;
+	    var start = {x:e.listX[0],y:e.listY[0]};
+	    var end = {x:e.offsetX,y:e.offsetY};
+	    var a = angleFor2Point(start, end);
+	    if((a >= 0 && a <= 15) || (a <= 0 && a >= -15)){
+	        //Left
+	        this.disx = -4; this.disy = 0;
+	        this.simondir = 0;
+	    }
+	    else if(a >= 75 && a <= 105) {
+	        // Down
+	        this.disy = -4; this.disx = 0;
+	        this.simondir = 90;
+	    }
+	    else if(a >= 165 || a <= -165) {
+	        // Left
+	        this.disx = 4; this.disy = 0;
+	        this.simondir = 180;
+	    }
+	    else if(a <= -75 && a >= -105) {
+	        // Up
+	        this.disy = 4; this.disx = 0;
+	        this.simondir = -90;
+	    }
+	    else valid = false;
+	    if(valid && !this.onmove) {
+	        this.onmove = true;
+	        this.simonrun.start();
+	        this.simonstand.stop();
+	    }
+	};
+	this.moveover = function(e) {
+	    this.disx = 0; this.disy = 0;
+	    this.onmove = false;
+	    this.simonrun.stop();
+	    this.simonstand.start();
+	};
+	// Init key listeners
+	this.movecb = new mse.Callback(this.move, this);
+	this.moveovercb = new mse.Callback(this.moveover, this);
+	this.touchMovecb = new mse.Callback(this.touchMove, this);
+};
+extend(FindSimon, mse.Game);
+
+
+
+
+
+var RatGame = function() {
+	mse.Game.call(this);
+	
+	this.offx = 220; this.offy = 0;
+	this.width = 360; this.height = 600;
+	
+	mse.src.addSource('ratImg', 'rat.png', 'img');
+	var ratSit = new mse.Sprite(this,{pos:[30,this.height-80]}, 'ratImg', 80,50, 0,0,400,100);
+	var ratHead = new mse.Sprite(this,{pos:[20,this.height-96]}, 'ratImg', 39,34, 400,0,39,34);
+	var ratHang = new mse.Sprite(this, {pos:[45,this.height-80]}, 'ratImg', 40,113, 0,101,400,113);
+	mse.src.addSource('sacImg', 'sac.png', 'img');
+	var sac = new mse.Image(this, {pos:[this.width-160,20], insideRec:[60,40,60,60]}, 'sacImg');
+	var pochet = new mse.Sprite(this, {pos:[this.width-100,175]}, 'sacImg', 60,40, 60,155,60,40);
+	
+	var seq = [0,1,2,3,4,5,6,7,8,9];
+	var sitAnim = new mse.FrameAnimation(ratSit, seq, 0, 2);
+	var hangAnim = new mse.FrameAnimation(ratHang, seq, 0, 2);
+	
+	this.dragStart = function(e) {
+		var x = e.offsetX - this.offx;
+		var y = e.offsetY - this.offy;
+		if(x>30 && x<110 && y>this.height-80 && y<this.height-30) {
+			this.sit = false;
+			ratHang.offx = x-20; ratHang.offy = y-14;
+			
+			sitAnim.stop();
+			hangAnim.start();
+		}
+	};
+	this.dragMove = function(e) {
+		var x = e.offsetX - this.offx-20;
+		var y = e.offsetY - this.offy-14;
+		ratHang.offx = x; ratHang.offy = y;
+	};
+	this.dragEnd = function(e) {
+		var x = e.offsetX - this.offx;
+		var y = e.offsetY - this.offy;
+		if(this.sit) return;
+		if(sac.inObj(e.offsetX, e.offsetY)) {
+			var drop = new mse.KeyFrameAnimation(ratHang, {
+					frame	: [0, 25, 35],
+					pos		: [[x, y], [sac.offx+70,sac.offy+125], [sac.offx+70,sac.offy+125]]
+				}, 1);
+			drop.evtDeleg.addListener('end', new mse.Callback(this.end, this));
+			drop.start();
+			this.droped = true;
+			mse.root.evtDistributor.removeListener('gestureStart', cbStart);
+			mse.root.evtDistributor.removeListener('gestureUpdate', cbMove);
+			mse.root.evtDistributor.removeListener('gestureEnd', cbEnd);
+		}
+		else {
+			this.sit = true;
+			hangAnim.stop();
+			sitAnim.start();
+		}
+	};
+	
+	var cbStart = new mse.Callback(this.dragStart, this);
+	var cbMove = new mse.Callback(this.dragMove, this);
+	var cbEnd = new mse.Callback(this.dragEnd, this);
+	
+	this.init = function() {
+		mse.root.evtDistributor.addListener('gestureStart', cbStart, true, this);
+		mse.root.evtDistributor.addListener('gestureUpdate', cbMove, true, this);
+		mse.root.evtDistributor.addListener('gestureEnd', cbEnd, true, this);
+		
+		this.sit = true;
+		this.droped = false;
+		sitAnim.start();
+	};
+	
+	this.logic = function(delta) {
+		if(this.droped) {
+			var d = pochet.offy - ratHang.offy - 114;
+			ratHang.fh = d < 0 ? 114+d : 114;
+			ratHang.height = ratHang.fh;
+		}
+	};
+    
+	this.draw = function(ctx) {
+		sac.draw(ctx);
+		if(this.sit) {
+			ratSit.draw(ctx);
+			ratHead.draw(ctx);
+			// Draw text
+			ctx.save();
+			// Draw bull
+			ctx.fillStyle = "#FFF";
+			ctx.translate(ratHead.getX()+ratHead.getWidth()*1.2, ratHead.getY()-24);
+			ctx.beginPath();
+			ctx.moveTo(-10,30);
+			ctx.lineTo(0,30-15);
+			ctx.lineTo(10,30);
+			ctx.lineTo(-10,30);
+			ctx.fill();
+			ctx.fillRoundRect(0, 0, 240, 30, 10);
+			ctx.fillStyle = "#000";
+			ctx.font = "20px Verdana";
+			ctx.textBaseline = 'top';
+			ctx.fillText("Aide Simon, vite!", 10, 4);
+			ctx.restore();
+		}
+		else ratHang.draw(ctx);
+		if(this.droped) pochet.draw(ctx);
+	};
+};
+extend(RatGame, mse.Game);var coords = JSON.parse('{"cid0":800,"cid1":600,"cid2":-1.25,"cid3":-2.5,"cid4":20,"cid5":360,"cid6":220,"cid7":0,"cid8":151.25,"cid9":188.75,"cid10":66.25,"cid11":61.25,"cid12":330,"cid13":235,"cid14":27.5,"cid15":187.5,"cid16":245,"cid17":16.5,"cid18":231.25,"cid19":181.25,"cid20":366.25,"cid21":51.25}');initMseConfig();mse.init();function createbook(){var root = new mse.Root('Test',coords.cid0,coords.cid1,'portrait');var temp = {};var animes={};var games={};var wikis={};mse.src.addSource('src0_image','./images/src0_image.jpeg','img',true);mse.src.addSource('src1_image','./images/src1_image.jpeg','img',true);mse.src.addSource('src2_image','./images/src2_image.jpeg','img',true);mse.src.addSource('src3_image','./images/src3_image.png','img',true);mse.src.addSource('src4_image','./images/src4_image.png','img',true);wikis.sac_wiki=new mse.WikiLayer();wikis.sac_wiki.addTextCard();wikis.sac_wiki.textCard.addSection('Sac', 'Sac a dos');wikis.sac_wiki.textCard.addSection('like', 'jki ghjy guyghf iug tyfd');wikis.sac_wiki.addImage('src3_image', 'sac');mse.src.addSource('src5_image','./images/src5_image.jpeg','img',true);mse.src.addSource('src6_image','./images/src6_image.jpeg','img',true);mse.src.addSource('src9_image','./images/src9_image.jpeg','img',true);var pages = {};var layers = {};var objs = {};pages.back=new mse.BaseContainer(root,{size:[coords.cid0,coords.cid1]});layers.backdefault=new mse.Layer(pages.back,1,{"globalAlpha":1,"size":[coords.cid0,coords.cid1]});objs.obj200=new mse.Image(layers.backdefault,{"size":[coords.cid0,coords.cid1],"pos":[coords.cid2,coords.cid3],"fillStyle":"rgb(0, 0, 0)","globalAlpha":1,"font":"normal "+coords.cid4+"px Times","textAlign":"left"},'src5_image');layers.backdefault.addObject(objs.obj200);pages.back.addLayer('backdefault',layers.backdefault);layers.mask=new mse.Layer(pages.back,2,{"globalAlpha":1,"size":[coords.cid0,coords.cid1]});objs.obj201=new mse.Mask(layers.mask,{"size":[coords.cid5,coords.cid1],"pos":[coords.cid6,coords.cid7],"fillStyle":"rgb(0, 0, 0)","globalAlpha":0.69,"font":"normal "+coords.cid4+"px Times","textAlign":"left"});layers.mask.addObject(objs.obj201);objs.obj203=new mse.Image(layers.mask,{"size":[coords.cid8,coords.cid9],"pos":[coords.cid10,coords.cid11]},'src4_image');layers.mask.addObject(objs.obj203);pages.back.addLayer('mask',layers.mask);layers.art=new mse.ArticleLayer(pages.back,3,{"size":[coords.cid12,coords.cid1],"pos":[coords.cid13,coords.cid7],"fillStyle":"rgb(255, 255, 255)","globalAlpha":1,"font":"normal "+coords.cid4+"px Helvetical","textAlign":"left","textBaseline":"top","lineHeight":coords.cid14},null);objs.obj202=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Durant quelques instants, Simon resta ',true);layers.art.addObject(objs.obj202);objs.obj203=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'suspendu dans les airs. Une sensation ',true);layers.art.addObject(objs.obj203);objs.obj204=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'unique, enivrante. Comme s’il volait.',true);layers.art.addObject(objs.obj204);objs.obj205=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il est malade$nbsp;ce type !',true);layers.art.addObject(objs.obj205);objs.obj200=new FindSimon();layers.art.addGame(objs.obj200);objs.obj206=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Et soudain, la chute. Interminable. ',true);layers.art.addObject(objs.obj206);objs.obj207=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il se mit à paniquer. Devant lui, il n’y ',true);layers.art.addObject(objs.obj207);objs.obj208=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'avait qu’un trou noir, béant, une porte ',true);layers.art.addObject(objs.obj208);objs.obj209=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'de ténèbres ouverte sur les Enfers.',true);layers.art.addObject(objs.obj209);objs.obj210=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Après tout ce n’était peut-être pas une ',true);layers.art.addObject(objs.obj210);objs.obj211=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'bonne idée.',true);layers.art.addObject(objs.obj211);objs.obj404=new mse.Image(layers.art,{"size":[coords.cid15,coords.cid16],"pos":[coords.cid17,coords.cid4]},'src3_image');layers.art.addObject(objs.obj404);objs.obj212=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'On fait le tour et on le récupère en bas.',true);layers.art.addObject(objs.obj212);objs.obj213=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Ce fut la dernière chose qu’il entendit ',true);layers.art.addObject(objs.obj213);objs.obj214=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'avant d’atterrir avec violence dans un ',true);layers.art.addObject(objs.obj214);objs.obj215=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'épais taillis. Le choc lui arracha un cri. ',true);layers.art.addObject(objs.obj215);objs.obj216=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Tout son corps lui faisait mal, ses bras ',true);objs.obj216.addLink(new mse.Link('lui',16,'wiki',wikis.sac_wiki));layers.art.addObject(objs.obj216);objs.obj217=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'zébrés d’écorchures, le souffle ',true);layers.art.addObject(objs.obj217);objs.obj218=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'définitivement coupé. ',true);layers.art.addObject(objs.obj218);objs.obj219=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il n’était pas tombé sur le sol. Il était ',true);objs.obj219.addLink(new mse.Link('tombé',19,'fb','http://www.facebook.com/pandamicro'));layers.art.addObject(objs.obj219);objs.obj220=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'suspendu juste au-dessus de la voie ',true);layers.art.addObject(objs.obj220);objs.obj221=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'ferrée, sauvé par un buisson ',true);layers.art.addObject(objs.obj221);objs.obj222=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'providentiel qui poussait dans le vide. ',true);layers.art.addObject(objs.obj222);objs.obj223=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Waouh, songea-t-il en essayant de se ',true);layers.art.addObject(objs.obj223);objs.obj224=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'dégager, je l’ai échappé belle…',true);layers.art.addObject(objs.obj224);objs.obj225=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Mais, alors qu’il pensait s’en être sorti, ',true);layers.art.addObject(objs.obj225);objs.obj226=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'les racines du taillis cédèrent d’un seul ',true);layers.art.addObject(objs.obj226);objs.obj227=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'coup, propulsant Simon deux mètres ',true);layers.art.addObject(objs.obj227);objs.obj228=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'plus bas. ',true);layers.art.addObject(objs.obj228);objs.obj229=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Ne pas atterrir sur mon sac, surtout ne ',true);layers.art.addObject(objs.obj229);objs.obj230=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'pas atterrir sur mon sac, fut sa seule ',true);layers.art.addObject(objs.obj230);objs.obj231=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'pensée avant de rejoindre le ballast. ',true);layers.art.addObject(objs.obj231);objs.obj232=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Les angles aigus des pierres pénétrèrent ',true);layers.art.addObject(objs.obj232);objs.obj233=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'dans ses côtes et sa tête heurta le métal ',true);layers.art.addObject(objs.obj233);objs.obj234=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'de la voie abandonnée. ',true);layers.art.addObject(objs.obj234);objs.obj235=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il était allongé sur une traverse, son ',true);layers.art.addObject(objs.obj235);objs.obj236=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'regard bleu inondé par la lueur de la ',true);layers.art.addObject(objs.obj236);objs.obj237=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'pleine lune. Il n’avait plus envie de ',true);layers.art.addObject(objs.obj237);objs.obj238=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'bouger, absorbé par les dessins ',true);layers.art.addObject(objs.obj238);objs.obj239=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'mystérieux que traçaient les étoiles ',true);layers.art.addObject(objs.obj239);objs.obj240=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'dans le ciel.',true);layers.art.addObject(objs.obj240);objs.obj241=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Une étrange sensation – humide et ',true);layers.art.addObject(objs.obj241);objs.obj242=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'râpeuse à la fois - le tira de sa rêverie. ',true);layers.art.addObject(objs.obj242);objs.obj243=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'C’était la minuscule langue de Dark. ',true);layers.art.addObject(objs.obj243);objs.obj244=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Dark$nbsp;! Tu n’as rien$nbsp;! s’exclama Simon ',true);layers.art.addObject(objs.obj244);objs.obj245=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'en se redressant.',true);layers.art.addObject(objs.obj245);objs.obj246=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Aussitôt le rat se lova dans son cou, ',true);layers.art.addObject(objs.obj246);objs.obj247=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'rassuré à son tour par l’état de santé de ',true);layers.art.addObject(objs.obj247);objs.obj248=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'son maître.  ',true);layers.art.addObject(objs.obj248);objs.obj249=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il est là. Vivant$nbsp;!',true);layers.art.addObject(objs.obj249);objs.obj250=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'La Fouine$nbsp;! ',true);layers.art.addObject(objs.obj250);objs.obj251=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'La Meute n’avait pas mis bien ',true);layers.art.addObject(objs.obj251);objs.obj252=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'longtemps pour le retrouver. La traque ',true);layers.art.addObject(objs.obj252);objs.obj253=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'allait recommencer. Mais l’adolescent ',true);layers.art.addObject(objs.obj253);objs.obj254=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'était fourbu, perclus de douleurs et il se ',true);layers.art.addObject(objs.obj254);objs.obj255=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'voyait mal fuir encore une fois. ',true);layers.art.addObject(objs.obj255);objs.obj256=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il se releva, fouillant  l’obscurité ',true);layers.art.addObject(objs.obj256);objs.obj257=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'alentour. ',true);layers.art.addObject(objs.obj257);objs.obj258=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'A droite, le danger...',true);layers.art.addObject(objs.obj258);objs.obj259=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'A gauche, l’œil béant d’un tunnel ',true);layers.art.addObject(objs.obj259);objs.obj260=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'ferroviaire qui plongeait sous le Parc.',true);layers.art.addObject(objs.obj260);objs.obj261=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il n’y avait pas à hésiter.',true);layers.art.addObject(objs.obj261);objs.obj262=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il ramassa sa besace et se remit en ',true);layers.art.addObject(objs.obj262);objs.obj263=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'route. Il avait faim, il avait froid et sa ',true);layers.art.addObject(objs.obj263);objs.obj264=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'cheville le faisait affreusement souffrir. ',true);layers.art.addObject(objs.obj264);objs.obj265=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il extirpa la lampe de son sac et caressa ',true);layers.art.addObject(objs.obj265);objs.obj266=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'la fourrure de Dark.',true);layers.art.addObject(objs.obj266);objs.obj267=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Eh bien, mon vieux, je crois que nous ',true);layers.art.addObject(objs.obj267);objs.obj268=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'sommes en bien mauvaise posture. ',true);layers.art.addObject(objs.obj268);objs.obj269=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Désolé de t’avoir entraîné là-dedans. ',true);layers.art.addObject(objs.obj269);objs.obj270=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Le rongeur l’écoutait d’un air attentif, ',true);layers.art.addObject(objs.obj270);objs.obj271=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'dressé sur ses pattes postérieures, le nez ',true);layers.art.addObject(objs.obj271);objs.obj272=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'tendu. ',true);layers.art.addObject(objs.obj272);objs.obj273=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Voilà que je me mets à parler à mon rat ',true);layers.art.addObject(objs.obj273);objs.obj274=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'comme s’il comprenait quelque chose$nbsp;!',true);layers.art.addObject(objs.obj274);objs.obj275=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Dans la pénombre, l’entrée du tunnel ',true);layers.art.addObject(objs.obj275);objs.obj276=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'ressemblait au porche d’un temple ',true);layers.art.addObject(objs.obj276);objs.obj277=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'mystérieux. ',true);layers.art.addObject(objs.obj277);objs.obj278=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Indiana Jones. ',true);layers.art.addObject(objs.obj278);objs.obj279=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Sauf que l’adolescent ne possédait ni ',true);layers.art.addObject(objs.obj279);objs.obj280=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'chapeau, ni fouet. ',true);layers.art.addObject(objs.obj280);objs.obj281=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Simon … Simon … Reviens…',true);layers.art.addObject(objs.obj281);objs.obj282=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'La voix de Kevin s’élevait dans la nuit. ',true);layers.art.addObject(objs.obj282);objs.obj283=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Mielleuse, sournoise. ',true);layers.art.addObject(objs.obj283);objs.obj284=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Simon, tu as gagné. Si tu t’ rends ',true);layers.art.addObject(objs.obj284);objs.obj285=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'maintenant, j’te promets qu’on t’fera ',true);layers.art.addObject(objs.obj285);objs.obj286=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'pas trop souffrir, ajouta-t-il en raclant la ',true);layers.art.addObject(objs.obj286);objs.obj287=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'lame de son couteau contre les pierres ',true);layers.art.addObject(objs.obj287);objs.obj288=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'d’un muret.',true);layers.art.addObject(objs.obj288);objs.obj289=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Un bruit affreux, qui fit dresser les poils ',true);layers.art.addObject(objs.obj289);objs.obj290=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'de l’adolescent. ',true);layers.art.addObject(objs.obj290);objs.obj291=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Hors de question de tomber entre leurs ',true);layers.art.addObject(objs.obj291);objs.obj292=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'mains! Il s’avança dans les ténèbres du ',true);layers.art.addObject(objs.obj292);objs.obj293=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'tunnel, guidé par le minuscule halo de ',true);layers.art.addObject(objs.obj293);objs.obj294=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'sa lampe torche. ',true);layers.art.addObject(objs.obj294);objs.obj295=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'La voûte minérale répercutait le bruit de ',true);layers.art.addObject(objs.obj295);objs.obj296=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'ses pas. ',true);layers.art.addObject(objs.obj296);objs.obj297=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Simon balaya les murs et… hurla$nbsp;!',true);layers.art.addObject(objs.obj297);objs.obj298=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Là, dans la lueur blafarde, était apparu ',true);layers.art.addObject(objs.obj298);objs.obj299=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'un visage. Démesuré. Grimaçant.',true);layers.art.addObject(objs.obj299);objs.obj300=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Une fresque.',true);layers.art.addObject(objs.obj300);objs.obj301=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Quel idiot$nbsp;! songea-t’il.',true);layers.art.addObject(objs.obj301);objs.obj302=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'L’œuvre représentait une créature ',true);layers.art.addObject(objs.obj302);objs.obj303=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'démoniaque qui semblait vouloir ',true);layers.art.addObject(objs.obj303);objs.obj304=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'dévorer l’intrus. Une sorte ',true);layers.art.addObject(objs.obj304);objs.obj305=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'d’avertissement.',true);layers.art.addObject(objs.obj305);objs.obj306=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Impressionné, Simon trébucha et s’étala ',true);layers.art.addObject(objs.obj306);objs.obj307=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'de tout son long. ',true);layers.art.addObject(objs.obj307);objs.obj308=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Et merde$nbsp;!',true);layers.art.addObject(objs.obj308);objs.obj309=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Une chute sans gravité. Sauf que Dark, ',true);layers.art.addObject(objs.obj309);objs.obj310=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'sans doute agacé d’être de nouveau ',true);layers.art.addObject(objs.obj310);objs.obj311=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'balloté, avait disparu$nbsp;!',true);layers.art.addObject(objs.obj311);objs.obj312=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Dark$nbsp;! Dark$nbsp;!',true);layers.art.addObject(objs.obj312);objs.obj313=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'L’adolescent avait presque crié. ',true);layers.art.addObject(objs.obj313);objs.obj314=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Les conséquences ne se firent pas ',true);layers.art.addObject(objs.obj314);objs.obj315=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'attendre. ',true);layers.art.addObject(objs.obj315);objs.obj316=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Venez les gars, il est là$nbsp;! Tout prêt$nbsp;!',true);layers.art.addObject(objs.obj316);objs.obj317=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Simon entendit un bruit de cavalcade ',true);layers.art.addObject(objs.obj317);objs.obj318=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'dans sa direction. Il balaya la surface du ',true);layers.art.addObject(objs.obj318);objs.obj319=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'tunnel. Mais il n’y avait rien qui ',true);layers.art.addObject(objs.obj319);objs.obj320=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'ressembla à une cachette. Pas la ',true);layers.art.addObject(objs.obj320);objs.obj321=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'moindre anfractuosité, pas le moindre ',true);layers.art.addObject(objs.obj321);objs.obj322=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'bloc où se dissimuler. ',true);layers.art.addObject(objs.obj322);objs.obj323=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Juste la queue de Dark qui disparaissait ',true);layers.art.addObject(objs.obj323);objs.obj324=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'dans le mur, quelques mètres devant lui. ',true);layers.art.addObject(objs.obj324);objs.obj325=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Simon se précipita.',true);layers.art.addObject(objs.obj325);objs.obj326=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Derrière lui, les prédateurs se ',true);layers.art.addObject(objs.obj326);objs.obj327=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'regroupaient.',true);layers.art.addObject(objs.obj327);objs.obj328=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'On se met en ligne et on avance. Il n’a ',true);layers.art.addObject(objs.obj328);objs.obj329=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'aucune chance de nous échapper.',true);layers.art.addObject(objs.obj329);objs.obj330=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Une sueur froide inondait le dos de ',true);layers.art.addObject(objs.obj330);objs.obj331=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'l’adolescent. La peur.',true);layers.art.addObject(objs.obj331);objs.obj332=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Dark$nbsp;?',true);layers.art.addObject(objs.obj332);objs.obj333=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Un couinement, juste devant lui. ',true);layers.art.addObject(objs.obj333);objs.obj334=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Simon s’approcha et découvrit un trou, ',true);layers.art.addObject(objs.obj334);objs.obj335=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'de la taille de son poing, qui semblait ',true);layers.art.addObject(objs.obj335);objs.obj336=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'avoir été creusé à hauteur d’homme. Le ',true);layers.art.addObject(objs.obj336);objs.obj337=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'rat l’attendait là, comme pour l’inviter à ',true);layers.art.addObject(objs.obj337);objs.obj338=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'le suivre.',true);layers.art.addObject(objs.obj338);objs.obj339=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Et comment veux-tu que je rentre ',true);layers.art.addObject(objs.obj339);objs.obj340=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'là-dedans$nbsp;? ',true);layers.art.addObject(objs.obj340);objs.obj341=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'La Meute se rapprochait encore. ',true);layers.art.addObject(objs.obj341);objs.obj342=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Ll’adolescent plongea ses mains dans ',true);layers.art.addObject(objs.obj342);objs.obj343=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'l’orifice et s’aperçut que les parois ',true);layers.art.addObject(objs.obj343);objs.obj344=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'étaient friables. Sans doute une chatière ',true);layers.art.addObject(objs.obj344);objs.obj345=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'que l’on avait dissimulée à la hâte. En ',true);layers.art.addObject(objs.obj345);objs.obj346=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'quelques gestes, il dégagea un espace ',true);layers.art.addObject(objs.obj346);objs.obj347=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'suffisant pour qu’il puisse s’y engager. ',true);layers.art.addObject(objs.obj347);objs.obj348=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Dark, tu es un génie, murmura Simon en ',true);layers.art.addObject(objs.obj348);objs.obj349=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'songeant à cette vieille comptine que lui ',true);layers.art.addObject(objs.obj349);objs.obj350=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'chantait sa mère, jadis$nbsp;: «$nbsp;Muruzé, ',true);layers.art.addObject(objs.obj350);objs.obj351=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Troussifée, Rassimais$nbsp;». ',true);layers.art.addObject(objs.obj351);objs.obj352=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Des mots magiques, qu’il avait mis des ',true);layers.art.addObject(objs.obj352);objs.obj353=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'années à comprendre$nbsp;: «$nbsp;Mur usé, trou ',true);layers.art.addObject(objs.obj353);objs.obj354=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'s’y fait, rat s’y met…$nbsp;».',true);layers.art.addObject(objs.obj354);objs.obj355=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il sourit un instant puis plongea le ',true);layers.art.addObject(objs.obj355);objs.obj356=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'faisceau de sa lampe dans le minuscule ',true);layers.art.addObject(objs.obj356);objs.obj357=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'passage. Impossible d’en apercevoir le ',true);layers.art.addObject(objs.obj357);objs.obj358=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'bout. Impossible de savoir où il allait. ',true);layers.art.addObject(objs.obj358);objs.obj359=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Des bruits de pas sur le gravier, juste ',true);layers.art.addObject(objs.obj359);objs.obj360=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'derrière lui. Pas le choix$nbsp;!',true);layers.art.addObject(objs.obj360);objs.obj361=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il se faufila entre les étroites parois, les ',true);layers.art.addObject(objs.obj361);objs.obj362=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'bras en avant, poussant son sac. Il ',true);layers.art.addObject(objs.obj362);objs.obj363=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'n’avait même pas la place de ramper, ',true);layers.art.addObject(objs.obj363);objs.obj364=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'contraint d’onduler à la manière d’un ',true);layers.art.addObject(objs.obj364);objs.obj365=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'serpent. ',true);layers.art.addObject(objs.obj365);objs.obj366=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'La poussière l’aveuglait, de la boue ',true);layers.art.addObject(objs.obj366);objs.obj367=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'s’engouffrait dans sa bouche et il ',true);layers.art.addObject(objs.obj367);objs.obj368=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'commençait à suffoquer.',true);layers.art.addObject(objs.obj368);objs.obj369=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},' Le salaud, il essaye encore de nous ',true);layers.art.addObject(objs.obj369);objs.obj370=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'échapper$nbsp;!',true);layers.art.addObject(objs.obj370);objs.obj371=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Repéré$nbsp;!',true);layers.art.addObject(objs.obj371);objs.obj372=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'L’adolescent tenta d’accélérer le ',true);layers.art.addObject(objs.obj372);objs.obj373=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'mouvement. Mais plus il avançait, plus ',true);layers.art.addObject(objs.obj373);objs.obj374=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'il avait l’impression que le boyau allait ',true);layers.art.addObject(objs.obj374);objs.obj375=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'l’avaler, qu’il allait mourir là. Il aurait ',true);layers.art.addObject(objs.obj375);objs.obj376=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'voulu hurler mais sa cage thoracique ',true);layers.art.addObject(objs.obj376);objs.obj377=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'était trop oppressée.',true);layers.art.addObject(objs.obj377);objs.obj378=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Vas-y$nbsp;! Suis-le$nbsp;! hurlait Kevin.',true);layers.art.addObject(objs.obj378);objs.obj379=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Mais…',true);layers.art.addObject(objs.obj379);objs.obj380=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Discute pas la Fouine, vas-y$nbsp;!',true);layers.art.addObject(objs.obj380);objs.obj381=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Simon tremblait, la sueur collait à son ',true);layers.art.addObject(objs.obj381);objs.obj382=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'front tandis que l’autre se faufilait déjà ',true);layers.art.addObject(objs.obj382);objs.obj383=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'à sa poursuite. Il était mince, agile et ',true);layers.art.addObject(objs.obj383);objs.obj384=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'surtout il avait encore plus peur de ',true);layers.art.addObject(objs.obj384);objs.obj385=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Kevin que lui. ',true);layers.art.addObject(objs.obj385);objs.obj386=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Cette fois, Simon était bel et bien foutu.',true);layers.art.addObject(objs.obj386);objs.obj387=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Soudain, un éclair blanc le fit sursauter. ',true);layers.art.addObject(objs.obj387);objs.obj388=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Une silhouette spectrale venait de ',true);layers.art.addObject(objs.obj388);objs.obj389=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'passer entre son corps et la paroi.',true);layers.art.addObject(objs.obj389);objs.obj390=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Dans les secondes qui suivirent, un ',true);layers.art.addObject(objs.obj390);objs.obj391=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'hurlement ébranla le tunnel. ',true);layers.art.addObject(objs.obj391);objs.obj392=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Mais l’adolescent n’eut pas le temps de ',true);layers.art.addObject(objs.obj392);objs.obj393=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'s’y intéresser car il venait, enfin, de ',true);layers.art.addObject(objs.obj393);objs.obj394=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'déboucher sur un espace plus grand. ',true);layers.art.addObject(objs.obj394);objs.obj395=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Il s’assit un instant pour reprendre son ',true);layers.art.addObject(objs.obj395);objs.obj396=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'souffle tandis que Dark lissait ses ',true);layers.art.addObject(objs.obj396);objs.obj397=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'moustaches à ses côtés. Quelques ',true);layers.art.addObject(objs.obj397);objs.obj398=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'gouttes de sang poissaient son museau. ',true);layers.art.addObject(objs.obj398);objs.obj399=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Le visage de Simon s’éclaira : l’éclair ',true);layers.art.addObject(objs.obj399);objs.obj400=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'blanc, le hurlement.',true);layers.art.addObject(objs.obj400);objs.obj401=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'Sacré Dark$nbsp;! Sans toi, je n’avais aucune ',true);layers.art.addObject(objs.obj401);objs.obj402=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'chance… Maintenant, la question est de ',true);layers.art.addObject(objs.obj402);objs.obj403=new mse.Text(layers.art,{size:[coords.cid12,coords.cid14]},'savoir où nous avons atterri$nbsp;!',true);layers.art.addObject(objs.obj403);layers.art.setDefile(1300);temp.layerDefile=layers.art;pages.back.addLayer('art',layers.art);pages.back2=new mse.BaseContainer(null,{size:[coords.cid0,coords.cid1]});layers.back2default=new mse.Layer(pages.back2,1,{"globalAlpha":1,"size":[coords.cid0,coords.cid1]});objs.obj405=new mse.Image(layers.back2default,{"size":[coords.cid0,coords.cid1],"pos":[coords.cid7,coords.cid7]},'src6_image');layers.back2default.addObject(objs.obj405);objs.obj406=new mse.Image(layers.back2default,{"size":[coords.cid18,coords.cid19],"pos":[coords.cid20,coords.cid21]},'src9_image');layers.back2default.addObject(objs.obj406);pages.back2.addLayer('back2default',layers.back2default);var action={};var reaction={};mse.currTimeline.start();};mse.autoFitToWindow(createbook);
