@@ -138,12 +138,15 @@ function changeCoords() {
     for(var i in coords) {
         coords[i] = parseFloat(new Number(ratio * coords[i]).toFixed(2));
     }
+    if(window.autoFitCallback) window.autoFitCallback();
+    window.autoFitCallback = null;
 }
 
-mse.autoFitToWindow = function() {
+mse.autoFitToWindow = function(f) {
+    if(f) window.autoFitCallback = f;
     if(coords && coords['cid1']) {
         if(MseConfig.pageHeight > 250) changeCoords();
-        else setTimeout(autoFitToWindow, 1000);
+        else setTimeout(mse.autoFitToWindow, 1000);
     }
 }
 
@@ -678,6 +681,7 @@ mse.Root = function(id, width, height, orientation) {
 	    this.viewport.y = (this.height - MseConfig.pageHeight)/2;
 	    this.jqObj.attr({'width':MseConfig.pageWidth, 'height':MseConfig.pageHeight});
 	    this.jqObj.css({'left':"0px",'top':"0px"});
+	    this.ctx.translate(-this.viewport.x, -this.viewport.y);
 	};
 	
 	this.setContainer = function(container) {
@@ -935,7 +939,6 @@ $.extend(mse.BaseContainer.prototype, {
     		if(this.deleg) this.deleg.draw(ctx);
     		else {
     			this.configCtx(ctx);
-    			if(mse.root.viewport) ctx.translate(-mse.root.viewport.x, -mse.root.viewport.y);
     			for(var i in this._layers) {
     				this._layers[i].draw(ctx);
     			}

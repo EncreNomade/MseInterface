@@ -68,7 +68,7 @@ class ProjectGenerator {
         // Initiale Mse system
         $this->jstr .= "initMseConfig();";
         $this->jstr .= "mse.init();";
-        $this->jstr .= "mse.autoFitToWindow();";
+        $this->jstr .= "function createbook(){";
         // Initiale root
         $this->jstr .= "var root = new mse.Root('".$this->pj->getName()."',".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight).",'".$this->pj->getOrientation()."');";
         $this->autoid = 0;
@@ -361,7 +361,9 @@ class ProjectGenerator {
         }
         
         // Start the book
-        $this->jstr .= "mse.currTimeline.start();";
+        $this->jstr .= "mse.currTimeline.start();};";
+        // Lazy init the book
+        $this->jstr .= "mse.autoFitToWindow(createbook);";
         
         // Join the coords array in the beginning
         $this->jstr = "var coords = JSON.parse('".json_encode($this->coords)."');".$this->jstr;

@@ -13,7 +13,7 @@
 		<key>StateType</key>
 		<string>ProjectWindow</string>
 		<key>TopLeftPoint</key>
-		<string>{15, 878}</string>
+		<string>{7, 878}</string>
 	</dict>
 	<key>com.macrabbit.Espresso.FileManager.DisclosureCollapsed</key>
 	<false/>
@@ -77,6 +77,12 @@
 			<dict>
 				<key>DocumentURL</key>
 				<string>file://localhost/Users/panda/Sites/MseInterface/generate_js.php</string>
+				<key>StateType</key>
+				<string>DefaultTab</string>
+			</dict>
+			<dict>
+				<key>DocumentURL</key>
+				<string>file://localhost/Users/panda/Sites/MseInterface/projects/mse.js</string>
 				<key>StateType</key>
 				<string>DefaultTab</string>
 			</dict>
