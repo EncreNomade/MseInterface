@@ -275,25 +275,21 @@ SourceManager.prototype = {
 	sources: {},
 	expos: {},
 	acceptType: new Array('image', 'audio', 'game', 'anime', 'wiki'),
-	idRegExp: /(\w+)_(\w+)/,
-	idCheck: /\w+_[(image)|(audio)|(game)|(anime)|(wiki)]/,
 	extCheck: /data:\s*(\w+)\/(\w+);/,
 	pathCheck: /^(\.\/)?(\w+\/)*(\w+)\.(\w+)/,
 	
 	sourceType: function(id) {
-		var res = id.match(this.idRegExp);
-		return res[2];
+	    if(this.sources[id]) {
+    		return this.sources[id].type;
+		}
+		else return "none";
 	},
 	dataExtension: function(id) {
-	    if(!this.sources[id] || typeof this.sources[id] != "string") return null;
-	    var res = this.sources[id].match(this.extCheck);
+	    if(!this.sources[id] || typeof this.sources[id].data != "string") return null;
+	    var res = this.sources[id].data.match(this.extCheck);
 	    if(res != null && (res[1] == "image" || res[1] == "audio" || res[1] == "game")) 
 	        return res[2];
 	    else return null;
-	},
-	realName: function(id) {
-	    var res = id.match(this.idRegExp);
-	    return res[1];
 	},
 	isExist: function(id) {
 	    return ($.inArray(id, Object.keys(this.sources)) != -1);
@@ -301,10 +297,16 @@ SourceManager.prototype = {
 	addSource: function(type, data, id) {
 		if($.inArray(type, this.acceptType) == -1) return;
 		if(!id) {
-		    id = 'src'+this.currId+'_'+type;
+		    id = 'src'+this.currId;
 		    this.currId++;
 		}
-		else if(!id.match(this.idCheck)) id = id+'_'+type;
+		else if(this.sources[id] != null && type != "wiki" && type != "anime") {
+		    alert("Le nom de source exist déjà...");
+		    return;
+		}
+		// Source structure
+		var src = {'type':type, 'data':null};
+		this.sources[id] = src;
 		// Generate expo
 		var expo = $('<div class="icon_src" draggable="true"></div>');
 		expo.get(0).addEventListener('dragstart', dragFromSrcs, false);
@@ -318,20 +320,20 @@ SourceManager.prototype = {
 		switch(type) {
 		case 'image':
 			// Add image source
-			this.sources[id] = data;
+			this.sources[id].data = data;
 			var img = $('<img name="'+ id +'"></img>');
 			img.attr({src: data});
 			expo.append(img);
 			break;
 		case 'audio':
 		    // Add audio source
-		    this.sources[id] = data;
+		    this.sources[id].data = data;
 		    expo.css('background', 'url("./images/UI/audio.png") center center no-repeat');
 		    break;
 		case 'game':
 		    // Add game source
 		    var encoded = base64_encode(data);
-		    this.sources[id] = "data:game/js;base64,"+encoded;
+		    this.sources[id].data = "data:game/js;base64,"+encoded;
 		    expo.css('background', 'url("./images/UI/HTML5game.png") center center no-repeat');
 		    break;
 		/*case 'text': 
@@ -365,24 +367,21 @@ SourceManager.prototype = {
 			expo.append(content);
 			break;*/
 		case 'wiki':
-		    if(this.sources[id]) {
-		        this.sources[id] = data;
-		        return;
-		    }
-		    this.sources[id] = data;
-		    expo.append('<p>WIKI: '+this.realName(id)+'</p>');
+		    this.sources[id].data = data;
+		    // Already exist
+		    if(this.sources[id]) return;
+		    
+		    expo.append('<p>WIKI: '+id+'</p>');
 		    expo.children().css('font','bold 8px Times');
 		    expo.click(function(){
 		        srcMgr.editWiki($(this).data('srcId'));
 		    });
 		    break;
 		case 'anime':
-		    if(this.sources[id]) {
-		        this.sources[id] = data;
-		        return;
-		    }
-		    this.sources[id] = data;
-		    expo.append('<p>Anime: '+this.realName(id)+'</p>');
+		    this.sources[id].data = data;
+		    if(this.sources[id]) return;
+
+		    expo.append('<p>Anime: '+id+'</p>');
 		    expo.circleMenu({'addscript':['./images/UI/addscript.jpg',addScriptDialog]});
 		    expo.click(function(){
 		        srcMgr.getSource($(this).data('srcId')).showAnimeOnEditor();
@@ -399,22 +398,23 @@ SourceManager.prototype = {
 	},
 	getSource: function(id) {
 	    if(this.sources[id])
-    		return this.sources[id];
+    		return this.sources[id].data;
     	else return null;
 	},
 	getImgSrcIDs: function(){
 	    var res = [];
 	    for(var id in this.sources) {
-	        if(this.sourceType(id) == "image") res.push(id);
+	        if(this.sources[id].type == "image") res.push(id);
 	    }
 	    return res;
 	},
 	generateChildDomElem: function(id, parent) {
-		var type = this.sourceType(id);
+	    if(!this.sources[id]) return;
+		var type = this.sources[id].type;
 		switch(type) {
 		case 'image':
 			var img = $('<img name="'+id+'">');
-			img.attr({'src':this.sources[id]});
+			img.attr({'src':this.sources[id].data});
 			img.removeAttr('draggable');
 
 			var container = $('<div class="illu">');
@@ -442,14 +442,13 @@ SourceManager.prototype = {
 					'top': 2-res.height()+'px'});
 			return res;*/
 		case 'game':
-		    var name = this.realName(id);
-			var game = $('<div class="game" name="'+name+'">');
+			var game = $('<div class="game" name="'+id+'">');
 			game.deletable();
 
 			// Resize
 			var w = parent.width()*0.8, h = w*0.6/0.8;
 			game.css({'width':w+'px', 'height':h+'px'});
-		    game.append('<h3>Game: '+name+'</h3>');
+		    game.append('<h3>Game: '+id+'</h3>');
 		    return game;
 		default: 
 		}
@@ -466,42 +465,31 @@ SourceManager.prototype = {
 		this.uploaded = 0;
 	},
 	editWiki: function(id) {
-	    if(!this.sources[id] || !(this.sources[id] instanceof Wiki)) return;
-	    this.sources[id].showWikiOnEditor();
+	    if(!this.sources[id] || !(this.sources[id].data instanceof Wiki)) return;
+	    this.sources[id].data.showWikiOnEditor();
 	},
 	uploadSrc: function(url, pjName) {
 	    this.uploaded = 0;
 	    for(var key in this.sources) {
 	        var data = null;
-	        var type = this.sourceType(key);
+	        var type = this.sources[key].type;
 	        // Check if data is original content or the relative path
 	        var ext = this.dataExtension(key);
 	        // relative path
 	        if((type == "image" || type == "game" || type == "audio") && (!ext || ext == "")) {
 	            ++this.uploaded;
-	            srcMgr.updateSrcs(pjName);
+	            this.updateSrcs(pjName);
 	            continue;
 	        }
 	        // Original content, upload it
 	        switch(type) {
-	        case "image":
-	            data = "pj="+pjName+"&type=image&name="+key+"&data="+this.sources[key];
+	        case "image": case "audio": case "game":
+	            data = "pj="+pjName+"&type="+type+"&name="+key+"&data="+this.sources[key].data;
 	            break;
-	        case "audio":
-	            data = "pj="+pjName+"&type=audio&name="+key+"&data="+this.sources[key];
-	            break;
-	        case "game":
-	            data = "pj="+pjName+"&type=game&name="+this.realName(key)+"&data="+this.sources[key];
-	            break;
-	        case "wiki":
-	            //data = "pj="+pjName+"&type=anime&name="+key+"&data="+JSON.stringify(this.sources[key]);
-	            //break;
-	        case "animes":
+	        case "wiki": case "animes":
 	            ++this.uploaded;
-	            srcMgr.updateSrcs(pjName);
+	            this.updateSrcs(pjName);
 	            continue;
-	            //data = "pj="+pjName+"&type=wiki&name="+key+"&data="+JSON.stringify(this.sources[key]);
-	            break;
 	        }
 	        
 	        if(data)
@@ -516,7 +504,7 @@ SourceManager.prototype = {
 	                        srcMgr.updateSrcs(pjName);
 	                    }
 	                    else if(srcMgr.pathCheck.test(msg)) {
-	                        srcMgr.sources[key] = msg;
+	                        srcMgr.sources[key].data = msg;
 	                        ++srcMgr.uploaded;
 	                        srcMgr.updateSrcs(pjName);
 	                    }

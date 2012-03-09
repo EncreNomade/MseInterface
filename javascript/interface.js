@@ -729,8 +729,8 @@ function dropToTargetZone(e) {
 	$(this).css('border-style', 'dotted');
 	
 	var id = e.dataTransfer.getData('Text');
-	var regexp = new RegExp("\\w*"+$(this).data('type'));
-	if(!id || !id.match(regexp)) return;
+	var type = srcMgr.sourceType(id);
+	if(!id || type != $(this).data('type')) return;
 	// Place in the elem zone
 	$(this).html(srcMgr.getExpo(id));
 	$(this).attr('target', id);
@@ -1054,10 +1054,9 @@ function dropImgToWikiCard(e) {
     
     var id = e.dataTransfer.getData('Text');
     var data = srcMgr.getSource(id);
-    if(id.match(/\w*image/)) {
-        if(data == null) return;
-    }
-    else return;
+    var type = srcMgr.sourceType(id);
+    // Verification
+    if(!data || type != "image") return;
     
     var img = $('<img name="'+id+'" src="'+data+'" style="top:20px;">');
     img.get(0).addEventListener('dragover', DropZone.prototype.dragOverElemZone, false);
@@ -1334,7 +1333,8 @@ function addAnimeObj(e, id, data) {
 function dropToAnimeEditor(e) {
     e.stopPropagation();
     var id = e.dataTransfer.getData('Text');
-    if(!id || !id.match(/\w*image/)) return;
+    var type = srcMgr.sourceType(id);
+    if(!id || type != "image") return;
     var data = srcMgr.getSource(id);
     if(data == null) return;
     
@@ -1383,17 +1383,18 @@ function dragLeaveExpo(e) {
 function dropToScene(e) {
 	e.stopPropagation();
 	var id = e.dataTransfer.getData('Text');
-	if(!id || !id.match(/\w*image/)) return;
+	var type = srcMgr.sourceType(id);
+	if(!id || type != "image") return;
 	var data = srcMgr.getSource(id);
 	if(data == null) return;
-	
 	addImageElem(id, data, curr.page, curr.step);
 };
 function dropToExpo(e) {
 	e.stopPropagation();
 	$(this).css('border', 'none');
 	var id = e.dataTransfer.getData('Text');
-	if(!id || !id.match(/\w*image/)) return;
+	var type = srcMgr.sourceType(id);
+	if(!id || type != "image") return;
 	var data = srcMgr.getSource(id);
 	if(data == null) return;
 	
@@ -1429,10 +1430,9 @@ function dropToInsertZone(e) {
 	
 	var id = e.dataTransfer.getData('Text');
 	var data = srcMgr.getSource(id);
-	if(id.match(/\w*image/) || id.match(/\w*game/)) {
-	    if(!data) return;
-	}
-	else return;
+	var type = srcMgr.sourceType(id);
+	// Verification
+	if(!data || (type != "image" && type != "game")) return;
 	// Append to elem zone
 	$(this).append(srcMgr.getExpo(id));
 };
@@ -1491,7 +1491,9 @@ function dropToAudioElemZone(e) {
 	$(this).css('border-style', 'dotted');
 	
 	var id = e.dataTransfer.getData('Text');
-	if(!id || !id.match(/\w*audio/)) return;
+	var type = srcMgr.sourceType(id);
+	// Verification
+	if(!data || (type != "audio")) return;
 	// Place in the elem zone
 	$(this).append(srcMgr.getExpo(id));
 	$(this).attr('link', id);
@@ -1502,7 +1504,9 @@ function dropToWikiElemZone(e) {
     $(this).css('border-style', 'dotted');
     
     var id = e.dataTransfer.getData('Text');
-    if(!id || !id.match(/\w*wiki/)) return;
+    var type = srcMgr.sourceType(id);
+    // Verification
+    if(!data || (type != "wiki")) return;
     // Place in the elem zone
     $(this).append(srcMgr.getExpo(id));
     $(this).attr('link', id);
