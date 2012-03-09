@@ -23,7 +23,7 @@ class MseProject {
     private $lastModif;
     private $currObjId;
     private $currSrcId;
-    private static $typeRegExp = "/\w+_((image)|(audio)|(game)|(anime)|(wiki))/";
+    private static $typeRegExp = "/(\w+)_((image)|(audio)|(game)|(anime)|(wiki))/";
 
     function MseProject($pjName, $bkName="", $width = 800, $height = 600, $orient = 'portrait') {
         $numargs = func_num_args();
@@ -146,6 +146,11 @@ class MseProject {
     }
     function typeForSrc($key){
         preg_match(self::$typeRegExp, $key, $res);
+        if(array_key_exists(2, $res)) return $res[2];
+        else return "";
+    }
+    function nameForSrc($key){
+        preg_match(self::$typeRegExp, $key, $res);
         if(array_key_exists(1, $res)) return $res[1];
         else return "";
     }
@@ -221,25 +226,6 @@ class MseProject {
             }
         }
         else {
-        /*
-            $query = sprintf("INSERT INTO Projects(id,owner,creation,folder,name,width,height,orientation,struct,sources,scripts,lastModif) Value('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')",
-                mysql_real_escape_string($id), 
-                mysql_real_escape_string($owner), 
-                mysql_real_escape_string($modif),
-                mysql_real_escape_string($this->bookName),
-                mysql_real_escape_string($this->name),
-                mysql_real_escape_string($this->width),
-                mysql_real_escape_string($this->height),
-                mysql_real_escape_string($this->orientation),
-                mysql_real_escape_string(json_encode($this->struct)),
-                mysql_real_escape_string(json_encode($this->sources)),
-                mysql_real_escape_string(json_encode($this->scripts)), 
-                mysql_real_escape_string($modif));
-            $resp = mysql_query($query);
-            if(!$resp) {
-                die("Fail to add the project record to database: ".mysql_error());
-                return FALSE;
-            }*/
             echo "alert('Fail to add the project record to database');";
             return FALSE;
         }

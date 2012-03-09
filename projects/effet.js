@@ -1,3 +1,15 @@
+/*!
+ * Mse Graphic Effects Library v1.0
+ * Encre Nomade
+ *
+ * Author: Lv Yuchang
+ * Copyright 2011, MseEdition
+ *
+ * Date: 10/2011
+ */
+ 
+
+
 // effet : affectation des effets sur le texte ou l'image
 (function( mse ){
 
@@ -9,9 +21,6 @@ __KEY_B = 66;
 __KEY_V = 86;
 __KEY_C = 67;
 __E = 0.000001;
-
-mse.src.addSource('fogEffectImg', 'src/CL15.png', 'img', true);
-mse.src.addSource('fogBetaImg', 'src/blue_fog.jpg', 'img', true);
 
 Number.prototype.toHexString = function(){
 	return this.toString(16);
@@ -34,15 +43,15 @@ mse.EffectScreen.prototype = {
 	toString : function(){return "[object mse.EffectScreen]"}
 };
 /*******************************************************************/
-mse.ESVibration = function (){
-	mse.EffectScreen.call(this);
+mse.ESEarthquake = function (){
+	mse.EffectScreen.call(this);	
 	
 	this.count = 0;
 	this.imgPixels = null;
 };
-extend(mse.ESVibration,mse.EffectScreen);
-$.extend(mse.ESVibration.prototype, {
-	label : "vibration",
+extend(mse.ESEarthquake,mse.EffectScreen);
+$.extend(mse.ESEarthquake.prototype, {
+	label : "earthquake",
 	process : function(ctx){
 		if(!(this.count%1)){
 			this.offsetX = (Math.random()-0.5)*8;
@@ -62,12 +71,109 @@ $.extend(mse.ESVibration.prototype, {
 });
 	
 /*******************************************************************/
+mse.ESEarthquakeByCss = function (config){
+	mse.EffectScreen.call(this);
+	
+	this.config = {
+		target : 'book',
+		duration : 2000,
+		horizontal : 8,
+		vertical : 8
+	};
+	
+	if(config)$.extend(this.config,config);
+	this.count = 0;
+	var canvas = document.getElementById(this.config.target);
+	this.defaultLeft = checkFontSize(canvas.style.left);
+	this.defaultTop = checkFontSize(canvas.style.top);
+};
+extend(mse.ESEarthquakeByCss,mse.EffectScreen);
+$.extend(mse.ESEarthquakeByCss.prototype, {
+	label : "earthquakeByCss",
+	process : function(ctx){
+		if(!(this.count%1)){
+			this.offsetX = (Math.random()-0.5)*this.config.horizontal;
+			this.offsetY = (Math.random()-0.5)*this.config.vertical;
+		}
+		mse.root.setPos(this.offsetX+this.defaultLeft,this.offsetY+this.defaultTop);
+		
+		this.count++;
+		if(this.count > this.config.duration) this.endEffect();
+	},
+	toString : function(){
+		return this.label;
+	}
+});
+	
+/*******************************************************************/
+mse.ESDropdownByCss = function (config){
+	mse.EffectScreen.call(this);
+	
+	this.config = {
+		target : 'book',
+		duration : 500,
+		g : 9.8
+	};
+	
+	if(config)$.extend(this.config,config);	
+	
+	this.count = 0;
+	var canvas = document.getElementById(this.config.target);
+	this.defaultLeft = checkFontSize(canvas.style.left);
+	this.defaultTop = checkFontSize(canvas.style.top);
+
+    this.markFalling = true;
+           
+	this.buffH = 0;
+    this.g = this.config.g;
+    this.h = 0;
+    this.Vo = 0;
+    this.Vt = 0;
+    this.t = 0;	
+};
+extend(mse.ESDropdownByCss,mse.EffectScreen);
+$.extend(mse.ESDropdownByCss.prototype, {
+	label : "dropdownByCss",
+	process : function(ctx){
+        if(this.markFalling)this.falling();
+        else this.rising();
+        
+		mse.root.setPos(this.defaultLeft,this.h-ctx.canvas.height);
+		
+        this.count++; this.t++;
+        if(this.count > this.config.duration) this.endEffect();
+	},
+    falling : function(){
+        this.Vt = this.Vo + this.g*this.t;
+        this.h = this.buffH + 0.5*this.g*this.t*this.t;
+        if(this.h > 600){
+            this.h = 600;
+            this.t = 0;
+            this.Vo = this.Vt/1.7;
+            this.markFalling = false;
+        }
+    },
+    rising : function(){
+        this.Vt = this.Vo + (-this.g)*this.t;
+        this.h = 600 - (this.Vt*this.Vt - this.Vo*this.Vo)/(2*(-this.g));
+        if(this.Vt < 0){
+            this.buffH = this.h;
+            this.t = 0;
+            this.Vo = 0;
+            this.markFalling = true;           
+        }
+    },
+	toString : function(){
+		return this.label;
+	}
+});
+	
+/*******************************************************************/
 mse.ESDropdown = function (){
     mse.EffectScreen.call(this);
     this.count = 0;
     
     this.imgPixels = null;
-    this.offsetY = 0;
     this.markFalling = true;
            
 	this.buffH = 0;
@@ -81,31 +187,29 @@ extend(mse.ESDropdown,mse.EffectScreen);
 $.extend(mse.ESDropdown.prototype, {
     label : "dropdown",
     process : function(ctx){
-    	this.offsetY = -ctx.canvas.height;
-    	
-        if(this.markFalling)this.falling(ctx);
-        else this.rising(ctx);
+        if(this.markFalling)this.falling();
+        else this.rising();
 
-        this.imgPixels = ctx.getImageData(0,0,ctx.canvas.width,ctx.canvas.height);
-        ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
-        ctx.putImageData(this.imgPixels,0,this.offsetY+this.h,0,0,this.imgPixels.width,this.imgPixels.height);
+        this.imgPixels = ctx.getImageData(0,0,800,600);
+        ctx.clearRect(0,0,800,600);
+        ctx.putImageData(this.imgPixels,0,-ctx.canvas.height+this.h,0,0,this.imgPixels.width,this.imgPixels.height);
 
         this.count++; this.t++;
         if(this.count > 800) this.endEffect();
     },
-    falling : function(ctx){
+    falling : function(){
         this.Vt = this.Vo + this.g*this.t;
         this.h = this.buffH + 0.5*this.g*this.t*this.t;
-        if(this.h > ctx.canvas.height){
-            this.h = ctx.canvas.height;
+        if(this.h > 600){
+            this.h = 600;
             this.t = 0;
-            this.Vo = this.Vt/2;
+            this.Vo = this.Vt/1.7;
             this.markFalling = false;
         }
     },
-    rising : function(ctx){
+    rising : function(){
         this.Vt = this.Vo + (-this.g)*this.t;
-        this.h = ctx.canvas.height - (this.Vt*this.Vt - this.Vo*this.Vo)/(2*(-this.g));
+        this.h = 600 - (this.Vt*this.Vt - this.Vo*this.Vo)/(2*(-this.g));
         if(this.Vt < 0){
             this.buffH = this.h;
             this.t = 0;
@@ -130,10 +234,9 @@ mse.EffectText.prototype = {
 	draw : function(ctx){},
 	logic : function(delta){},
 	toString : function(){return "[object mse.EffectText]"}
-	//Can not use "if" statement here.
 };
 /*******************************************************************/
-mse.ETFadein = function(subject,config,multi) { //Effect Type 1.1
+mse.ETFade = function(subject,config,multi) {
 	mse.EffectText.call(this,subject,config,multi);
 	this.count = 0;
 	
@@ -145,9 +248,9 @@ mse.ETFadein = function(subject,config,multi) { //Effect Type 1.1
 	
 	if(config)$.extend(this.config,config);
 };
-extend(mse.ETFadein,mse.EffectText);
-$.extend(mse.ETFadein.prototype, { //Only constants we should put into prototype!!!
-	label : "fadein",
+extend(mse.ETFade,mse.EffectText);
+$.extend(mse.ETFade.prototype, {
+	label : "fade",
 	logic : function(delta){
 		if(this.count <= this.config.duration){
 			this.subject.globalAlpha = this.config.start + (this.count/this.config.duration)*(this.config.end-this.config.start);
@@ -230,10 +333,11 @@ mse.ETTypewriter = function(subject,config,multi) { //Effect Type 4
 	this.alphabetsDePhrase = this.subject.text.split('');
 	
 	this.config = {
-		speed : 0
+		speed : 1
 	};
 	
 	if(config)$.extend(this.config,config);
+	this.config.speed = this.config.speed - 1;
 };
 extend(mse.ETTypewriter,mse.EffectText);
 $.extend(mse.ETTypewriter.prototype, {
@@ -407,18 +511,19 @@ $.extend(mse.ETZoomtext.prototype, {
 		else{
 			if(this.multi)return false;
 			this.subject.endEffect();
-		}		
+		}
 	},
 	draw : function (ctx){
 		ctx.fillText(this.subject.text,this.subject.getX(),this.subject.getY());
 	},
 	toString : function(){
 		return this.label;
-	}	
+	}
 });
 /*******************************************************************/
-mse.ETDeformtext = function(subject,config,multi) { //Effect Type 4
+mse.ETTwisttext = function(subject,config,multi) { 
 	mse.EffectText.call(this,subject,config,multi);
+	this.cbProcess = new mse.Callback(this.process,this);
 	
 	this.count = 0;
 	this.alphabetsDePhrase = this.subject.text.split('');
@@ -434,9 +539,9 @@ mse.ETDeformtext = function(subject,config,multi) { //Effect Type 4
 	
 	if(config)$.extend(this.config,config);
 };
-extend(mse.ETDeformtext,mse.EffectText);
-$.extend(mse.ETDeformtext.prototype, {
-	label : "deformtext",
+extend(mse.ETTwisttext,mse.EffectText);
+$.extend(mse.ETTwisttext.prototype, {
+	label : "twisttext",
 	logic : function(delta){
 		if(this.count <= this.config.duration){
 			for(var i = 0; i < this.longueur; i++){
@@ -482,6 +587,74 @@ $.extend(mse.ETDeformtext.prototype, {
 	}
 });
 /*******************************************************************/
+mse.ETTwistMultiText = function(subject,config,multi) {
+	mse.EffectText.call(this,subject,config,multi);
+	
+	if(!mse.ETTwistMultiText.prototype.initflag){
+		mse.root.evtDistributor.addListener('drawover', new mse.Callback(mse.ETTwistMultiText.prototype.process, null));
+		mse.ETTwistMultiText.prototype.initflag = true;
+	}
+
+	this.alphabetsDePhrase = this.subject.text.split('');
+	this.longueur = this.alphabetsDePhrase.length;
+	this.fontsizeArray = new Array();
+	
+	this.config = {
+		periode : 30,
+		variation : 10,
+		ratio : 0.5
+	};
+	
+	if(config)$.extend(this.config,config);
+};
+extend(mse.ETTwistMultiText,mse.EffectText);
+$.extend(mse.ETTwistMultiText.prototype, {
+	label : "twistmultitext",
+	count : 0,
+	initflag : false,
+	process : function(){
+		mse.ETTwistMultiText.prototype.count++;
+		if(mse.ETTwistMultiText.prototype.count > 60000) mse.ETTwistMultiText.prototype.count=0;
+	},
+	endEffect : function(){
+		this.subject.endEffect();
+	},
+	logic : function(delta){
+
+	},
+	draw : function (ctx){
+		var c = mse.ETTwistMultiText.prototype.count % this.config.periode;
+		var fontWidth = 0;
+		if(c <= this.config.periode){
+			for(var i = 0; i < this.longueur; i++){
+				var size = 0;
+				var valueCos = (-Math.cos((fontWidth/this.subject.width)*360*(Math.PI/180)));
+				if(c <= this.config.periode*this.config.ratio){
+					size = this.config.variation*(c/(this.config.periode*this.config.ratio))*valueCos+18;
+				}
+				else{
+					size = this.config.variation*((this.config.periode-c)/(this.config.periode*(1-this.config.ratio)))*valueCos+18;
+				}
+				fontWidth += ctx.measureText(this.alphabetsDePhrase[i]).width;
+				size = Math.round(size);
+				this.fontsizeArray[i] = size.toString() + "px " + mse.configs.font;
+			}
+			if(this.multi)return true;
+		}
+		
+		var stringWidth = 0;
+		var offsetX = 0;
+		for(var i = 0; i < this.longueur; i++){
+			ctx.font = this.fontsizeArray[i];
+			ctx.fillText(this.alphabetsDePhrase[i],this.subject.getX()+stringWidth,this.subject.getY());
+			stringWidth += ctx.measureText(this.alphabetsDePhrase[i]).width;
+		}
+	},
+	toString : function(){
+		return this.label;
+	}
+});
+/*******************************************************************/
 mse.MultiEffectContainer = function (subject,dictObjEffects){
 	mse.EffectText.call(this,subject);
 	this.dictObjEffects = dictObjEffects;
@@ -492,13 +665,6 @@ mse.MultiEffectContainer = function (subject,dictObjEffects){
 extend(mse.MultiEffectContainer,mse.EffectText);
 $.extend(mse.MultiEffectContainer.prototype, {
 	label : "multieffect",
-	conflict : {
-		"param" : [],
-		"zoom" : ["imageData"],
-		"trajet" : ["imageData","content","trajet"],
-		"imageData" : ["trajet","zoom","content","imageData"],
-		"content" : ["imageData","trajet","content"]		
-	},
 	classification : {
 		"fadein" : "param",
 		"colored" : "param",
@@ -506,7 +672,15 @@ $.extend(mse.MultiEffectContainer.prototype, {
 		"flytext" : "trajet",
 		"painttext" : "imageData",
 		"typewriter" : "content",
-		"deformtext" : "content"
+		"twisttext" : "content",
+		"twistmultitext" : "content"
+	},
+	conflict : {
+		"param" : [],
+		"zoom" : ["imageData"],
+		"trajet" : ["imageData","content","trajet"],
+		"imageData" : ["trajet","zoom","content","imageData"],
+		"content" : ["imageData","trajet","content"]		
 	},
 	filterEffect : function (listEffect){
 		var principalDraw = null;
@@ -558,14 +732,15 @@ mse.initTextEffect = function (effectConf,subject) {
 	if(Object.keys(effectConf).length < 2){
 		for(var nEffect in effectConf){
 			switch(nEffect){
-				case "fadein" : return (new mse.ETFadein(subject,effectConf[nEffect],false));
+				case "fade" : return (new mse.ETFade(subject,effectConf[nEffect],false));
 				case "colored": return (new mse.ETColored(subject,effectConf[nEffect],false));
 				case "typewriter": return (new mse.ETTypewriter(subject,effectConf[nEffect],false));
 				case "painttext": return (new mse.ETPainttext(subject,effectConf[nEffect],false));
 				case "flytext": return (new mse.ETFlytext(subject,effectConf[nEffect],false));
 				case "zoomtext" : return (new mse.ETZoomtext(subject,effectConf[nEffect],false));
-				case "deformtext" : return (new mse.ETDeformtext(subject,effectConf[nEffect],false));
-				default : return null;				
+				case "twisttext" : return (new mse.ETTwisttext(subject,effectConf[nEffect],false));
+				case "twistmultitext" : return (new mse.ETTwistMultiText(subject,effectConf[nEffect],false));
+				default : return null;
 			}
 		}
 		return null;
@@ -574,13 +749,14 @@ mse.initTextEffect = function (effectConf,subject) {
 		var dictObjEffects = {};
 		for(var nEffect in effectConf){
 			switch(nEffect){
-				case "fadein" : dictObjEffects[nEffect] = new mse.ETFadein(subject,effectConf[nEffect],true);break;
+				case "fade" : dictObjEffects[nEffect] = new mse.ETFade(subject,effectConf[nEffect],true);break;
 				case "colored": dictObjEffects[nEffect] = new mse.ETColored(subject,effectConf[nEffect],true);break;
 				case "typewriter": dictObjEffects[nEffect] = new mse.ETTypewriter(subject,effectConf[nEffect],true);break;
 				case "painttext": dictObjEffects[nEffect] = new mse.ETPainttext(subject,effectConf[nEffect],true);break;
 				case "flytext": dictObjEffects[nEffect] = new mse.ETFlytext(subject,effectConf[nEffect],true);break;
 				case "zoomtext": dictObjEffects[nEffect] = new mse.ETZoomtext(subject,effectConf[nEffect],true);break;
-				case "deformtext": dictObjEffects[nEffect] = new mse.ETDeformtext(subject,effectConf[nEffect],true);break;
+				case "twisttext": dictObjEffects[nEffect] = new mse.ETTwisttext(subject,effectConf[nEffect],true);break;
+				case "twistmultitext": dictObjEffects[nEffect] = new mse.ETTwistMultiText(subject,effectConf[nEffect],true);break;
 				default: break;
 			}
 		}
@@ -601,7 +777,7 @@ mse.EffectImage.prototype = {
 	toString : function(){return "[object mse.EffectImage]"}
 };
 /*******************************************************************/
-mse.EIFadein = function(subject,config,multi) {
+mse.EIFade = function(subject,config,multi) {
 	mse.EffectImage.call(this,subject,config,multi);
 
 	this.count = 0;
@@ -614,9 +790,9 @@ mse.EIFadein = function(subject,config,multi) {
 	
 	if(config)$.extend(this.config,config);
 };
-extend(mse.EIFadein,mse.EffectImage);
-$.extend(mse.EIFadein.prototype, {
-	label : "fadeinImage",
+extend(mse.EIFade,mse.EffectImage);
+$.extend(mse.EIFade.prototype, {
+	label : "fadeImage",
 	logic : function(delta){
 		if(this.count <= this.config.duration){
 			this.subject.globalAlpha = this.config.start + (this.count/this.config.duration)*(this.config.end-this.config.start);
@@ -703,11 +879,12 @@ $.extend(mse.EISnow.prototype, {
 			if(snowX>this.subject.width)snowX %= this.subject.width;
 			if(snowY>this.subject.height)snowY %= this.subject.height;
 
-			//var rgSnow = ctx.createRadialGradient(snowX,snowY,this.arrayR[i]/2,snowX,snowY,this.arrayR[i]);
-			//rgSnow.addColorStop(0,"rgba(255,255,255," + this.arrayAlpha[i] + ")");
-			//rgSnow.addColorStop(1,"rgba(255,255,255,0)");
-			//ctx.fillStyle = rgSnow;
-
+		//	var rgSnow = ctx.createRadialGradient(snowX,snowY,this.arrayR[i]/2,snowX,snowY,this.arrayR[i]);
+		//	rgSnow.addColorStop(0,"rgba(255,255,255," + this.arrayAlpha[i] + ")");
+		//	rgSnow.addColorStop(1,"rgba(255,255,255,0)");
+		//	ctx.fillStyle = rgSnow;
+			
+		
 			ctx.fillStyle = "white";
 			var cacheAlpha = this.arrayAlpha[i];
 			ctx.globalAlpha = cacheAlpha/Math.floor(this.arrayR[i]/2);			
@@ -718,6 +895,7 @@ $.extend(mse.EISnow.prototype, {
 				ctx.closePath();
 				ctx.fill();
 			}
+		
         }		
 	},
 	toString : function(){
@@ -932,6 +1110,8 @@ mse.EIVibration = function(subject,config,multi) {
 	
 	this.config = {
 		duration : Number.POSITIVE_INFINITY,
+		vertical : 8,
+		horizontal : 8
 	};	
 	if(config)$.extend(this.config,config);
 
@@ -941,9 +1121,9 @@ $.extend(mse.EIVibration.prototype, {
 	label : "vibration",
 	logic : function(delta){
 		if(this.count <= this.config.duration){	
-			if(!(this.count%2)){
-				this.offsetX = (Math.random()-0.5)*30;
-				this.offsetY = (Math.random()-0.5)*30;
+			if(!(this.count%1)){
+				this.offsetX = (Math.random()-0.5)*this.config.horizontal;
+				this.offsetY = (Math.random()-0.5)*this.config.vertical;
 			}
 
 			this.count++;
@@ -964,206 +1144,7 @@ $.extend(mse.EIVibration.prototype, {
 	}
 });
 /*******************************************************************/
-mse.EIFogBeta2 = function(subject,config,multi) {
-	mse.EffectImage.call(this,subject,config,multi);
-	
-	this.count = 0;
-	this.timeFac = 0;
-	this.imgFog = new Image();
-	this.flagGetlist = false;
-	this.listX = new Array();
-	this.listY = new Array();
-	
-	this.seuil = 10;
-	
-	this.previousX = 0;
-	this.previousY = 0;
-	
-	this.r = 1;
-	this.R = 15;
-	this.k = 1;
-	
-	this.imgPixels = null;
-	
-	this.canvas2 = document.createElement('canvas');
-	
-	this.config = {
-		duration : Number.POSITIVE_INFINITY,
-	};
-	
-	if(config)$.extend(this.config,config);
-	
-	var cbStart = new mse.Callback(this.dragStart, this);
-	var cbMove = new mse.Callback(this.dragMove, this);
-	var cbEnd = new mse.Callback(this.dragEnd, this);
-	this.subject.getContainer().evtDeleg.addListener('gestureStart', cbStart);
-	this.subject.getContainer().evtDeleg.addListener('gestureUpdate', cbMove);
-	this.subject.getContainer().evtDeleg.addListener('gestureEnd', cbEnd);
-	
-	this.imgFog = mse.src.getSrc('fogBetaImg');
-	this.canvas2.width = this.subject.width;
-	this.canvas2.height = this.subject.height;
-	this.ctx2 = this.canvas2.getContext('2d');
-	this.ctx2.globalAlpha = 0.7;
-	this.ctx2.drawImage(this.imgFog,0,0,this.canvas2.width,this.canvas2.height);
-
-};
-extend(mse.EIFogBeta2,mse.EffectImage);
-$.extend(mse.EIFogBeta2.prototype, {
-	label : "fogbetaImage2",
-	dragStart : function(e){
-		this.previousX = e.offsetX;
-		this.previousY = e.offsetY;
-		/*
-		this.imgPixels = this.ctx2.getImageData(this.previousX-this.R,this.previousY-this.R,2*this.R+1,2*this.R+1);
-		
-		for(var y = 0; y < 2*this.R+1; y++){
-			for(var x = 0; x < 2*this.R+1; x++){
-				var i = (y*4) * (2*this.R+1) + x*4; 
-				var d = mse.distance(this.previousX,this.previousY,x+this.previousX-this.R,y+this.previousY-this.R);
-				if(d <= this.r){						
-					this.imgPixels.data[i+3] = 0;
-				}
-				else if (d > this.r && d <= this.R){
-					var ttt = ((d - this.r)/(this.R - this.r)) * this.k;
-					this.imgPixels.data[i+3] = this.imgPixels.data[i+3]*ttt;
-				}
-				else ;
-			}
-		}
-		
-		this.ctx2.putImageData(this.imgPixels,this.previousX-this.R,this.previousY-this.R,0,0,this.imgPixels.width,this.imgPixels.height);
-		*/
-		this.imgPixels = null;
-		this.firstDraw = false;
-	},
-	dragMove : function(e){	
-		var testX = e.listX[e.listX.length-1];
-		var testY = e.listY[e.listY.length-1];
-		var d = mse.distance(this.previousX,this.previousY,testX,testY);
-
-		if(d > this.seuil){
-			//if(!this.firstDraw){
-				
-				/*
-				
-				this.imgPixels = this.ctx2.getImageData(this.previousX-this.R,this.previousY-this.R,2*this.R+1,2*this.R+1);
-		
-				for(var y = 0; y < 2*this.R+1; y++){
-					for(var x = 0; x < 2*this.R+1; x++){
-						var i = (y*4) * (2*this.R+1) + x*4; 
-						var d = mse.distance(this.previousX,this.previousY,x+this.previousX-this.R,y+this.previousY-this.R);
-						if(d <= this.r){						
-							this.imgPixels.data[i+3] = 0;
-						}
-						else if (d > this.r && d <= this.R){
-							var ttt = ((d - this.r)/(this.R - this.r)) * this.k;
-							this.imgPixels.data[i+3] = this.imgPixels.data[i+3]*ttt;
-						}
-						else ;
-					}
-				}
-		
-				this.ctx2.putImageData(this.imgPixels,this.previousX-this.R,this.previousY-this.R,0,0,this.imgPixels.width,this.imgPixels.height);
-				
-				*/
-				
-				
-			//	this.firstDraw = true;
-			//}else{
-			
-			var alpha = angleForLine(this.previousX,this.previousY,testX,testY);
-			var gamma = Math.PI/2 - alpha;
-			var decalageY = Math.abs(Math.sin(gamma)*this.R);
-			var decalageX = Math.abs(Math.cos(gamma)*this.R);
-			
-			
-			
-			
-			var getimgOx = Math.min(this.previousX,testX)-decalageX, getimgOy = Math.min(this.previousY,testY)-decalageY;
-			var getimgWidth = Math.abs(this.previousX-testX)+2*decalageX, getimgHeight = Math.abs(this.previousY-testY)+2*decalageY;
-			this.imgPixels = this.ctx2.getImageData(getimgOx,getimgOy,getimgWidth,getimgHeight);			
-			
-			//var alpha = angleForLine(this.previousX,this.previousY,testX,testY);
-			//var getimgOx = Math.min(this.previousX,testX)-this.R, getimgOy = Math.min(this.previousY,testY)-this.R;
-			//var getimgWidth = Math.abs(this.previousX-testX)+2*this.R, getimgHeight = Math.abs(this.previousY-testY)+2*this.R;
-			//this.imgPixels = this.ctx2.getImageData(getimgOx,getimgOy,getimgWidth,getimgHeight);
-			
-			//var Ox = (this.previousX + testX)/2, Oy = (this.previousY + testY)/2;
-			//var gamma = 90 - alpha;
-			//var x1 = Ox - this.R*Math.cos(gamma), y1 = Oy - this.R*Math.sin(gamma);
-			//var x2 = Ox + this.R*Math.cos(gamma), y2 = Oy + this.R*Math.sin(gamma);
-
-			for(var y = 0; y < this.imgPixels.height; y++){
-				for(var x = 0; x < this.imgPixels.width; x++){
-					var i = (y*4) * this.imgPixels.width + x*4;
-					var offX = x + getimgOx, offY = y + getimgOy;
-					
-					//if(offX > x1 && offY < y1){
-						var dis = mse.distance(this.previousX,this.previousY,offX,offY);
-						var beta = angleForLine(this.previousX,this.previousY,offX,offY);
-						var h = Math.abs(dis*Math.sin(beta-alpha));
-						
-						var dis2 = mse.distance(testX,testY,offX,offY);
-						if(h <= this.R){
-							this.imgPixels.data[i+3] = this.imgPixels.data[i+3]*(h/this.R);
-						}
-						
-						
-					//	if(h <= this.R){
-							
-					//	}				
-					//}else if (offY >= y1 && offY <= y2) {
-					//	if(h <= this.R){
-							
-					//	}
-					//}else if (offY < x2 && offY > y2){
-					
-					//}
-
-					
-					
-					
-				}
-			}
-			this.ctx2.putImageData(this.imgPixels,getimgOx,getimgOy,0,0,this.imgPixels.width,this.imgPixels.height);
-
-			this.previousX = testX;
-			this.previousY = testY;
-		//	}
-		}
-
-	},
-	dragEnd : function(e){
-		//var x = e.offsetX;
-		//var y = e.offsetY;
-		this.listX = this.listY = [];
-		this.flagGetlist = false;
-		this.imgPixels = null;
-	},
-	logic : function(delta){
-		if(this.count <= this.config.duration){
-
-			this.count++;
-			if(this.multi)return true;
-		}
-		else{
-			if(this.multi)return false;
-			this.subject.endEffect();
-		}		
-	},
-	draw : function (ctx,x,y){		
-		var img = mse.src.getSrc(this.subject.img);
-		ctx.drawImage(img,x,y,this.subject.width,this.subject.height);
- 		ctx.drawImage(this.canvas2,x,y,this.canvas2.width,this.canvas2.height);
- 		//this.ctx1.clearRect(0,0,this.canvas1.width,this.canvas1.height);
-	},
-	toString : function(){
-		return this.label;
-	}
-});
-/*******************************************************************/
-mse.EIFogBeta = function(subject,config,multi) {
+mse.EIErase = function(subject,config,multi) {
 	mse.EffectImage.call(this,subject,config,multi);
 	
 	this.canvas2 = document.createElement('canvas');
@@ -1171,20 +1152,22 @@ mse.EIFogBeta = function(subject,config,multi) {
 	//this.listX = new Array(); this.listY = new Array();
 	this.imgPixels = null;
 	this.count = 0;
-	
 	this.eraseAll = false;
-	this.eraseAllRatio = 0.2;
-	this.opacityBlur = 0.7;
 	
 	this.config = {
 		duration : Number.POSITIVE_INFINITY,
+		src : 'vapeur',
 		k : 1,
 		r : 1,
 		R : 15,
+		opacityBlur : 0.7,
+		eraseAllRatio : 0.2,
 		eraseZone : [[0,0,this.subject.width,this.subject.height]]
 	};
 	
 	if(config)$.extend(this.config,config);
+	
+	this.opacityBlur = this.config.opacityBlur;
 	
 	this.cbStart = new mse.Callback(this.dragStart, this);
 	this.cbMove = new mse.Callback(this.dragMove, this);
@@ -1193,7 +1176,7 @@ mse.EIFogBeta = function(subject,config,multi) {
 	this.subject.getContainer().evtDeleg.addListener('gestureUpdate', this.cbMove);
 	this.subject.getContainer().evtDeleg.addListener('gestureEnd', this.cbEnd);
 	
-	this.imgFog = mse.src.getSrc('fogBetaImg');
+	this.imgFog = mse.src.getSrc(this.config.src);
 	this.canvas2.width = this.subject.width;
 	this.canvas2.height = this.subject.height;
 	this.ctx2 = this.canvas2.getContext('2d');
@@ -1201,9 +1184,9 @@ mse.EIFogBeta = function(subject,config,multi) {
 	this.ctx2.drawImage(this.imgFog,0,0,this.canvas2.width,this.canvas2.height);
 
 };
-extend(mse.EIFogBeta,mse.EffectImage);
-$.extend(mse.EIFogBeta.prototype, {
-	label : "fogbetaImage",
+extend(mse.EIErase,mse.EffectImage);
+$.extend(mse.EIErase.prototype, {
+	label : "eraseImage",
 	dragStart : function(e){
 		var x = e.offsetX;
 		var y = e.offsetY;
@@ -1245,7 +1228,7 @@ $.extend(mse.EIFogBeta.prototype, {
 				}
 				numTotalPixels += this.config.eraseZone[k][2]*this.config.eraseZone[k][3];
 			}
-			if((opacityZero/(numTotalPixels/10))>this.eraseAllRatio)this.eraseAll = true;
+			if((opacityZero/(numTotalPixels/10))>this.config.eraseAllRatio)this.eraseAll = true;
 		}
 		
 		this.imgPixels = null;
@@ -1287,161 +1270,12 @@ $.extend(mse.EIFogBeta.prototype, {
 	}
 });
 /*******************************************************************/
-mse.EICandle = function(subject,config,multi) {
-	mse.EffectImage.call(this,subject,config,multi);
-
-	this.count = 0;
-	this.newTime = 0;
-	this.oldTime = 0;
-	this.timeFac = 0;
-	this.fires = new Array();
-	this.canvas1 = document.createElement('canvas'); //Temporary printing
-	
-
-	this.config = {
-		duration : Number.POSITIVE_INFINITY,
-	};
-
-	var cb = new mse.Callback(this.interaction, this);
-	this.subject.getContainer().evtDeleg.addListener('click', cb);
-
-	if(config)$.extend(this.config,config);
-
-	this.canvas1.width = this.subject.width;
-	this.canvas1.height = this.subject.height;
-	this.ctx1 = this.canvas1.getContext('2d');
-
-	//this.canvas2.width = this.subject.width;
-	//this.canvas2.height = this.subject.height;
-	//this.ctx2 = this.canvas2.getContext('2d');
-
-};
-extend(mse.EICandle,mse.EffectImage);
-$.extend(mse.EICandle.prototype, {
-	label : "candle",
-	firePos : [[135,320,false],[596,370,false],[323,277,false],[503,306,false]],
-	Fire : function(seq,x,y,maxR,minR,t,w,h){
-
-		this.sx = x; this.sy = y; this.maxR = maxR; this.minR = minR; this.t = t; this.w = w; this.h = h; this.initSeq = seq;//const
-		this.seq = seq; 
-		this.R = 1; this.opacity=0.5; this.ratio = 0; this.zoom = true;
-		this.startFire = true;
-
-		this.move = function(timeFac,ctx1) {
-			//determine all the parameters
-			this.seq += 0.3*timeFac;
-
-			if(this.seq - this.initSeq >= this.t){
-				this.zoom = !this.zoom;
-				this.seq = this.initSeq;
-			}
-
-			this.ratio = Math.sin(((this.seq - this.initSeq)/this.t)*Math.PI/2);
-
-			if(this.zoom){
-				if(this.startFire){
-					this.R = this.maxR*this.ratio;
-				}
-				else{
-					this.R = this.minR+(this.maxR-this.minR)*this.ratio;
-				}
-			}
-			else{
-				if(this.startFire)this.startFire = false;
-				this.R = this.maxR+(this.minR-this.maxR)*this.ratio;
-			}
-
-			ctx1.globalAlpha = this.opacity + 0.2*Math.random();
-		
-			/*	
-			//set the size of canvas to draw the fire
-			var canvas2 = document.createElement('canvas'); //Source of Fire
-			canvas2.height = canvas2.width = 2*this.R;
-			
-			var ctx2 = canvas2.getContext('2d');
-			//draw fire
-			var rg = ctx2.createRadialGradient(this.R,this.R,this.R/2,this.R,this.R,this.R);
-			rg.addColorStop(0,"rgba(" + Math.floor(255-this.R*5) + "," + Math.floor(153+this.R*2) + ",0," + 0.9 + ")");
-			rg.addColorStop(1,"rgba(255,255,0," + 0 + ")");
-			ctx2.fillStyle = rg;
-
-			ctx2.beginPath();
-			ctx2.arc(this.R,this.R,this.R,0,Math.PI*2,true);
-			ctx2.closePath();
-			ctx2.fill();
-
-			//put this fire onto ctx1
-			ctx1.drawImage(canvas2,0,0,canvas2.width,canvas2.height,this.sx-this.R,this.sy-this.R,2*this.R,2*this.R);
-			*/
-			
-			var rg = ctx1.createRadialGradient(this.sx,this.sy,this.R/4,this.sx,this.sy,this.R);
-			rg.addColorStop(0,"rgba(" + Math.floor(255-this.R*3) + "," + Math.floor(153+this.R*1.3) + ",0," + 0.75 + ")");
-			rg.addColorStop(1,"rgba(255,255,0," + 0 + ")");
-			ctx1.fillStyle = rg;
-			
-			ctx1.beginPath();
-			ctx1.arc(this.sx,this.sy,this.R,0,Math.PI*2,true);
-			ctx1.closePath();
-			ctx1.fill();			
-			
-		};
-		
-	},
-	
-	sortFire : function(f1,f2){
-		return f1.seq-f2.seq;
-	},
-	interaction : function(e){
-		var x = e.offsetX;
-		var y = e.offsetY;
-		
-		for(var arrayFire in this.firePos){
-			if((x > this.firePos[arrayFire][0]-15) && (x < this.firePos[arrayFire][0]+15) && (y > this.firePos[arrayFire][1]-15) && (y < this.firePos[arrayFire][1]+15) && !this.firePos[arrayFire][2]){
-				this.fires.push(new this.Fire(15,this.firePos[arrayFire][0],this.firePos[arrayFire][1],20,15,30,this.canvas1.width,this.canvas1.height));
-				this.firePos[arrayFire][2] = true;
-			}
-		}
-		
-	},
-	logic : function(delta){
-		if(this.count <= this.config.duration){
-			
- 			this.newTime = new Date().getTime();
- 			if(0 === this.oldTime)this.oldTime = this.newTime;
- 			this.timeFac = (this.newTime - this.oldTime)*0.1;
- 			if(this.timeFac>3)this.timeFac = 3;
- 			this.oldTime = this.newTime;
- 			this.fires.sort(this.sortFire);	
- 								
-			for(var i=0; i<this.fires.length; i++){
- 				this.fires[i].move(this.timeFac,this.ctx1);
- 			}
-
-			this.count++;
-			if(this.multi)return true;
-		}
-		else{
-			if(this.multi)return false;
-			this.subject.endEffect();
-		}		
-	},
-	draw : function (ctx,x,y){
-		var img = mse.src.getSrc(this.subject.img);
-		ctx.drawImage(img,x,y,this.subject.width,this.subject.height);
- 		ctx.drawImage(this.canvas1,x,y,this.subject.width,this.subject.height);
- 		this.ctx1.clearRect(0,0,this.canvas1.width,this.canvas1.height);
-	},
-	toString : function(){
-		return this.label;
-	}
-});
-/*******************************************************************/
-mse.EIBougie = function(subject,config,multi) {
+mse.EILightcandle = function(subject,config,multi) {
 	mse.EffectImage.call(this,subject,config,multi);
 
 	this.count = 0;
 	this.timeFac = 0;
-	this.lightR = this.initlightR = 75;
+	
 	this.lightX = 0;
 	this.lightY = 0;
 	this.arrayAlpha = [0.0,0.0,0.0,0.0];
@@ -1450,7 +1284,13 @@ mse.EIBougie = function(subject,config,multi) {
 	
 	this.config = {
 		duration : Number.POSITIVE_INFINITY,
+		src : 'grotte',
+		initlightR : 75,
+		chglightR : 0.05,
 	};
+	
+	if(config)$.extend(this.config,config);
+	this.lightR = this.initlightR = this.config.initlightR;
 
 	var cb = new mse.Callback(this.interaction, this);
 	this.subject.getContainer().evtDeleg.addListener('click', cb);
@@ -1458,17 +1298,15 @@ mse.EIBougie = function(subject,config,multi) {
 	var cb2 = new mse.Callback(this.intermove, this);
 	this.subject.getContainer().evtDeleg.addListener('move', cb2);
 
-	if(config)$.extend(this.config,config);
-
-	this.imgBG = mse.src.getSrc('bougieAImg');
+	this.imgBG = mse.src.getSrc(this.config.src);
 	this.canvas1.width = 1256;
 	this.canvas1.height = 600;
 	this.ctx1 = this.canvas1.getContext('2d');
 	this.ctx1.drawImage(this.imgBG,0,0,this.canvas1.width,this.canvas1.height);
 		
 };
-extend(mse.EIBougie,mse.EffectImage);
-$.extend(mse.EIBougie.prototype, {
+extend(mse.EILightcandle,mse.EffectImage);
+$.extend(mse.EILightcandle.prototype, {
 	label : "bougie",
 	firePos : [[135,320,false],[596,370,false],[323,277,false],[503,306,false]],
 	intermove : function(e){
@@ -1486,7 +1324,7 @@ $.extend(mse.EIBougie.prototype, {
 	},
 	logic : function(delta){
 		if(this.count <= this.config.duration){
-			this.lightR = this.initlightR * (0.95+Math.random()*0.1);
+			this.lightR = this.initlightR * (1-this.config.chglightR+Math.random()*(2*this.config.chglightR));
 
 			this.count++;
 			if(this.multi)return true;
@@ -1561,7 +1399,7 @@ mse.EIBlur = function(subject,config,multi) {
 	
 	this.frainSimon = false;
 	this.timeStamp = 0;
-	this.frainDuration = 200;
+	//this.frainDuration = 200;
 	
 	this.canvasBuffer = document.createElement('canvas');
 	this.canvasBuffer.width = this.subject.width;
@@ -1578,13 +1416,15 @@ mse.EIBlur = function(subject,config,multi) {
 	
 	this.config = {
 		duration : Number.POSITIVE_INFINITY,
-		speedRefresh : Math.ceil(this.frainDuration/10),
+		frainDuration : 200,
+		step : 10,
 		startRadius : 10,
 		endRadius : 1,
 		iteration : 1
 	};
 	
 	if(config)$.extend(this.config,config);
+	this.config.speedRefresh = Math.ceil(this.config.frainDuration/this.config.step);
 	
 };
 extend(mse.EIBlur,mse.EffectImage);
@@ -1727,7 +1567,6 @@ $.extend(mse.EIBlur.prototype, {
 				}
 			}
 		}
-		//return imgPixels;
 	},
 	initBuff : function(){
 				this.ctxBuff.clearRect(0,0,this.subject.width,this.subject.height);
@@ -1744,11 +1583,11 @@ $.extend(mse.EIBlur.prototype, {
 			}
 			
 			if(this.frainSimon){
-				if(this.count - this.timeStamp <= this.frainDuration){
+				if(this.count - this.timeStamp <= this.config.frainDuration){
 					this.active = true;
 					if((this.count - this.timeStamp)%this.config.speedRefresh == 0){
 						this.initBuff();
-						this.blurCanvasRGBA(this.imgPixels, this.config.startRadius + ((this.count - this.timeStamp)/this.frainDuration)*(this.config.endRadius-this.config.startRadius), this.config.iteration);
+						this.blurCanvasRGBA(this.imgPixels, this.config.startRadius + ((this.count - this.timeStamp)/this.config.frainDuration)*(this.config.endRadius-this.config.startRadius), this.config.iteration);
 						this.ctxBlur.putImageData(this.imgPixels,0,0,0,0,this.imgPixels.width,this.imgPixels.height);
 					}
 				}
@@ -1795,13 +1634,7 @@ mse.EIColorSwitch = function(subject,config,multi) {
 	this.numScenario = new Array();
 	
 	this.concert = false;
-	this.concertDuration = 300;
-	
 	this.flicker = false;
-	this.flickerDuration = 600;
-	
-	this.sunrise = false;
-	this.sunriseDuration = 600;
 	
 	this.canvasColorSwitch = document.createElement('canvas');
 	this.canvasColorSwitch.width = this.subject.width;
@@ -1819,12 +1652,15 @@ mse.EIColorSwitch = function(subject,config,multi) {
 	this.config = {
 		duration : Number.POSITIVE_INFINITY,
 		paramHSL : [36,1.6,0.95],
-		concertSpeedRefresh : Math.ceil(this.concertDuration/10),
-		flickerSpeedRefresh : Math.ceil(this.flickerDuration/30),
-		sunriseSpeedRefresh : Math.ceil(this.sunriseDuration/150)
+		concertDuration : 300,
+		concertStep : 30,
+		flickerDuration : 300,
+		flickerStep : 30
 	};
 	
 	if(config)$.extend(this.config,config);
+	this.config.concertSpeedRefresh = Math.ceil(this.config.concertDuration/this.config.concertStep);
+	this.config.flickerSpeedRefresh = Math.ceil(this.config.flickerDuration/this.config.flickerStep);
 	
 };
 extend(mse.EIColorSwitch,mse.EffectImage);
@@ -1858,22 +1694,15 @@ $.extend(mse.EIColorSwitch.prototype, {
 			case __KEY_N:
 				this.concert = true;
 				this.timeStamp = this.count;
-				for (var i = 0; i < 10; i++){
+				for (var i = 0; i < this.config.concertStep; i++){
 					this.numScenario.push(Math.round(18*Math.random()+1)/2);
 				}
 				break;
 			case __KEY_B:
 				this.flicker = true;
 				this.timeStamp = this.count;
-				for (var i = 0; i < 30; i++){
+				for (var i = 0; i < this.config.flickerStep; i++){
 					this.numScenario.push(0.15+0.85*Math.random());
-				}
-				break;
-			case __KEY_C:
-				this.sunrise = true;
-				this.timeStamp = this.count;
-				for (var i = 0; i < 150; i++){
-					this.numScenario.push((200-i)/150);
 				}
 				break;
 			default : break;
@@ -1913,7 +1742,7 @@ $.extend(mse.EIColorSwitch.prototype, {
 			}
 			
 			if(this.concert && !this.flicker){
-				if(this.count - this.timeStamp < this.concertDuration){
+				if(this.count - this.timeStamp < this.config.concertDuration){
 					this.active = true;
 					if((this.count - this.timeStamp)%this.config.concertSpeedRefresh == 0){
 						this.initBuff();
@@ -1939,7 +1768,7 @@ $.extend(mse.EIColorSwitch.prototype, {
 			}
 			
 			if(this.flicker && !this.concert){
-				if(this.count - this.timeStamp < this.flickerDuration){
+				if(this.count - this.timeStamp < this.config.flickerDuration){
 					this.active = true;
 					if((this.count - this.timeStamp)%this.config.flickerSpeedRefresh == 0){
 						this.initBuff();
@@ -1964,8 +1793,88 @@ $.extend(mse.EIColorSwitch.prototype, {
 				}
 			}
 			
+			this.count++;
+			if(this.multi)return true;
+		}
+		else{
+			this.subject.getContainer().evtDeleg.removeListener('keydown', cb);
+			if(this.multi)return false;
+			this.subject.endEffect();
+		}
+	},
+	draw : function (ctx,x,y){
+		if(!this.active){
+			ctx.drawImage(this.img,x,y,this.subject.width,this.subject.height);
+		}
+		else{
+			ctx.drawImage(this.canvasColorSwitch,x,y,this.subject.width,this.subject.height);
+		}
+	},
+	toString : function(){
+		return this.label;
+	}
+});
+/*******************************************************************/
+mse.EISunrise = function(subject,config,multi) {
+	mse.EffectImage.call(this,subject,config,multi);
+	
+	this.count = 0;
+	this.flagInit = false;
+	this.img = mse.src.getSrc(this.subject.img);
+	this.imgPixels = null;
+	this.active = 0;
+	
+	this.timeStamp = 0;
+	this.numScenario = new Array();
+	
+	this.sunrise = false;
+	
+	this.canvasColorSwitch = document.createElement('canvas');
+	this.canvasColorSwitch.width = this.subject.width;
+	this.canvasColorSwitch.height = this.subject.height;
+	this.ctxCS = this.canvasColorSwitch.getContext('2d');
+	
+	this.canvasBuffer = document.createElement('canvas');
+	this.canvasBuffer.width = this.subject.width;
+	this.canvasBuffer.height = this.subject.height;
+	this.ctxBuff = this.canvasBuffer.getContext('2d');
+
+	var cb = new mse.Callback(this.interaction, this);
+	this.subject.getContainer().evtDeleg.addListener('keydown', cb);
+
+	this.config = {
+		duration : Number.POSITIVE_INFINITY,
+		sunriseDuration : 600,
+		step : 150
+	};
+	
+	if(config)$.extend(this.config,config);
+	this.config.sunriseSpeedRefresh = Math.ceil(this.config.sunriseDuration/this.config.step);
+};
+extend(mse.EISunrise,mse.EffectImage);
+$.extend(mse.EISunrise.prototype, {
+	label : "sunrise",
+	interaction : function(e){
+		switch(e.keyCode){
+			case __KEY_C:
+				this.sunrise = true;
+				this.timeStamp = this.count;
+				for (var i = 0; i < this.config.step; i++){
+					this.numScenario.push((this.config.step/3*4-i)/this.config.step);
+				}
+				break;
+			default : break;
+		}
+	},
+	initBuff : function(){
+			this.ctxBuff.clearRect(0,0,this.subject.width,this.subject.height);
+			this.ctxBuff.drawImage(this.img,0,0,this.subject.width,this.subject.height);
+			this.imgPixels = this.ctxBuff.getImageData(0,0,this.subject.width,this.subject.height);		
+	},
+	logic : function(delta){
+		if(this.count <= this.config.duration){
 			if(this.sunrise){
-				if(this.count - this.timeStamp < this.sunriseDuration){
+				if(this.count - this.timeStamp < this.config.sunriseDuration){
 					this.active = true;
 					if((this.count - this.timeStamp)%this.config.sunriseSpeedRefresh == 0){
 						this.initBuff();
@@ -2003,7 +1912,7 @@ $.extend(mse.EIColorSwitch.prototype, {
 				else{
 					this.active = false;
 					this.sunrise = false;					
-				}				
+				}
 			}
 			
 			this.count++;
@@ -2045,17 +1954,16 @@ $.extend(mse.MultiImageEffectContainer.prototype, {
 		"candle" : ["pixel","weather"]
 	},
 	classification : {
-		"fadein" : "param",
+		"fade" : "param",
 		"snow" : "weather",
 		"rain" : "weather",
 		"fog" : "weather",
-		"fogbeta" : "weather",
-		"fogbeta2" : "weather",
+		"erase" : "pixel",
 		"vibration" : "weather",
 		"colorswitch" : "pixel",
 		"blur" : "pixel",
-		"candle" : "candle",
-		"bougie" : "candle"
+		"sunrise" : "pixel",
+		"lightcandle" : "candle"
 	},
 	filterEffect : function (listEffect){
 		var principalDraw = null;
@@ -2106,17 +2014,16 @@ mse.initImageEffect = function (effectConf,subject) {
 	if(Object.keys(effectConf).length < 2){
 		for(var nEffect in effectConf){
 			switch(nEffect){
-				case "fadein" : return (new mse.EIFadein(subject,effectConf[nEffect],false));
+				case "fade" : return (new mse.EIFade(subject,effectConf[nEffect],false));
 				case "snow" : return (new mse.EISnow(subject,effectConf[nEffect],false));
 				case "rain" : return (new mse.EIRain(subject,effectConf[nEffect],false));
 				case "fog" : return (new mse.EIFog(subject,effectConf[nEffect],false));
 				case "colorswitch" : return (new mse.EIColorSwitch(subject,effectConf[nEffect],false));
 				case "blur" : return (new mse.EIBlur(subject,effectConf[nEffect],false));
-				case "candle" : return (new mse.EICandle(subject,effectConf[nEffect],false));
-				case "bougie" : return (new mse.EIBougie(subject,effectConf[nEffect],false));
-				case "fogbeta" : return (new mse.EIFogBeta(subject,effectConf[nEffect],false));
-				case "fogbeta2" : return (new mse.EIFogBeta2(subject,effectConf[nEffect],false));
+				case "lightcandle" : return (new mse.EILightcandle(subject,effectConf[nEffect],false));
+				case "erase" : return (new mse.EIErase(subject,effectConf[nEffect],false));
 				case "vibration" : return (new mse.EIVibration(subject,effectConf[nEffect],false));
+				case "sunrise" : return (new mse.EISunrise(subject,effectConf[nEffect],false));
 				default : return null;				
 			}
 		}
@@ -2126,17 +2033,16 @@ mse.initImageEffect = function (effectConf,subject) {
 		var dictObjEffects = {};
 		for(var nEffect in effectConf){
 			switch(nEffect){
-				case "fadein" : dictObjEffects[nEffect] = new mse.EIFadein(subject,effectConf[nEffect],true);break;
+				case "fade" : dictObjEffects[nEffect] = new mse.EIFade(subject,effectConf[nEffect],true);break;
 				case "snow": dictObjEffects[nEffect] = new mse.EISnow(subject,effectConf[nEffect],true);break;
 				case "rain": dictObjEffects[nEffect] = new mse.EIRain(subject,effectConf[nEffect],true);break;
 				case "fog": dictObjEffects[nEffect] = new mse.EIFog(subject,effectConf[nEffect],true);break;
 				case "colorswitch": dictObjEffects[nEffect] = new mse.EIColorSwitch(subject,effectConf[nEffect],true);break;
 				case "blur": dictObjEffects[nEffect] = new mse.EIBlur(subject,effectConf[nEffect],true);break;
-				case "candle": dictObjEffects[nEffect] = new mse.EICandle(subject,effectConf[nEffect],true);break;
-				case "bougie": dictObjEffects[nEffect] = new mse.EIBougie(subject,effectConf[nEffect],true);break;
-				case "fogbeta": dictObjEffects[nEffect] = new mse.EIFogBeta(subject,effectConf[nEffect],true);break;
-				case "fogbeta2": dictObjEffects[nEffect] = new mse.EIFogBeta2(subject,effectConf[nEffect],true);break;
+				case "lightcandle": dictObjEffects[nEffect] = new mse.EILightcandle(subject,effectConf[nEffect],true);break;
+				case "erase": dictObjEffects[nEffect] = new mse.EIErase(subject,effectConf[nEffect],true);break;
 				case "vibration": dictObjEffects[nEffect] = new mse.EIVibration(subject,effectConf[nEffect],true);break;
+				case "sunrise": dictObjEffects[nEffect] = new mse.EISunrise(subject,effectConf[nEffect],true);break;
 				default: break;
 			}
 		}
@@ -2240,6 +2146,43 @@ mse.hsl_rgb = function(H,S,L){
 	B = B*255.0;
 	
 	return [R,G,B];
+}
+/*******************************************************************/
+var FPS = 0;
+var logger={ frameCount : 0 };
+
+mse.showFPS = function(game){	
+	if (game==null){
+		return;
+	}
+	if (game.logger==null){
+		game.logger={ frameCount : 0 };
+	}
+	var div=document.getElementById("fpsBar");
+	if (div==null){
+		div=document.createElement("div");
+		document.body.appendChild(div);
+		var style={
+			backgroundColor:"rgba(0,0,0,0.5)",
+			position:"absolute",
+			left:"300px",
+			top:"1px",
+			color:"#fff",
+			width:"100px",
+			height:"30px",
+			border:"solid 1px #ccc",
+			fontSize:"22px",
+			zIndex : 99999
+		}
+		for (var key in style){
+			div.style[key]=style[key];
+		}
+	}
+	function _core(){			
+		div.innerHTML = "FPS:" + game.logger.frameCount;
+		game.logger.frameCount = 0;	
+	}
+	setInterval(_core ,1000-1);
 }
 /*******************************************************************/
 })(mse);
