@@ -309,12 +309,12 @@ SourceManager.prototype = {
 		// Generate expo
 		var expo = $('<div class="icon_src" draggable="true"></div>');
 		expo.get(0).addEventListener('dragstart', dragFromSrcs, false);
-		expo.deletable(function(e) {
+		/*expo.deletable(function(e) {
 			e.preventDefault();e.stopPropagation();
 			var container = $(this).parents('.icon_src');
 			srcMgr.delSource(container.data('srcId'));
 			container.remove();
-		});
+		});*/
 		
 		switch(type) {
 		case 'image':
@@ -324,14 +324,16 @@ SourceManager.prototype = {
 			var img = $('<img name="'+ id +'"></img>');
 			img.attr({src: data});
 			expo.append(img);
-			expo.circleMenu({'rename':['./images/UI/rename.jpg',this.renameDialog]});
+			expo.circleMenu({'rename':['./images/UI/rename.jpg',this.renameDialog],
+			                 'delete':['./images/UI/del.png',this.deleteSrc]});
 			break;
 		case 'audio':
 		    // Add audio source
 		    src.data = data;
 		    this.sources[id] = src;
 		    expo.css('background', 'url("./images/UI/audio.png") center center no-repeat');
-		    expo.circleMenu({'rename':['./images/UI/rename.jpg',this.renameDialog]});
+		    expo.circleMenu({'rename':['./images/UI/rename.jpg',this.renameDialog],
+		                     'delete':['./images/UI/del.png',this.deleteSrc]});
 		    break;
 		case 'game':
 		    // Add game source
@@ -342,6 +344,7 @@ SourceManager.prototype = {
 		    else src.data = data;
 		    this.sources[id] = src;
 		    expo.css('background', 'url("./images/UI/HTML5game.png") center center no-repeat');
+		    expo.circleMenu({'delete':['./images/UI/del.png',this.deleteSrc]});
 		    break;
 		/*case 'text': 
 			var height = data.children('p').length * data.css('line-height') + 50;
@@ -387,6 +390,7 @@ SourceManager.prototype = {
 		    expo.click(function(){
 		        srcMgr.editWiki($(this).data('srcId'));
 		    });
+		    expo.circleMenu({'delete':['./images/UI/del.png',this.deleteSrc]});
 		    break;
 		case 'anime':
 		    if(this.sources[id]) {
@@ -402,6 +406,7 @@ SourceManager.prototype = {
 		        srcMgr.getSource($(this).data('srcId')).showAnimeOnEditor();
 		    });
 		    expo.children().css('font','bold 8px Times');
+		    expo.circleMenu({'delete':['./images/UI/del.png',this.deleteSrc]});
 		    break;
 		}
 		
@@ -478,6 +483,12 @@ SourceManager.prototype = {
     		delete this.sources[id];
 		delete this.expos[id];
 		this.uploaded = 0;
+	},
+	deleteSrc: function(src) {
+	    if(!src) return;
+	    var id = src.data('srcId');
+	    srcMgr.delSource(id);
+	    src.remove();
 	},
     rename: function(id, newName) {
         if(!this.sources[id] || this.sources[newName]) {
