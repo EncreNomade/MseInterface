@@ -371,7 +371,7 @@ function uploadfile() {
 // Add page dialog
 function createPageDialog() {
 	dialog.showPopup('Ajouter une page', 400, 200, 'Ajouter');
-	dialog.main.html('<h5>Name: </h5><input id="addPage" type="text">');
+	dialog.main.html('<p><label>Name: </label><input id="addPage" type="text"></p>');
 	dialog.confirm.click(function() {
 		var name = $('#addPage').val();
 		var page = addPage(name);

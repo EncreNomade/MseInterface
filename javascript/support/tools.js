@@ -324,12 +324,14 @@ SourceManager.prototype = {
 			var img = $('<img name="'+ id +'"></img>');
 			img.attr({src: data});
 			expo.append(img);
+			expo.circleMenu({'rename':['./images/UI/rename.jpg',this.renameDialog]});
 			break;
 		case 'audio':
 		    // Add audio source
 		    src.data = data;
 		    this.sources[id] = src;
 		    expo.css('background', 'url("./images/UI/audio.png") center center no-repeat');
+		    expo.circleMenu({'rename':['./images/UI/rename.jpg',this.renameDialog]});
 		    break;
 		case 'game':
 		    // Add game source
@@ -476,6 +478,25 @@ SourceManager.prototype = {
     		delete this.sources[id];
 		delete this.expos[id];
 		this.uploaded = 0;
+	},
+    rename: function(id, newName) {
+        if(!this.sources[id] || this.sources[newName]) {
+            alert("Echec à changer de nom pour la source");
+            return;
+        }
+        this.expos[newName] = this.expos[id];
+        this.sources[newName] = this.sources[id];
+        this.expos[newName].data('srcId', newName);
+        this.delSource(id);
+    },
+	renameDialog: function(src) {
+	    var id = src.data('srcId');
+	    dialog.showPopup('Renomer source', 300, 150, 'Confirmer');
+	    dialog.main.html('<p><label>Nouveau nom: </label><input id="rename" type="text"></p>');
+	    dialog.confirm.click(function() {
+	    	srcMgr.rename(id, $('#rename').val());
+	    	dialog.close();
+	    });
 	},
 	editWiki: function(id) {
 	    if(!this.sources[id] || !(this.sources[id].data instanceof Wiki)) return;
