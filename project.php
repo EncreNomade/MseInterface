@@ -144,16 +144,6 @@ class MseProject {
         if($srcs) $this->sources = $srcs;
         else $this->sources = array();
     }
-    function typeForSrc($key){
-        preg_match(self::$typeRegExp, $key, $res);
-        if(array_key_exists(2, $res)) return $res[2];
-        else return "";
-    }
-    function nameForSrc($key){
-        preg_match(self::$typeRegExp, $key, $res);
-        if(array_key_exists(1, $res)) return $res[1];
-        else return "";
-    }
     
     function addScript($name, $script){
         $this->scripts[$name] = $script;

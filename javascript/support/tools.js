@@ -306,7 +306,6 @@ SourceManager.prototype = {
 		}
 		// Source structure
 		var src = {'type':type, 'data':null};
-		this.sources[id] = src;
 		// Generate expo
 		var expo = $('<div class="icon_src" draggable="true"></div>');
 		expo.get(0).addEventListener('dragstart', dragFromSrcs, false);
@@ -320,20 +319,26 @@ SourceManager.prototype = {
 		switch(type) {
 		case 'image':
 			// Add image source
-			this.sources[id].data = data;
+			src.data = data;
+			this.sources[id] = src;
 			var img = $('<img name="'+ id +'"></img>');
 			img.attr({src: data});
 			expo.append(img);
 			break;
 		case 'audio':
 		    // Add audio source
-		    this.sources[id].data = data;
+		    src.data = data;
+		    this.sources[id] = src;
 		    expo.css('background', 'url("./images/UI/audio.png") center center no-repeat');
 		    break;
 		case 'game':
 		    // Add game source
-		    var encoded = base64_encode(data);
-		    this.sources[id].data = "data:game/js;base64,"+encoded;
+		    if(!srcMgr.pathCheck.test(data)) {
+		        var encoded = base64_encode(data);
+		        src.data = "data:game/js;base64,"+encoded;
+		    }
+		    else src.data = data;
+		    this.sources[id] = src;
 		    expo.css('background', 'url("./images/UI/HTML5game.png") center center no-repeat');
 		    break;
 		/*case 'text': 
@@ -367,10 +372,14 @@ SourceManager.prototype = {
 			expo.append(content);
 			break;*/
 		case 'wiki':
-		    this.sources[id].data = data;
 		    // Already exist
-		    if(this.sources[id]) return;
-		    
+		    if(this.sources[id]) {
+		        src.data = data;
+		        this.sources[id] = src;
+		        return;
+		    }
+		    src.data = data;
+		    this.sources[id] = src;
 		    expo.append('<p>WIKI: '+id+'</p>');
 		    expo.children().css('font','bold 8px Times');
 		    expo.click(function(){
@@ -378,9 +387,13 @@ SourceManager.prototype = {
 		    });
 		    break;
 		case 'anime':
-		    this.sources[id].data = data;
-		    if(this.sources[id]) return;
-
+		    if(this.sources[id]) {
+		        src.data = data;
+		        this.sources[id] = src;
+		        return;
+		    }
+		    src.data = data;
+		    this.sources[id] = src;
 		    expo.append('<p>Anime: '+id+'</p>');
 		    expo.circleMenu({'addscript':['./images/UI/addscript.jpg',addScriptDialog]});
 		    expo.click(function(){

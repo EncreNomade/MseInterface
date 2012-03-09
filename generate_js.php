@@ -96,8 +96,9 @@ class ProjectGenerator {
         $this->jstr .= "var games={};";
         $this->jstr .= "var wikis={};";
         $srcs = $this->pj->getAllSrcs();
-        foreach( $srcs as $name=>$src ) {
-            $type = $this->pj->typeForSrc($name);
+        foreach( $srcs as $name=>$srcData ) {
+            $type = $srcData->type;
+            $src = $srcData->data;
             switch($type){
             case "image": case "audio":
                 if($type == "image") {
