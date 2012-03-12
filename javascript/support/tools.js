@@ -1163,6 +1163,22 @@ Popup.prototype = {
 	}
 };
 
+var loading = function() {
+    return {
+        circle: $('<div id="loading"><img src="./images/UI/loading.gif"/></div>'),
+        back: $('<div class="popup_back" style="z-index:110;"></div>'),
+        show: function(duration){
+            $('body').append(this.back);
+            $('body').append(this.circle);
+            if(duration) setTimeout("loading.hide()", duration);
+        },
+        hide: function(){
+            this.back.remove();
+            this.circle.remove();
+        }
+    };
+}();
+
 
 
 

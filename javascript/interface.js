@@ -1656,6 +1656,7 @@ function saveToLocalStorage(name, jsonstr){
 // save project
 function saveProject() {
     if(!pjName) return;
+    loading.show(6000);
     // Save ressources
     srcMgr.uploadSrc('upload_src.php', pjName);
     scriptMgr.upload('upload_src.php', pjName);
@@ -1703,5 +1704,6 @@ function saveProject() {
 	       var pjsavestr = JSON.stringify(pjsave);
 	       
 	       saveToLocalStorage(pjName, pjsavestr);
+	       loading.hide();
 	   });
 }
