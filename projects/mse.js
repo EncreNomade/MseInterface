@@ -1113,7 +1113,7 @@ mse.Text = function(parent, param, text, styled) {
 	    case 'fb':
 	        this.getContainer().evtDeleg.addListener(
 	        		'click', 
-	        		new mse.Callback(window.open, window, linkObj.link,'_newtab'), 
+	        		new mse.Callback(window.open, window, linkObj.link, '_newtab'), 
 	        		true, 
 	        		this);
 	        break;

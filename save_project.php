@@ -7,6 +7,7 @@
  */
  
 include 'project.php';
+include 'generate_js.php';
 include 'dbconn.php';
 session_start();
 
@@ -26,6 +27,10 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
             $pj = $_SESSION[$pjname];
             $pj->setStruct($struct);
             $modif = $pj->saveToDB();
+            
+            $generator = new ProjectGenerator($pj);
+            $generator->putAllinContentJS();
+            
             echo $modif;
         }
     }

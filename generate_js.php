@@ -5,13 +5,6 @@
  * Site: pandamicro.co.cc
  * Octobre 2011
  */
- 
-include 'project.php';
-
-session_start();
-
-ini_set("display_errors","1");
-error_reporting(E_ALL);
 
 class ProjectGenerator {
     private $pj;
@@ -53,14 +46,28 @@ class ProjectGenerator {
         $path = $this->pj->getRelatJSPath();
         $js = $this->generateJS();
         // System mse
-        file_put_contents($path, file_get_contents("projects/mse.js"));
+        $content = file_get_contents("projects/mse.js");
+        //file_put_contents($path, file_get_contents("projects/mse.js"));
         // External js (game)
         foreach($this->scriptExt as $extjs) {
             if(file_exists($extjs))
-                file_put_contents($path, file_get_contents($extjs), FILE_APPEND);
+                $content .= file_get_contents($extjs);
+                //file_put_contents($path, file_get_contents($extjs), FILE_APPEND);
         }
         // Project content
-        file_put_contents($path, $js, FILE_APPEND);
+        $content .= $js;
+        //file_put_contents($path, $js, FILE_APPEND);
+        
+        // Communicate with Google Closure Compiler
+        $ch = curl_init('http://closure-compiler.appspot.com/compile');
+         
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, 'output_info=compiled_code&output_format=text&compilation_level=SIMPLE_OPTIMIZATIONS&js_code=' . urlencode($content));
+        $output = curl_exec($ch);
+        curl_close($ch);
+        
+        file_put_contents($path, $output);
     }
     
     function encodedCoord($number){
@@ -399,7 +406,7 @@ class ProjectGenerator {
             $layer = stripslashes($layer);
             $layer = preg_replace("/<\/img>/", "", $layer);
             $layer = preg_replace("/(<img[^>]*)(>)/", "$1/>", $layer);
-            $layer = preg_replace("/[^\$]nbsp;/", '$nbsp;', $layer);
+            $layer = preg_replace("/[^\$]nbsp;/", ' ', $layer);
             $layernode = simplexml_load_string($layer, "SimpleXMLElement", LIBXML_PARSEHUGE);
             $this->addLayer($layernode, $page);
         }
@@ -655,18 +662,6 @@ class ProjectGenerator {
             
         return array($param, $paramStr);
     }
-}
-
-// AJAX POST check
-if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && array_key_exists('pj', $_POST)) {
-    // Initialisation of project
-    $pjName = $_POST['pj'];
-    if(array_key_exists($pjName, $_SESSION)) {
-        $pj = $_SESSION[$pjName];
-        $generator = new ProjectGenerator($pj);
-        $generator->putAllinContentJS();
-    }
-    else echo "Fail to generate project.";
 }
 
 ?>

@@ -191,10 +191,7 @@ else header("Location: index.php", true);
     }
 	
 	$('#showProjet').click(function(){
-	    $.post("generate_js.php", {'pj':pjName}, function(msg) {
-	           if(msg && msg != "") alert(msg);
-	           window.open('./projects/'+pjName+'/index.php', '_newtab');
-	       });
+	    window.open('./projects/'+pjName+'/index.php', '_newtab');
 	});
 	$('#newProjet').click(function(){
 	    window.open('./index.php', '_newtab');
