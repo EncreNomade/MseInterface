@@ -21,7 +21,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
     if( array_key_exists($pjname, $_SESSION) && array_key_exists('localStorage', $_POST) ) {
         ConnectDB();
         $localStr = stripslashes($_POST['localStorage']);
-        $local = get_object_vars(json_decode($localStr, true));
+        $local = json_decode($localStr, true);
         if(!is_null($local)) {
             $pj = $_SESSION[$pjname];
             $pj->setCurrObjId($local['objCurrId']);

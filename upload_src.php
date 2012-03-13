@@ -64,7 +64,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
             else {
                 $filename = saveBase64Src($name, $encodedStr, $pj);
                 if(!is_null($filename))
-                    echo $pj->getSrcSavePath($type).$filename;
+                    echo $name."&&".$pj->getSrcSavePath($type).$filename;
                 //if(!is_null($filename)) $pj->addSrc($name, $type, $pj->getRelatSrcPath($type).$filename);
             }
         break;

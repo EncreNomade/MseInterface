@@ -83,17 +83,17 @@ else header("Location: index.php", true);
 		<li><img src="./images/tools/line.png"></li>
 		<li><img src="./images/tools/sep.png"></li>
 		<li><h5>Paramètres:</h5></li>
-		<li><h5>Poids</h5><input id="shape_weight" size="2" type="number"></li>
-		<li><h5>Radius</h5><input id="shape_radius" size="2" type="number"></li>
-		<li><h5>Opaque</h5><input id="shape_opac" size="3" type="number"></li>
-		<li><h5>Rempli</h5><input id="shape_fill" size="5" type="color"></li>
+		<li><h5>Poids</h5><input id="shape_weight" style="width: 22px;" value="0" type="number"></li>
+		<li><h5>Radius</h5><input id="shape_radius" style="width: 22px;" value="0" type="number"></li>
+		<li><h5>Opaque</h5><input id="shape_opac" style="width: 32px;" value="100" min="0" max="100" step="1" type="number"></li>
+		<li><h5>Rempli</h5><input id="shape_fill" size="5" value="#000" type="color"></li>
 		<li><h5>Trait</h5><input id="shape_stroke" size="5" type="color"></li>
 	</ul>
 	<ul id="textTools" class="central_tools">
 		<li><h5>Paramètres:</h5></li>
 		<li><h5>Color</h5><input id="text_color" size="5" value="#000" type="color"></li>
 		<li><h5>Police</h5><input id="text_font" size="5" type="text"></li>
-		<li><h5>Taille</h5><input id="text_size" size="3" value="16" type="number"><span>px</span></li>
+		<li><h5>Taille</h5><input id="text_size" style="width: 28px;" value="16" type="number"><span>px</span></li>
 		<li><h5>Style</h5><select id="text_style">
 			<option value="normal">normal</option>
 			<option value="bold">gras</option>
@@ -109,11 +109,11 @@ else header("Location: index.php", true);
 		<li><h5>Paramètres:</h5></li>
 		<li><h5>Color</h5><input id="wiki_color" size="5" value="#000" type="color"></li>
 		<li><h5>Police</h5><input id="wiki_font" size="5" type="text"></li>
-		<li><h5>Taille</h5><input id="wiki_size" size="3" value="16" type="number"><span>px</span></li>
+		<li><h5>Taille</h5><input id="wiki_size" style="width: 28px; value="16" type="number"><span>px</span></li>
 	</ul>
 	<ul id="animeTools" class="central_tools">
 		<li><h5>Paramètres: </h5></li>
-		<li><h5>Boucle:</h5><input id="animeRepeat" size="2" type="number" value="1"></li>
+		<li><h5>Boucle:</h5><input id="animeRepeat" style="width: 28px;" type="number" value="1"></li>
 		<li><h5>Nom:</h5><input id="animeName" size="5" type="text"></li>
 		<li><input type="button" id="createAnime" value="Sauvegarder"></input></li>
 	</ul>

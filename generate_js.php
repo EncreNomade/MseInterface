@@ -386,7 +386,7 @@ class ProjectGenerator {
         // Start the book
         $this->jstr .= "mse.currTimeline.start();};";
         // Lazy init the book
-        $this->jstr .= "mse.autoFitToWindow(createbook);";
+        //$this->jstr .= "mse.autoFitToWindow(createbook);";
         
         // Join the coords array in the beginning
         $this->jstr = "var coords = JSON.parse('".json_encode($this->coords)."');".$this->jstr;

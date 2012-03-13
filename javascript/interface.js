@@ -42,7 +42,7 @@ function init() {
 		res.each(function() {
 			//srcMgr.addSource('obj', $(this));
 			$(this).attr('id', 'obj'+(curr.objId++));
-			$(this).selectable(null).deletable().configurable({text:true}).hoverButton('./images/UI/addscript.jpg', addScriptForObj).appendTo(curr.step);
+			$(this).selectable(null).deletable().configurable().hoverButton('./images/UI/addscript.jpg', addScriptForObj).appendTo(curr.step);
 		});
 		elems.remove();
 	});
@@ -417,7 +417,7 @@ function articleStepDialog(name, params) {
 	dialog.main.append('<p><label>Défile auto:</label><input id="defile" type="checkbox"></p>');
 	dialog.main.append('<p><label>Location:</label><input id="articlex" size="10" placeholder="x" type="text"><span>px</span><input id="articley" size="10" placeholder="y" type="text"><span>px</span></p>');
 	dialog.main.append('<p><label>Ligne de texte:</label><input id="linew" size="10" placeholder="Largeur" type="text"><span>px</span><input id="lineh" size="10" placeholder="hauteur" type="text"><span>px</span></p>');
-	dialog.main.append('<p><label>Police:</label><input id="articleFont" size="10" placeholder="famille" type="text"><input id="articleFsize" size="3" type="number"><span>px</span><select id="articleFontw"><option value="normal">normal</option><option value="bold">bold</option></select></p>');
+	dialog.main.append('<p><label>Police:</label><input id="articleFont" size="10" placeholder="famille" type="text"><input id="articleFsize" style="width: 28px;" type="number"><span>px</span><select id="articleFontw"><option value="normal">normal</option><option value="bold">bold</option></select></p>');
 	dialog.main.append('<p><label>Couleur:</label><input id="articleColor" size="10" type="color"></p>');
 	dialog.main.append('<p><label>Alignement:</label><select id="articleAlign"><option value="left">left</option><option value="center">center</option><option value="right">right</option></select></p>');
 	
@@ -489,10 +489,10 @@ function showParameter(obj, conf) {
 	dialog.main.append('<p><label>Position:</label><input id="pm_x" size="10" value="'+x+'" placeholder="x" type="text"><span>px</span><input id="pm_y" size="10" value="'+y+'" placeholder="y" type="text"><span>px</span></p>');
 	dialog.main.append('<p><label>Taille</label><input id="pm_width" size="10" value="'+width+'" placeholder="Largeur" type="text"><span>px</span><input id="pm_height" size="10" value="'+height+'" placeholder="hauteur" type="text"><span>px</span></p>');
 	dialog.main.append('<h2> - Texte</h2>');
-	dialog.main.append('<p><label>Police:</label><input id="pm_font" size="10" value="'+font+'" placeholder="famille" type="text"><input id="pm_fsize" size="3" value="'+fsize+'" type="number"><span>px</span><select id="pm_fstyle" value="'+fstyle+'"><option value="normal">normal</option><option value="bold">bold</option></select></p>');
+	dialog.main.append('<p><label>Police:</label><input id="pm_font" size="10" value="'+font+'" placeholder="famille" type="text"><input id="pm_fsize" style="width: 28px;" value="'+fsize+'" type="number"><span>px</span><select id="pm_fstyle" value="'+fstyle+'"><option value="normal">normal</option><option value="bold">bold</option></select></p>');
 	dialog.main.append('<p><label>Alignement:</label><select id="pm_align" value="'+align+'"><option value="left">left</option><option value="center">center</option><option value="right">right</option></select></p>');
 	dialog.main.append('<h2> - Couleur</h2>');
-	dialog.main.append('<p><label>Opacity:</label><input id="pm_opac" size="3" value="'+opac+'" type="number"></p>');
+	dialog.main.append('<p><label>Opacity:</label><input id="pm_opac" style="width: 28px;" value="'+opac+'" type="number"></p>');
 	dialog.main.append('<p><label>Fond:</label><input id="pm_back" size="10" value="'+back+'" type="color"></p>');
 	dialog.main.append('<p><label>Color:</label><input id="pm_color" size="10" value="'+color+'" type="color"></p>');
 	dialog.main.append('<p><label>Trace:</label><input id="pm_stroke" size="10" value="'+stroke+'" type="color"></p>');
@@ -1015,7 +1015,7 @@ function addSectionWiki(button, title, type, content) {
         temp += '<h4>'+content+'</h4>';
     }
     else if(type == 'link') {
-        if( content.match(/^[a-zA-Z]+:\/\/(\w+(-\w+)*)(\.(\w+(-\w+)*))*(\?\s*)?$/) ) {
+        if( content.match(/^\w+:\/(\/[\-\_\w\?\&\.]+)+/) ) {
             temp += '<img src="./images/UI/wikibutton.png" style="width:'+(config.wikiWidth*0.5)+'px;height:'+$('#wiki_size').val()+'px;left:20%;position:relative;" value="'+content+'">';
         }
         else {
@@ -1493,7 +1493,7 @@ function dropToAudioElemZone(e) {
 	var id = e.dataTransfer.getData('Text');
 	var type = srcMgr.sourceType(id);
 	// Verification
-	if(!data || (type != "audio")) return;
+	if(!id || (type != "audio")) return;
 	// Place in the elem zone
 	$(this).append(srcMgr.getExpo(id));
 	$(this).attr('link', id);
@@ -1506,7 +1506,7 @@ function dropToWikiElemZone(e) {
     var id = e.dataTransfer.getData('Text');
     var type = srcMgr.sourceType(id);
     // Verification
-    if(!data || (type != "wiki")) return;
+    if(!id || (type != "wiki")) return;
     // Place in the elem zone
     $(this).append(srcMgr.getExpo(id));
     $(this).attr('link', id);
@@ -1545,8 +1545,8 @@ function startDraw(e) { // Mousedown
 	case 0: case 1: // Rectangle
 		curr.editing = $('<div class="rect"></div>');
 		curr.editing.css({
-			left:e.clientX-$('#editor').position().left+'px', 
-			top:e.clientY-$('#editor').position().top+'px',
+			left:e.clientX-$('#editor').offset().left+'px', 
+			top:e.clientY-$('#editor').offset().top+'px',
 			width:'0px', height:'0px',
 			background:fcolor, opacity:opac, 
 			'border-color':scolor, 'border-width':weight+'px'
@@ -1599,8 +1599,8 @@ function textEditorClicked(e) {
 	
 	curr.editing = $('<div class="text"><textarea row="2" cols="20" autofocus="true"></textarea></div>');
 	curr.editing.css({
-		left:e.clientX-$('#editor').position().left+'px', 
-		top:e.clientY-$('#editor').position().top+'px'
+		left:e.clientX-$('#editor').offset().left+'px', 
+		top:e.clientY-$('#editor').offset().top+'px'
 	});
 	// Param
 	configChanged();
@@ -1616,7 +1616,7 @@ function configChanged(e) {
 	if(!isColor(tcolor)) tcolor = 'none';
 	var font = $('#text_font').val();
 	var size = $('#text_size').val();
-	size = isNaN(size) ? 16 : size;
+	size = config.sceneY(isNaN(size) ? 16 : size);
 	var style = $('#text_style').val();
 	if(style == "normal") style = "";
 	var align = $('#text_align').val();
@@ -1656,7 +1656,7 @@ function saveToLocalStorage(name, jsonstr){
 // save project
 function saveProject() {
     if(!pjName) return;
-    loading.show(6000);
+    loading.show(5000);
     // Save ressources
     srcMgr.uploadSrc('upload_src.php', pjName);
     scriptMgr.upload('upload_src.php', pjName);

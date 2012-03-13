@@ -145,7 +145,7 @@ function changeCoords() {
 mse.autoFitToWindow = function(f) {
     if(f) window.autoFitCallback = f;
     if(coords && coords['cid1']) {
-        if(MseConfig.pageHeight > 250) changeCoords();
+        if(MseConfig.pageHeight > 250) ;//changeCoords();
         else setTimeout(mse.autoFitToWindow, 1000);
     }
 }

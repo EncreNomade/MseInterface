@@ -276,7 +276,8 @@ SourceManager.prototype = {
 	expos: {},
 	acceptType: new Array('image', 'audio', 'game', 'anime', 'wiki'),
 	extCheck: /data:\s*(\w+)\/(\w+);/,
-	pathCheck: /^(\.\/)?(\w+\/)*(\w+)\.(\w+)/,
+	pathCheck: /^(\.\/)?([\w\_\s]+\/)*([\w\_\s]+)\.(\w+)/,
+	uploadResp: /^([\w\_\s]+)\&\&([\w\_\s\.\/]+)/,
 	
 	sourceType: function(id) {
 	    if(this.sources[id]) {
@@ -544,12 +545,13 @@ SourceManager.prototype = {
 	                processData: false,
 	                'data': data,
 	                success: function(msg){
+	                    var resp = msg.match(srcMgr.uploadResp);
 	                    if(msg == "SUCCESS"){
 	                        ++srcMgr.uploaded;
 	                        srcMgr.updateSrcs(pjName);
 	                    }
-	                    else if(srcMgr.pathCheck.test(msg)) {
-	                        srcMgr.sources[key].data = msg;
+	                    else if(resp && resp[1] && srcMgr.pathCheck.test(resp[2])) {
+	                        srcMgr.sources[resp[1]].data = resp[2];
 	                        ++srcMgr.uploaded;
 	                        srcMgr.updateSrcs(pjName);
 	                    }
