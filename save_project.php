@@ -18,14 +18,21 @@ error_reporting(E_ALL);
 if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && array_key_exists('pj', $_POST)) {
     $pjname = $_POST['pj'];
     // If project doesn't exist in session, abondon
-    if( array_key_exists($pjname, $_SESSION) && array_key_exists('struct', $_POST) ) {
+    if( array_key_exists($pjname, $_SESSION) 
+     && array_key_exists('struct', $_POST) 
+     && array_key_exists('objCurrId', $_POST) 
+     && array_key_exists('srcCurrId', $_POST) ) {
         ConnectDB();
         // Read the input from stdin
         $structStr = stripslashes($_POST['struct']);
         $struct = get_object_vars(json_decode($structStr));
+        $objId = intval($_POST['objCurrId']);
+        $srcId = intval($_POST['srcCurrId']);
         if(!is_null($struct)) {
             $pj = $_SESSION[$pjname];
             $pj->setStruct($struct);
+            $pj->setCurrObjId($objId);
+            $pj->setCurrSrcId($srcId);
             $modif = $pj->saveToDB();
             
             $generator = new ProjectGenerator($pj);
@@ -33,6 +40,9 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
             
             echo $modif;
         }
+    }
+    else {
+        echo "Fail: POST data incomplete";
     }
 }
 

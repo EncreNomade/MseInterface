@@ -64,10 +64,10 @@ class ProjectGenerator {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, 'output_info=compiled_code&output_format=text&compilation_level=SIMPLE_OPTIMIZATIONS&js_code=' . urlencode($content));
-        $output = curl_exec($ch);
+        //$output = curl_exec($ch);
         curl_close($ch);
         
-        file_put_contents($path, $output);
+        file_put_contents($path, $content);
     }
     
     function encodedCoord($number){
@@ -387,6 +387,7 @@ class ProjectGenerator {
         $this->jstr .= "mse.currTimeline.start();};";
         // Lazy init the book
         //$this->jstr .= "mse.autoFitToWindow(createbook);";
+        $this->jstr .= "createbook();";
         
         // Join the coords array in the beginning
         $this->jstr = "var coords = JSON.parse('".json_encode($this->coords)."');".$this->jstr;
@@ -482,8 +483,6 @@ class ProjectGenerator {
         // Init Obj
         $obj = "objs.".$id;
         // Init attributes
-        //$id = "autoid".$this->autoid;
-        //$this->autoid++;
         $params = $this->formatParams($objnode['style']);
         
         switch($type) {
@@ -496,7 +495,7 @@ class ProjectGenerator {
             break;
         case "txt":
             // Text content
-            $this->jstr .= "$obj=new mse.Text($layer,".$params[1].",'".$objnode->p[0]."',true);";
+            $this->jstr .= "$obj=new mse.Text($layer,".$params[1].",'".addslashes($objnode->p[0])."',true);";
             break;
         default:
             $this->jstr .= "$obj=new mse.UIObject($layer,".$params[1].");";break;
@@ -538,7 +537,7 @@ class ProjectGenerator {
             if(count($p->span) > 0){
                 preg_match(self::$patterns['linkCutter'], $p[0]->asXML(), $content);
                 $content = $content[1].$content[2].$content[3];
-                $this->jstr .= "$obj=new mse.Text($layer,$params,'$content',true);";
+                $this->jstr .= "$obj=new mse.Text($layer,$params,'".addslashes($content)."',true);";
                 foreach($p->span as $link)
                     $this->addLink($link, $obj, $index);
             }
@@ -614,7 +613,7 @@ class ProjectGenerator {
             $paramStr .= '"fillStyle":"'.$param['fillStyle'].'",';
         }
         else if( array_key_exists(1, $bgColor) ) {
-            $param['fillStyle'] = $bgcolor[1];
+            $param['fillStyle'] = $bgColor[1];
             $paramStr .= '"fillStyle":"'.$param['fillStyle'].'",';
         }
         if( array_key_exists(1, $alpha) ) {

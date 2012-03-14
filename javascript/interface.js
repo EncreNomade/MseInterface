@@ -314,6 +314,7 @@ function uploadfile() {
         }
         else if(link.search(audpattern) != -1) {
             srcMgr.addSource('audio', link);
+            dialog.close();
         }
         else {
             alert("Échec à télécharger, type inconnu");
@@ -490,7 +491,7 @@ function showParameter(obj, conf) {
 	dialog.main.append('<p><label>Taille</label><input id="pm_width" size="10" value="'+width+'" placeholder="Largeur" type="text"><span>px</span><input id="pm_height" size="10" value="'+height+'" placeholder="hauteur" type="text"><span>px</span></p>');
 	dialog.main.append('<h2> - Texte</h2>');
 	dialog.main.append('<p><label>Police:</label><input id="pm_font" size="10" value="'+font+'" placeholder="famille" type="text"><input id="pm_fsize" style="width: 28px;" value="'+fsize+'" type="number"><span>px</span><select id="pm_fstyle" value="'+fstyle+'"><option value="normal">normal</option><option value="bold">bold</option></select></p>');
-	dialog.main.append('<p><label>Alignement:</label><select id="pm_align" value="'+align+'"><option value="left">left</option><option value="center">center</option><option value="right">right</option></select></p>');
+	dialog.main.append('<p><label>Alignement:</label><select id="pm_align"><option value="left">left</option><option value="center">center</option><option value="right">right</option></select></p>');
 	dialog.main.append('<h2> - Couleur</h2>');
 	dialog.main.append('<p><label>Opacity:</label><input id="pm_opac" style="width: 28px;" value="'+opac+'" type="number"></p>');
 	dialog.main.append('<p><label>Fond:</label><input id="pm_back" size="10" value="'+back+'" type="color"></p>');
@@ -506,6 +507,7 @@ function showParameter(obj, conf) {
 	if(disables.back) $('#pm_back').attr('disabled', 'true');
 	if(disables.color) $('#pm_color').attr('disabled', 'true');
 	if(disables.stroke) $('#pm_stroke').attr('disabled', 'true');
+	$('#pm_align').val(align);
 	
 	dialog.confirm.click(function(){
 		var res = {};
@@ -763,25 +765,28 @@ function addImageElem(id, data, page, step) {
 	var img = $('<img name="'+ id +'">');
 	img.attr('src', data);
 	img.css({'width':'100%','height':'100%'});
+	img.load(function() {
+	    var w = img.attr('width'), h = img.attr('height'), cw = page.width(), ch = page.height();
+	    if(!w || !h) return;
+	    
+	    var container = $('<div id="obj'+(curr.objId++)+'">');
+		container.append(img);
+		container.deletable();
+		
+		// Resize
+		var ratiox = cw/w;
+		var ratioy = ch/h;
+		var ratio = (ratiox > ratioy ? ratioy : ratiox);
+		if(ratio < 1) {w = w*ratio; h = h*ratio;};
+		container.css({'position':'absolute', 'top':'0px', 'left':'0px'});
+		container.css({'width':w+'px', 'height':h+'px', 'border-style':'solid', 'border-color':'#4d4d4d', 'border-width':'0px'});
+		
+		// Listener to manipulate
+		// Choose Resize Move
+		container.resizable().moveable().configurable({text:true,stroke:true}).hoverButton('./images/UI/addscript.jpg', addScriptForObj);
 	
-	var container = $('<div id="obj'+(curr.objId++)+'">');
-	container.append(img);
-	container.deletable();
-	
-	// Resize
-	var w = img.attr('width'), h = img.attr('height'), cw = page.width(), ch = page.height();
-	var ratiox = cw/w;
-	var ratioy = ch/h;
-	var ratio = (ratiox > ratioy ? ratioy : ratiox);
-	if(ratio < 1) {w = w*ratio; h = h*ratio;};
-	container.css({'position':'absolute', 'top':'0px', 'left':'0px'});
-	container.css({'width':w+'px', 'height':h+'px', 'border-style':'solid', 'border-color':'#4d4d4d', 'border-width':'0px'});
-	
-	// Listener to manipulate
-	// Choose Resize Move
-	container.resizable().moveable().configurable({text:true,stroke:true}).hoverButton('./images/UI/addscript.jpg', addScriptForObj);
-
-	step.append(container);
+		step.append(container);
+	});
 }
 
 function addPage(name) {
@@ -1682,7 +1687,7 @@ function saveProject() {
     var structStr = JSON.stringify(struct);
     
 	// Upload structure to server
-	$.post("save_project.php", {"pj":pjName, "struct":structStr}, function(msg){
+	$.post("save_project.php", {"pj":pjName, "struct":structStr, "objCurrId":curr.objId, "srcCurrId":srcMgr.currId}, function(msg){
 	       var modif = parseInt(msg);
 	       if(!isNaN(modif)) curr.lastModif = modif;
 	       else if(msg != "") alert(msg);
