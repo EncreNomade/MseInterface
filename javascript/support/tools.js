@@ -324,7 +324,15 @@ SourceManager.prototype = {
 			src.data = data;
 			this.sources[id] = src;
 			var img = $('<img name="'+ id +'"></img>');
-			img.attr({src: data});
+			// Securely get the image width and height in Webkit
+			var imageSrc = new Image();
+			imageSrc.addEventListener('load', function(){
+			    src.width = imageSrc.width;
+			    src.height = imageSrc.height;
+			}, false);
+			imageSrc.src = data;
+			img[0].src = imageSrc.src;
+			
 			expo.append(img);
 			expo.circleMenu({'rename':['./images/UI/rename.jpg',this.renameDialog],
 			                 'delete':['./images/UI/del.png',this.deleteSrc]});
@@ -444,7 +452,7 @@ SourceManager.prototype = {
 			container.deletable(null, true);
 
 			// Resize
-			var w = img.attr('width'), h = img.attr('height'), cw = parent.width()*0.9, ch = parent.height();
+			var w = img.prop('width'), h = img.prop('height'), cw = parent.width()*0.9, ch = parent.height();
 			var ratio = cw/w;
 			if(ratio < 1) {w = w*ratio; h = h*ratio;};
 			container.css({'width':parent.width()+'px', 'height':h+40+'px'});

@@ -765,28 +765,30 @@ function addImageElem(id, data, page, step) {
 	var img = $('<img name="'+ id +'">');
 	img.attr('src', data);
 	img.css({'width':'100%','height':'100%'});
-	img.load(function() {
-	    var w = img.attr('width'), h = img.attr('height'), cw = page.width(), ch = page.height();
-	    if(!w || !h) return;
-	    
-	    var container = $('<div id="obj'+(curr.objId++)+'">');
-		container.append(img);
-		container.deletable();
-		
-		// Resize
-		var ratiox = cw/w;
-		var ratioy = ch/h;
-		var ratio = (ratiox > ratioy ? ratioy : ratiox);
-		if(ratio < 1) {w = w*ratio; h = h*ratio;};
-		container.css({'position':'absolute', 'top':'0px', 'left':'0px'});
-		container.css({'width':w+'px', 'height':h+'px', 'border-style':'solid', 'border-color':'#4d4d4d', 'border-width':'0px'});
-		
-		// Listener to manipulate
-		// Choose Resize Move
-		container.resizable().moveable().configurable({text:true,stroke:true}).hoverButton('./images/UI/addscript.jpg', addScriptForObj);
 	
-		step.append(container);
-	});
+	var src = srcMgr.getSource(id);
+    if(src.width && src.height) var w = src.width, h = src.height;
+    else var w = img.prop('width'), h = img.prop('height');
+    var cw = page.width(), ch = page.height();
+    if(!w || !h) return;
+    
+    var container = $('<div id="obj'+(curr.objId++)+'">');
+	container.append(img);
+	container.deletable();
+	
+	// Resize
+	var ratiox = cw/w;
+	var ratioy = ch/h;
+	var ratio = (ratiox > ratioy ? ratioy : ratiox);
+	if(ratio < 1) {w = w*ratio; h = h*ratio;};
+	container.css({'position':'absolute', 'top':'0px', 'left':'0px'});
+	container.css({'width':w+'px', 'height':h+'px', 'border-style':'solid', 'border-color':'#4d4d4d', 'border-width':'0px'});
+	
+	// Listener to manipulate
+	// Choose Resize Move
+	container.resizable().moveable().configurable({text:true,stroke:true}).hoverButton('./images/UI/addscript.jpg', addScriptForObj);
+
+	step.append(container);
 }
 
 function addPage(name) {
@@ -1131,12 +1133,12 @@ function addFrame(interval, empty) {
     var prev = frameexpo.prev();
     if(empty!==true && prev.length == 1) {
         var content = prev.data('frame').children().clone(true);
-        frame.append(content);
         content.find('.del_container').remove();
         content.find('canvas').parent().remove();
         content.each(function(){
             $(this).deletable().configurable({text:true,stroke:true}).hoverButton('./images/UI/recut.png', recutAnimeObj);
         });
+        frame.append(content);
     }
     // Active function
     frameexpo.click(function(){
@@ -1312,32 +1314,33 @@ function addAnimeObj(e, id, data) {
     var img = $('<img name="'+ id +'" src="'+ data +'">');
 	img.css({'width':'100%','height':'100%'});
 	
-	img.load(function(){
-	    var w = img.attr('width'), h = img.attr('height'), cw = $('#editor').width()/2, ch = $('#editor').height()/2;
-	    if(!w || !h) return;
-	    
-		var container = $('<div>');
-		container.append(img);
-		container.deletable();
-		
-		// Resize
-		var ratiox = cw/w;
-		var ratioy = ch/h;
-		var ratio = (ratiox > ratioy ? ratioy : ratiox);
-		if(ratio < 1) {w = w*ratio; h = h*ratio;};
-		container.css({'position':'absolute', 'top':e.offsetY-h/2+'px', 'left':e.offsetX-w/2+'px'});
-		container.css({'width':w+'px', 'height':h+'px', 'border-style':'solid', 'border-color':'#4d4d4d', 'border-width':'0px'});
-		
-		// Listener to manipulate
-		// Choose Resize Move
-		container.resizable().moveable().configurable({text:true,stroke:true});
-		// Recut the image
-		container.hoverButton('./images/UI/recut.png', recutAnimeObj);
+	var src = srcMgr.getSource(id);
+	if(src.width && src.height) var w = src.width, h = src.height;
+	else var w = img.prop('width'), h = img.prop('height');
+	var cw = $('#editor').width()/2, ch = $('#editor').height()/2;
+	if(!w || !h) return;
+    
+	var container = $('<div>');
+	container.append(img);
+	container.deletable();
 	
-		$('#editor').children().each(function(){
-		    if($(this).css('z-index') == '2')
-		        $(this).append(container);
-		});
+	// Resize
+	var ratiox = cw/w;
+	var ratioy = ch/h;
+	var ratio = (ratiox > ratioy ? ratioy : ratiox);
+	if(ratio < 1) {w = w*ratio; h = h*ratio;};
+	container.css({'position':'absolute', 'top':e.offsetY-h/2+'px', 'left':e.offsetX-w/2+'px'});
+	container.css({'width':w+'px', 'height':h+'px', 'border-style':'solid', 'border-color':'#4d4d4d', 'border-width':'0px'});
+	
+	// Listener to manipulate
+	// Choose Resize Move
+	container.resizable().moveable().configurable({text:true,stroke:true});
+	// Recut the image
+	container.hoverButton('./images/UI/recut.png', recutAnimeObj);
+
+	$('#editor').children().each(function(){
+	    if($(this).css('z-index') == '2')
+	        $(this).append(container);
 	});
 };
 function dropToAnimeEditor(e) {
