@@ -259,7 +259,8 @@ function retrieveLocalInfo(pjsave) {
     if(isNaN(pjsave.lastModif)) curr.lastModif = lastModServer;
     else curr.lastModif = pjsave.lastModif;
     // Scripts
-    scriptMgr.scripts = pjsave.scripts;
+    if(!(pjsave.scripts instanceof Array) && Object.keys(pjsave.scripts).length != 0)
+        scriptMgr.scripts = pjsave.scripts;
 }
 	
 	// Compare server and local last modification info for Synchronization

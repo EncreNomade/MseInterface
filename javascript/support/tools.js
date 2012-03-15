@@ -149,8 +149,8 @@ var Config = (function() {
 		    this.swidth = this.ratio * this.width;
 		}
 		$('#editor').width(this.swidth).height(this.sheight);
-		$('#rulerX').attr('width', this.swidth+17).attr('height', 15);
-		$('#rulerY').attr('width', 15).attr('height',this.sheight+17);
+		$('#rulerX').prop('width', this.swidth+17).prop('height', 15);
+		$('#rulerY').prop('width', 15).prop('height',this.sheight+17);
 		
 		this.sceneX = function(x) {
 			return Math.round(this.ratio * x);
@@ -237,7 +237,7 @@ var DropZone = function(dropHandler, style, id){
     this.dropHandler = dropHandler;
     this.jqObj = $('<div class="drop_zone"/>');
     if(style) this.jqObj.css(style);
-    if(id) this.jqObj.attr('id', id);
+    if(id) this.jqObj.prop('id', id);
     this.jqObj.data('typeChecker', this.typeChecker);
     // Interaction with drop zone
     this.jqObj.get(0).addEventListener('dragover', this.dragOverElemZone, false);
@@ -444,8 +444,8 @@ SourceManager.prototype = {
 		switch(type) {
 		case 'image':
 			var img = $('<img name="'+id+'">');
-			img.attr({'src':this.sources[id].data});
-			img.removeAttr('draggable');
+			img.prop({'src':this.sources[id].data});
+			img.removeProp('draggable');
 
 			var container = $('<div class="illu">');
 			container.append(img);
@@ -541,7 +541,7 @@ SourceManager.prototype = {
 	        case "image": case "audio": case "game":
 	            data = "pj="+pjName+"&type="+type+"&name="+key+"&data="+this.sources[key].data;
 	            break;
-	        case "wiki": case "animes":
+	        case "wiki": case "anime":
 	            ++this.uploaded;
 	            this.updateSrcs(pjName);
 	            continue;
@@ -654,7 +654,7 @@ StepManager.prototype = {
 	},
 	renameStep: function(stepN, name) {
 	    this.stepexpos[stepN].data('name', name);
-	    this.steps[stepN].attr('id', name);
+	    this.steps[stepN].prop('id', name);
 	},
 	
 	addStepWithContent: function(name, step) {
@@ -828,7 +828,7 @@ var Wiki = function(name, cardsDom, font, fontsize, color) {
     this.name = name;
     this.cards = [];
     cardsDom.find('input, .del_container, .sepline').remove();
-    cardsDom.find('img').attr('src', '');
+    cardsDom.find('img').prop('src', '');
     // Analyze the cards
     for(var i = 0; i < cardsDom.length; i++) {
         var card = {};
@@ -937,15 +937,19 @@ Animation.prototype = {
                 // Validity
                 if(container.children('canvas').length != 0 || !name || name == "") return;
                 // Recut
-                params.w = img.attr('naturalWidth'); params.h = img.attr('naturalHeight');
+                params.w = img.prop('naturalWidth'); params.h = img.prop('naturalHeight');
                 var ratiox = params.w/img.width(), ratioy = params.h/img.height();
-                params.sx = -img.position().left * ratiox; params.sy = -img.position().top * ratioy;
-                params.dw = container.width(); params.dh = container.height();
-                params.sw = params.dw * ratiox; params.sh = params.dh * ratioy;
+                params.sx = parseInt(-img.position().left * ratiox); 
+                params.sy = parseInt(-img.position().top * ratioy);
+                params.sw = parseInt(container.width() * ratiox); 
+                params.sh = parseInt(container.height() * ratioy);
                 if(params.sx != 0 || params.sy != 0 || params.sw != params.w || params.sh != params.h)
                     objs[name].type = "spriteRecut";
                 // parameters
-                params.dx = container.position().left; params.dy = container.position().top;
+                params.dx = config.realX(container.position().left); 
+                params.dy = config.realY(container.position().top);
+                params.dw = config.realX(container.width()); 
+                params.dh = config.realY(container.height());
                 params.opacity = parseFloat(container.css('opacity'));
                 
                 frame.objs[name] = params;
@@ -993,7 +997,9 @@ Animation.prototype = {
                     case "image":
                         img.css({'position':'relative', 'left':'0%', 'top':'0%', 'width':'100%', 'height':'100%'});break;
                     }
-                    container.css({'position':'absolute', 'top':param.dy+'px', 'left':param.dx+'px', 'width':param.dw+'px', 'height':param.dh+'px', 'border-style':'solid', 'border-color':'#4d4d4d', 'border-width':'0px', 'overflow':'hidden', 'opacity':param.opacity});
+                    var dx = config.sceneX(param.dx), dy = config.sceneY(param.dy); 
+                    var dw = config.sceneX(param.dw), dh = config.sceneY(param.dh);
+                    container.css({'position':'absolute', 'top':dy+'px', 'left':dx+'px', 'width':dw+'px', 'height':dh+'px', 'border-style':'solid', 'border-color':'#4d4d4d', 'border-width':'0px', 'overflow':'hidden', 'opacity':param.opacity});
                     container.html(img);
                     container.deletable().resizable().moveable().configurable({text:true,stroke:true});
                     container.hoverButton('./images/UI/recut.png', recutAnimeObj);
@@ -1163,7 +1169,7 @@ Popup.prototype = {
 		
 		this.titre.children('span').html(msg);
 		if(msgConfirm) {
-			this.confirm.attr('value', msgConfirm);
+			this.confirm.val(msgConfirm);
 			this.confirm.show();
 		}
 		else this.confirm.hide();
@@ -1223,7 +1229,7 @@ ObjChooser.prototype = {
     choosed: function(obj){
         // Set referenced id for analyze in the server
         if(!obj.prop('id') || obj.prop('id') == "") 
-            obj.attr('id', "referenced"+(ObjChooser.prototype.refObjId++));
+            obj.prop('id', "referenced"+(ObjChooser.prototype.refObjId++));
         this.jqObj.children('h5').text(obj.prop('id'));
         $('#center_panel, #right').css('z-index', 1);
         $('#objChooserMask').remove();
@@ -1537,7 +1543,7 @@ $.fn.editable = function(callback) {
 		editfield.css({'color':color, 'background':'rgba(255,255,255,0.3)', 'top':$(this).css('top'), 'left':$(this).css('left'), 'position':$(this).css('position'), 'font-family':$(this).css('font-family'), 'font-size':$(this).css('font-size')});
 		$(this).replaceWith(editfield);
 		editfield.blur(function() {
-			var newname = $(this).attr('value');
+			var newname = $(this).val();
 			var newtext = $('<'+tagName+'>'+newname+'</'+tagName+'>');
 			newtext.css({'color':$(this).css('color'), 'top':$(this).css('top'), 'left':$(this).css('left'), 'position':$(this).css('position'), 'font-family':$(this).css('font-family'), 'font-size':$(this).css('font-size')});
 			$(this).replaceWith(newtext);

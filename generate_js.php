@@ -165,6 +165,7 @@ class ProjectGenerator {
                         $dyvar = $this->encodedCoord($dy);
                         $dwvar = $this->encodedCoord($dw);
                         $dhvar = $this->encodedCoord($dh);
+                        //echo "Coord: $dx, $dy, $dw, $dh";
                         
                         // First initialization of objet, add to objlist array
                         if(!array_key_exists($key, $objlist)){
