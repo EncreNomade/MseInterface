@@ -108,8 +108,8 @@ else header("Location: index.php", true);
 	<ul id="wikiTools" class="central_tools">
 		<li><h5>Paramètres:</h5></li>
 		<li><h5>Color</h5><input id="wiki_color" size="5" value="#000" type="color"></li>
-		<li><h5>Police</h5><input id="wiki_font" size="5" type="text"></li>
-		<li><h5>Taille</h5><input id="wiki_size" style="width: 28px; value="16" type="number"><span>px</span></li>
+		<li><h5>Police</h5><input id="wiki_font" size="5" type="text" value="Arial"></li>
+		<li><h5>Taille</h5><input id="wiki_size" style="width: 28px;" value="14" type="number"><span>px</span></li>
 	</ul>
 	<ul id="animeTools" class="central_tools">
 		<li><h5>Paramètres: </h5></li>
@@ -228,13 +228,13 @@ function retrieveLocalInfo(pjsave) {
                         	'top': ($(this).children('p').length == 0) ? '0%' : '-100%',
                         	'display':'none'});
                     });
-                    id = parseInt(obj.attr('id').substring(3));
+                    id = parseInt(obj.prop('id').substring(3));
                     if(id > maxid) maxid = id;
                 }
                 // Other obj
                 else {
                     obj.selectable(null).deletable().configurable().resizable().moveable().hoverButton('./images/UI/addscript.jpg', addScriptForObj);
-                    id = parseInt(obj.attr('id').substring(3));
+                    id = parseInt(obj.prop('id').substring(3));
                     if(id > maxid) maxid = id;
                 }
             });

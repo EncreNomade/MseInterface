@@ -540,7 +540,7 @@ __KEY_RIGHT	= 39;
 	MseConfigrationSingleton = function() {
 		// Class singleton for all general configration
 		this.os = BrowserDetect.OS;
-		this.mobile = (this.os.indexOf("Mobile") >= 0);
+		this.mobile = (this.os == "Mobile/iOS/iPhone");
 		this.browser = BrowserDetect.browser; // Chrome/Safari/Firefox/Opera/Explorer
 		//this.version = BrowserDetect.version;
 		

@@ -617,7 +617,7 @@ function addScriptForObj(e){
 };
 function addScriptDialog(src, srcType){
     var name = "";
-    var tagName = src.attr('tagName');
+    var tagName = src[0].tagName;
     var srcid = "";
     if(srcType != "obj") {
         // Page label event
@@ -637,7 +637,7 @@ function addScriptDialog(src, srcType){
     }
     else {
         name = "Object";
-        srcid = src.attr('id');
+        srcid = src.prop('id');
     }
     if(!srcType || !srcid || srcid == "") return;
     
@@ -694,7 +694,7 @@ function tarDynamic(e){
     case "page":
         var select = '<select id="script_tar">';
         $('.scene').each(function(){
-            select += '<option value="'+$(this).attr('id')+'">'+$(this).attr('id')+'</option>';});
+            select += '<option value="'+$(this).prop('id')+'">'+$(this).prop('id')+'</option>';});
         select += '</select>';
         cible.append(select);
         break;
@@ -827,7 +827,7 @@ function delCurrentPage() {
         return;
     }
     
-    var name = curr.page.attr('id');
+    var name = curr.page.prop('id');
     // Delete in labelbar
     $('#pageBar .active').remove();
     // Delete step manager in dom
@@ -912,7 +912,7 @@ function modifyZ() {
 		var zid = expo.find('input[type="number"]').val();
 		// Modify layer's index
 		var layer = expo.find('span:first').html();
-		var page = curr.page.attr('id');
+		var page = curr.page.prop('id');
 		layers[page][layer].css('z-index', zid);
 		// Replace span with modified zid
 		var res = $('<span>'+zid+'</span>');
@@ -1055,7 +1055,8 @@ function saveWiki() {
 // WikiEditor Interaction
 function dropImgToWikiCard(e) {
     e.stopPropagation();
-    if($(this).attr('tagName') == "DIV") $(this).css('border-style', 'dotted');
+    if($(this).hasClass('drop_zone')) $(this).css('border-style', 'dotted');
+    else $(this).css('border-style', 'none');
     
     var id = e.dataTransfer.getData('Text');
     var data = srcMgr.getSource(id);
@@ -1311,28 +1312,32 @@ function addAnimeObj(e, id, data) {
     var img = $('<img name="'+ id +'" src="'+ data +'">');
 	img.css({'width':'100%','height':'100%'});
 	
-	var container = $('<div>');
-	container.append(img);
-	container.deletable();
+	img.load(function(){
+	    var w = img.attr('width'), h = img.attr('height'), cw = $('#editor').width()/2, ch = $('#editor').height()/2;
+	    if(!w || !h) return;
+	    
+		var container = $('<div>');
+		container.append(img);
+		container.deletable();
+		
+		// Resize
+		var ratiox = cw/w;
+		var ratioy = ch/h;
+		var ratio = (ratiox > ratioy ? ratioy : ratiox);
+		if(ratio < 1) {w = w*ratio; h = h*ratio;};
+		container.css({'position':'absolute', 'top':e.offsetY-h/2+'px', 'left':e.offsetX-w/2+'px'});
+		container.css({'width':w+'px', 'height':h+'px', 'border-style':'solid', 'border-color':'#4d4d4d', 'border-width':'0px'});
+		
+		// Listener to manipulate
+		// Choose Resize Move
+		container.resizable().moveable().configurable({text:true,stroke:true});
+		// Recut the image
+		container.hoverButton('./images/UI/recut.png', recutAnimeObj);
 	
-	// Resize
-	var w = img.attr('width'), h = img.attr('height'), cw = $('#editor').width()/2, ch = $('#editor').height()/2;
-	var ratiox = cw/w;
-	var ratioy = ch/h;
-	var ratio = (ratiox > ratioy ? ratioy : ratiox);
-	if(ratio < 1) {w = w*ratio; h = h*ratio;};
-	container.css({'position':'absolute', 'top':e.offsetY-h/2+'px', 'left':e.offsetX-w/2+'px'});
-	container.css({'width':w+'px', 'height':h+'px', 'border-style':'solid', 'border-color':'#4d4d4d', 'border-width':'0px'});
-	
-	// Listener to manipulate
-	// Choose Resize Move
-	container.resizable().moveable().configurable({text:true,stroke:true});
-	// Recut the image
-	container.hoverButton('./images/UI/recut.png', recutAnimeObj);
-
-	$('#editor').children().each(function(){
-	    if($(this).css('z-index') == '2')
-	        $(this).append(container);
+		$('#editor').children().each(function(){
+		    if($(this).css('z-index') == '2')
+		        $(this).append(container);
+		});
 	});
 };
 function dropToAnimeEditor(e) {
@@ -1681,7 +1686,7 @@ function saveProject() {
         for(var i in steps) {
             var step = steps[i].clone();
             step.find('.del_container, .ctrl_pt').remove();
-            struct[key][step.attr('id')] = serializer.serializeToString(step.get(0));
+            struct[key][step.prop('id')] = serializer.serializeToString(step.get(0));
         }
     }
     var structStr = JSON.stringify(struct);

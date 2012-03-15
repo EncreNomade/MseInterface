@@ -254,7 +254,8 @@ DropZone.prototype = {
     	return false;
     },
     dragLeaveElemZone: function(e) {
-    	$(this).css('border-style', 'dotted');
+        if($(this).hasClass('drop_zone')) $(this).css('border-style', 'dotted');
+        else $(this).css('border-style', 'none');
     },
     appendTo: function(parent){this.jqObj.appendTo(parent);}
 };
@@ -580,7 +581,7 @@ var StepManager = function(page) {
 	this.stepexpos = {};
 	this.currStepN = 1;
 	
-	managers[page.attr('id')] = this;
+	managers[page.prop('id')] = this;
 	// Append to right panel
 	$('#right_panel').append(this.manager);
 };
@@ -840,14 +841,14 @@ var Wiki = function(name, cardsDom, font, fontsize, color) {
                 var section = {};
                 section.title = title.text();
                 // Link section
-                if(title.next().attr('tagName') == 'IMG') {
+                if(title.next()[0].tagName == 'IMG') {
                     section.type = 'link';
                     section.content = title.next().attr('value');
                 }
                 // Text section
                 else {
                     section.type = 'text';
-                    section.content = (title.next().attr('tagName')=='H4') ? title.next().text() : "";
+                    section.content = (title.next()[0].tagName=='H4') ? title.next().text() : "";
                 }
                 card.sections.push(section);
             }
@@ -1213,9 +1214,9 @@ ObjChooser.prototype = {
     },
     choosed: function(obj){
         // Set referenced id for analyze in the server
-        if(!obj.attr('id') || obj.attr('id') == "") 
+        if(!obj.prop('id') || obj.prop('id') == "") 
             obj.attr('id', "referenced"+(ObjChooser.prototype.refObjId++));
-        this.jqObj.children('h5').text(obj.attr('id'));
+        this.jqObj.children('h5').text(obj.prop('id'));
         $('#center_panel, #right').css('z-index', 1);
         $('#objChooserMask').remove();
     }
@@ -1517,7 +1518,7 @@ $.fn.addStepManager = function() {
 
 // Editable for the text tags
 $.fn.editable = function(callback) {
-	var tagName = $(this).attr('tagName');
+	var tagName = this[0].tagName;
 	// Don't support
 	if( $.inArray(tagName.toUpperCase(), editSupportTag) == -1 ) return;
 	
