@@ -26,117 +26,143 @@ mse.currTimeline = null;
 
 
 // Gestion de ressources
-mse.Ressource = function() {};
-mse.Ressource.prototype = {
-	constructor	: mse.Ressource,
-	list 		: {},
-	loading		: [],
-	preload		: new Array(),
-	loadInfo	: 'Chargement ressources: ',
-	waitinglist : {},
-	audExtCheck : /(.ogg|.mp3)/,
-	init		: function() {
-		var ctx, angle;
-		for(var i = 0; i < 12; i++) {
-			this.loading[i] = document.createElement('canvas');
-			this.loading[i].width = 300; this.loading[i].height = 300;
-			ctx = this.loading[i].getContext('2d');
-			ctx.translate(150,150);
-			//ctx.fillStyle = 'rgba(0,0,0,0.4)';
-			//ctx.fillRoundRect(-50,-50, 100,100, 10);
-			angle = 2*Math.PI / 12;
-			ctx.fillStyle = '#AAAAAA';
-			for(var j = 0; j < 12; j++) {
-				if(j == i) {
-					ctx.fillStyle = '#EEEEEE';
-					ctx.fillRect(60, -9, 60, 18);
-					ctx.fillStyle = '#AAAAAA';
-				}
-				else ctx.fillRect(60, -9, 60, 18);
-				ctx.rotate(angle);
-			}
-		}
-	},
-	addSource	: function(name, file, type, pre) {
-		switch(type) {
-		case 'img' : case 'image':
-			this.list[name] = new Image();
-			this.list[name].src = cfs.srcPath + file;
-			this.list[name].lid = 0; // Loading current index
-			break;
-		case 'aud' : case 'audio':
-			this.list[name] = document.createElement('audio');
-			if(file.search(this.audExtCheck) == -1) {
-			    switch(MseConfig.browser) {
-			    case 'Chrome': case 'Firefox': case 'Opera':
-				    this.list[name].src = cfs.srcPath+file+'.ogg';break;
-			    case 'Safari': case 'Explorer':
-				    this.list[name].src = cfs.srcPath+file+'.mp3';break;
-			    }
-			}
-			else this.list[name].src = cfs.srcPath+file;
-			this.list[name].load();
-			break;
-		default: return;
-		}
-		this.list[name].type = type;
-		if(pre && type != 'aud' && type != 'audio') this.preload.push(this.list[name]);
-	},
-	getSrc		: function(name) {
-		var res = this.list[name];
-		if(!res) return null;
-		switch(res.type) {
-		case 'img': case 'image':
-			if(!res || res.complete) return res;
-			else {
-				if(res.lid == 12) res.lid = 0;
-				return this.loading[(res.lid++)];
-			}
-		case 'aud': case 'audio':
-			return res;
-		}
-	},
-	waitSrc     : function(name, callback) {
-	    if(!this.list[name]) return;
-	    if(this.list[name].complete) {
-	        callback.invoke();
-	        return;
+mse.src = function() {
+    return {
+	    list 		: {},
+	    loading		: [],
+	    preload		: new Array(),
+	    loadInfo	: 'Chargement ressources: ',
+	    waitinglist : {},
+	    audExtCheck : /(.ogg|.mp3)/,
+	    init		: function() {
+	    	var ctx, angle;
+	    	for(var i = 0; i < 12; i++) {
+	    		this.loading[i] = document.createElement('canvas');
+	    		this.loading[i].width = 300; this.loading[i].height = 300;
+	    		ctx = this.loading[i].getContext('2d');
+	    		ctx.translate(150,150);
+	    		//ctx.fillStyle = 'rgba(0,0,0,0.4)';
+	    		//ctx.fillRoundRect(-50,-50, 100,100, 10);
+	    		angle = 2*Math.PI / 12;
+	    		ctx.fillStyle = '#AAAAAA';
+	    		for(var j = 0; j < 12; j++) {
+	    			if(j == i) {
+	    				ctx.fillStyle = '#EEEEEE';
+	    				ctx.fillRect(60, -9, 60, 18);
+	    				ctx.fillStyle = '#AAAAAA';
+	    			}
+	    			else ctx.fillRect(60, -9, 60, 18);
+	    			ctx.rotate(angle);
+	    		}
+	    	}
+	    },
+	    addSource	: function(name, file, type, pre) {
+	    	switch(type) {
+	    	case 'img' : case 'image':
+	    		this.list[name] = new Image();
+	    		this.list[name].src = cfs.srcPath + file;
+	    		this.list[name].lid = 0; // Loading current index
+	    		break;
+	    	case 'aud' : case 'audio':
+	    		this.list[name] = document.createElement('audio');
+	    		if(file.search(this.audExtCheck) == -1) {
+	    		    switch(MseConfig.browser) {
+	    		    case 'Chrome': case 'Firefox': case 'Opera':
+	    			    this.list[name].src = cfs.srcPath+file+'.ogg';break;
+	    		    case 'Safari': case 'Explorer':
+	    			    this.list[name].src = cfs.srcPath+file+'.mp3';break;
+	    		    }
+	    		}
+	    		else this.list[name].src = cfs.srcPath+file;
+	    		this.list[name].load();
+	    		break;
+	    	default: return;
+	    	}
+	    	this.list[name].type = type;
+	    	if(pre && type != 'aud' && type != 'audio') this.preload.push(this.list[name]);
+	    },
+	    getSrc		: function(name) {
+	    	var res = this.list[name];
+	    	if(!res) return null;
+	    	switch(res.type) {
+	    	case 'img': case 'image':
+	    		if(!res || res.complete) return res;
+	    		else {
+	    			if(res.lid == 12) res.lid = 0;
+	    			return this.loading[(res.lid++)];
+	    		}
+	    	case 'aud': case 'audio':
+	    		return res;
+	    	}
+	    },
+	    waitSrc     : function(name, callback) {
+	        if(!this.list[name]) return;
+	        if(this.list[name].complete) {
+	            callback.invoke();
+	            return;
+	        }
+	        if(!this.waitinglist[name]) this.waitinglist[name] = new Array();
+	        var wlist = this.waitinglist[name];
+	        wlist.push(callback);
+	        this.list[name].onload = function() {
+	            for(var cb in wlist) wlist[cb].invoke();
+	        };
+	    },
+	    preloadProc	: function() {
+	    	var count = 0;
+	    	for(var i = 0; i < this.preload.length; i++)
+	    		if(this.preload[i].complete) count++;
+	    	return [count, this.preload.length];
+	    },
+	    preloadPage	: function(ctx, fini, total) {
+	    	ctx.clearRect(0, 0, mse.root.width, mse.root.height);
+	    	ctx.save();
+	    	ctx.strokeStyle = '#333333';
+	    	ctx.lineWidth = 2;
+	    	ctx.strokeRoundRect((mse.root.width-280)/2, mse.root.height-100, 281, 11, 5);
+	    	ctx.fillStyle = '#555555';
+	    	ctx.fillRoundRect((mse.root.width-280)/2, mse.root.height-100, (fini/total)*280, 10, 5);
+	    	var txt = this.loadInfo + fini + '/' + total;
+	    	var w = ctx.measureText(txt).width;
+	    	ctx.font = '20px '+cfs.font;
+	    	ctx.fillStyle = '#000000';
+	    	ctx.fillText(txt, (mse.root.width-w)/2, mse.root.height-60);
+	    	ctx.restore();
 	    }
-	    if(!this.waitinglist[name]) this.waitinglist[name] = new Array();
-	    var wlist = this.waitinglist[name];
-	    wlist.push(callback);
-	    this.list[name].onload = function() {
-	        for(var cb in wlist) wlist[cb].invoke();
-	    };
-	},
-	preloadProc	: function() {
-		var count = 0;
-		for(var i = 0; i < this.preload.length; i++)
-			if(this.preload[i].complete) count++;
-		return [count, this.preload.length];
-	},
-	preloadPage	: function(ctx, fini, total) {
-		ctx.clearRect(0, 0, mse.root.width, mse.root.height);
-		ctx.save();
-		ctx.strokeStyle = '#333333';
-		ctx.lineWidth = 2;
-		ctx.strokeRoundRect((mse.root.width-280)/2, mse.root.height-100, 281, 11, 5);
-		ctx.fillStyle = '#555555';
-		ctx.fillRoundRect((mse.root.width-280)/2, mse.root.height-100, (fini/total)*280, 10, 5);
-		var txt = this.loadInfo + fini + '/' + total;
-		var w = ctx.measureText(txt).width;
-		ctx.font = '20px '+cfs.font;
-		ctx.fillStyle = '#000000';
-		ctx.fillText(txt, (mse.root.width-w)/2, mse.root.height-60);
-		ctx.restore();
-	}
-};
-mse.src	= new mse.Ressource();
+	};
+}();
+
+var initCoordinateSys = function(){
+    mse.coords = {};
+    mse.coorRatio = 1;
+    mse.joinCoor = function(coor) {
+        if(isNaN(coor)) return "";
+        var cid = 0;
+        for (var i in mse.coords) {
+            if (coor == mse.coords[i]) return i;
+            
+            var reg = i.match(/cid(\d+)/);
+            if(reg[1]) var id = parseInt(reg[1]);
+            if(!isNaN(id) && id >= cid) cid = id + 1;
+        }
+        var key = "cid"+cid;
+        mse.coords[key] = mse.coorRatio == 1 ? coor : parseFloat(new Number(mse.coorRatio * coor).toFixed(2));
+        return key;
+    };
+    mse.coor = function(key) {
+        if(isNaN(mse.coords[key])) return 0;
+        else return mse.coords[key];
+    };
+    mse.realCoor = function(coor) {
+        if(isNaN(coor)) return 0;
+        else return mse.coorRatio == 1 ? coor : parseFloat(new Number(mse.coorRatio * coor).toFixed(2));
+    };
+}();
 
 function changeCoords() {
-    var ratio = MseConfig.pageHeight / coords['cid1'];
-    for(var i in coords) {
-        coords[i] = parseFloat(new Number(ratio * coords[i]).toFixed(2));
+    mse.coorRatio = MseConfig.pageHeight / mse.coords['cid1'];
+    for(var i in mse.coords) {
+        mse.coords[i] = parseFloat(new Number(mse.coorRatio * mse.coords[i]).toFixed(2));
     }
     if(window.autoFitCallback) window.autoFitCallback();
     window.autoFitCallback = null;
@@ -144,8 +170,8 @@ function changeCoords() {
 
 mse.autoFitToWindow = function(f) {
     if(f) window.autoFitCallback = f;
-    if(coords && coords['cid1']) {
-        if(MseConfig.pageHeight > 250) ;//changeCoords();
+    if(mse.coords['cid1']) {
+        if(MseConfig.pageHeight > 250) changeCoords();
         else setTimeout(mse.autoFitToWindow, 1000);
     }
 }

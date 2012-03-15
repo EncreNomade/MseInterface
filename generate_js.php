@@ -78,7 +78,7 @@ class ProjectGenerator {
                 $key = "cid".count($this->coords);
                 $this->coords[$key] = $number;
             }
-            return "coords.$key";
+            return "mse.coor('$key')";
         }
         return '0';
     }
@@ -119,6 +119,7 @@ class ProjectGenerator {
                 break;
                 
             case "game":
+                $this->jstr .= "games.$name = new $name();";
                 array_push($this->scriptExt, $src);
                 break;
                 
@@ -387,11 +388,11 @@ class ProjectGenerator {
         // Start the book
         $this->jstr .= "mse.currTimeline.start();};";
         // Lazy init the book
-        //$this->jstr .= "mse.autoFitToWindow(createbook);";
-        $this->jstr .= "createbook();";
+        $this->jstr .= "mse.autoFitToWindow(createbook);";
+        //$this->jstr .= "createbook();";
         
         // Join the coords array in the beginning
-        $this->jstr = "var coords = JSON.parse('".json_encode($this->coords)."');".$this->jstr;
+        $this->jstr = "mse.coords = JSON.parse('".json_encode($this->coords)."');".$this->jstr;
         
         return $this->jstr;
     }
