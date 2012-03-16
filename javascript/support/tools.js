@@ -912,17 +912,19 @@ Wiki.prototype = {
 
 
 // Animation system
-var Animation = function(name, repeat, statiq) {
+var Animation = function(name, repeat, block, statiq) {
     //this.anime = {};
     this.name = name;
     this.repeat = repeat;
     this.statiq = statiq;
     this.frames = [];
     this.objs = {};
+    this.block = block ? true : false;
 };
 Animation.prototype = {
     constructor: Animation,
     createAnimation: function(frames) {
+        // Analyze
         for(var i = 0; i < frames.length; i++){
             var frame = {};
             var framexpo = $(frames.get(i));
@@ -936,30 +938,57 @@ Animation.prototype = {
             content.each(function(){
                 var params = {};
                 var container = $(this);
-                var img = container.children('img');
-                var name = img.attr('name');
+                // Type
+                if(container.hasClass('rect')) var type = 'rect';
+                else if(container.children('img').length == 1) var type = 'image';
+                else if(container.children('p').length > 0) var type = 'text';
+                // Type incorrect
+                if(!type) return;
+                
+                if(type == 'image') var name = container.children('img').attr('name');
+                else var name = container.prop('id');
+                // Validity
+                if(!name || name == "") return;
                 // Add to objects array
                 if(!objs[name]) {
                     objs[name] = {};
-                    objs[name].type = "image";
+                    objs[name].type = type;
+                    if(type == 'text') {
+                        // Text static config
+                        objs[name].content = container.children('p').text();
+                        objs[name].font = container.css('font-family');
+                        if(!objs[name].font || objs[name].font == "") objs[name].font = 'Arial';
+                        objs[name].fWeight = container.css('font-weight');
+                        if(!objs[name].fWeight || objs[name].fWeight == "") objs[name].fWeight = 'normal';
+                        objs[name].align = container.css('text-align');
+                        if(!objs[name].align || objs[name].align == "") objs[name].align == "left";
+                    }
                 }
-                // Validity
-                if(container.children('canvas').length != 0 || !name || name == "") return;
-                // Recut
-                params.w = img.prop('naturalWidth'); params.h = img.prop('naturalHeight');
-                var ratiox = params.w/img.width(), ratioy = params.h/img.height();
-                params.sx = parseInt(-img.position().left * ratiox); 
-                params.sy = parseInt(-img.position().top * ratioy);
-                params.sw = parseInt(container.width() * ratiox); 
-                params.sh = parseInt(container.height() * ratioy);
-                if(params.sx != 0 || params.sy != 0 || params.sw != params.w || params.sh != params.h)
-                    objs[name].type = "spriteRecut";
-                // parameters
+                // Parameters animatable
                 params.dx = config.realX(container.position().left); 
                 params.dy = config.realY(container.position().top);
                 params.dw = config.realX(container.width()); 
                 params.dh = config.realY(container.height());
                 params.opacity = parseFloat(container.css('opacity'));
+                if(type == 'image') {
+                    var img = container.children('img');
+                    // Recut
+                    params.w = img.prop('naturalWidth'); params.h = img.prop('naturalHeight');
+                    var ratiox = params.w/img.width(), ratioy = params.h/img.height();
+                    params.sx = parseInt(-img.position().left * ratiox); 
+                    params.sy = parseInt(-img.position().top * ratioy);
+                    params.sw = parseInt(container.width() * ratiox); 
+                    params.sh = parseInt(container.height() * ratioy);
+                    if(params.sx != 0 || params.sy != 0 || params.sw != params.w || params.sh != params.h)
+                        objs[name].type = "spriteRecut";
+                }
+                else if(type == 'rect') {
+                    params.color = container.css('background-color');
+                }
+                else if(type == 'text') {
+                    params.color = container.css('color');
+                    params.fsize = container.css('font-size');
+                }
                 
                 frame.objs[name] = params;
             });
@@ -982,6 +1011,7 @@ Animation.prototype = {
         var timeline = $('#timeline');
         $('#animeRepeat').val(this.repeat);
         $('#animeName').val(this.name);
+        $('#animeBlock').val(this.block);
         for(var i = 0; i < this.frames.length; i++){
             var frame = this.frames[i];
             var frameexpo = addFrame(frame.interval, true);
@@ -995,27 +1025,46 @@ Animation.prototype = {
             // Objects
             for(var key in frame.objs){
                 var container = $('<div>');
+                container.deletable().resizable().moveable().configurable();
                 var param = frame.objs[key];
                 var type = this.objs[key].type;
-                if(type == "spriteRecut" || type == "sprite" || type == "image") {
-                    var img = $('<img name="'+ key +'" src="'+srcMgr.getSource(key)+'">');
+                switch(type) {
+                case "spriteRecut": case "sprite": case "image":
+                    container.hoverButton('./images/UI/recut.png', recutAnimeObj);
+                    var elem = $('<img name="'+ key +'" src="'+srcMgr.getSource(key)+'">');
                     switch(type) {
                     case "sprite":
                     case "spriteRecut":
-                        img.css({'position':'relative', 'left':-100*param.sx/param.w+'%', 'top':-100*param.sy/param.h+'%', 'width':100*param.w/param.sw+'%', 'height':100*param.h/param.sh+'%'});break;
+                        elem.css({'position':'relative', 'left':-100*param.sx/param.w+'%', 'top':-100*param.sy/param.h+'%', 'width':100*param.w/param.sw+'%', 'height':100*param.h/param.sh+'%'});break;
                     case "image":
-                        img.css({'position':'relative', 'left':'0%', 'top':'0%', 'width':'100%', 'height':'100%'});break;
+                        elem.css({'position':'relative', 'left':'0%', 'top':'0%', 'width':'100%', 'height':'100%'});break;
                     }
-                    var dx = config.sceneX(param.dx), dy = config.sceneY(param.dy); 
-                    var dw = config.sceneX(param.dw), dh = config.sceneY(param.dh);
-                    container.css({'position':'absolute', 'top':dy+'px', 'left':dx+'px', 'width':dw+'px', 'height':dh+'px', 'border-style':'solid', 'border-color':'#4d4d4d', 'border-width':'0px', 'overflow':'hidden', 'opacity':param.opacity});
-                    container.html(img);
-                    container.deletable().resizable().moveable().configurable({text:true,stroke:true});
-                    container.hoverButton('./images/UI/recut.png', recutAnimeObj);
+                break;
+                case "text":
+                    container.prop('id', key);
+                    container.css({
+                        'font-family': this.objs[key].font,
+                        'font-weight': this.objs[key].fWeight,
+                        'text-align': this.objs[key].align,
+                        'color': param.color,
+                        'font-size': param.fsize
+                    });
+                    var elem = $('<p>'+this.objs[key].content+'</p>');
+                break;
+                case "rect":
+                    container.prop('id', key);
+                    container.css({'background-color': param.color});
+                    var elem = '';
+                break;
+                case "default": continue;
                 }
-                else if(type == "text"){
-                }
-                framelayer.append(container);
+                // Parameters in common
+                var dx = config.sceneX(param.dx), dy = config.sceneY(param.dy); 
+                var dw = config.sceneX(param.dw), dh = config.sceneY(param.dh);
+                container.css({'position':'absolute', 'top':dy+'px', 'left':dx+'px', 'width':dw+'px', 'height':dh+'px', 'border-style':'solid', 'border-color':'#4d4d4d', 'border-width':'0px', 'overflow':'hidden', 'opacity':param.opacity});
+                
+                container.html(elem);
+                framelayer.prepend(container);
             }
         }
         showAnimeEditor();

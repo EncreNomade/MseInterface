@@ -113,6 +113,7 @@ else header("Location: index.php", true);
 	</ul>
 	<ul id="animeTools" class="central_tools">
 		<li><h5>Paramètres: </h5></li>
+		<li><h5>Bloquant:</h5><input id="animeBlock" type="checkbox" checked="true"></li>
 		<li><h5>Boucle:</h5><input id="animeRepeat" style="width: 28px;" type="number" value="1"></li>
 		<li><h5>Nom:</h5><input id="animeName" size="5" type="text"></li>
 		<li><input type="button" id="createAnime" value="Sauvegarder"></input></li>

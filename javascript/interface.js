@@ -61,7 +61,8 @@ function init() {
 	$('#createAnime').click(function(){
 	    var name = $("#animeName").val();
 	    var repeat = $("#animeRepeat").val();
-	    var anime = new Animation(name, repeat, true);
+	    var block = $("#animeBlock").val();
+	    var anime = new Animation(name, repeat, block, true);
 	    anime.createAnimation($('#timeline').children('div'));
 	    srcMgr.addSource('anime', anime, $('#animeName').val());
 	});
