@@ -164,9 +164,6 @@ else header("Location: index.php", true);
 	$('#newPage, #createPage').click(createPageDialog);
 	$('#removePage').click(delCurrentPage);
 	$('#newCalque').click(createStepDialog);
-	
-	$('#texticon').click(showTextEditor);
-	$('#recticon').click(showShapeEditor);
 	$('#wikiicon').click(showWikiEditor);
 	$('#animeicon').click(showAnimeEditor);
 	

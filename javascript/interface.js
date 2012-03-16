@@ -1,12 +1,5 @@
 var pages = {};
 var managers = {};
-var tag = {
-	drawstarted: false
-};
-var prevState = {};
-var curr = {
-    objId: 0
-};
 var dialog, srcMgr;
 // Parameters' list with disable configuration, defaultly all false
 var paramdisablelist = {
@@ -27,61 +20,9 @@ function init() {
 	$('.central_tools').hide();
 	$('#editor').hide();
 	$('#timeline').hide();
-	$('#shapeTools').hideable(function() {
-		$('#menu_mask').hide();
-		// Unbind event handler
-		$('#editor').unbind();
-		$('body').unbind('mouseup', cancelDraw);
-		$('body').unbind('mousemove', drawing);
-
-		$('#shapeTools').hide();
-		$('#editor').hide();
-		// Copy all in current step
-		var elems = $('#editor').children('div');
-		var res = elems.deletable(false).clone();
-		res.each(function() {
-			//srcMgr.addSource('obj', $(this));
-			$(this).attr('id', 'obj'+(curr.objId++));
-			$(this).selectable(null).deletable().configurable().hoverButton('./images/UI/addscript.jpg', addScriptForObj).appendTo(curr.step);
-		});
-		elems.remove();
-	});
-	// Tool chooser in shape tools
-	var tools = $('#shapeTools').find('img:lt(4)');
-	tools.click(function() {
-		tools.removeClass('active');
-		$(this).addClass('active');
-	});
-	$('#textTools').hideable(function() {
-		$('#menu_mask').hide();
-		// Unbind event handler
-		$('#editor').unbind();
-		// Hide editor
-		$('#textTools').hide();
-		$('#editor').hide();
-		
-		// Generate Text Elem
-		var elems = $('#editor').children('div');
-		elems.each(function() {
-			var area = $(this).children('textarea');
-			var arr = area.val().split('\n');
-			if(arr.length == 1 && arr[0] == "") return;
-			var res = $('<div id="obj'+(curr.objId++)+'"></div>');
-			res.css({
-				'position':'absolute', 'left':$(this).css('left'), 'top':$(this).css('top'),
-				'font-size':area.css('font-size'), 'font-family':area.css('font-family'), 'font-weight':area.css('font-weight'),
-				'line-height':fontsize*1.1+'px', 'text-align':area.css('text-align'), 'color':area.css('color')
-			});
-			var fontsize = area.css('font-size');
-			for(var i = 0; i < arr.length; i++) {
-				res.append('<p style="margin:0px;padding:0px;">'+arr[i]+'</p>');
-			}
-			// Append all in current step
-			res.selectable(null).moveable().resizable().deletable().configurable().hoverButton('./images/UI/addscript.jpg', addScriptForObj).appendTo(curr.step);
-			//srcMgr.addSource('text', res);
-		});
-		elems.remove();
-	});
+	initShapeTool();
+	initTextTool();
+	
 	$('#wikiTools').hideable(function() {
 	    $('#menu_mask').hide();
 	    // Unbind event handler
@@ -125,13 +66,6 @@ function init() {
 	    srcMgr.addSource('anime', anime, $('#animeName').val());
 	});
 	
-	
-	// Config change real time listener
-	$('#text_color').get(0).onchange = configChanged;
-	$('#text_font').get(0).onchange = configChanged;
-	$('#text_size').get(0).onchange = configChanged;
-	$('#text_style').get(0).onchange = configChanged;
-	$('#text_align').get(0).onchange = configChanged;
 	// Mouse event handler for the resize behavior
 	$('body').supportResize(); 
 	
@@ -930,29 +864,6 @@ function modifyZ() {
 
 // Interaction with widget==============================
 
-// Shape editor
-function showShapeEditor() {
-	// Trigger close event if center panel is showing up
-	if($('#center_panel').css('display') == 'block')
-		$('.central_tools:visible').find('.del_container img:first').click();
-	$('.central_tools').hide();
-	$('#menu_mask').show();
-	$('#shapeTools').show();
-	$('#editor').show();
-	$('#editor').mousedown(startDraw).mouseup(cancelDraw).mousemove(drawing);
-	$('body').mouseup(cancelDraw).mousemove(drawing);
-}
-// Text editor
-function showTextEditor() {
-	// Trigger close event if center panel is showing up
-	if($('#center_panel').css('display') == 'block')
-		$('.central_tools:visible').find('.del_container img:first').click();
-	$('.central_tools').hide();
-	$('#menu_mask').show();
-	$('#textTools').show();
-	$('#editor').show();
-	$('#editor').click(textEditorClicked);
-}
 // Wiki editor
 function addWikiCard(type) {
     var w = config.wikiWidth;
@@ -1527,118 +1438,6 @@ function dropToWikiElemZone(e) {
 
 
 
-
-// Interaction with editor===============================
-
-// Draw Rect
-function startDraw(e) { // Mousedown
-	tag.drawstarted = true;
-	prevState.x = e.clientX;
-	prevState.y = e.clientY;
-	// Param
-	var weight = $('#shape_weight').val();
-	weight = isNaN(weight) ? 1 : weight;
-	var radius = $('#shape_radius').val();
-	radius = isNaN(radius) ? 0 : radius;
-	var opac = $('#shape_opac').val();
-	opac = (opac!=''&&isRatio(opac, 100)) ? opac/100 : 1;
-	var fcolor = $('#shape_fill').val();
-	if(!isColor(fcolor)) fcolor = 'none';
-	var scolor = $('#shape_stroke').val();
-	if(!isColor(scolor)) scolor = '#000';
-	// Type
-	$('#shapeTools img').each(function(id) {
-		if($(this).hasClass('active')) {
-			curr.shapeType = id;
-			return false;
-		}
-	});
-	
-	switch(curr.shapeType) {
-	case 0: case 1: // Rectangle
-		curr.editing = $('<div class="rect"></div>');
-		curr.editing.css({
-			left:e.clientX-$('#editor').offset().left+'px', 
-			top:e.clientY-$('#editor').offset().top+'px',
-			width:'0px', height:'0px',
-			background:fcolor, opacity:opac, 
-			'border-color':scolor, 'border-width':weight+'px'
-		});
-		$('#editor').append(curr.editing);
-		// Manip
-		curr.editing.resizable().moveable().deletable();
-		break;
-	case 2: // Elipse
-		break;
-	case 3: // Line
-		break;
-	default:break;
-	}
-	if(radius != 0 && curr.shapeType == 1) {
-		// Round radius to rect
-		radius = radius+'px';
-		curr.editing.css({'border-radius':radius, '-webkit-border-radius':radius, '-moz-border-radius':radius});
-	}
-}
-function cancelDraw(e) { // Mouseup
-	if(tag.drawstarted) {
-		tag.drawstarted = false;
-		if(curr.editing && (curr.editing.width() == 0 || curr.editing.height() == 0))
-			curr.editing.remove();
-		curr.editing = null;
-	}
-}
-function drawing(e) { // Mousemove
-	if(!tag.drawstarted || !curr.editing) return;
-	switch(curr.shapeType) {
-	case 0: case 1: // Rectangle
-		var dx = e.clientX - prevState.x, dy = e.clientY - prevState.y;
-		curr.editing.css({width:dx+'px',height:dy+'px'});
-		break;
-	case 2:break;
-	case 3: // Line
-		break;
-	default:break;
-	}
-}
-
-
-// Typing Text
-function textEditorClicked(e) {
-	if(this != e.target) return;
-	if(curr.editing) {
-		if(curr.editing.children('textarea').val() == "") curr.editing.remove();
-	}
-	
-	curr.editing = $('<div class="text"><textarea row="2" cols="20" autofocus="true"></textarea></div>');
-	curr.editing.css({
-		left:e.clientX-$('#editor').offset().left+'px', 
-		top:e.clientY-$('#editor').offset().top+'px'
-	});
-	// Param
-	configChanged();
-	$('#editor').append(curr.editing);
-	curr.editing.moveable().selectable(function(){
-		$(this).children('textarea').focus();
-	}).deletable();
-}
-function configChanged(e) {
-	if(!curr.editing) return;
-	// Param
-	var tcolor = $('#text_color').val();
-	if(!isColor(tcolor)) tcolor = 'none';
-	var font = $('#text_font').val();
-	var size = $('#text_size').val();
-	size = config.sceneY(isNaN(size) ? 16 : size);
-	var style = $('#text_style').val();
-	if(style == "normal") style = "";
-	var align = $('#text_align').val();
-	
-	curr.editing.children('textarea').css({
-		'text-align':align, 'font':style+' '+size+'px '+font, 
-		'color':tcolor
-	});
-}
 
 
 // Management of project =====================================

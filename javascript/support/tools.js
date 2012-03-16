@@ -1,3 +1,12 @@
+var tag = {
+	drawstarted: false
+};
+var prevState = {};
+var curr = {
+    objId: 0
+};
+
+
 // Transforme css coordinary to number
 function cssCoordToNumber(c){
 	return parseFloat(c.substring(0,c.indexOf('px')));
@@ -1110,6 +1119,263 @@ var scriptMgr = function() {
 
 
 
+
+// Editable tools
+var EditableTool = function(jqToolsPanel, activeButton){
+    // Verify tools panel
+    if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools')) return;
+    if(!activeButton || !activeButton.click) return;
+    this.toolsPanel = jqToolsPanel;
+    this.toolsPanel.css('z-index', 7);
+    this.toolsPanel.data('editTool', this);
+    this.activeBn = activeButton;
+    this.activeBn.data('editTool', this);
+    // Active process
+    this.activeBn.click(function() {
+        var tool = $(this).data('editTool');
+        if(tool instanceof EditableTool) {
+            tool.active();
+        }
+    });
+    // Verify the existance of del container
+    if(jqToolsPanel.find('.del_container img').length == 0) {
+        jqToolsPanel.hideable(function() {
+            var tool = $(this).parents('.central_tools').data('editTool');
+            tool.close();
+        });
+    }
+    
+    // Init editor
+    this.editor = $('<div class="direct_editor">');
+    this.editor.data('editTool', this);
+    
+    // Register this tool
+    if(!this.constructor.prototype.allTools) this.constructor.prototype.allTools = '#'+this.toolsPanel.prop('id');
+    else this.constructor.prototype.allTools += ', #'+this.toolsPanel.prop('id');
+};
+EditableTool.prototype = {
+    constructor: EditableTool,
+    allTools: '',
+    init: function() {},
+    active: function() {
+        // Trigger close event if center panel is showing up
+        var allTools = $(this.allTools);
+        allTools.filter(':visible').find('.del_container img:first').click();
+        allTools.hide();
+        this.toolsPanel.show();
+        this.getEditorParent().append(this.editor);
+        
+        this.init();
+    },
+    getEditorParent: function() {
+        if($('#animeTools').css('display') == 'block') {
+            return $('#editor');
+        }
+        else return curr.page;
+    },
+    getTarget: function() {
+        if($('#animeTools').css('display') == 'block') {
+            var tar;
+            $('#editor').children().each(function(){
+                if($(this).css('z-index') == '2')
+                    tar = $(this);
+            });
+            return tar;
+        }
+        else return curr.step;
+    },
+    finishEdit: function(elems, tar) {},
+    close: function() {
+        this.finishEdit(this.editor.children(), this.getTarget());
+        this.editor.children().remove();
+        this.editor.detach();
+        this.toolsPanel.hide();
+    }
+};
+
+var initTextTool = function() {
+    var tool = new EditableTool($('#textTools'), $('#texticon'));
+    
+    function textConfChanged(e) {tool.configChanged(e);};
+    // Config change real time listener
+    $('#text_color').change(textConfChanged);
+    $('#text_font').change(textConfChanged);
+    $('#text_size').change(textConfChanged);
+    $('#text_style').change(textConfChanged);
+    $('#text_align').change(textConfChanged);
+    
+    $.extend(tool, {
+        finishEdit: function(elems, tar) {
+            elems.each(function() {
+            	var area = $(this).children('textarea');
+            	var arr = area.val().split('\n');
+            	if(arr.length == 1 && arr[0] == "") return;
+            	var res = $('<div id="obj'+(curr.objId++)+'"></div>');
+            	res.css({
+            		'position':'absolute', 'left':$(this).css('left'), 'top':$(this).css('top'),
+            		'font-size':area.css('font-size'), 'font-family':area.css('font-family'), 'font-weight':area.css('font-weight'),
+            		'line-height':fontsize*1.1+'px', 'text-align':area.css('text-align'), 'color':area.css('color')
+            	});
+            	var fontsize = area.css('font-size');
+            	for(var i = 0; i < arr.length; i++) {
+            		res.append('<p style="margin:0px;padding:0px;">'+arr[i]+'</p>');
+            	}
+            	// Append all in current step
+            	res.selectable(null).moveable().resizable().deletable().configurable().hoverButton('./images/UI/addscript.jpg', addScriptForObj).appendTo(tar);
+            });
+        },
+        createTextArea: function(e) {
+            if(this.editor.get(0) != e.target) return;
+            if(this.editing) {
+            	if(this.editing.children('textarea').val() == "") this.editing.remove();
+            }
+            
+            this.editing = $('<div class="text"><textarea row="2" cols="16" autofocus="true"></textarea></div>');
+            this.editing.css({
+            	left:e.clientX-this.editor.offset().left+'px', 
+            	top:e.clientY-this.editor.offset().top+'px'
+            });
+            // Param
+            this.configChanged();
+            this.editor.append(this.editing);
+            this.editing.moveable().selectable(function(){
+            	$(this).children('textarea').focus();
+            }).deletable();
+        },
+        configChanged: function(e){
+            if(!this.editing) return;
+            // Param
+            var tcolor = $('#text_color').val();
+            if(!isColor(tcolor)) tcolor = 'none';
+            var font = $('#text_font').val();
+            var size = $('#text_size').val();
+            size = config.sceneY(isNaN(size) ? 16 : size);
+            var style = $('#text_style').val();
+            if(style == "normal") style = "";
+            var align = $('#text_align').val();
+            
+            this.editing.children('textarea').css({
+            	'text-align':align, 
+            	'font':style+' '+size+'px '+font, 
+            	'color':tcolor
+            });
+        }
+    });
+    
+    tool.editor.click(function(e){tool.createTextArea(e);});
+    return tool;
+};
+
+var initShapeTool = function() {
+    var tool = new EditableTool($('#shapeTools'), $('#recticon'));
+    // Tool chooser in shape tools
+    var tools = $('#shapeTools').find('img:lt(4)');
+    tools.click(function() {
+    	tools.removeClass('active');
+    	$(this).addClass('active');
+    	//tool.shapeType = $(this).prevAll()
+    	// Type
+    	$('#shapeTools img').each(function(id) {
+    		if($(this).hasClass('active')) {
+    			tool.shapeType = id;
+    			return false;
+    		}
+    	});
+    });
+    
+    function cbstart(e){tool.startDraw(e);};
+    function cbdraw(e){tool.drawing(e);};
+    function cbfinish(e){tool.cancelDraw(e);};
+    $.extend(tool, {
+        init: function() {
+            $('body').mouseup(cbfinish).mousemove(cbdraw);
+            this.shapeType = 0;
+        },
+        finishEdit: function(elems, tar) {
+            elems.detach();
+            elems.each(function() {
+            	$(this).attr('id', 'obj'+(curr.objId++));
+            	$(this).hoverButton('./images/UI/addscript.jpg', addScriptForObj);
+            });
+            elems.appendTo(tar);
+            
+            $('body').unbind('mouseup', cbfinish);
+            $('body').unbind('mousemove', cbdraw);
+        },
+        startDraw: function(e) {
+            this.drawstarted = true;
+            this.originx = e.clientX;
+            this.originy = e.clientY;
+            // Param
+            var weight = $('#shape_weight').val();
+            weight = isNaN(weight) ? 1 : weight;
+            var radius = $('#shape_radius').val();
+            radius = isNaN(radius) ? 0 : radius;
+            var opac = $('#shape_opac').val();
+            opac = (opac!=''&&isRatio(opac, 100)) ? opac/100 : 1;
+            var fcolor = $('#shape_fill').val();
+            if(!isColor(fcolor)) fcolor = 'none';
+            var scolor = $('#shape_stroke').val();
+            if(!isColor(scolor)) scolor = '#000';
+            
+            switch(this.shapeType) {
+            case 0: case 1: // Rectangle
+            	this.editing = $('<div class="rect"></div>');
+            	this.editing.css({
+            		left:e.clientX-this.editor.offset().left+'px', 
+            		top:e.clientY-this.editor.offset().top+'px',
+            		width:'0px', height:'0px',
+            		background:fcolor, opacity:opac, 
+            		'border-color':scolor, 'border-width':weight+'px'
+            	});
+            	this.editor.append(this.editing);
+            	// Manip
+            	this.editing.resizable().moveable().deletable().configurable();
+            	break;
+            case 2: // Elipse
+            	break;
+            case 3: // Line
+            	break;
+            default:break;
+            }
+            if(radius != 0 && this.shapeType == 1) {
+            	// Round radius to rect
+            	radius = radius+'px';
+            	this.editing.css({'border-radius':radius, '-webkit-border-radius':radius, '-moz-border-radius':radius});
+            }
+        },
+        cancelDraw: function(e) {
+            if(this.drawstarted) {
+            	this.drawstarted = false;
+            	if(this.editing && (this.editing.width() == 0 || this.editing.height() == 0))
+            		this.editing.remove();
+            	this.editing = null;
+            }
+        },
+        drawing: function(e) {
+            if(!this.drawstarted || !this.editing) return;
+            switch(this.shapeType) {
+            case 0: case 1: // Rectangle
+            	var dx = e.clientX - this.originx, dy = e.clientY - this.originy;
+            	this.editing.css({width:dx+'px',height:dy+'px'});
+            	break;
+            case 2:
+                break;
+            case 3: // Line
+            	break;
+            default:break;
+            }
+        }
+    });
+    
+    tool.editor.mousedown(cbstart).mouseup(cbfinish).mousemove(cbdraw);
+    return tool;
+};
+
+
+
+
+
 // Popup widgt
 var Popup = function() {
 	if(!this.inited) {
@@ -1270,7 +1536,7 @@ var hoverIcon = function(elem, func, img, data) {
 	var icon = $('<img src="'+img+'", style="top:'+top+'px;"></img>');
 	icons.append(icon);
 	icon.hide().bind('click', data, func);
-	elem.hover(function(){icon.show();}, function(){icon.hide()});
+	elem.hover(function(){icon.show();}, function(){icon.hide();});
 };
 // Icon always show up
 var staticIcon = function(elem, func, img, data) {
@@ -1495,10 +1761,10 @@ function resizeElem(e) {
 }
 
 $.fn.supportResize = function() {
-	this.die('mousemove', resizeElem);
-	this.die('mouseup', cancelResize);
-	this.live('mousemove', resizeElem);
-	this.live('mouseup', cancelResize);
+	this.off('mousemove', resizeElem);
+	this.off('mouseup', cancelResize);
+	this.on('mousemove', resizeElem);
+	this.on('mouseup', cancelResize);
 	return this;
 }
 $.fn.resizable = function(supp) {
