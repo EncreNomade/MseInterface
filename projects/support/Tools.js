@@ -73,7 +73,7 @@ function randomInt(max) {
 
 // Get the font size from the string of font definition
 function checkFontSize(str) {
-    var match = /\s*(\d*)px/.exec(str);
+    var match = /\s*([\d\.]*)px/.exec(str);
     return match[1];
 };
 

@@ -1008,7 +1008,7 @@ function showAnimeEditor() {
     if($('#timeline .frameexpo').length == 0) $('#addFrame').click();
 };
 function showFrame(frame) {
-    $('#editor').children().css('z-index', 1).removeClass('active');
+    $('#editor').children('.frame').css('z-index', 1).removeClass('active');
     frame.css('z-index', 2).addClass('active');
 };
 function delFrame(e) {
@@ -1048,7 +1048,9 @@ function addFrame(interval, empty) {
         content.find('.del_container').remove();
         content.find('canvas').parent().remove();
         content.each(function(){
-            $(this).deletable().configurable({text:true,stroke:true}).hoverButton('./images/UI/recut.png', recutAnimeObj);
+            if($(this).children('img').length == 1)
+                $(this).deletable().configurable().hoverButton('./images/UI/recut.png', recutAnimeObj);
+            else $(this).deletable().configurable();
         });
         frame.append(content);
     }
@@ -1189,8 +1191,7 @@ function confirmCut(e) {
     container.css({'width':roiw+'px', 'height':roih+'px', 'overflow':'hidden'});
     img.css({'position':'relative', 'left':-100*roix/roiw+'%', 'top':-100*roiy/roih+'%', 'width':100*w/roiw+'%', 'height':100*h/roih+'%'});
     container.append(img);
-    container.deletable().resizable().moveable().configurable({text:true,stroke:true});
-    container.hoverButton('./images/UI/recut.png', recutAnimeObj);
+    container.deletable().resizable().moveable().configurable().hoverButton('./images/UI/recut.png', recutAnimeObj);
 };
 function recutAnimeObj(e) {
     e.preventDefault();e.stopPropagation();
@@ -1246,7 +1247,7 @@ function addAnimeObj(e, id, data) {
 	
 	// Listener to manipulate
 	// Choose Resize Move
-	container.resizable().moveable().configurable({text:true,stroke:true});
+	container.resizable().moveable().configurable();
 	// Recut the image
 	container.hoverButton('./images/UI/recut.png', recutAnimeObj);
 

@@ -955,13 +955,9 @@ Animation.prototype = {
                     objs[name].type = type;
                     if(type == 'text') {
                         // Text static config
-                        objs[name].content = container.children('p').text();
-                        objs[name].font = container.css('font-family');
-                        if(!objs[name].font || objs[name].font == "") objs[name].font = 'Arial';
-                        objs[name].fWeight = container.css('font-weight');
-                        if(!objs[name].fWeight || objs[name].fWeight == "") objs[name].fWeight = 'normal';
                         objs[name].align = container.css('text-align');
                         if(!objs[name].align || objs[name].align == "") objs[name].align == "left";
+                        objs[name].content = container.children('p').text();
                     }
                 }
                 // Parameters animatable
@@ -987,7 +983,13 @@ Animation.prototype = {
                 }
                 else if(type == 'text') {
                     params.color = container.css('color');
-                    params.fsize = container.css('font-size');
+                    params.fontw = container.css('font-weight');
+                    if(!params.fontw) params.fontw = "";
+                    params.font = container.css('font-family');
+                    if(!params.font) params.font = "Arial";
+                    params.fonts = container.css('font-size');
+                    if(!params.fonts) params.fonts = "16";
+                    params.fonts = config.realY(parseInt(params.fonts));
                 }
                 
                 frame.objs[name] = params;
@@ -1043,28 +1045,29 @@ Animation.prototype = {
                 case "text":
                     container.prop('id', key);
                     container.css({
-                        'font-family': this.objs[key].font,
-                        'font-weight': this.objs[key].fWeight,
+                        'font-weight': param.fontw,
+                        'font-size': param.fonts+'px',
+                        'font-family': param.font,
                         'text-align': this.objs[key].align,
                         'color': param.color,
-                        'font-size': param.fsize
                     });
-                    var elem = $('<p>'+this.objs[key].content+'</p>');
+                    var elem = $('<p style="margin:0px;padding:0px;">'+this.objs[key].content+'</p>');
                 break;
                 case "rect":
                     container.prop('id', key);
                     container.css({'background-color': param.color});
+                    container.addClass('rect');
                     var elem = '';
                 break;
-                case "default": continue;
+                default: continue;
                 }
                 // Parameters in common
                 var dx = config.sceneX(param.dx), dy = config.sceneY(param.dy); 
                 var dw = config.sceneX(param.dw), dh = config.sceneY(param.dh);
                 container.css({'position':'absolute', 'top':dy+'px', 'left':dx+'px', 'width':dw+'px', 'height':dh+'px', 'border-style':'solid', 'border-color':'#4d4d4d', 'border-width':'0px', 'overflow':'hidden', 'opacity':param.opacity});
                 
-                container.html(elem);
-                framelayer.prepend(container);
+                container.append(elem);
+                framelayer.append(container);
             }
         }
         showAnimeEditor();
