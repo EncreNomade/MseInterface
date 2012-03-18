@@ -3,7 +3,7 @@
  * Author: LING Huabin @Pandamicro
  * Mail: lphuabin@gmail.com
  * Site: pandamicro.co.cc
- * Octobre 2011
+ * Janvier 2012
  */
 
 class ProjectGenerator {
@@ -85,8 +85,8 @@ class ProjectGenerator {
     
     function generateJS(){
         if(is_null($this->pj) || is_null($this->pj->getStruct())) return "alert('JS Generation failed')";
-        $this->pjWidth = (int)$this->pj->getWidth();
-        $this->pjHeight = (int)$this->pj->getHeight();
+        $this->pjWidth = intval($this->pj->getWidth());
+        $this->pjHeight = intval($this->pj->getHeight());
         $this->jstr = "";
         // Initiale Mse system
         $this->jstr .= "initMseConfig();";
@@ -103,6 +103,7 @@ class ProjectGenerator {
         $this->jstr .= "var games={};";
         $this->jstr .= "var wikis={};";
         $srcs = $this->pj->getAllSrcs();
+        $animesrcs = array();
         foreach( $srcs as $name=>$srcData ) {
             $type = $srcData->type;
             $src = $srcData->data;
@@ -114,7 +115,12 @@ class ProjectGenerator {
                     // Change path with relative in folder of project
                     $src = preg_replace("/\S+(\/images\/)/", '.$1', $src, 1);
                 }
-                else {$t = "aud";$preload = "false";}
+                else {
+                    $t = "aud";
+                    $preload = "false";
+                    // Change path with relative in folder of project
+                    $src = preg_replace("/\S+(\/audios\/)/", '.$1', $src, 1);
+                }
                 $this->jstr .= "mse.src.addSource('$name','$src','$t',$preload);";
                 break;
                 
@@ -124,208 +130,7 @@ class ProjectGenerator {
                 break;
                 
             case "anime":
-                $repeat = $src->repeat;
-                $static = $src->statiq;
-                $animeFrs = $src->frames;
-                $animeObjs = get_object_vars($src->objs);
-                // Calcule total frame duration
-                $duration = 0;
-                // Frame table
-                $frames = array();
-                foreach( $animeFrs as $frame ) {
-                    // Transform second to frame
-                    $interval = round($frame->interval*25);
-                    array_push($frames, $duration);
-                    $duration += $interval;
-                }
-                array_push($frames, $duration);
-                // Initialisation of animation
-                $this->jstr .= "animes.$name=new mse.Animation($duration,$repeat,$static);";
-                // Obj list
-                $objlist = array();
-                $nbFr = count($animeFrs);
-                // Array of frames
-                for( $f = 0; $f < $nbFr; ++$f ){
-                    $frame = $animeFrs[$f];
-                    $objs = get_object_vars($frame->objs);
-                    $tranpos = $frame->trans->pos;
-                    $transize = $frame->trans->size;
-                    $tranopac = $frame->trans->opac;
-                    $tranfont = $frame->trans->font;
-                    // Array of objs
-                    foreach( $objs as $key=>$params ) {
-                        $dx = $params->dx; $dy = $params->dy;
-                        $dw = $params->dw; $dh = $params->dh;
-                        $opacity = $params->opacity;
-                        $t = $animeObjs[$key]->type;
-                        
-                        if($t == "spriteRecut" || $t == "sprite"){
-                            $w = $params->w; $h = $params->h;
-                            $sx = $params->sx; $sy = $params->sy;
-                            $sw = $params->sw; $sh = $params->sh;
-                        }
-                        else if($t == "text") {
-                            $fonts = $params->fonts;
-                            $fontw = $params->fontw;
-                            $font = $params->font;
-                            $fontsvar = $this->encodedCoord($fonts);
-                        }
-                        
-                        $dxvar = $this->encodedCoord($dx);
-                        $dyvar = $this->encodedCoord($dy);
-                        $dwvar = $this->encodedCoord($dw);
-                        $dhvar = $this->encodedCoord($dh);
-                        //echo "Coord: $dx, $dy, $dw, $dh";
-                        
-                        // First initialization of objet, add to objlist array
-                        if(!array_key_exists($key, $objlist)){
-                            switch($t) {
-                            case "image":
-                                $this->jstr .= "temp.obj=new mse.Image(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar]},'$key');";
-                                break;
-                            case "spriteRecut":
-                                $this->jstr .= "temp.obj=new mse.Sprite(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar]},'$key',[[$sx,$sy,$sw,$sh]]);";
-                                $spriteFrCount = 0;
-                                break;
-                            case "rect":
-                                $this->jstr .= "temp.obj=new mse.Mask(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar],'fillStyle':'$params->color'});";
-                                break;
-                            case "text":
-                                $content = $animeObjs[$key]->content;
-                                $align = $animeObjs[$key]->align;
-                                $this->jstr .= "temp.obj=new mse.Text(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar],'fillStyle':'$params->color','textBaseline':'top','font':'$fontw '+$fontsvar+'px $font','textAlign':'$align'},'$content',true);";
-                                break;
-                            }
-                            $this->jstr .= "animes.$name.addObj('$key',temp.obj);";
-                            $objlist[$key] = array("params"=>array(),"animes"=>array());
-                        }
-                        else {
-                            // Previous parameters
-                            $prevdx = $objlist[$key]["params"]['dx']; $prevdy = $objlist[$key]["params"]['dy'];
-                            $prevdw = $objlist[$key]["params"]['dw']; $prevdh = $objlist[$key]["params"]['dh'];
-                            $prevopac = $objlist[$key]["params"]['opacity'];
-                            // Analyse of animations
-                            $animes = $objlist[$key]["animes"];
-                            
-                            if($t == 'spriteRecut' || $t == 'sprite') {
-                                $prevsx = $objlist[$key]["params"]['sx']; $prevsy = $objlist[$key]["params"]['sy'];
-                                $prevsw = $objlist[$key]["params"]['sw']; $prevsh = $objlist[$key]["params"]['sh'];
-                                
-                                if($prevsx!=$sx || $prevsy!=$sy || $prevsw!=$sw || $prevsh!=$sh){
-                                    $this->jstr .= "temp.obj.appendFrame([$sx,$sy,$sw,$sh]);";
-                                    // spriteSeq
-                                    if(!array_key_exists('spriteSeq', $animes)) $animes['spriteSeq']=array();
-                                    // Fill the table of animation of spriteSeq before the current frame
-                                    for($i = count($animes['spriteSeq']); $i < $f; ++$i)
-                                        array_push($animes['spriteSeq'], $spriteFrCount);
-                                    $spriteFrCount++;
-                                }
-                            }
-                            // Font
-                            if($t == 'text') {
-                                $prevfonts = $objlist[$key]["params"]['fonts'];
-                                $prevfsvar = $this->encodedCoord($prevfonts);
-                                if($prevfonts != $fonts) {
-                                    if(!array_key_exists('fontSize', $animes)) $animes['fontSize']=array();
-                                    $fontval = $tranfont==2 ? $prevfsvar : array($prevfsvar,$tranfont);
-                                    for($i = count($animes['fontSize']); $i < $f; ++$i)
-                                        array_push($animes['fontSize'], $fontval);
-                                }
-                            }
-                            // Pos
-                            if($dx != $prevdx || $dy != $prevdy){
-                                if(!array_key_exists('pos', $animes)) $animes['pos']=array();
-                                $pos = $tranpos==2 ? array($this->encodedCoord($prevdx),$this->encodedCoord($prevdy))
-                                                   : array($this->encodedCoord($prevdx),$this->encodedCoord($prevdy),$tranpos);
-                                for($i = count($animes['pos']); $i < $f; ++$i)
-                                    array_push($animes['pos'], $pos);
-                            }
-                            // Size
-                            if($dw != $prevdw || $dh != $prevdh){
-                                if(!array_key_exists('size', $animes)) $animes['size']=array();
-                                $size = $transize==2 ? array($this->encodedCoord($prevdw),$this->encodedCoord($prevdh))
-                                                     : array($this->encodedCoord($prevdw),$this->encodedCoord($prevdh),$transize);
-                                for($i = count($animes['size']); $i < $f; ++$i)
-                                    array_push($animes['size'], $size);
-                            }
-                            // Opactiy
-                            if($opacity != $prevopac){
-                                if(!array_key_exists('opacity', $animes)) $animes['opacity']=array();
-                                $opac = $tranopac==2 ? $prevopac : array($prevopac,$tranopac);
-                                for($i = count($animes['opacity']); $i < $f; ++$i)
-                                    array_push($animes['opacity'], $opac);
-                            }
-                            $objlist[$key]["animes"] = $animes;
-                        }
-                        
-                        // Last frame, complete animations
-                        if($f == $nbFr-1){
-                            foreach( $objlist[$key]["animes"] as $p=>$seq ) {
-                                switch($p) {
-                                case 'spriteSeq':
-                                    for($i = count($seq); $i <= $nbFr; ++$i)
-                                        array_push($seq, $spriteFrCount);
-                                break;
-                                case 'pos':
-                                    $pos = array($this->encodedCoord($dx),$this->encodedCoord($dy));
-                                    for($i = count($seq); $i <= $nbFr; ++$i)
-                                        array_push($seq, $pos);
-                                break;
-                                case 'size':
-                                    $size = array($this->encodedCoord($dw),$this->encodedCoord($dh));
-                                    for($i = count($seq); $i <= $nbFr; ++$i)
-                                        array_push($seq, $size);
-                                break;
-                                case 'opacity':
-                                    for($i = count($seq); $i <= $nbFr; ++$i)
-                                        array_push($seq, $opacity);
-                                break;
-                                case 'fontSize':
-                                    for($i = count($seq); $i <= $nbFr; ++$i)
-                                        array_push($seq, $fontsvar);
-                                break;
-                                }
-                                $objlist[$key]["animes"][$p] = $seq;
-                            }
-                        }
-                        // Update previous parameters state
-                        $objlist[$key]["params"] = get_object_vars($params);
-                    }
-                }
-                
-                // Generate animation
-                foreach($objlist as $key=>$obj) {
-                    $this->jstr .= "animes.$name.addAnimation('$key',{'frame':JSON.parse('".json_encode($frames)."')";
-                    // All animations for this obj
-                    $animes = $obj['animes'];
-                    foreach($animes as $p=>$seq) {
-                        // Manuel transform in pos and size, because they use coord variable which can't be correctly parsed
-                        if($p=="pos" || $p=="size") {
-                            $this->jstr .= ",'$p':[";
-                            for($fr = 0; $fr < count($seq); ++$fr){
-                                if($fr != 0) $this->jstr .= ",";
-                                $this->jstr .= "[".$seq[$fr][0].",".$seq[$fr][1];
-                                if(array_key_exists(2, $seq[$fr])) $this->jstr .= ",".$seq[$fr][2];
-                                $this->jstr .= "]";
-                            }
-                            $this->jstr .= "]";
-                        }
-                        else if($p=="fontSize") {
-                            $this->jstr .= ",'$p':[";
-                            for($fr = 0; $fr < count($seq); ++$fr){
-                                if($fr != 0) $this->jstr .= ",";
-                                if(is_array($seq[$fr])) {
-                                    $this->jstr .= "[".$seq[$fr][0].",".$seq[$fr][1]."]";
-                                }
-                                else $this->jstr .= $seq[$fr];
-                            }
-                            $this->jstr .= "]";
-                        }
-                        // JSON structure
-                        else $this->jstr .= ",'$p':JSON.parse('".json_encode($seq)."')";
-                    }
-                    $this->jstr .= "});";
-                }
+                $animesrcs[$name] = $src;
                 break;
                 
             case "wiki":
@@ -348,7 +153,7 @@ class ProjectGenerator {
             }
         }
         
-        // Pages
+        // Pages, Layers, Objects
         $this->jstr .= "var pages = {};";
         $this->jstr .= "var layers = {};";
         $this->jstr .= "var objs = {};";
@@ -357,6 +162,218 @@ class ProjectGenerator {
         $pages = $this->pj->getStruct();
         foreach( $pages as $id => $page ) {
             $this->addPage($id, $page);
+        }
+        
+        foreach( $animesrcs as $name => $src ) {
+            $repeat = $src->repeat;
+            $static = $src->statiq;
+            $block = $src->block;
+            $animeFrs = $src->frames;
+            $animeObjs = get_object_vars($src->objs);
+            // Calcule total frame duration
+            $duration = 0;
+            // Frame table
+            $frames = array();
+            foreach( $animeFrs as $frame ) {
+                // Transform second to frame
+                $interval = round($frame->interval*25);
+                array_push($frames, $duration);
+                $duration += $interval;
+            }
+            array_push($frames, $duration);
+            // Initialisation of animation
+            $this->jstr .= "animes.$name=new mse.Animation($duration,$repeat,".($static===false?"false":"true").");";
+            if($block) $this->jstr .= "animes.$name.block=true;";
+            // Obj list
+            $objlist = array();
+            $nbFr = count($animeFrs);
+            // Array of frames
+            for( $f = 0; $f < $nbFr; ++$f ){
+                $frame = $animeFrs[$f];
+                $objs = get_object_vars($frame->objs);
+                $tranpos = $frame->trans->pos;
+                $transize = $frame->trans->size;
+                $tranopac = $frame->trans->opac;
+                $tranfont = $frame->trans->font;
+                // Array of objs
+                foreach( $objs as $key=>$params ) {
+                    $dx = $params->dx; $dy = $params->dy;
+                    $dw = $params->dw; $dh = $params->dh;
+                    $opacity = $params->opacity;
+                    $t = $animeObjs[$key]->type;
+                    
+                    if($t == "spriteRecut" || $t == "sprite"){
+                        $w = $params->w; $h = $params->h;
+                        $sx = $params->sx; $sy = $params->sy;
+                        $sw = $params->sw; $sh = $params->sh;
+                    }
+                    else if($t == "text") {
+                        $fonts = $params->fonts;
+                        $fontw = $params->fontw;
+                        $font = $params->font;
+                        $fontsvar = $this->encodedCoord($fonts);
+                    }
+                    
+                    $dxvar = $this->encodedCoord($dx);
+                    $dyvar = $this->encodedCoord($dy);
+                    $dwvar = $this->encodedCoord($dw);
+                    $dhvar = $this->encodedCoord($dh);
+                    //echo "Coord: $dx, $dy, $dw, $dh";
+                    
+                    // First initialization of objet, add to objlist array
+                    if(!array_key_exists($key, $objlist)){
+                        if($static) {
+                            switch($t) {
+                            case "image":
+                                $this->jstr .= "temp.obj=new mse.Image(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar]},'$key');";
+                                break;
+                            case "spriteRecut":
+                                $this->jstr .= "temp.obj=new mse.Sprite(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar]},'$key',[[$sx,$sy,$sw,$sh]]);";
+                                $spriteFrCount = 0;
+                                break;
+                            case "rect":
+                                $this->jstr .= "temp.obj=new mse.Mask(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar],'fillStyle':'$params->color'});";
+                                break;
+                            case "text":
+                                $content = $animeObjs[$key]->content;
+                                $align = $animeObjs[$key]->align;
+                                $this->jstr .= "temp.obj=new mse.Text(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar],'fillStyle':'$params->color','textBaseline':'top','font':'$fontw '+$fontsvar+'px $font','textAlign':'$align'},'$content',true);";
+                                break;
+                            }
+                            $this->jstr .= "animes.$name.addObj('$key',temp.obj);";
+                        }
+                        else {
+                            $this->jstr .= "animes.$name.addObj('$key',objs.$key);";
+                        }
+                        $objlist[$key] = array("params"=>array(),"animes"=>array());
+                    }
+                    else {
+                        // Previous parameters
+                        $prevdx = $objlist[$key]["params"]['dx']; $prevdy = $objlist[$key]["params"]['dy'];
+                        $prevdw = $objlist[$key]["params"]['dw']; $prevdh = $objlist[$key]["params"]['dh'];
+                        $prevopac = $objlist[$key]["params"]['opacity'];
+                        // Analyse of animations
+                        $animes = $objlist[$key]["animes"];
+                        
+                        if($t == 'spriteRecut' || $t == 'sprite') {
+                            $prevsx = $objlist[$key]["params"]['sx']; $prevsy = $objlist[$key]["params"]['sy'];
+                            $prevsw = $objlist[$key]["params"]['sw']; $prevsh = $objlist[$key]["params"]['sh'];
+                            
+                            if($prevsx!=$sx || $prevsy!=$sy || $prevsw!=$sw || $prevsh!=$sh){
+                                $this->jstr .= "temp.obj.appendFrame([$sx,$sy,$sw,$sh]);";
+                                // spriteSeq
+                                if(!array_key_exists('spriteSeq', $animes)) $animes['spriteSeq']=array();
+                                // Fill the table of animation of spriteSeq before the current frame
+                                for($i = count($animes['spriteSeq']); $i < $f; ++$i)
+                                    array_push($animes['spriteSeq'], $spriteFrCount);
+                                $spriteFrCount++;
+                            }
+                        }
+                        // Font
+                        if($t == 'text') {
+                            $prevfonts = $objlist[$key]["params"]['fonts'];
+                            $prevfsvar = $this->encodedCoord($prevfonts);
+                            if($prevfonts != $fonts) {
+                                if(!array_key_exists('fontSize', $animes)) $animes['fontSize']=array();
+                                $fontval = $tranfont==2 ? $prevfsvar : array($prevfsvar,$tranfont);
+                                for($i = count($animes['fontSize']); $i < $f; ++$i)
+                                    array_push($animes['fontSize'], $fontval);
+                            }
+                        }
+                        // Pos
+                        if($dx != $prevdx || $dy != $prevdy){
+                            if(!array_key_exists('pos', $animes)) $animes['pos']=array();
+                            $pos = $tranpos==2 ? array($this->encodedCoord($prevdx),$this->encodedCoord($prevdy))
+                                               : array($this->encodedCoord($prevdx),$this->encodedCoord($prevdy),$tranpos);
+                            for($i = count($animes['pos']); $i < $f; ++$i)
+                                array_push($animes['pos'], $pos);
+                        }
+                        // Size
+                        if($dw != $prevdw || $dh != $prevdh){
+                            if(!array_key_exists('size', $animes)) $animes['size']=array();
+                            $size = $transize==2 ? array($this->encodedCoord($prevdw),$this->encodedCoord($prevdh))
+                                                 : array($this->encodedCoord($prevdw),$this->encodedCoord($prevdh),$transize);
+                            for($i = count($animes['size']); $i < $f; ++$i)
+                                array_push($animes['size'], $size);
+                        }
+                        // Opactiy
+                        if($opacity != $prevopac){
+                            if(!array_key_exists('opacity', $animes)) $animes['opacity']=array();
+                            $opac = $tranopac==2 ? $prevopac : array($prevopac,$tranopac);
+                            for($i = count($animes['opacity']); $i < $f; ++$i)
+                                array_push($animes['opacity'], $opac);
+                        }
+                        $objlist[$key]["animes"] = $animes;
+                    }
+                    
+                    // Last frame, complete animations
+                    if($f == $nbFr-1){
+                        foreach( $objlist[$key]["animes"] as $p=>$seq ) {
+                            switch($p) {
+                            case 'spriteSeq':
+                                for($i = count($seq); $i <= $nbFr; ++$i)
+                                    array_push($seq, $spriteFrCount);
+                            break;
+                            case 'pos':
+                                $pos = array($this->encodedCoord($dx),$this->encodedCoord($dy));
+                                for($i = count($seq); $i <= $nbFr; ++$i)
+                                    array_push($seq, $pos);
+                            break;
+                            case 'size':
+                                $size = array($this->encodedCoord($dw),$this->encodedCoord($dh));
+                                for($i = count($seq); $i <= $nbFr; ++$i)
+                                    array_push($seq, $size);
+                            break;
+                            case 'opacity':
+                                for($i = count($seq); $i <= $nbFr; ++$i)
+                                    array_push($seq, $opacity);
+                            break;
+                            case 'fontSize':
+                                for($i = count($seq); $i <= $nbFr; ++$i)
+                                    array_push($seq, $fontsvar);
+                            break;
+                            }
+                            $objlist[$key]["animes"][$p] = $seq;
+                        }
+                    }
+                    // Update previous parameters state
+                    $objlist[$key]["params"] = get_object_vars($params);
+                }
+            }
+            
+            // Generate animation
+            foreach($objlist as $key=>$obj) {
+                $this->jstr .= "animes.$name.addAnimation('$key',{'frame':JSON.parse('".json_encode($frames)."')";
+                // All animations for this obj
+                $animes = $obj['animes'];
+                foreach($animes as $p=>$seq) {
+                    // Manuel transform in pos and size, because they use coord variable which can't be correctly parsed
+                    if($p=="pos" || $p=="size") {
+                        $this->jstr .= ",'$p':[";
+                        for($fr = 0; $fr < count($seq); ++$fr){
+                            if($fr != 0) $this->jstr .= ",";
+                            $this->jstr .= "[".$seq[$fr][0].",".$seq[$fr][1];
+                            if(array_key_exists(2, $seq[$fr])) $this->jstr .= ",".$seq[$fr][2];
+                            $this->jstr .= "]";
+                        }
+                        $this->jstr .= "]";
+                    }
+                    else if($p=="fontSize") {
+                        $this->jstr .= ",'$p':[";
+                        for($fr = 0; $fr < count($seq); ++$fr){
+                            if($fr != 0) $this->jstr .= ",";
+                            if(is_array($seq[$fr])) {
+                                $this->jstr .= "[".$seq[$fr][0].",".$seq[$fr][1]."]";
+                            }
+                            else $this->jstr .= $seq[$fr];
+                        }
+                        $this->jstr .= "]";
+                    }
+                    // JSON structure
+                    else $this->jstr .= ",'$p':JSON.parse('".json_encode($seq)."')";
+                }
+                $this->jstr .= "});";
+            }
         }
         
         $this->jstr .= "var action={};";
@@ -420,8 +437,8 @@ class ProjectGenerator {
         // Start the book
         $this->jstr .= "mse.currTimeline.start();};";
         // Lazy init the book
-        $this->jstr .= "mse.autoFitToWindow(createbook);";
-        //$this->jstr .= "createbook();";
+        //$this->jstr .= "mse.autoFitToWindow(createbook);";
+        $this->jstr .= "createbook();";
         
         // Join the coords array in the beginning
         $this->jstr = "mse.coords = JSON.parse('".json_encode($this->coords)."');".$this->jstr;

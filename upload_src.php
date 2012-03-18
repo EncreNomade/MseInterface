@@ -35,7 +35,7 @@ function saveBase64Src($name, $encodedStr, $pj) {
     if($content) {
         $path = $pj->getSrcSavePath($type).$filename;
         $res = file_put_contents($path, $content);
-        return $filename;
+        return $type == 'audio' ? $name : $filename;
     }
     else echo 'failed to upload src...';
     return null;

@@ -47,7 +47,7 @@ function init() {
 	    // Unbind event handler
 	    $('#editor').unbind();
 	    $('#animeTools').hide();
-	    $('#editor').hide();
+	    $('#editor').removeData('static').hide();
 	    $('#editor').children('div').remove();
 	    $('#timeline').hide();
 	    $('#addFrame').prevAll().remove();
@@ -62,7 +62,8 @@ function init() {
 	    var name = $("#animeName").val();
 	    var repeat = $("#animeRepeat").val();
 	    var block = $("#animeBlock").val();
-	    var anime = new Animation(name, repeat, block, true);
+	    var statiq = $('#editor').data('static') == 'false' ? false : true;
+	    var anime = new Animation(name, repeat, block, statiq);
 	    anime.createAnimation($('#timeline').children('div'));
 	    srcMgr.addSource('anime', anime, $('#animeName').val());
 	});
@@ -995,8 +996,7 @@ function showAnimeEditor() {
     	$('.central_tools:visible').find('.del_container img:first').click();
     $('#menu_mask').show();
     $('#animeTools').show();
-    $('#editor').css('background', 'transparent');
-    $('#editor').show();
+    $('#editor').css('background', 'transparent').data('static','true').show();
     $('#timeline').show();
     
     // Interaction with drop zone
@@ -1006,6 +1006,33 @@ function showAnimeEditor() {
     
     // Create new frame
     if($('#timeline .frameexpo').length == 0) $('#addFrame').click();
+};
+function animateObj(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var tar = $(this).parent().parent();
+    showAnimeEditorForObj(tar);
+};
+function showAnimeEditorForObj(obj) {
+    // Trigger close event if center panel is showing up
+    if($('#center_panel').css('display') == 'block')
+    	$('.central_tools:visible').find('.del_container img:first').click();
+    $('#menu_mask').show();
+    $('#animeTools').show();
+    $('#editor').css('background', 'transparent').data('static','false').show();;
+    $('#timeline').show();
+    
+    // Create new frame
+    if($('#timeline .frameexpo').length == 0) $('#addFrame').click();
+    // Append target object
+    if(obj) {
+        var tar = obj.clone();
+        tar.children('.del_container').remove();
+        tar.deletable().configurable();
+        $('#editor').children('.frame').each(function(){
+            if($(this).hasClass('active')) $(this).append(tar);
+        });
+    }
 };
 function showFrame(frame) {
     $('#editor').children('.frame').css('z-index', 1).removeClass('active');
@@ -1471,6 +1498,8 @@ function saveToLocalStorage(name, jsonstr){
 function saveProject() {
     if(!pjName) return;
     loading.show(5000);
+    // Clear server ressources
+    //$.get('clearSrcs.php', {'pj':pjName}, function(msg){if(msg != "") alert(msg);});
     // Save ressources
     srcMgr.uploadSrc('upload_src.php', pjName);
     scriptMgr.upload('upload_src.php', pjName);

@@ -740,8 +740,10 @@ mse.Root = function(id, width, height, orientation) {
 		
 		var block = false;
 		for(var i in this.animes) {
-			this.animes[i].logic(delta);
-			if(this.animes[i].block) block = true;
+		    if(this.animes[i].block) block = true;
+			if(this.animes[i].logic(delta))
+			    // Delete finish animation
+			    this.animes.splice(i,1);
 		}
 		if(block) return;
 		
@@ -761,10 +763,7 @@ mse.Root = function(id, width, height, orientation) {
 		}
 		if(this.gamewindow.currGame) this.gamewindow.draw(this.ctx);
 		
-		for(var i in this.animes)
-			if(this.animes[i].draw(this.ctx))
-				// Delete finish animation
-				this.animes.splice(i,1);
+		for(var i in this.animes) this.animes[i].draw(this.ctx);
 				
 		this.evtDistributor.rootEvt.eventNotif("drawover",this.ctx);
 	};
@@ -3051,7 +3050,7 @@ mse.Animation = function(duration, repeat, statiq, container, param){
     this.statiq = statiq ? true : false;
     // Super constructor
     if(this.statiq) mse.UIObject.call(this, null, {});
-	else mse.UIObject.call(this, container, param);
+	else mse.UIObject.call(this, container, param?param:{});
 	this.objs = {};
 	this.animes = [];
 	this.duration = duration;
@@ -3065,7 +3064,7 @@ $.extend(mse.Animation.prototype, {
     addObj: function(name, obj){
         if(obj instanceof mse.UIObject){
             this.objs[name] = obj;
-            obj.parent = this;
+            if(this.statiq) obj.parent = this;
         }
     },
     getObj: function(name){
@@ -3086,6 +3085,11 @@ $.extend(mse.Animation.prototype, {
                 this.animes[i].resetAnimation();
             mse.root.animes.push(this);
         }
+        else if(!this.statiq && $.inArray(this, mse.root.animations) == -1) {
+            for(var i in this.animes)
+                this.animes[i].resetAnimation();
+            mse.root.animations.push(this);
+        }
         this.evtDeleg.eventNotif('start');
     },
     pause: function(){
@@ -3095,19 +3099,22 @@ $.extend(mse.Animation.prototype, {
         if(this.state){
             for(var i in this.animes)
         	    this.animes[i].logic(delta);
+        	    
+        	for(var i in this.animes){
+        	    if(!this.animes[i].isEnd())
+        	        return false;
+        	}
+        	this.state = 0;
+        	return false;
+        }
+        else {
+            this.evtDeleg.eventNotif('end');
+            return true;
         }
     },
     draw: function(ctx){
         for(var key in this.objs)
             this.objs[key].draw(ctx);
-
-        for(var i in this.animes){
-            if(!this.animes[i].isEnd())
-                return false;
-        }
-        this.state = 0;
-        this.evtDeleg.eventNotif('end');
-        return true;
     }
 });
 

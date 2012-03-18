@@ -110,7 +110,7 @@ function base64_encode (data) {
 function objToClass(obj, classn) {
     var o = new classn(); 
     for(var key in obj) {
-        if(obj[key] && obj[key] != "undefined") o[key] = obj[key];
+        if(obj[key] !== null && obj[key] !== undefined) o[key] = obj[key];
     } 
     return o;
 }
@@ -286,7 +286,7 @@ SourceManager.prototype = {
 	expos: {},
 	acceptType: new Array('image', 'audio', 'game', 'anime', 'wiki'),
 	extCheck: /data:\s*(\w+)\/(\w+);/,
-	pathCheck: /^(\.\/)?([\w\_\s]+\/)*([\w\_\s]+)\.(\w+)/,
+	pathCheck: /^(\.\/)?([\w\_\s]+\/)*([\w\_\s\.]+)/,
 	uploadResp: /^([\w\_\s]+)\&\&([\w\_\s\.\/]+)/,
 	
 	sourceType: function(id) {
@@ -420,12 +420,11 @@ SourceManager.prototype = {
 		    src.data = data;
 		    this.sources[id] = src;
 		    expo.append('<p>Anime: '+id+'</p>');
-		    expo.circleMenu({'addscript':['./images/UI/addscript.jpg',addScriptDialog]});
+		    expo.circleMenu({'delete':['./images/UI/del.png',this.deleteSrc],'addscript':['./images/UI/addscript.jpg',addScriptDialog]});
 		    expo.click(function(){
 		        srcMgr.getSource($(this).data('srcId')).showAnimeOnEditor();
 		    });
 		    expo.children().css('font','bold 8px Times');
-		    expo.circleMenu({'delete':['./images/UI/del.png',this.deleteSrc]});
 		    break;
 		}
 		
@@ -924,6 +923,7 @@ var Animation = function(name, repeat, block, statiq) {
 Animation.prototype = {
     constructor: Animation,
     createAnimation: function(frames) {
+        var statiq = this.statiq;
         // Analyze
         for(var i = 0; i < frames.length; i++){
             var frame = {};
@@ -945,7 +945,8 @@ Animation.prototype = {
                 // Type incorrect
                 if(!type) return;
                 
-                if(type == 'image') var name = container.children('img').attr('name');
+                if(!statiq) var name = container.prop('id');
+                else if(type == 'image') var name = container.children('img').attr('name');
                 else var name = container.prop('id');
                 // Validity
                 if(!name || name == "") return;
@@ -1026,18 +1027,20 @@ Animation.prototype = {
             if(!isNaN(frame.trans.font)) trans.data('font', frame.trans.font);
             // Objects
             for(var key in frame.objs){
-                var container = $('<div>');
+                var container = $('<div id='+key+'>');
                 container.deletable().resizable().moveable().configurable();
                 var param = frame.objs[key];
                 var type = this.objs[key].type;
                 switch(type) {
                 case "spriteRecut": case "sprite": case "image":
                     container.hoverButton('./images/UI/recut.png', recutAnimeObj);
+                    // Resolve the src pb with non statiq animations
+                    if(!this.statiq) key = $('#'+key).children('img').attr('name');
                     var elem = $('<img name="'+ key +'" src="'+srcMgr.getSource(key)+'">');
                     switch(type) {
                     case "sprite":
                     case "spriteRecut":
-                        elem.css({'position':'relative', 'left':-100*param.sx/param.w+'%', 'top':-100*param.sy/param.h+'%', 'width':100*param.w/param.sw+'%', 'height':100*param.h/param.sh+'%'});break;
+                        elem.css({'position':'relative', 'left':-100*param.sx/param.dw+'%', 'top':-100*param.sy/param.dh+'%', 'width':100*param.w/param.sw+'%', 'height':100*param.h/param.sh+'%'});break;
                     case "image":
                         elem.css({'position':'relative', 'left':'0%', 'top':'0%', 'width':'100%', 'height':'100%'});break;
                     }
@@ -1070,7 +1073,8 @@ Animation.prototype = {
                 framelayer.append(container);
             }
         }
-        showAnimeEditor();
+        if(this.statiq) showAnimeEditor();
+        else showAnimeEditorForObj();
     }
 };
 
