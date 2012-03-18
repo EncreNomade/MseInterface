@@ -515,7 +515,13 @@ function MseGestEvt( e, forAnalyse ) {
 		this.rolled = -40 * e.detail;
 		this.type = 'mousewheel';
 	}
-	else if(e.type === 'mousewheel') this.rolled = e.wheelDelta;
+	else if(e.type === 'mousewheel') {
+	    if(e.wheelDelta)
+    	    this.rolled = e.wheelDelta;
+    	else if(e.originalEvent && e.originalEvent.wheelDelta)
+    	    this.rolled = e.originalEvent.wheelDelta;
+    	else this.rolled = 0;
+	}
 	
 	// Optional data
 	if(_data)

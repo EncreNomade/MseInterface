@@ -139,14 +139,15 @@ class ProjectGenerator {
                     if( $card->type == "text" ) {
                         $this->jstr .= "wikis.$name.addTextCard();";
                         foreach($card->sections as $section) {
+                            $content = str_replace("/", "\/", addslashes(str_replace("\n", "", $section->content)));
                             if($section->type == "link")
-                                $this->jstr .= "wikis.$name.textCard.addLink('".$section->title."', '".$section->content."');";
+                                $this->jstr .= "wikis.$name.textCard.addLink('".$section->title."', '$content');";
                             else if($section->type == "text")
-                                $this->jstr .= "wikis.$name.textCard.addSection('".$section->title."', '".$section->content."');";
+                                $this->jstr .= "wikis.$name.textCard.addSection('".$section->title."', '$content');";
                         }
                     }
                     else if( $card->type == "img" ){
-                        $this->jstr .= "wikis.$name.addImage('".$card->image."', '".$card->legend."');";
+                        $this->jstr .= "wikis.$name.addImage('".$card->image."', '".addslashes($card->legend)."');";
                     }
                 }
                 break;
