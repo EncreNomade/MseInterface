@@ -1,3 +1,36 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+
+<meta name="robots" content="noindex"/>
+<meta name="viewport" content="minimum-scale=1.0, maximum-scale=1.0, width=device-width, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+
+<title>Livre généré</title>
+
+<script type="text/javascript">
+addEventListener("load", function(){
+	setTimeout(function(){window.scrollTo(0, 1);}, 0);
+	$('body').css({'margin':'0px','padding':'0px'});
+}, false);
+</script>
+
+<link rel="stylesheet" href="../support/flarevideo/flarevideo.css" type="text/css">
+<link rel="stylesheet" href="../support/flarevideo/flarevideo.default.css" type="text/css">
+<script src="../support/jquery-latest.js"></script>
+<script src="../support/BrowserDetect.js"></script>
+<script src="../support/flarevideo/jquery.ui.slider.js" type="text/javascript"></script>
+<script src="../support/flarevideo/flarevideo.js" type="text/javascript"></script> 
+<script src="../support/Interaction.js"></script>
+<script src="../support/Tools.js"></script>
+
+</head>
+
+<body>
+
+<script type="text/javascript">
+
 var __currContextOwner__;
 (function(h,e){var b=function(){};b.configs={font:"Verdana",srcPath:""};var d=b.configs;b.root=null;b.currTimeline=null;b.src=function(){return{list:{},loading:[],preload:[],loadInfo:"Chargement ressources: ",waitinglist:{},audExtCheck:/(.ogg|.mp3)/,init:function(){for(var a,b,g=0;12>g;g++){this.loading[g]=document.createElement("canvas");this.loading[g].width=300;this.loading[g].height=300;a=this.loading[g].getContext("2d");a.translate(150,150);b=2*Math.PI/12;a.fillStyle="#AAAAAA";for(var m=0;12>
 m;m++)m==g?(a.fillStyle="#EEEEEE",a.fillRect(60,-9,60,18),a.fillStyle="#AAAAAA"):a.fillRect(60,-9,60,18),a.rotate(b)}},addSource:function(a,b,g,m){switch(g){case "img":case "image":this.list[a]=new Image;this.list[a].src=d.srcPath+b;this.list[a].lid=0;break;case "aud":case "audio":this.list[a]=document.createElement("audio");if(-1==b.search(this.audExtCheck))switch(MseConfig.browser){case "Chrome":case "Firefox":case "Opera":this.list[a].src=d.srcPath+b+".ogg";break;case "Safari":case "Explorer":this.list[a].src=
@@ -261,3 +294,8 @@ type:"show"}],function(){f.start()});mse.Script.register([{src:s,type:"show"}],f
 i,"src1");mse.transition(B,b,25)});mse.Script.register([{src:K,type:"show"}],function(){r.start()});mse.Script.register([{src:K,type:"firstShow"}],function(){mse.src.getSrc("src21").play()});for(var ga=0;ga<c.objList.length;ga++){var ha=c.getObject(ga);ha instanceof mse.Text&&ha.evtDeleg.addListener("firstShow",new mse.Callback(h,null,{typewriter:{}},ha))}mse.src.addSource("cran","./images/cran.png","img",!0);mse.src.addSource("audCran","./audios/cran","aud",!1);var sf=(mse.coor("cid0")-51)/2,tf=
 (mse.coor("cid1")-350)/2+140,uf=new mse.Sprite(null,{},"cran",51,210,0,0,51,210),vf=new mse.Sprite(null,{pos:[-12,-127]},"cran",25,196,51,0,25,139),L=new mse.UIObject(null,{});L.count=0;L.angle=-180;L.draw=function(a){10==this.count&&mse.src.getSrc("audCran").play();10<=this.count&&14>=this.count&&(this.angle=-180+180*(this.count-10)/4);this.count++;a.save();a.globalAlpha=this.globalAlpha;a.translate(sf+24,tf+16);a.rotate(this.angle*Math.PI/180);vf.draw(a);a.rotate(-this.angle*Math.PI/180);a.translate(-24,
 -16);uf.draw(a);a.restore()};t=new mse.Animation(36,1,!0);t.block=!0;t.addObj("couteau",L);t.addAnimation("couteau",{frame:[0,6,30,36],opacity:[0,1,1,0]});mse.Script.register([{src:fa,type:"show"}],function(){t.start()});mse.currTimeline.start()}createbook();
+
+</script>
+
+</body>
+</html>

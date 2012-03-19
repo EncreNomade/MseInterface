@@ -193,7 +193,6 @@ mse.init = function(configs) {
 	mse.src.addSource('downBn', '../images/button/descend.png', 'img', true);
 	mse.src.addSource('playBn', '../images/button/play.png', 'img', true);
 	mse.src.addSource('pauseBn', '../images/button/pause.png', 'img', true);
-	mse.src.addSource('ratImg', '../images/rat.png', 'img');
 };
 
 

@@ -463,6 +463,7 @@ function _addPoint(e) {
 
 
 function MseGestEvt( e, forAnalyse ) {
+    if(e.originalEvent) e = e.originalEvent;
 	this.target = e.target;
 	
 	// Event for analyser to analyse the gestures
@@ -512,14 +513,14 @@ function MseGestEvt( e, forAnalyse ) {
 	}
 	if(e.type === 'DOMMouseScroll') {// Firefox
 		// The measurement units of the detail and wheelDelta properties are different.
-		this.rolled = -40 * e.detail;
+		if(e.detail) 
+		    this.rolled = -40 * e.detail;
+		else this.rolled = 0;
 		this.type = 'mousewheel';
 	}
 	else if(e.type === 'mousewheel') {
 	    if(e.wheelDelta)
     	    this.rolled = e.wheelDelta;
-    	else if(e.originalEvent && e.originalEvent.wheelDelta)
-    	    this.rolled = e.originalEvent.wheelDelta;
     	else this.rolled = 0;
 	}
 	
