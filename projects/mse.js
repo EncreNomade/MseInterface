@@ -2311,8 +2311,8 @@ mse.Card = function(parent, param, ui) {
     this.ui = ui;
     if(ui) this.addLayer('ui', ui);
     this.margin = [15, 15, 15, 15];
-    // Angle between -20 and 20
-    this.angle = randomInt(40) - 20;
+    // Angle between -10 and 10
+    this.angle = randomInt(20) - 10;
     this.lw = this.width - this.margin[1] - this.margin[3];
     this.lh = this.height - this.margin[0] - this.margin[2];
 };

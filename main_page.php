@@ -165,11 +165,8 @@ else header("Location: index.php", true);
 	$('#newPage, #createPage').click(createPageDialog);
 	$('#removePage').click(delCurrentPage);
 	$('#newCalque').click(createStepDialog);
-	$('#wikiicon').click(showWikiEditor);
-	$('#animeicon').click(showAnimeEditor);
 	
 	$('#srcAdd').click(addFileDialog);
-	
 	$('#saveProjet').click(saveProject);
 	
 	<?php
@@ -219,7 +216,7 @@ function retrieveLocalInfo(pjsave) {
                         if($(this).hasClass('illu')) $(this).deletable(null, true);
                         $(this).selectable(selectP)
                                .staticButton('./images/UI/insertbelow.png', insertElemDialog)
-                               .staticButton('./images/tools/anime.png', animateObj)
+                               .staticButton('./images/tools/anime.png', animeTool.animateObj)
                                .staticButton('./images/UI/addscript.jpg', addScriptForObj)
                                .css({'z-index':'0','background':'none'});
                         $(this).children('.del_container').css({
@@ -233,7 +230,7 @@ function retrieveLocalInfo(pjsave) {
                 // Other obj
                 else {
                     obj.selectable(null).deletable().configurable().resizable().moveable()
-                       .hoverButton('./images/tools/anime.png', animateObj)
+                       .hoverButton('./images/tools/anime.png', animeTool.animateObj)
                        .hoverButton('./images/UI/addscript.jpg', addScriptForObj);
                     id = parseInt(obj.prop('id').substring(3));
                     if(id > maxid) maxid = id;

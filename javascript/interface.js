@@ -19,54 +19,10 @@ function init() {
 	$('#menu_mask').hide();
 	$('.central_tools').hide();
 	$('#editor').hide();
-	$('#timeline').hide();
 	initShapeTool();
 	initTextTool();
-	
-	$('#wikiTools').hideable(function() {
-	    $('#menu_mask').hide();
-	    // Unbind event handler
-	    $('#editor').unbind();
-	    $('#wikiTools').hide();
-	    $('#editor').css('overflow','hidden').hide();
-	    $('#editor').children('div').remove();
-		//saveWiki();
-	});
-	// Font configue in Wiki tools
-	$('#wiki_color').change(function(){
-	    $('#editor').find('h5, h3, h4').css('color', this.value);
-	});
-	$('#wiki_font').change(function(){
-	    $('#editor').find('h5, h3, h4').css('font-family', this.value);
-	});
-	$('#wiki_size').change(function(){
-	    $('#editor').find('h5, h3, h4').css('font-size', config.sceneY(this.value)+'px');
-	});
-	$('#animeTools').hideable(function() {
-	    $('#menu_mask').hide();
-	    // Unbind event handler
-	    $('#editor').unbind();
-	    $('#animeTools').hide();
-	    $('#editor').removeData('static').hide();
-	    $('#editor').children('div').remove();
-	    $('#timeline').hide();
-	    $('#addFrame').prevAll().remove();
-	    $('#editor').css('background', '#ffffff');
-	    $('#animeName').val("");
-	    $('#animeRepeat').val(1);
-	});
-	// Set transition type
-    $('.motion').live('click', transSetup);
-	$('#addFrame').click(addFrame);
-	$('#createAnime').click(function(){
-	    var name = $("#animeName").val();
-	    var repeat = $("#animeRepeat").val();
-	    var block = $("#animeBlock").val();
-	    var statiq = $('#editor').data('static') == 'false' ? false : true;
-	    var anime = new Animation(name, repeat, block, statiq);
-	    anime.createAnimation($('#timeline').children('div'));
-	    srcMgr.addSource('anime', anime, $('#animeName').val());
-	});
+	window.wikiTool = initWikiTool();
+	window.animeTool = initAnimeTool();
 	
 	// Mouse event handler for the resize behavior
 	$('body').supportResize(); 
@@ -328,7 +284,7 @@ function createStepDialog() {
 	// Differente type of Step
 	dialog.main.append('<div style="position:relative;left:60px;top:15px"><div id="normalStep" class="big_button">Normal</div><div id="article" class="big_button">Article</div></div>');
 	
-	$('#normalStep, #article, #wiki').click(function() {
+	$('#normalStep, #article').click(function() {
 		var params = {};
 		var name = $('#stepName').val();
 		
@@ -504,46 +460,6 @@ function hideLinkSetter(e) {
     curr.selectRange = null;
 };
 
-// Wiki add section dialog
-function addSectionDialog(e) {
-    dialog.showPopup('Nouvelle section de la carte Wiki', 400, 230, 'Ajouter');
-    dialog.main.append('<p><label>Titre:</label><input id="section_title" type="text" size="10"></p>');
-    dialog.main.append('<p><label>Type:</label><select id="section_type"><option value="text">texte</option><option value="link">lien</option></select></p>');
-    dialog.main.append('<p><label>Contenu:</label><textarea row="5" cols="22" id="section_content" style="margin-left:10px;"></textarea></p>');
-    
-    dialog.confirm.click(function(){
-        if( addSectionWiki($(e.target), $('#section_title').val(), $('#section_type').val(), $('#section_content').val()) )
-            dialog.close();
-    });
-};
-
-// Animation transition setup dialog
-function transSetup(e){
-    var trans = $(e.target);
-    var posv = trans.data('pos'), sizev = trans.data('size'), opacv = trans.data('opac'), fontv = trans.data('font');
-    dialog.showPopup('Configuration de la transition', 400, 300, 'Confirmer', trans);
-    var options = '<option value="2">Homogène</option><option value="1">Aucune</option>';
-    var pos = $('<p><label>Position:</label><select id="trans_pos">'+options+'</select></p>');
-    var size = $('<p><label>Taille:</label><select id="trans_size">'+options+'</select></p>');
-    var opac = $('<p><label>Opacité:</label><select id="trans_opac">'+options+'</select></p>');
-    var font = $('<p><label>Police:</label><select id="trans_font"">'+options+'</select></p>');
-    pos.find('option[value="'+(posv?posv:2)+'"]').attr('selected', 'true');
-    size.find('option[value="'+(sizev?sizev:2)+'"]').attr('selected', 'true');
-    opac.find('option[value="'+(opacv?opacv:2)+'"]').attr('selected', 'true');
-    font.find('option[value="'+(fontv?fontv:2)+'"]').attr('selected', 'true');
-    dialog.main.append(pos).append(size).append(opac).append(font);
-    
-    dialog.confirm.click(function(){
-        if(!dialog.caller) return;
-        var trans = dialog.caller;
-        trans.data('pos', $('#trans_pos').val());
-        trans.data('size', $('#trans_size').val());
-        trans.data('opac', $('#trans_opac').val());
-        trans.data('font', $('#trans_font').val());
-        dialog.close();
-    });
-};
-
 // Add script
 function addScriptForObj(e){
     e.preventDefault();
@@ -663,6 +579,7 @@ function tarDynamic(e){
 };
 // Drop event for all type of target
 function dropToTargetZone(e) {
+    e = e.originalEvent;
 	e.stopPropagation();
 	$(this).css('border-style', 'dotted');
 	
@@ -736,9 +653,8 @@ function addPage(name) {
 	// Add step manager
 	page.addStepManager();
 	// DnD listenerts to add Elements
-	page.get(0).addEventListener('dragover', dragOverScene, false);
-	page.get(0).addEventListener('drop', dropToScene, false);
-	
+	page.bind('dragover', dragOverScene).bind('drop', dropToScene);
+
 	var pageLabel = $('<li>'+name+'</li>');
 	pageLabel.click(activeBarLabel).circleMenu({
 	        'test':['./images/UI/recut.png',null],
@@ -864,435 +780,7 @@ function modifyZ() {
 	});
 }
 
-// Interaction with widget==============================
 
-// Wiki editor
-function addWikiCard(type) {
-    var w = config.wikiWidth;
-    var h = config.wikiHeight;
-    var card = $('<div class="wiki_card"></div>');
-    card.css({'width':w+'px', 'height':h+'px'});
-    switch(type) {
-    case 'generator':
-        $('#editor').append(card);
-        card.append('<img id="wiki_addDesc" src="./images/tools/wiki_addDescription.png" style="top:'+(1/7*h)+'px;height:'+(1/7*h)+'px;">');
-        card.append('<img id="wiki_addImg" src="./images/tools/wiki_addImg.png" style="top:'+(3/8*h)+'px;height:'+(1/7*h)+'px;">');
-        card.append('<input id="wiki_name" type="text" placeholder="Nom de wiki" style="top:'+(5/8*h)+'px;height:20px;">');
-        card.append('<input id="save_wiki" type="button" value="Sauvegarder" style="top:'+(7/9*h)+'px;height:30px;">');
-        $('#wiki_addDesc').click(function(){addWikiCard('description');});
-        $('#wiki_addImg').click(function(){addWikiCard('image');});
-        $('#save_wiki').click(saveWiki);
-    break;
-    case 'image':
-        card.insertBefore('.wiki_card:last');
-        card.deletable();
-        var img = (new DropZone(dropImgToWikiCard, {'top':'20px','height':(h-90)+'px'}, "wikiImgInput")).jqObj;
-        card.append(img);
-        var legend = $('<input type="text" placeholder="legend" style="top:'+(h-45)+'px;height:20px;font-style:italic;">');
-        legend.blur(function(){
-            var value = $(this).val();
-            var newlegend = $('<h5>'+value+'</h5>');
-            newlegend.css({'top':(h-45)+'px'});
-            $(this).replaceWith(newlegend);
-            newlegend.editable();
-        });
-        card.append(legend);
-    break;
-    case 'description':
-        card.insertBefore('.wiki_card:last');
-        card.deletable();
-        addSect = $('<input type="button" value="Nouvelle section" style="margin-top:10px;height:30px;">');
-        card.append(addSect);
-        addSect.click(addSectionDialog);
-    break;
-    }
-    return card;
-};
-function showWikiEditor() {
-    // Trigger close event if center panel is showing up
-    if($('#center_panel').css('display') == 'block')
-    	$('.central_tools:visible').find('.del_container img:first').click();
-    $('#menu_mask').show();
-    $('#wikiTools').show();
-    $('#editor').css('overflow','auto').show();
-    addWikiCard('generator');
-};
-function addSectionWiki(button, title, type, content) {
-    if(!title) {
-       alert('Information incomplete.'); 
-       return false;
-    }
-    var font = $('#wiki_font').val();
-    var fsize = config.sceneX($('#wiki_size').val());
-    var fcolor = $('#wiki_color').val();
-    var temp = '<h3>'+title+'</h3>';
-    temp += '<div class="sepline"></div>';
-    if(type == 'text') {
-        if(!content) {
-            alert('Information incomplete.');
-            return false;
-        }
-        temp += '<h4>'+content+'</h4>';
-    }
-    else if(type == 'link') {
-        if( content.match(/^\w+:\/(\/[\-\_\w\?\&\.]+)+/) ) {
-            temp += '<img src="./images/UI/wikibutton.png" style="width:'+(config.wikiWidth*0.5)+'px;height:'+$('#wiki_size').val()+'px;left:20%;position:relative;" value="'+content+'">';
-        }
-        else {
-            alert('Votre lien url n\'est pas correct.');
-            return false;
-        }
-    }
-    button.before(temp);
-    button.prevAll().css({'font-family':font, 'font-size':fsize, 'color':fcolor});
-    return true;
-};
-function saveWiki() {
-    var name = $('#wiki_name').val();
-    if(!name) {
-        alert('Échec à sauvegarder, indiquez le nom de wiki s\'il vous plaît');
-        return false;
-    }
-    // Trigger blur event to make legend valid
-    $('#editor').find('input').blur();
-    // Copy all in current step to src
-    var cards = $('#editor').children('div:last-child').prevAll();
-    if(cards.length == 0) return false;
-    // Other parameters
-    var font = $('#wiki_font').val();
-    var fsize = $('#wiki_size').val();
-    var fcolor = $('#wiki_color').val();
-    var wiki = new Wiki(name, cards.clone(), font, fsize, fcolor);
-    srcMgr.addSource('wiki', wiki, name);
-    return true;
-};
-
-// WikiEditor Interaction
-function dropImgToWikiCard(e) {
-    e.stopPropagation();
-    if($(this).hasClass('drop_zone')) $(this).css('border-style', 'dotted');
-    else $(this).css('border-style', 'none');
-    
-    var id = e.dataTransfer.getData('Text');
-    var data = srcMgr.getSource(id);
-    var type = srcMgr.sourceType(id);
-    // Verification
-    if(!data || type != "image") return;
-    
-    var img = $('<img name="'+id+'" src="'+data+'" style="top:20px;">');
-    img.get(0).addEventListener('dragover', DropZone.prototype.dragOverElemZone, false);
-    img.get(0).addEventListener('dragleave', DropZone.prototype.dragLeaveElemZone, false);
-    img.get(0).addEventListener('drop', dropImgToWikiCard, false);
-    img.mouseup(DropZone.prototype.dragLeaveElemZone);
-    // Append to elem zone
-    $(this).replaceWith(img);
-};
-
-
-// Animation editor=====================================
-function showAnimeEditor() {
-    // Trigger close event if center panel is showing up
-    if($('#center_panel').css('display') == 'block')
-    	$('.central_tools:visible').find('.del_container img:first').click();
-    $('#menu_mask').show();
-    $('#animeTools').show();
-    $('#editor').css('background', 'transparent').data('static','true').show();
-    $('#timeline').show();
-    
-    // Interaction with drop zone
-    var editor = $('#editor').get(0);
-    editor.addEventListener('dragover', dragOverScene, false);
-    editor.addEventListener('drop', dropToAnimeEditor, false);
-    
-    // Create new frame
-    if($('#timeline .frameexpo').length == 0) $('#addFrame').click();
-};
-function animateObj(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    var tar = $(this).parent().parent();
-    showAnimeEditorForObj(tar);
-};
-function showAnimeEditorForObj(obj) {
-    // Trigger close event if center panel is showing up
-    if($('#center_panel').css('display') == 'block')
-    	$('.central_tools:visible').find('.del_container img:first').click();
-    $('#menu_mask').show();
-    $('#animeTools').show();
-    $('#editor').css('background', 'transparent').data('static','false').show();;
-    $('#timeline').show();
-    
-    // Create new frame
-    if($('#timeline .frameexpo').length == 0) $('#addFrame').click();
-    // Append target object
-    if(obj) {
-        var tar = obj.clone();
-        tar.children('.del_container').remove();
-        tar.deletable().configurable();
-        $('#editor').children('.frame').each(function(){
-            if($(this).hasClass('active')) $(this).append(tar);
-        });
-    }
-};
-function showFrame(frame) {
-    $('#editor').children('.frame').css('z-index', 1).removeClass('active');
-    frame.css('z-index', 2).addClass('active');
-};
-function delFrame(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    // Show another frame
-    var target = $(this).parent().parent();
-    if(target.prev().length > 0) target.prev().click();
-    else if(target.next('div').length > 0) target.next('div').click();
-    else return;
-    // Delete frame
-    target.data('frame').remove();
-    // Delete frame expo
-    target.remove();
-};
-function addFrame(interval, empty) {
-    if(isNaN(interval) || interval <= 0) var interval = 0.5;
-    var frameexpo = $('<div class="frameexpo"><h4>Frame</h4><h5>durée: <span>'+interval+'</span>s</h5><div class="motion"/></div>');
-    frameexpo.find('span').editable();
-    // Set default transition
-    frameexpo.children('div.motion').data('pos','2').data('size','2').data('opac','2').data('font','2');
-    // Insert
-    var expos = $('#addFrame').prevAll();
-    if(expos.length == 0) $('#addFrame').before(frameexpo);
-    else
-        expos.each(function(){
-            if($(this).hasClass('active')) $(this).after(frameexpo);
-        });
-    // Append frame in editor
-    var frame = $('<div class="frame"></div>');
-    $('#editor').append(frame);
-    frameexpo.data('frame', frame);
-    // Copy content in previous frame to the new frame
-    var prev = frameexpo.prev();
-    if(empty!==true && prev.length == 1) {
-        var content = prev.data('frame').children().clone(true);
-        content.find('.del_container').remove();
-        content.find('canvas').parent().remove();
-        content.each(function(){
-            if($(this).children('img').length == 1)
-                $(this).deletable().configurable().hoverButton('./images/UI/recut.png', recutAnimeObj);
-            else $(this).deletable().configurable();
-        });
-        frame.append(content);
-    }
-    // Active function
-    frameexpo.click(function(){
-        $('#addFrame').prevAll().removeClass('active');
-        $(this).addClass('active');
-        showFrame($(this).data('frame'));
-    }).click();
-    // Deletable
-    frameexpo.deletable(delFrame);
-    return frameexpo;
-};
-function redrawAnimeObj(canvas) {
-    // Draw image
-    var ctx = canvas.get(0).getContext("2d");
-    var w = canvas.get(0).width, h = canvas.get(0).height;
-    ctx.clearRect(0,0,w,h);
-    ctx.drawImage(canvas.data('img'), 0, 0, w, h);
-    // Retrieve selection zone points
-    var roix = canvas.data('roix');
-    var roiy = canvas.data('roiy');
-    var roiw = canvas.data('roiw');
-    var roih = canvas.data('roih');
-    // Draw mask
-    ctx.globalAlpha = 0.4;
-    ctx.fillRect(0,0,roix,h);
-    ctx.fillRect(roix,0,roiw,roiy);
-    ctx.fillRect(roix+roiw,0,w-roix-roiw,h);
-    ctx.fillRect(roix,roiy+roih,roiw,h-roiy-roih);
-    ctx.globalAlpha = 1;
-    // Draw control points
-    ctx.fillStyle = '#E30';
-    ctx.strokeStyle = '#E30';
-    ctx.fillRect(roix-2.5,roiy-2.5,5,5);
-    ctx.fillRect(roix+roiw-2.5,roiy-2.5,5,5);
-    ctx.fillRect(roix+roiw-2.5,roiy+roih-2.5,5,5);
-    ctx.fillRect(roix-2.5,roiy+roih-2.5,5,5);
-    ctx.strokeRect(roix,roiy,roiw,roih);
-    ctx.fillStyle = '#000';
-    ctx.strokeStyle = '#000';
-};
-function startRecut(e){
-    e.preventDefault();
-    e.stopPropagation();
-    tag.cutstarted = true;
-    var x = e.offsetX, y = e.offsetY;
-    var roix = $(this).data('roix');
-    var roiy = $(this).data('roiy');
-    var roiw = $(this).data('roiw');
-    var roih = $(this).data('roih');
-    var dx = Math.abs(x-roix), dy = Math.abs(y-roiy);
-    if(dx < 3 && dy < 3) {
-        curr.cutCtrlPt = 0;return true; // Left Top
-    }
-    dx = Math.abs(x-roix-roiw);
-    if(dx < 3 && dy < 3) {
-        curr.cutCtrlPt = 1;return true; // Right Top
-    }
-    dy = Math.abs(y-roiy-roih);
-    if(dx < 3 && dy < 3) {
-        curr.cutCtrlPt = 2;return true; // Right Bottom
-    }
-    dx = Math.abs(x-roix);
-    if(dx < 3 && dy < 3) {
-        curr.cutCtrlPt = 3;return true; // Right Top
-    }
-    if(x > roix && y > roiy && x < roix+roiw && y < roiy+roih){
-        curr.cutCtrlPt = 4; // Move selection zone
-        prevState.cutX = x;
-        prevState.cutY = y;
-        return true;
-    }
-};
-function recutting(e){
-    if(!tag.cutstarted || isNaN(curr.cutCtrlPt)) return;
-    e.preventDefault();
-    e.stopPropagation();
-    var x = e.offsetX, y = e.offsetY;
-    var roix = $(this).data('roix');
-    var roiy = $(this).data('roiy');
-    var roiw = $(this).data('roiw');
-    var roih = $(this).data('roih');
-    switch(curr.cutCtrlPt) {
-    case 0:
-        if(x < roix+roiw && y < roiy+roih) {
-            $(this).data('roiw', roix+roiw-x);$(this).data('roih', roiy+roih-y);
-            $(this).data('roix', x);$(this).data('roiy', y);
-        }
-        break;
-    case 1:
-        if(x > roix && y < roiy+roih) {
-            $(this).data('roiw', x-roix);$(this).data('roih', roiy+roih-y);
-            $(this).data('roiy', y);
-        }
-        break;
-    case 2:
-        if(x > roix && y > roiy) {
-            $(this).data('roiw', x-roix);$(this).data('roih', y-roiy);
-        }
-        break;
-    case 3:
-        if(x < roix+roiw && y > roiy) {
-            $(this).data('roiw', roix+roiw-x);$(this).data('roih', y-roiy);
-            $(this).data('roix', x);
-        }
-        break;
-    case 4:
-        if(isNaN(prevState.cutX) || isNaN(prevState.cutY)) return;
-        $(this).data('roix', roix+x-prevState.cutX);
-        $(this).data('roiy', roiy+y-prevState.cutY);
-        prevState.cutX = x;
-        prevState.cutY = y;
-        break;
-    default: return;
-    }
-    redrawAnimeObj($(this));
-};
-function endRecut(e){
-    if(tag.cutstarted) {
-    	e.preventDefault();
-    	e.stopPropagation();
-    	tag.cutstarted = false;
-    	curr.cutCtrlPt = prevState.cutX = prevState.cutY = null;
-    }
-};
-function confirmCut(e) {
-    e.preventDefault();e.stopPropagation();
-    var container = $(this).parent().parent();
-    var tar = container.children('canvas');
-    var roix = tar.data('roix');
-    var roiy = tar.data('roiy');
-    var roiw = tar.data('roiw');
-    var roih = tar.data('roih');
-    var img = $(tar.data('img'));
-    var w = tar.get(0).width, h = tar.get(0).height;
-    container.children().remove();
-    container.css({'width':roiw+'px', 'height':roih+'px', 'overflow':'hidden'});
-    img.css({'position':'relative', 'left':-100*roix/roiw+'%', 'top':-100*roiy/roih+'%', 'width':100*w/roiw+'%', 'height':100*h/roih+'%'});
-    container.append(img);
-    container.deletable().resizable().moveable().configurable().hoverButton('./images/UI/recut.png', recutAnimeObj);
-};
-function recutAnimeObj(e) {
-    e.preventDefault();e.stopPropagation();
-    var tar = $(this).parent().parent();
-    var img = tar.children('img');
-    var name = img.attr('name');
-    var w = img.width(), h = img.height();
-    var x = img.position().left, y = img.position().top;
-    tar.children().remove();
-    tar.resizable(false);
-    var canvas = $('<canvas name="'+name+'" width='+w+' height='+h+'></canvas>');
-    tar.append(canvas);
-    // Confirm button
-    tar.hoverButton('./images/UI/confirm.png', confirmCut);
-    // Conserve image obj in data
-    canvas.data('img', img.get(0));
-    // Coordinates of selection zone
-    if(x && y) var roix = -x, roiy = -y, roiw = tar.width(), roih = tar.height();
-    else var roix = Math.floor(w/4), roiy = Math.floor(h/4), roiw = Math.floor(w/2), roih = Math.floor(h/2);
-    canvas.data('roix', roix);
-    canvas.data('roiy', roiy);
-    canvas.data('roiw', roiw);
-    canvas.data('roih', roih);
-    tar.width(w); tar.height(h);
-    // Draw content
-    redrawAnimeObj(canvas);
-    // Add selection zone listeners
-    canvas.mousedown(startRecut);
-    canvas.mousemove(recutting);
-    canvas.mouseup(endRecut).mouseout(endRecut);
-};
-function addAnimeObj(e, id, data) {
-    var img = $('<img name="'+ id +'" src="'+ data +'">');
-	img.css({'width':'100%','height':'100%'});
-	
-	var src = srcMgr.getSource(id);
-	if(src.width && src.height) var w = src.width, h = src.height;
-	else var w = img.prop('width'), h = img.prop('height');
-	var cw = $('#editor').width()/2, ch = $('#editor').height()/2;
-	if(!w || !h) return;
-    
-	var container = $('<div>');
-	container.append(img);
-	container.deletable();
-	
-	// Resize
-	var ratiox = cw/w;
-	var ratioy = ch/h;
-	var ratio = (ratiox > ratioy ? ratioy : ratiox);
-	if(ratio < 1) {w = w*ratio; h = h*ratio;};
-	container.css({'position':'absolute', 'top':e.offsetY-h/2+'px', 'left':e.offsetX-w/2+'px'});
-	container.css({'width':w+'px', 'height':h+'px', 'border-style':'solid', 'border-color':'#4d4d4d', 'border-width':'0px'});
-	
-	// Listener to manipulate
-	// Choose Resize Move
-	container.resizable().moveable().configurable();
-	// Recut the image
-	container.hoverButton('./images/UI/recut.png', recutAnimeObj);
-
-	$('#editor').children().each(function(){
-	    if($(this).css('z-index') == '2')
-	        $(this).append(container);
-	});
-};
-function dropToAnimeEditor(e) {
-    e.stopPropagation();
-    var id = e.dataTransfer.getData('Text');
-    var type = srcMgr.sourceType(id);
-    if(!id || type != "image") return;
-    var data = srcMgr.getSource(id);
-    if(data == null) return;
-    
-    addAnimeObj(e, id, data);
-};
 
 
 // Active one label in the tab bar
@@ -1318,11 +806,13 @@ function activeBarLabel() {
 
 // Drag over
 function dragOverScene(e) {
+    e = e.originalEvent;
 	e.preventDefault();
 	e.dataTransfer.dropEffect = 'copy';
 	return false;
 };
 function dragOverExpo(e) {
+    e = e.originalEvent;
 	e.preventDefault();
 	e.dataTransfer.dropEffect = 'copy';
 	$(this).css('border', '1px #4d4d4d solid');
@@ -1334,6 +824,7 @@ function dragLeaveExpo(e) {
 };
 // Function drop to add Elem
 function dropToScene(e) {
+    e = e.originalEvent;
 	e.stopPropagation();
 	var id = e.dataTransfer.getData('Text');
 	var type = srcMgr.sourceType(id);
@@ -1343,6 +834,7 @@ function dropToScene(e) {
 	addImageElem(id, data, curr.page, curr.step);
 };
 function dropToExpo(e) {
+    e = e.originalEvent;
 	e.stopPropagation();
 	$(this).css('border', 'none');
 	var id = e.dataTransfer.getData('Text');
@@ -1378,6 +870,7 @@ function insertElemAfter(e) {
 
 // Drop zone interaction
 function dropToInsertZone(e) {
+    e = e.originalEvent;
 	e.stopPropagation();
 	$(this).css('border-style', 'dotted');
 	
@@ -1440,6 +933,7 @@ function modifyLink(e) {
 };
 // Audio drop zone interaction
 function dropToAudioElemZone(e) {
+    e = e.originalEvent;
 	e.stopPropagation();
 	$(this).css('border-style', 'dotted');
 	
@@ -1453,6 +947,7 @@ function dropToAudioElemZone(e) {
 };
 // Wiki resource drop zone interaction
 function dropToWikiElemZone(e) {
+    e = e.originalEvent;
     e.stopPropagation();
     $(this).css('border-style', 'dotted');
     
