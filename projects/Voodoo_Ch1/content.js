@@ -1,263 +1,3773 @@
+/*!
+ * Mse Canvas JavaScript Library v0.85
+ * MseEdition
+ *
+ * Author: LING Huabin - lphuabin@gmail.com
+ * Copyright 2011, MseEdition
+ *
+ * Date: 21/03/2011
+ */
+
 var __currContextOwner__;
-(function(h,e){var b=function(){};b.configs={font:"Verdana",srcPath:""};var d=b.configs;b.root=null;b.currTimeline=null;b.src=function(){return{list:{},loading:[],preload:[],loadInfo:"Chargement ressources: ",waitinglist:{},audExtCheck:/(.ogg|.mp3)/,init:function(){for(var a,b,g=0;12>g;g++){this.loading[g]=document.createElement("canvas");this.loading[g].width=300;this.loading[g].height=300;a=this.loading[g].getContext("2d");a.translate(150,150);b=2*Math.PI/12;a.fillStyle="#AAAAAA";for(var m=0;12>
-m;m++)m==g?(a.fillStyle="#EEEEEE",a.fillRect(60,-9,60,18),a.fillStyle="#AAAAAA"):a.fillRect(60,-9,60,18),a.rotate(b)}},addSource:function(a,b,g,m){switch(g){case "img":case "image":this.list[a]=new Image;this.list[a].src=d.srcPath+b;this.list[a].lid=0;break;case "aud":case "audio":this.list[a]=document.createElement("audio");if(-1==b.search(this.audExtCheck))switch(MseConfig.browser){case "Chrome":case "Firefox":case "Opera":this.list[a].src=d.srcPath+b+".ogg";break;case "Safari":case "Explorer":this.list[a].src=
-d.srcPath+b+".mp3"}else this.list[a].src=d.srcPath+b;this.list[a].load();break;default:return}this.list[a].type=g;m&&"aud"!=g&&"audio"!=g&&this.preload.push(this.list[a])},getSrc:function(a){a=this.list[a];if(!a)return null;switch(a.type){case "img":case "image":if(!a||a.complete)return a;12==a.lid&&(a.lid=0);return this.loading[a.lid++];case "aud":case "audio":return a}},waitSrc:function(a,b){if(this.list[a])if(this.list[a].complete)b.invoke();else{this.waitinglist[a]||(this.waitinglist[a]=[]);var g=
-this.waitinglist[a];g.push(b);this.list[a].onload=function(){for(var a in g)g[a].invoke()}}},preloadProc:function(){for(var a=0,b=0;b<this.preload.length;b++)this.preload[b].complete&&a++;return[a,this.preload.length]},preloadPage:function(a,f,g){a.clearRect(0,0,b.root.width,b.root.height);a.save();a.strokeStyle="#333333";a.lineWidth=2;a.strokeRoundRect((b.root.width-280)/2,b.root.height-100,281,11,5);a.fillStyle="#555555";a.fillRoundRect((b.root.width-280)/2,b.root.height-100,280*(f/g),10,5);f=this.loadInfo+
-f+"/"+g;g=a.measureText(f).width;a.font="20px "+d.font;a.fillStyle="#000000";a.fillText(f,(b.root.width-g)/2,b.root.height-60);a.restore()}}}();(function(){b.coords={};b.coorRatio=1;b.joinCoor=function(a){if(isNaN(a))return"";var f=0,g;for(g in b.coords){if(a==b.coords[g])return g;var m=g.match(/cid(\d+)/);if(m[1])var k=parseInt(m[1]);!isNaN(k)&&k>=f&&(f=k+1)}f="cid"+f;b.coords[f]=1==b.coorRatio?a:parseFloat((new Number(b.coorRatio*a)).toFixed(2));return f};b.coor=function(a){return isNaN(b.coords[a])?
-0:b.coords[a]};b.realCoor=function(a){return isNaN(a)?0:1==b.coorRatio?a:parseFloat((new Number(b.coorRatio*a)).toFixed(2))}})();b.autoFitToWindow=function(a){a&&(h.autoFitCallback=a);if(b.coords.cid1)if(250<MseConfig.pageHeight){b.coorRatio=MseConfig.pageHeight/b.coords.cid1;for(var f in b.coords)b.coords[f]=parseFloat((new Number(b.coorRatio*b.coords[f])).toFixed(2));h.autoFitCallback&&h.autoFitCallback();h.autoFitCallback=null}else setTimeout(b.autoFitToWindow,1E3)};b.init=function(a){e.extend(d,
-a);b.src.init();b.src.addSource("imgNotif","../images/turn_comp.png","img");b.src.addSource("fbBar","../images/barre/fb.png","img");b.src.addSource("wikiBar","../images/barre/wiki.png","img");b.src.addSource("wikiBn","../images/button/wiki.png","img");b.src.addSource("bookBn","../images/button/book.png","img");b.src.addSource("illuBn","../images/button/illu.png","img");b.src.addSource("audBn","../images/button/audIcon.png","img");b.src.addSource("accelerBn","../images/button/accelere.png","img",!0);
-b.src.addSource("upBn","../images/button/monter.png","img",!0);b.src.addSource("ralentiBn","../images/button/ralenti.png","img",!0);b.src.addSource("downBn","../images/button/descend.png","img",!0);b.src.addSource("playBn","../images/button/play.png","img",!0);b.src.addSource("pauseBn","../images/button/pause.png","img",!0)};var j={fb:"rgb(74,108,164)",wiki:"rgb(230,82,82)",audio:"#FFB11B"},i={};b.fade=function(a,f,g,m,k){a&&(a=new b.KeyFrameAnimation(a,{frame:[0,f],opacity:[g,m]},1),k&&a.evtDeleg.addListener("end",
-k),a.start())};b.fadein=function(a,f,g){b.fade(a,f,0,1,g)};b.fadeout=function(a,f,g){b.fade(a,f,1,0,g)};b.slidein=function(a,f,g,m,k){!a instanceof b.UIObject||(isNaN(k)&&(k=1),a=new b.KeyFrameAnimation(a,{frame:[0,f],pos:g,opacity:[0,k]},1),m&&a.evtDeleg.addListener("end",m),a.start())};b.slideout=function(a,f,g,m){!a instanceof b.UIObject||(a=new b.KeyFrameAnimation(a,{frame:[0,f],pos:g,opacity:[a.globalAlpha,0]},1),m&&a.evtDeleg.addListener("end",m,!1),a.start())};b.transition=function(a,f,g,m){var k=
-a.parent;k instanceof b.Layer&&k.insertBefore(f,a);b.fadein(f,g,m);b.fadeout(a,g,new b.Callback(k.delObject,k,a))};b.setCursor=function(a){-1!=a.indexOf(".")?b.root.jqObj.css("cursor",'url("'+a+'"), auto'):b.root.jqObj.get(0).style.cursor=a};b.changePage=function(a,f){f&&a.evtDeleg.addListener("click",new b.Callback(b.root.transition,b.root,b.root.container),!0);b.root.transition(a)};b.createBackLayer=function(a){if(i[a])return i[a];var f=new b.Layer(null,0,{size:[b.root.width,b.root.height]});f.addObject(new b.Image(f,
-{size:[b.root.width,b.root.height]},a));return i[a]=f};b.Callback=function(a,b){if(!a)return null;this.func=a;this.caller=b;if(2<arguments.length){this.args=[];for(var g=2;g<arguments.length;g++)this.args.push(arguments[g])}this.link=function(a){this.linked||(this.linked=[]);this.linked.push(a)};this.invoke=function(a){var g=null;this.args?g=a?this.args.concat(a):this.args:!this.args&&a&&(g=[a]);this.func.apply(b,g);if(this.linked)for(var d in this.linked)this.linked[d].invoke()}};b.EventListener=
-function(a,b,g,m){this.evtName=a;this.callback=b;this.target=m?m:b.caller;this.preventBubbling=g?g:!1;this.inObj=function(a,b){return a&&b?this.target.inObj?this.target.inObj(a,b)?!0:!1:!0:!0};this.notify=function(a){this.callback.invoke(a)}};b.EventDelegateSystem=function(){function a(a,b){var m=a.target,k=b.target;return!m||!m.getZindex?-1:!k||!k.getZindex?1:m.getZindex()<k.getZindex()?1:m.getZindex()>k.getZindex()?-1:0}this.listeners={};this.domObj=null;this.setDominate=function(a){this.domObj=
-a};this.addListener=function(f,g,m,k){if("string"==typeof f&&g){this.listeners[f]||(this.listeners[f]=[]);var d=!1,m=new b.EventListener(f,g,m,k),e=this.listeners[f],h;for(h in e)if(e[h].callback==g&&(!k||e[h].target==k))d=!0,e.splice(h,1,m);d||this.listeners[f].push(m);this.listeners[f].sort(a)}};this.removeListeners=function(a){delete this.listeners[a]};this.removeListener=function(a,b){var m=this.listeners[a];if(m)for(var k=0;k<m.length;k++)if(m[k].callback==b){m.splice(k,1);break}};this.eventNotif=
-function(a,b){var m=!1;switch(a){case "move":var k=this.listeners.enter;if(k)for(var d in k)if(k[d].target.inObj(b.offsetX,b.offsetY)&&!k[d].target.inObj(b.prev[0],b.prev[1])){k[d].notify(b);m=!0;break}}if(k=this.listeners[a])for(var e in k){if((!this.domObj||this.domObj==k[e].target||this.domObj==k[e].target.parent)&&(!b||k[e].inObj(b.offsetX,b.offsetY))){var h=k[e].preventBubbling;k[e].notify(b);m=!0}if(h)break}return m}};b.EventDistributor=function(a,f,g){this.distributor=function(a){this.rootEvt.eventNotif(a.type,
-a);this.delegate&&this.delegate.eventNotif(a.type,a)};this.setDelegate=function(a){this.delegate=a};this.src=a;f.mseInteraction(this);f.mseInteraction("setDelegate",this.distributor);this.rootEvt=new b.EventDelegateSystem;g&&this.setDelegate(g);this.setDominate=function(a){this.rootEvt.setDominate(a);this.delegate&&this.delegate.setDominate(a)};this.addListener=function(a,b,f,g){this.rootEvt.addListener(a,b,f,g)};this.removeListeners=function(a){this.rootEvt.removeListeners(a)};this.removeListener=
-function(a,b){this.rootEvt.removeListener(a,b)}};b.Link=function(a,b,g,d,k,e){this.src=a;this.index=b;this.type=g;this.link=d;switch(this.type){case "fb":this.image="fbBar";break;case "wiki":this.image="wikiBar";break;case "illu":this.width=k?k:300,this.height=e?e:400}};b.UIObject=function(a,f){a?(this.parent=a,this.fixed=!1):this.parent=null;this.evtDeleg=new b.EventDelegateSystem;if(f&&(f.pos&&this.setPos(f.pos[0],f.pos[1]),f.size&&this.setSize(f.size[0],f.size[1]),f.font&&(this.font=f.font),f.fillStyle&&
-(this.fillStyle=f.fillStyle),f.strokeStyle&&(this.strokeStyle=f.strokeStyle),this.globalAlpha=isNaN(f.globalAlpha)?1:f.globalAlpha,f.lineWidth&&(this.lineWidth=f.lineWidth),f.shadow&&(this.shadow=f.shadow),f.textAlign&&(this.textAlign=f.textAlign),f.textBaseline&&(this.textBaseline=f.textBaseline),f.insideRec))this.insideRec=f.insideRec};b.UIObject.prototype={offx:0,offy:0,width:0,height:0,fixed:!0,setPos:function(a,b,g){g?(this.offx=a+(this.fixed?g.getX():g.offx),this.offy=b+(this.fixed?g.getY():
-g.offy)):(this.offx=a,this.offy=b)},setX:function(a,b){this.offx=b?a+(this.fixed?b.getX():b.offx):a},setY:function(a,b){this.offy=b?a+(this.fixed?b.getY():b.offy):a},getX:function(){return this.parent?this.parent.getX()+this.offx:this.offx},getY:function(){return this.parent?this.parent.getY()+this.offy:this.offy},getCanvasX:function(){if(this.parent)return this.parent.getCanvasX()+this.offx;var a=0;b.root.viewport&&(a=-b.root.viewport.x);return a+this.offx},getCanvasY:function(){if(this.parent)return this.parent.getCanvasY()+
-this.offy;var a=0;b.root.viewport&&(a=-b.root.viewport.y);return a+this.offy},setSize:function(a,b){this.width=a;this.height=b},getWidth:function(){return this.width},getHeight:function(){return this.height},inObj:function(a,b){if(1>this.getAlpha())return!1;if(this.insideRec)var g=this.getCanvasX()+this.insideRec[0],d=this.getCanvasY()+this.insideRec[1],k=this.insideRec[2],e=this.insideRec[3];else g=this.getCanvasX(),d=this.getCanvasY(),k=this.getWidth(),e=this.getHeight();return a>g&&a<g+k&&b>d&&
-b<d+e?!0:!1},getZindex:function(){return this.zid?this.zid:this.parent?this.parent.zid:0},getContainer:function(){return this instanceof b.BaseContainer?this:this.parent?this.parent.getContainer():b.root.container},setAlpha:function(a){this.globalAlpha=a},getAlpha:function(){return this.parent?this.parent.getAlpha()*this.globalAlpha:this.globalAlpha},getScale:function(){return isNaN(this.scale)?this.parent?this.parent.getScale():1:this.parent?this.parent.getScale()*this.scale:this.scale},move:function(a,
-b){this.offx+=a;this.offy+=b},addListener:function(){this.evtDeleg.addListener.apply(this.evtDeleg,arguments)},removeListener:function(){this.evtDeleg.removeListener.apply(this.evtDeleg,arguments)},configCtxFlex:function(a){this.font&&(a.font=this.font);this.fillStyle&&(a.fillStyle=this.fillStyle);this.strokeStyle&&(a.strokeStyle=this.strokeStyle);this.lineWidth&&(a.lineWidth=this.lineWidth);this.shadow?(a.shadowOffsetX=this.shadow.shadowOffsetX,a.shadowOffsetY=this.shadow.shadowOffsetY,a.shadowBlur=
-this.shadow.shadowBlur,a.shadowColor=this.shadow.shadowColor):a.shadowOffsetX=a.shadowOffsetY=a.shadowBlur=0;this.textAlign&&(a.textAlign=this.textAlign);this.textBaseline&&(a.textBaseline=this.textBaseline);a.globalAlpha=this.getAlpha()},configCtx:function(a){a.restore();a.save();this.configCtxFlex(a);var b=this.getScale();1!=b&&a.scale(b,b)},draw:function(){},logic:function(){},toString:function(){return"[object MseUIObject]"}};b.Root=function(a,f,g){this.setPos=function(a,b){this.jqObj.css({left:a+
-"px",top:b+"px"})};this.setSize=function(a,b){this.width=a;this.height=b;this.jqObj.attr({width:a,height:b})};this.setScale=function(a){if(1<a){this.height*a>MseConfig.pageHeight&&(a=MseConfig.pageHeight/this.height);this.width*a>MseConfig.pageWidth&&(a=MseConfig.pageWidth/this.width);var b=this.width*a,f=this.height*a;this.setPos((MseConfig.pageWidth-b)/2,(MseConfig.pageHeight-f)/2);this.setSize(b,f);this.scale=a}};this.setCenteredViewport=function(){this.viewport={};this.viewport.x=(this.width-
-MseConfig.pageWidth)/2;this.viewport.y=(this.height-MseConfig.pageHeight)/2;this.jqObj.attr({width:MseConfig.pageWidth,height:MseConfig.pageHeight});this.jqObj.css({left:"0px",top:"0px"});this.ctx.translate(-this.viewport.x,-this.viewport.y)};this.setContainer=function(a){this.container&&(this.container.firstShow=!1);a.root=this;this.container=a;this.evtDistributor.setDelegate(a.evtDeleg);this.dest=null;this.container.scale=this.scale};this.transition=function(a){this.dest||(this.container?(b.fadeout(this.container,
-20,new b.Callback(this.setContainer,this,a)),this.dest=a):this.setContainer(a),b.fadein(a,20))};this.inObj=function(){return!0};this.logic=function(a){for(var b in this.animations)this.animations[b].logic(a)&&this.animations.splice(b,1);var f=!1;for(b in this.animes)this.animes[b].block&&(f=!0),this.animes[b].logic(a)&&this.animes.splice(b,1);f||this.gamewindow.logic(a)||this.container&&this.container.logic(a)};this.draw=function(){MseConfig.mobile?this.ctx.clearRect(0,0,MseConfig.pageWidth,MseConfig.pageHeight):
-this.ctx.clearRect(0,0,this.width,this.height);if(!MseConfig.mobile||!(this.gamewindow.currGame&&"INDEP"==this.gamewindow.currGame.type))this.container&&this.container.draw(this.ctx),this.dest&&this.dest.draw(this.ctx);this.gamewindow.currGame&&this.gamewindow.draw(this.ctx);for(var a in this.animes)this.animes[a].draw(this.ctx);this.evtDistributor.rootEvt.eventNotif("drawover",this.ctx)};this.initTimeline=function(){};this.runTimeline=function(a){this.init?this.end?b.currTimeline.end=!0:(this.logic(a),
-this.draw()):(a=b.src.preloadProc(),a[0]<a[1]?b.src.preloadPage(this.ctx,a[0],a[1]):this.init=!0)};b.root=this;this.jqObj=e("<canvas></canvas>");this.jqObj.attr({id:a});a=(MseConfig.pageWidth-f)/2;this.jqObj.css({margin:"0px auto",padding:"0px",position:"absolute",left:a+"px",top:"0px"});e("body").css({position:"relative"}).append(this.jqObj);this.scale=1;this.setSize(f,g);this.interval=40;this.ctx=this.jqObj.get(0).getContext("2d");MseConfig.mobile&&(this.setCenteredViewport(),e(h).bind("orientationchange",
-function(){b.root.setCenteredViewport()}));this.evtDistributor=new b.EventDistributor(this,this.jqObj);this.container=null;this.init=this.end=!1;this.animations=[];this.animes=[];var d=e('<div id="video">');d.css({position:"absolute",width:0.8*f+"px",height:0.8*g+"px",left:a+0.1*f+"px",top:0.1*g+"px"});e("body").prepend(d);this.video=d.flareVideo(e("body"));this.video.hide();this.gamewindow=new b.GameShower;b.currTimeline=new b.Timeline(this,this.interval)};b.BaseContainer=function(a,f,g){b.UIObject.call(this,
-null,f);this._layers=[];this._changed=[];this.deleg=null;this.scale=1;this.count=0;this.firstShow=!1;MseConfig.mobile?(this.orientation=MseConfig.orientation,this.normal=!0,this.setOrientation(g?g:"portrait")):this.normal=!0;a&&a.setContainer(this)};extend(b.BaseContainer,b.UIObject);e.extend(b.BaseContainer.prototype,{setOrientation:function(a){MseConfig.mobile&&!("landscape"!=a&&"portrait"!=a)&&(this.orientation=a)},orientChange:function(a){__currContextOwner__=b.root;this.normal=a==this.orientation?
-!0:!1;b.root.jqObj.attr({width:MseConfig.pageWidth,height:MseConfig.pageHeight});b.root.width=MseConfig.pageWidth;b.root.height=MseConfig.pageHeight},addLayer:function(a,f){null!=a&&f instanceof b.UIObject&&(f.name=a,this._layers.push(f),this.sortLayer())},delLayer:function(a){if(null!=a)for(var b in this._layers)this._layers[b].name==a&&this._layers.splice(b,1)},getLayer:function(a){if(null!=a)for(var b in this._layers)if(this._layers[b].name==a)return this._layers[b]},sortLayer:function(){this._layers.sort(function(a,
-b){return a.zid<b.zid?-1:a.zid>b.zid?1:0})},setLayerActivate:function(a,b){null!=a&&null!=this._layers[a]&&this._layers[a].setActivate(b)},desactiveOthers:function(a){for(var b in this._layers)this._layers[b].active&&this._layers[b].name!=a&&(this._layers[b].setActivate(!1),this._changed.push(b))},reactiveOthers:function(){for(var a=this._changed.length,b=0;b<a;b++)this._layers[this._changed.pop()].setActivate(!0)},logic:function(a){if(!this.firstShow){this.firstShow=!0;this.evtDeleg.eventNotif("show");
-for(var b in this._layers)this._layers[b].evtDeleg.eventNotif("show")}MseConfig.mobile&&(this.normal&&MseConfig.orientation!=this.orientation?this.orientChange(MseConfig.orientation):!this.normal&&MseConfig.orientation==this.orientation&&this.orientChange(MseConfig.orientation));if(this.normal)if(this.deleg)this.deleg.logic(a);else for(b in this._layers)this._layers[b].logic(a);this.count++},draw:function(a){if(this.normal)if(this.deleg)this.deleg.draw(a);else{this.configCtx(a);for(var f in this._layers)this._layers[f].draw(a)}else a.drawImage(b.src.getSrc("imgNotif"),
-(a.canvas.width-50)/2,(a.canvas.height-80)/2,50,80)},toString:function(){return"[object MseBaseContainer]"}});b.Layer=function(a,f,g){b.UIObject.call(this,a,g);this.zid=f;this.active=!0;this.objList=[]};extend(b.Layer,b.UIObject);e.extend(b.Layer.prototype,{getObjectIndex:function(a){if(this.objList.indexOf)var b=this.objList.indexOf(a);else for(var g in this.objList)if(this.objList[g]===a){b=g;break}return null!=b&&-1!=b?b:-1},addObject:function(a){return a instanceof b.UIObject?(this.objList.push(a),
-!0):!1},insertObject:function(a,f){return a instanceof b.UIObject&&0<=f&&f<this.objList.length?(this.objList.splice(f,0,a),!0):!1},insertBefore:function(a,b){var g=this.getObjectIndex(b);-1!=g&&this.insertObject(a,g)},insertAfter:function(a,b){var g=this.getObjectIndex(b);-1!=g&&(g+1==this.objList.length?this.addObject(a):this.insertObject(a,g+1))},delObject:function(a){if(isNaN(a)){if(a instanceof b.UIObject){if(this.objList.indexOf)var f=this.objList.indexOf(a);else for(var g in this.objList)if(this.objList[g]===
-a){f=g;break}return null!=f&&-1!=f?(this.objList.splice(f,1),f):!1}}else return this.objList.splice(a,1),a},delAll:function(){for(var a in this.objList)delete this.objList[a];this.objList.length=0},getObject:function(a){return 0<=a&&a<this.objList.length?this.objList[a]:null},delSelf:function(){this.parent instanceof b.BaseContainer&&this.parent.delLayer(this.name)},setActivate:function(a){this.active=a},logic:function(a){if(this.active)for(var b=0;b<this.objList.length;b++)this.objList[b].logic(a)},
-draw:function(a){this.configCtx(a);for(var b=0;b<this.objList.length;b++)this.objList[b].draw(a)}});b.Text=function(a,f,g,d){b.UIObject.call(this,a,f);this.text=g;this.styled=d?!0:!1;this.linkInit=!1;this.zid=12;this.currentEffect=null;this.firstShow=!1;this.addLink=function(a){switch(a.type){case "audio":this.evtDeleg.addListener("firstShow",new b.Callback(a.link.play,a.link));this.getContainer().evtDeleg.addListener("click",new b.Callback(a.link.play,a.link),!0,this);break;case "wiki":this.getContainer().evtDeleg.addListener("click",
-new b.Callback(a.link.init,a.link,this.getContainer()),!0,this);break;case "fb":this.getContainer().evtDeleg.addListener("click",new b.Callback(h.open,h,a.link,"_newtab"),!0,this)}a.offset=this.text.indexOf(a.src);a.owner=this;this.link=a};this.startEffect=function(a){this.styled=!0;b.initTextEffect&&(this.currentEffect=b.initTextEffect(a,this))};this.endEffect=function(){this.currentEffect=null};this.inObj=function(a,b){return this.link?a>=this.getCanvasX()+this.linkOffs&&a<=this.getCanvasX()+this.endOffs+
-20&&b>=this.getCanvasY()&&b<=this.getCanvasY()+20?!0:!1:this.constructor.prototype.inObj.call(this,a,b)};this.logic=function(a){null!=this.currentEffect&&this.currentEffect.logic(a)};this.draw=function(a,b,f){this.firstShow||(this.firstShow=!0,this.evtDeleg.eventNotif("firstShow"));null!=b&&null!=f&&this.setPos(b,f);b=[this.getX(),this.getY()];this.styled&&(a.save(),this.configCtxFlex(a));null!=this.currentEffect?this.currentEffect.draw(a):this.link&&0<=this.link.offset?(this.linkInit||(this.begin=
-this.text.substring(0,this.link.offset),this.linkOffs=a.measureText(this.begin).width,this.endOffs=this.linkOffs+a.measureText(this.link.src).width,this.end=this.text.substr(this.link.offset+this.link.src.length),"audio"==this.link.type&&this.evtDeleg.removeListener("show",this.link.link.play),this.linkInit=!0),a.fillText(this.begin,b[0],b[1]),a.save(),a.fillStyle=j[this.link.type],a.fillText(this.link.src,b[0]+this.linkOffs,b[1]),a.restore(),a.fillText(this.end,b[0]+this.endOffs,b[1])):a.fillText(this.text,
-b[0],b[1]);this.styled&&a.restore()}};extend(b.Text,b.UIObject);b.Text.prototype.toString=function(){return"[object mse.Text]"};b.ArticleLayer=function(a,f,g,e){b.Layer.call(this,a,f,g);this.setDefile=function(a){this.currIndex=this.currTime=0;this.interval=a;this.complete=!1;this.endId=0;this.setSlider();this.ctrUI=new b.UIObject(null,{pos:[this.getX()+50,b.root.height-45],size:[this.width-100,50]});this.ctrUI.accelere=new b.Image(null,{size:[30,30]},"accelerBn");this.ctrUI.ralenti=new b.Image(null,
-{size:[30,30]},"ralentiBn");this.ctrUI.up=new b.Image(null,{size:[30,30]},"upBn");this.ctrUI.down=new b.Image(null,{size:[30,30]},"downBn");this.ctrUI.play=new b.Image(null,{size:[30,30]},"playBn");this.ctrUI.pause=new b.Image(null,{size:[30,30]},"pauseBn");this.ctrUI.tip=new b.Text(null,{textBaseline:"middle",textAlign:"center",font:"italic 20px "+d.font,fillStyle:"#FFF"},"",!0);this.ctrUI.layer=this;this.ctrUI.draw=function(a){a.save();a.translate(this.offx,this.offy);this.accelere.draw(a,this.width-
-30,0);this.up.draw(a,this.width-70,0);this.layer.pause?this.play.draw(a,this.width/2-15,0):this.pause.draw(a,this.width/2-15,0);this.ralenti.draw(a,0,0);this.down.draw(a,40,0);a.restore();this.tip.draw(a)};this.ctrEffect=function(a){var f=0,g=0;b.root.viewport&&(f=b.root.viewport.x,g=b.root.viewport.y);var e=f+a.offsetX-this.ctrUI.offx,d=g+a.offsetY-this.ctrUI.offy;if(!(0>d||50<d)){if(0<=e&&30>=e)this.interval+=200,this.interval=2E3<this.interval?2E3:this.interval,this.ctrUI.tip.text="moins rapide";
-else if(e>=this.width-130&&e<=this.width-100)this.interval-=200,this.interval=300>this.interval?300:this.interval,this.ctrUI.tip.text="plus rapide";else if(e>=this.ctrUI.width/2-15&&e<=this.ctrUI.width/2+15)this.pause=!this.pause,this.ctrUI.tip.text=this.pause?"pause":"reprendre";else return;this.ctrUI.tip.globalAlpha=1;b.slideout(this.ctrUI.tip,10,[[a.offsetX+f,a.offsetY+g],[a.offsetX+f,a.offsetY+g-50]])}};this.upDownStart=function(a){var f=0;b.root.viewport&&(f=b.root.viewport.x);a=f+a.offsetX-
-this.ctrUI.offx;40<=a&&70>=a?this.scrollEvt.rolled=-10:a>=this.width-170&&a<=this.width-140&&(this.scrollEvt.rolled=10)};this.upDownEnd=function(){this.scrollEvt.rolled=0};a=new b.Callback(this.ctrEffect,this);this.getContainer().evtDeleg.addListener("click",a,!0,this.ctrUI);this.getContainer().evtDeleg.addListener("gestureStart",new b.Callback(this.upDownStart,this),!0,this.ctrUI);this.getContainer().evtDeleg.addListener("gestureEnd",new b.Callback(this.upDownEnd,this));this.speedCtr=function(a){switch(a.keyCode){case __KEY_LEFT:this.interval+=
-100;this.interval=2E3<this.interval?2E3:this.interval;break;case __KEY_RIGHT:this.interval-=100,this.interval=300>this.interval?300:this.interval}};a=new b.Callback(this.speedCtr,this);this.getContainer().evtDeleg.addListener("keydown",a)};this.setSlider=function(){this.slider=new b.Slider(this,{},"vertical");this.updateListScreen();this.slider.evtDeleg.addListener("rolling",new b.Callback(function(){this.pause=!0},this));this.slider.evtDeleg.addListener("hide",new b.Callback(function(){var a=this.complete?
-this.objList.length:this.currIndex;if(0==a||this.objList[a-1].getY()<0.55*b.root.height)this.pause=!1},this))};this.updateIndexs=function(a,b){for(var f in this.phraseIndexs)this.phraseIndexs[f]>=a&&(this.phraseIndexs[f]+=b)};this.setLinklist=function(a){for(var b in a)for(var f=a[b].index,g=this.phraseIndexs[f];g<this.phraseIndexs[f+1];g++)if(this.objList[g].text&&0<=this.objList[g].text.indexOf(a[b].src)){a[b].index=g;this.objList[g].addLink(a[b]);break}this.links=a};this.setLinkDelegate=function(a,
-f){if(this.links)for(var g in this.links)this.links[g].type==f&&(this.objList[this.links[g].index].evtDeleg.addListener("show",new b.Callback(a.linkShowHandler,a,this.links[g])),this.objList[this.links[g].index].evtDeleg.addListener("disapear",new b.Callback(a.linkDisapearHandler,a,this.links[g])))};this.addObject=function(a){var b=this.objList.length-1;0<=b?a.setY(this.objList[b].height,this.objList[b]):a.setY(0);this.length+=a.height;this.endId=this.objList.length-1;return this.constructor.prototype.addObject.call(this,
-a)};this.addGame=function(a){a=new b.GameExpose(this,{size:[0.8*this.width,0.65*this.width]},a);a.setX(0.1*this.width);this.addObject(a)};this.insertObject=function(a,b){var f=this.constructor.prototype.insertObject.call(this,a,b);if(!f)return f;this.updateIndexs(b,1);0==b&&(a.setY(0),b=1);for(var g=b;g<this.objList.length;g++)this.objList[g].setY(this.objList[g-1].height,this.objList[g-1]);this.length+=a.height;return f};this.insertGame=function(a,f){var g=new b.GameExpose(this,{size:[0.8*this.width,
-0.65*this.width]},a);g.setX(0.1*this.width);this.insertObject(g,f)};this.delObject=function(a){var b=this.constructor.prototype.delObject.call(this,a);isNaN(b)||(this.length-=a.height,this.updateIndexs(b,-1),this.endId=this.objList.length-1);return b};this.getHeight=function(){var a=this.complete?this.objList.length:this.currIndex;return 0==a?0:this.objList[a-1].offy+this.objList[a-1].height};this.updateListScreen=function(){var a=this.oy-this.offy,a=0>a?0:a,b=a+0.8*this.height,f=this.complete?this.objList.length-
-1:this.currIndex-1,f=0>f?0:f,g=-1,e=-1;if(this.prevOffy<=a){for(var d=this.startId;d<=f;d++)if(-1==g&&this.objList[d].offy+this.objList[d].height>a&&(g=d),-1==e&&this.objList[d].offy>b){e=d;break}g=-1==g?f:g;e=-1==e?f:e}else{for(d=this.endId;0<=d;d--)if(-1==e&&this.objList[d].offy<=b&&(e=d),-1==g&&this.objList[d].offy+this.objList[d].height<=a){g=d;break}g=-1==g?0:g;e=-1==e?0:e}if(g>this.startId)for(d=this.startId;d<g;d++)this.objList[d].evtDeleg.eventNotif("disapear");else if(g<this.startId)for(d=
-g;d<this.startId;d++)this.objList[d].evtDeleg.eventNotif("show");if(e>this.endId)for(d=this.endId+1;d<=e;d++)this.objList[d].evtDeleg.eventNotif("show");else if(e<this.endId)for(d=e+1;d<=this.endId;d++)this.objList[d].evtDeleg.eventNotif("disapear");this.startId=g;this.endId=e};this.logic=function(a){if(this.active&&this.dominate instanceof b.UIObject)this.dominate.logic(a);else{this.scrollEvt.rolled&&this.slider.scroll(this.scrollEvt);this.slider&&this.updateListScreen();for(var f=this.startId;f<=
-this.endId;f++)this.objList[f].logic(a);if(!this.complete&&this.active&&!this.pause&&(this.currTime+=a,this.currTime>=(0!=this.currIndex&&this.objList[this.currIndex-1]instanceof b.Image?3E3:this.interval)))this.currTime=0,this.currIndex<this.objList.length?(a=this.objList[this.currIndex].offy+this.objList[this.currIndex].height/2,a>b.root.height/2&&(new b.KeyFrameAnimation(this,{frame:[0,15],pos:[[this.offx,this.offy],[this.offx,this.height/2-a]]},1)).start(),this.currIndex++):this.complete=!0;this.prevOffy=
-0>this.oy-this.offy?0:this.oy-this.offy}};this.draw=function(a){this.configCtx(a);for(var b=this.startId;b<=this.endId;b++)this.objList[b].draw(a);this.ctrUI&&this.ctrUI.draw(a)};this.inObj=function(a,b){return this.parent.inObj(a,b)};this.interrupt=function(){this.dominate=this.vide};this.play=function(){this.dominate=null};this.length=0;this.prevOffy=this.oy=this.offy;this.lineHeight=g.lineHeight?g.lineHeight:Math.round(1.4*(this.font?checkFontSize(this.font):16));this.phraseIndexs=[];if(e){a=b.root.ctx;
-this.configCtx(a);for(var f=Math.floor(this.width/a.measureText("A").width),e=e.split("\n"),h=g=0;h<e.length;h++)if(0==e[h].length)this.addObject(new b.UIObject(this,{size:[this.width,15]})),g++;else{this.phraseIndexs[h-g]=this.objList.length;for(var j=0;j<e[h].length;){var i=checkNextLine(a,e[h].substr(j),f,this.width);this.addObject(new b.Text(this,{size:[this.width,this.lineHeight]},e[h].substr(j,i)));j+=i}}}this.startId=0;this.endId=this.objList.length-1;this.complete=!0;this.pause=!1;this.scrollEvt=
-{};this.scrollEvt.rolled=0;this.vide=new b.UIObject;this.dominate=null};extend(b.ArticleLayer,b.Layer);b.Image=function(a,f,g){b.UIObject.call(this,a,f);this.img=g;this.currentEffect=null;this.firstShow=!1;b.src.waitSrc(this.img,new b.Callback(this.init,this))};extend(b.Image,b.UIObject);e.extend(b.Image.prototype,{init:function(){if(!this.width){var a=b.src.getSrc(this.img);this.width=a.width;this.height=a.height}},startEffect:function(a){b.initImageEffect&&(this.currentEffect=b.initImageEffect(a,
-this))},endEffect:function(){this.currentEffect=null},logic:function(a){this.firstShow||(this.firstShow=!0,this.evtDeleg.eventNotif("firstShow"));null!=this.currentEffect&&this.currentEffect.logic(a)},draw:function(a,f,g){var d=b.src.getSrc(this.img);this.configCtxFlex(a);if(isNaN(f)||isNaN(g))f=this.getX(),g=this.getY();null!=this.currentEffect?this.currentEffect.draw(a,f,g):a.drawImage(d,f,g,this.width,this.height)},toString:function(){return"[object mse.Image]"}});b.Mask=function(a,f,g){b.UIObject.call(this,
-a,f);null!=g&&(this.zid=g);f.cornerRatio&&(this.cr=f.cornerRatio);this.draw=function(a){this.configCtxFlex(a);this.cr?a.fillRoundRect(this.getX(),this.getY(),this.width,this.height,this.cr):a.fillRect(this.getX(),this.getY(),this.width,this.height)}};b.Mask.prototype=new b.UIObject;b.Mask.prototype.constructor=b.Mask;b.Sprite=function(a,f,g,d,e,h,j,i,n){b.Image.call(this,a,f,g);if(4==arguments.length)this.frames=d;else if(this.fw=d,this.fh=e,9==arguments.length?(this.sx=h,this.sy=j,this.sw=i,this.sh=
-n):(this.sy=this.sx=0,this.sw=this.img.width,this.sh=this.img.height),d<this.sw?this.col=Math.floor(this.sw/d):(this.fw=this.sw,this.col=1),e<this.sh?this.row=Math.floor(this.sh/e):(this.fh=this.sh,this.row=1),this.nb=this.col*this.row,0==this.width&&(this.width=this.fw),0==this.height)this.height=this.fh;this.curr=0};extend(b.Sprite,b.Image);e.extend(b.Sprite.prototype,{init:function(){},appendFrames:function(a){this.frames&&(this.frames=this.frames.concat(a))},appendFrame:function(a){this.frames&&
-this.frames.push(a)},draw:function(a,f,g){this.configCtxFlex(a);isNaN(f)&&(f=this.getX());isNaN(g)&&(g=this.getY());var d=b.src.getSrc(this.img);if(this.frames)e=this.frames[this.curr][0],h=this.frames[this.curr][1],a.drawImage(d,e,h,this.frames[this.curr][2],this.frames[this.curr][3],f,g,this.getWidth(),this.getHeight());else{var e=this.sx+this.curr%this.col*this.fw,h=this.sy+Math.floor(this.curr/this.col)*this.fh;a.drawImage(d,e,h,this.fw,this.fh,f,g,this.getWidth(),this.getHeight())}}});b.Game=
-function(){b.UIObject.call(this,null,{});this.offx=0.2*b.root.width;this.offy=0.2*b.root.height;this.width=0.6*b.root.width;this.height=0.6*b.root.height;this.type="DEP"};extend(b.Game,b.UIObject);e.extend(b.Game.prototype,{state:"DEFAULT",msg:{DEFAULT:"C'est un jeu, sans message......"},getMsg:function(){return this.msg[this.state]},setExpose:function(a){this.expo=a;this.type="INDEP"},addTo:function(a){this.parent=a;this.setPos(0,0);this.setSize(a.getWidth(),a.getHeight());a.addObject(this)},start:function(){b.root.container.evtDeleg.setDominate(this);
-b.root.gamewindow.loadandstart(this)},draw:function(){},end:function(){b.root.gamewindow.end();this.expo&&this.expo.endGame()},lose:function(){b.root.gamewindow.lose()}});b.GameShower=function(){b.UIObject.call(this,null,{});this.currGame=null;this.globalAlpha=0;this.state="DESACTIVE";b.src.addSource("gameover","../images/gameover.jpg","img",!0);this.loseimg=new b.Image(this,{pos:[0,0]},"gameover");this.losetext=new b.Text(this,{font:"Bold 36px "+b.configs.font,fillStyle:"#FFF",textBaseline:"middle",
-textAlign:"center"},"GAME OVER...",!0);this.losetext.evtDeleg.addListener("show",new b.Callback(this.losetext.startEffect,this.losetext,{typewriter:{speed:2}}));this.passBn=new b.Button(this,{size:[105,35],font:"12px "+d.font,fillStyle:"#FFF"},"Je ne joue plus","aideBar");this.firstShow=!1;this.load=function(a){a&&a instanceof b.Game&&(this.currGame=a,this.firstShow=!1,this.state="LOAD",b.fadein(this,15),b.fadein(this.currGame,15))};this.start=function(){this.currGame&&(this.setPos(this.currGame.offx,
-this.currGame.offy),this.setSize(this.currGame.width,this.currGame.height),this.loseimg.setSize(this.width-5,this.height-5),this.losetext.setPos(this.width/2,this.height/2),this.passBn.setPos(this.currGame.width-115,this.currGame.height-50),this.currGame.init&&this.currGame.init(),this.state="START")};this.loadandstart=function(a){this.load(a);this.start()};this.restart=function(f){b.root.evtDistributor.removeListener("click",a);this.passBn.inObj(f.offsetX,f.offsetY)?this.currGame.end():(this.state=
-"START",this.currGame.init())};var a=new b.Callback(this.restart,this);this.lose=function(){this.state="LOSE";this.losetext.evtDeleg.eventNotif("show");b.root.evtDistributor.addListener("click",a,!0,this.currGame)};this.end=function(){b.fadeout(this.currGame,25);b.fadeout(this,25,this.cbdesact)};this.desactive=function(){this.state="DESACTIVE";b.root.evtDistributor.setDominate(null)};this.cbdesact=new b.Callback(this.desactive,this);this.logic=function(a){"LOSE"==this.state&&this.losetext.logic();
-if("START"!=this.state&&"LOAD"!=this.state)return!1;MseConfig.mobile&&"landscape"!=MseConfig.orientation||this.currGame.logic(a);return!0};this.draw=function(a){0!=this.globalAlpha&&((this.configCtx(a),MseConfig.mobile||(a.strokeStyle="rgb(188,188,188)",a.lineWidth=5,a.strokeRect(this.offx-2.5,this.offy-2.5,this.width,this.height),a.lineWidth=1),"INDEP"==this.currGame.type&&MseConfig.mobile&&"landscape"!=MseConfig.orientation)?a.drawImage(b.src.getSrc("imgNotif"),(a.canvas.width-50)/2,(a.canvas.height-
-80)/2,50,80):"START"==this.state?(this.firstShow||(this.firstShow=!0,"INDEP"==this.currGame.type&&this.evtDeleg.eventNotif("firstShow"),MseConfig.mobile&&(this.currGame.setPos(0,0),this.currGame.setSize(MseConfig.pageWidth,MseConfig.pageHeight))),this.currGame.draw(a)):"LOSE"==this.state&&(a.fillStyle="#000",a.fillRect(this.getX(),this.getY(),this.width-5,this.height-5),this.losetext.draw(a),this.passBn.draw(a)))}};b.GameShower.prototype=new b.UIObject;b.GameShower.prototype.constructor=b.GameShower;
-b.GameExpose=function(a,f,g){b.UIObject.call(this,a,f);this.firstShow=!1;this.game=g;this.game.setExpose(this);this.msg="";this.msginlines=[];this.font||(this.font="12px Verdana");this.lineHeight=Math.round(1.2*checkFontSize(this.font));this.evtDeleg.addListener("firstShow",new b.Callback(a.interrupt,a));this.passBn=new b.Button(this,{pos:[this.width-115,this.height-60],size:[105,35],font:"12px "+d.font,fillStyle:"#FFF"},"Je ne joue pas","aideBar");this.launchGame=function(a){this.getContainer().evtDeleg.removeListener("click",
-this.launchcb);this.passBn.inObj(a.offsetX,a.offsetY)?this.endGame():this.game.start()};this.launchcb=new b.Callback(this.launchGame,this);this.endGame=function(){a.play&&a.play()};this.logic=function(){if(!this.firstShow){this.firstShow=true;this.evtDeleg.eventNotif("firstShow");this.getContainer().evtDeleg.addListener("click",this.launchcb,true)}if(this.msg!=this.game.getMsg()){this.msg=this.game.getMsg();this.msginlines.splice(0,this.msginlines.length);this.bullWidth=this.width;this.bullHeight=
-0;if(!this.msg||this.msg=="")this.bullHeight=0;else{var a=b.root.ctx;a.save();a.font=this.font;for(var f=Math.floor((this.bullWidth-20)/a.measureText("A").width),g=0;g<this.msg.length;){var d=checkNextLine(a,this.msg.substr(g),f,this.bullWidth-20);this.msginlines.push(this.msg.substr(g,d));g=g+d}a.restore()}}};this.draw=function(a){a.save();a.translate(this.getX(),this.getY()+15);a.fillStyle="#000";a.fillRect(0,0,this.width,this.height-30);a.strokeStyle="rgb(188,188,188)";a.lineWidth=5;a.strokeRect(0,
--2.5,this.width,this.height-30);a.lineWidth=1;a.font=this.font;a.textBaseline="top";a.fillStyle="#FFF";for(var b=(this.height-30-this.msginlines.length*this.lineHeight)/2,f=0;f<this.msginlines.length;f++)a.fillText(this.msginlines[f],10,b+f*this.lineHeight);a.restore();a.save();this.passBn.draw(a);a.restore()}};b.GameExpose.prototype=new b.UIObject;b.GameExpose.prototype.constructor=b.GameExpose;b.Slider=function(a,f,g,d,e){e||(e=a.parent?a.parent:b.root.container);b.UIObject.call(this,e,f);e.addLayer?
-e.addLayer("slider",this):e.addObject&&e.addObject(this);this.fillStyle="rgba(145,152,159, 0.7)";this.tar=a;d||(d=0);this.enScroll=!1;this.globalAlpha=this.scrollT=0;"horizontal"==g?(this.orientation="horizontal",this.setPos(this.tar.getX(),this.tar.getY()+this.tar.getHeight()+d),this.setSize(this.tar.getWidth(),10),this.loc=0,this.length=this.width):(this.orientation="vertical",this.setPos(this.tar.getX()+this.tar.getWidth()+d,this.tar.getY()),this.setSize(10,this.tar.getHeight()),this.loc=0,this.length=
-this.height);this.cbScroll=new b.Callback(this.scroll,this);this.cbGest=new b.Callback(this.gestUpdate,this);this.getContainer().evtDeleg.addListener("gestureUpdate",this.cbGest,!1,this.tar);MseConfig.mobile||this.getContainer().evtDeleg.addListener("mousewheel",this.cbScroll,!1,this.tar)};extend(b.Slider,b.UIObject);e.extend(b.Slider.prototype,{show:function(){b.fadein(this,4);this.enScroll=!0;this.evtDeleg.eventNotif("show")},hide:function(){1==this.globalAlpha&&b.fadeout(this,4);this.enScroll=
-!1;this.evtDeleg.eventNotif("hide")},scroll:function(a){0==this.globalAlpha&&this.show();this.scrollT=0;if("vertical"==this.orientation){if(this.tar.offy+=a.rolled,100<this.tar.offy||this.tar.offy+this.tar.getHeight()<this.tar.parent.getHeight()/2)this.tar.offy-=a.rolled}else if(this.tar.offx+=a.rolled,100<this.tar.offx||this.tar.offx+this.tar.getWidth()<this.tar.parent.getWidth()/2)this.tar.offx-=a.rolled;this.evtDeleg.eventNotif("rolling",a.rolled)},gestUpdate:function(a){4<a.listX.length&&(a.rolled=
-a.listY[a.listY.length-1]-a.listY[a.listY.length-2],this.scroll(a))},logic:function(a){if(this.enScroll)if(this.scrollT+=a,600<this.scrollT)this.hide();else{if("vertical"==this.orientation)var a=this.tar.parent.getHeight(),b=this.tar.getHeight(),g=-this.tar.offy;else a=this.tar.parent.getWidth(),b=this.tar.getWidth(),g=-this.tar.offx;this.length=a*a/b;this.loc=a*g/b;this.loc+this.length>a-30?this.length=a-this.loc-30:0>this.loc&&(this.length+=this.loc,this.loc=0)}},draw:function(a){if(0!=this.globalAlpha){a.save();
-this.configCtxFlex(a);a.translate(this.getX(),this.getY());a.beginPath();if("vertical"==this.orientation){var b=this.width/2;a.arc(b,this.loc+b,b,0,Math.PI,!0);a.lineTo(0,this.loc+this.length-b);a.arc(b,this.loc+this.length-b,b,Math.PI,2*Math.PI,!0);a.lineTo(this.width,this.loc+b)}else b=this.height/2,a.arc(this.loc+b,b,b,1.5*Math.PI,0.5*Math.PI,!1),a.lineTo(this.loc+l-b,0),a.arc(this.loc+l-b,b,b,0.5*Math.PI,1.5*Math.PI,!1),a.lineTo(this.loc+b,this.height);a.fill();a.restore()}}});b.Button=function(a,
-f,g,d,e,h){b.UIObject.call(this,a,f);this.txt=g;this.img=d;this.setLink(e,h)};extend(b.Button,b.UIObject);e.extend(b.Button.prototype,{urlClicked:function(){h.open(this.link,"_newtab")},setLink:function(a,f){a&&(this.link=a);"url"==f&&this.getContainer().evtDeleg.addListener("click",new b.Callback(this.urlClicked,this),!0,this)},draw:function(a,f,g){this.configCtxFlex(a);a.fillStyle="rgb(255,255,255)";a.textAlign="center";a.textBaseline="middle";null==f&&(f=this.getX(),g=this.getY());var d=b.src.getSrc(this.img);
-d&&a.drawImage(d,f,g,this.width,this.height);this.txt&&a.fillText(this.txt,f+this.width/2,g+this.height/2)}});b.MenuItem=function(a,f,g,d,e,h){b.UIObject.call(this,a,f);this.txt=g;this.img=d;this.zid=11;this.linkType=null!=e&&null!=h?e:"None";this.link=h;this.linkClicked=function(){switch(this.linkType){case "None":break;case "SubMenu":this.parent.subShow=this.link;var a=this.parent.subMenu[this.link],f;for(f in a)b.fadein(a[f],8);break;case "Card":this.link.evtDeleg.addListener("click",new b.Callback(b.root.revealCard,
-b.root,b.root.container),!0);b.root.poseCard(this.link);break;default:b.changePage(this.link)}};a=new b.Callback(this.linkClicked,this);switch(this.linkType){case "None":break;case "SubMenu":MseConfig.mobile?b.root.evtDistributor.addListener("click",a,!0):b.root.evtDistributor.addListener("enter",a,!0);break;default:b.root.evtDistributor.addListener("click",a,!0)}this.draw=function(a){this.configCtxFlex(a);if(this.img){var f=b.src.getSrc(this.img);a.drawImage(f,this.getX(),this.getY(),this.width,
-this.height)}else a.fillRect(this.getX(),this.getY(),this.width,this.height);this.txt&&a.fillText(this.txt,this.getX()+this.width/2,this.getY()+this.height/2)}};b.MenuItem.prototype=new b.UIObject;b.MenuItem.prototype.constructor=b.MenuItem;b.Menu=function(a,f,g,e){b.Layer.call(this,a,10,f);this.iwidth=g;this.iheight=e;this.ioffx=(this.width-g)/2;this.espace=20<e/2?e/2:20;this.fillStyle="rgb(145,152,159)";this.maskAlpha=0.45;this.shadow={shadowOffsetX:0,shadowOffsetY:0,shadowBlur:5,shadowColor:"rgb(67, 67, 67)"};
-this.subMenu=[];this.subShow=-1;this.offx-=this.width;this.state="PRESENT";this.zonex=this.width;this.inObj=function(a,b){if(this.insideRec)var f=this.getCanvasX()-this.zonex+this.insideRec[0],g=this.getCanvasY()+this.insideRec[1],d=this.insideRec[2],e=this.insideRec[3];else f=this.getCanvasX()-this.zonex,g=this.getCanvasY(),d=2*this.getWidth(),e=2*this.getHeight();return a>f&&a<f+d&&b>g&&b<g+e?!0:!1};this.getX=function(){return(this.parent?this.parent.getX():0)+this.offx+this.zonex};this.slideInOut=
-function(){switch(this.state){case "HIDE":this.name&&b.root.container.desactiveOthers(this.name);this.state="IN";break;case "PRESENT":this.name&&b.root.container.reactiveOthers(),this.state="OUT"}};this.hide=function(){this.state="HIDE";this.globalAlpha=this.zonex=0};this.addItem=function(a,f,g,d){var e=this.objList.length;"SubMenu"==g&&(d=e);a=new b.MenuItem(this,{pos:[this.ioffx,0==e?this.espace:this.objList[e-1].offy+this.iheight+this.espace],size:[this.iwidth,this.iheight]},a,f,g,d);this.addObject(a);
-return a};this.addSubItem=function(a,f,g,e,h){if(this.objList[a])return f=new b.MenuItem(this,{pos:[this.width+6,this.objList[a].offy],size:[180,this.iheight],globalAlpha:0,font:"Bold 16px "+d.font,textAlign:"center",fillStyle:"#FFF",textBaseline:"middle"},f,g,e,h),this.subMenu[a]||(this.subMenu[a]=[]),this.subMenu[a].push(f),f};this.delItem=function(a){this.objList.splice(a,1)};this.delSubItem=function(a,b){this.subMenu[b]&&this.subMenu[b].splice(a,1)};this.logic=function(a){switch(this.state){case "OUT":0<
-this.zonex?(this.globalAlpha-=a/500,0>this.globalAlpha&&(this.globalAlpha=0),this.zonex-=a/500*this.width):(this.state="HIDE",this.globalAlpha=0);break;case "IN":this.zonex<this.width?(this.globalAlpha+=a/500,1<this.globalAlpha&&(this.globalAlpha=1),this.zonex+=a/500*this.width):(this.state="PRESENT",this.globalAlpha=1)}};this.draw=function(a){if("HIDE"!=this.state){var b=this.maskAlpha*this.getAlpha();a.fillStyle="rgba(0,0,0,"+b+")";a.fillRect(this.getX(),this.getY(),256,this.height);this.configCtxFlex(a);
-a.fillRect(this.getX(),this.getY(),this.width,this.height);for(var f in this.objList)this.objList[f].draw(a);if(0<=this.subShow)for(f in this.subMenu[this.subShow])this.subMenu[this.subShow][f].draw(a)}};this.getContainer().evtDeleg.addListener("click",new b.Callback(this.slideInOut,this),!0)};b.Menu.prototype=new b.Layer;b.Menu.prototype.constructor=b.Menu;b.Card=function(a,f,g){b.UIObject.call(this,a,f);this._layers=[];(this.ui=g)&&this.addLayer("ui",g);this.margin=[15,15,15,15];this.angle=randomInt(40)-
-20;this.lw=this.width-this.margin[1]-this.margin[3];this.lh=this.height-this.margin[0]-this.margin[2]};extend(b.Card,b.UIObject);e.extend(b.Card.prototype,{addLayer:b.BaseContainer.prototype.addLayer,delLayer:b.BaseContainer.prototype.delLayer,getLayer:b.BaseContainer.prototype.getLayer,sortLayer:b.BaseContainer.prototype.sortLayer,draw:function(a){this.ui||(a.fillStyle="rgb(252,250,242)",a.fillRoundRect(this.getX(),this.getY(),this.width,this.height,20))},ptRotate:function(a,b){var g=this.getX()+
-this.width/2,d=this.getY()+this.height/2,e=a-g,h=b-d,j=this.angle*Math.PI/180,i=Math.sin(j),j=Math.cos(j);return[g+(e*j+h*i),d+(-e*i+h*j)]},inObj:function(a,f){var g=this.ptRotate(a,f);return b.UIObject.prototype.inObj.call(this,g[0],g[1])?!0:!1}});b.ImageCard=function(a,f,g,d,e){b.Card.call(this,a,f,g);d&&b.src.getSrc(d)&&(this.img=d,this.legend=e);b.src.waitSrc(this.img,new b.Callback(this.init,this))};extend(b.ImageCard,b.Card);e.extend(b.ImageCard.prototype,{legendheight:35,setImage:function(a,
-f){a&&b.src.getSrc(a)&&(this.img=a,this.legend=f)},init:function(){var a=this.lw,f=this.height-this.margin[0]-this.margin[2]-this.legendheight,g=b.src.getSrc(this.img),d=a/g.width,e=f/g.height,d=d<e?d:e;this.iw=g.width*d;this.ih=g.height*d;this.ix=this.margin[3]+(a-this.iw)/2;this.iy=this.margin[0]+(f-this.ih)/2},draw:function(a){a.save();a.translate(this.getX()+this.width/2,this.getY()+this.height/2);a.rotate(this.angle*Math.PI/180);a.translate(-this.width/2,-this.height/2);for(var f in this._layers)this._layers[f].draw(a);
-this.ui||(a.fillStyle="rgb(252,250,242)",a.fillRoundRect(0,0,this.width,this.height,20));this.img&&(a.drawImage(b.src.getSrc(this.img),this.ix,this.iy,this.iw,this.ih),a.font="italic 12px Verdana",a.textBaseline="top",a.textAlign="center",a.fillStyle="#000",a.fillTextWrapped(this.legend,this.ix+this.iw/2,this.iy+this.ih+5,this.lw,15),a.restore())}});b.TextContent=function(a,f){b.UIObject.call(this,a,f);this.font||(this.font="14px Verdana");this.textAlign||(this.textAlign="left");this.fillStyle||(this.fillStyle=
-"#000");this.textBaseline="top";this.sections=[];this.length=0};extend(b.TextContent,b.UIObject);e.extend(b.TextContent.prototype,{seplineoff:-3.5,titletextoff:5,sectionsep:12,lineHeight:18,addSection:function(a,f,g){if(!("string"!=typeof f||"string"!=typeof g)){switch(a){case "text":var d=g;break;case "link":d=new b.Button(this,{pos:[15,this.length+this.titletextoff+this.lineHeight],size:[80,this.lineHeight],font:this.font,fillStyle:"#FFF"},"Lien","wikiBar",g,"url")}this.sections.push([a,f,d]);this.configCtx(b.root.ctx);
-a=wrapText(f,b.root.ctx,this.width).length;a+=wrapText(g,b.root.ctx,this.width-15).length;a=a*this.lineHeight+this.titletextoff+this.sectionsep;this.length+=a}},getHeight:function(){return this.length},draw:function(a){a.save();a.translate(this.offx,this.offy);this.configCtxFlex(a);a.lineCap="round";for(var b=0,d=0;d<this.sections.length;d++)switch(a.font="bold "+this.font,b+=a.fillTextWrapped(this.sections[d][1],0,b,this.width,this.lineHeight)+this.titletextoff,a.beginPath(),a.moveTo(0,b+this.seplineoff),
-a.lineTo(this.width,b+this.seplineoff),a.stroke(),a.font=this.font,this.sections[d][0]){case "text":b+=a.fillTextWrapped(this.sections[d][2],15,b,this.width-15,this.lineHeight)+this.sectionsep;break;case "link":this.sections[d][2].draw(a,15,b),b+=this.lineHeight+this.sectionsep}a.restore()}});b.TextCard=function(a,f,d){b.Card.call(this,a,f,d);this.content=new b.TextContent(this,{pos:[this.margin[3],this.margin[0]],size:[this.lw,this.lh]});this.addLayer("content",this.content);this.slider=new b.Slider(this.content,
-{},"vertical");this.slider.setPos(this.width-this.margin[1],0)};extend(b.TextCard,b.Card);e.extend(b.TextCard.prototype,{getContainer:function(){return this},addSection:function(a,b){this.content.addSection("text",a,b)},addLink:function(a,b){this.content.addSection("link",a,b)},draw:function(a){a.save();a.translate(this.getX()+this.width/2,this.getY()+this.height/2);a.rotate(this.angle*Math.PI/180);a.translate(-this.width/2,-this.height/2);this.ui||(a.fillStyle="rgb(252,250,242)",a.fillRoundRect(0,
-0,this.width,this.height,20));for(var b in this._layers)this._layers[b].draw(a);a.restore()}});b.WikiLayer=function(){b.Layer.call(this,null,11,{});this.currCard=null;this.cbDragStart=new b.Callback(this.dragStart,this);this.cbDragMove=new b.Callback(this.dragMove,this);this.cbDragEnd=new b.Callback(this.dragEnd,this)};extend(b.WikiLayer,b.Layer);e.extend(b.WikiLayer.prototype,{cardw:250,cardh:320,hide:function(){var a=this.getContainer();a&&(a.evtDeleg.removeListener("gestureStart",this.cbDragStart),
-a.evtDeleg.removeListener("gestureUpdate",this.cbDragMove),a.evtDeleg.removeListener("gestureEnd",this.cbDragEnd));this.parent.reactiveOthers();this.globalAlpha=0;this.parent.delLayer("wiki")},init:function(a){if(!(!a instanceof b.UIObject)){this.parent=a;this.setSize(a.getWidth(),a.getHeight());this.setPos(0,0);this.cardx=(this.width-this.cardw)/2;this.cardy=(this.height-this.cardh)/2;for(var f in this.objList)this.objList[f].setPos(this.cardx,this.cardy);a.evtDeleg.addListener("gestureStart",this.cbDragStart,
-!0,this);a.evtDeleg.addListener("gestureUpdate",this.cbDragMove,!0,this);a.evtDeleg.addListener("gestureEnd",this.cbDragEnd,!0,this);a.addLayer("wiki",this);this.globalAlpha=1;a.desactiveOthers("wiki")}},addImage:function(a,f){this.addObject(new b.ImageCard(this,{size:[this.cardw,this.cardh]},null,a,f))},addTextCard:function(){this.textCard=new b.TextCard(this,{size:[this.cardw,this.cardh]},null);this.addObject(this.textCard)},addExplication:function(a,b){this.addTextCard();this.textCard.addSection(a,
-b)},addLink:function(a,b){this.textCard||this.addTextCard();this.textCard.addLink(a,b)},dragStart:function(a){for(var b=this.objList.length-1;0<=b;b--)if(this.objList[b].inObj(a.offsetX,a.offsetY)){this.objList[b].evtDeleg.eventNotif("click",a)||(this.currCard=this.objList[b]);return}this.hide()},dragMove:function(a){this.currCard&&this.currCard.move(a.listX[a.listX.length-1]-a.listX[a.listX.length-2],a.listY[a.listY.length-1]-a.listY[a.listY.length-2])},dragEnd:function(){this.currCard=null}});b.PageWiki=
-function(a,f,g,e,h,j){b.Layer.call(this,a,f,g);a.addLayer("content",this);var i=b.root.ctx;i.font="22px "+d.font;var p=1.2*i.measureText(e).width;this.title=new b.Button(this,{pos:[(this.width-p)/2,15],size:[p,35],font:"22px "+d.font,fillStyle:"#FFF"},e,"wikiBar");i.font="bold 14px Arial Narrow";p=1.2*i.measureText("Revenir \u00e0 l'histoire").width;this.quit=new b.Button(this,{pos:[this.width-p-30,this.height-30],size:[p,25],font:"bold 14px Arial Narrow",fillStyle:"#FFF"},"Revenir \u00e0 l'histoire",
-"wikiBar");this.photos=h;this.phOff=this.width/2;this.espace=this.width/10;this.mask=new b.Mask(this,{pos:[0,0],size:[this.width,185],fillStyle:"#434343"});g.pos=[this.offx+30,this.offy+210];g.size=[this.width-60,this.height-165];this.content=new b.ArticleLayer(a,f,g,j);this.content.setSlider();this.v=0;this.setQuitTarget=function(a){this.getContainer().evtDeleg.addListener("click",new b.Callback(b.root.transition,b.root,a),!0,this.quit)};this.addPhoto=function(a){this.photos.push(a)};this.logic=
-function(a){if(0!=this.v&&null!=this.photos){this.phOff+=this.v;var f=3*-this.espace,d,g;for(g in this.photos)d=b.src.getSrc(this.photos[g]),f+=100*d.width/d.height+this.espace;this.phOff>this.width/2&&(this.phOff=this.width/2);this.phOff+f<this.width/2&&(this.phOff=this.width/2-f)}this.content.logic(a)};this.draw=function(a){this.content.draw(a);this.mask.draw(a);this.title.draw(a);this.quit.draw(a);a.save();a.globalAlpha=1;a.strokeStyle="#FFF";a.fillStyle="#727272";a.translate(this.getX(),this.getY()+
-65);a.fillRect(0,1,this.width,118);a.beginPath();a.moveTo(0,0);a.lineTo(this.width,0);a.moveTo(0,120);a.lineTo(this.width,120);a.stroke();if(null!=this.photos){if(0<this.photos.length)var f=this.phOff-50;var d,g,e;for(e in this.photos){g=b.src.getSrc(this.photos[e]);d=100*g.width/g.height;if(0>f){if(0<f+d){var h=-f*g.width/d;a.drawImage(g,h,0,g.width-h,g.height,0,10,d+f,100)}}else f+d>this.width?f<this.width&&a.drawImage(g,0,0,(this.width-f)*g.width/d,g.height,f,10,this.width-f,100):a.drawImage(g,
-f,10,d,100);f+=d+this.espace}}a.restore()};this.onMove=function(a){var b=a.offsetX-this.getX(),a=a.offsetY-this.getY();65>=a||185<=a?this.v=0:(b-=this.width/2,this.v=30<Math.abs(b)?b/20:0)};this.getContainer().evtDeleg.addListener("move",new b.Callback(this.onMove,this),!0)};b.PageWiki.prototype=new b.Layer;b.PageWiki.prototype.constructor=b.PageWiki;b.Video=function(a,f,d){b.UIObject.call(this,a,f);this.srcs=d;this.launch=function(){b.root.video.load(d);b.root.video.show()};this.draw=function(a){a.save();
-a.fillStyle="#000";a.strokeStyle="#FFF";a.lineWidth=4;a.translate(this.getX(),this.getY());a.strokeRoundRect(0,0,this.width,this.height,5);a.fillRoundRect(0,0,this.width,this.height,5);a.beginPath();a.moveTo(this.width/2-25,this.height/2-20);a.lineTo(this.width/2+25,this.height/2);a.lineTo(this.width/2-25,this.height/2+20);a.lineTo(this.width/2-25,this.height/2-20);a.fillStyle="#FFF";a.fill();a.restore()};this.getContainer().evtDeleg.addListener("click",new b.Callback(this.launch,this),!0,this)};
-b.Video.prototype=new b.UIObject;b.Video.prototype.constructor=b.Video;b.Timeline=function(a,f,d,e){if(!a.initTimeline||!a.runTimeline)return null;this.src=a;if(0<f)this.tsFixed=!0,this.interval=f,this.length=null!=e?e:0;else{if(!d instanceof Array)return null;this.tsFixed=!1;this.timeprog=d;this.length=d.length}this.src.initTimeline(this);this.start=function(){this.currIndex=this.currTimestamp=0;this.inPause=this.end=!1;this.src.runTimeline();b.currTimeline=this;this.timer=this.tsFixed?setInterval("mse.currTimeline.run()",
-this.interval):setTimeout("mse.currTimeline.run()",this.timeprog[this.currIndex])};this.run=function(){this.end?this.tsFixed?clearInterval(this.timer):clearTimeout(this.timer):this.inPause||(this.currTimestamp+=this.tsFixed?this.interval:this.timeprog[this.currIndex],this.currIndex++,0==this.length||this.currIndex<e?this.tsFixed?this.src.runTimeline(this.interval):(this.timer=setTimeout("mse.currTimeline.run()",this.timeprog[this.currIndex]),this.src.runTimeline(this.timeprog[this.currIndex-1])):
-this.end=!0)};this.playpause=function(){this.end||(this.inPause=!this.inPause,this.inPause||(b.currTimeline!=this&&(b.currTimeline=this),this.timer=setTimeout("mse.currTimeline.run()",1200)))};this.play=function(){this.end||(this.inPause=!1,b.currTimeline!=this&&(b.currTimeline=this),this.timer=setTimeout("mse.currTimeline.run()",1200))};this.pause=function(){this.end||(this.inPause=!0)}};b.FrameAnimation=function(a,f,d,e){if(!f instanceof Array||!a instanceof b.Sprite)return null;this.sprite=a;this.seq=
-f;this.rep=isNaN(d)?1:d;this.delay=e?e:0;this.active=!1;this.evtDeleg=new b.EventDelegateSystem;b.root.animations.push(this);this.start=function(){this.currFr=0;this.currRep=1;this.delayCount=this.delay;this.active=!0;this.evtDeleg.eventNotif("start")};this.stop=function(){this.currRep=this.currFr=0;this.active=!1;this.evtDeleg.eventNotif("end")};this.logic=function(){if(!this.active)return!1;if(this.currFr<this.seq.length-1)0!=this.delay?(0==this.delayCount&&(this.currFr++,this.delayCount=this.delay),
-this.delayCount--):this.currFr++;else if(this.currRep<this.rep||0==this.rep)this.currRep++,this.currFr=0;else return this.active=!1,this.evtDeleg.eventNotif("end"),!0;this.sprite.curr=this.seq[this.currFr];return!1}};b.KeyFrameAnimation=function(a,f,d){if(!a instanceof b.UIObject)return mseLog("Type Error","Element isn't a Mse UI Element"),null;if(!f||!f.frame)return mseLog("Parameter Error","No frame stamp defined"),null;for(var e in f)if(f[e].length!=f.frame.length)return mseLog("Parameter Error",
-"KeyFrame length not compatible with the frame stamp"),null;this.length=f.frame.length;if(2>this.length)return mseLog("Length Error","KeyFrame Length must be larger than 2"),null;if(0!=f.frame[0])return mseLog("Error","Frame start point is not 0"),null;this.duration=f.frame[this.length-1];this.element=a;this.repeat=null==d?1:d;this.map=f;this.resetAnimation();this.evtDeleg=new b.EventDelegateSystem;this.map.opacity&&(this.element.globalAlpha=0==this.map.opacity[0]?0.01:this.map.opacity[0])};b.KeyFrameAnimation.prototype=
-{construction:b.KeyFrameAnimation,setNoTransition:function(){this.notransition=!0},resetAnimation:function(){this.currId=-1;this.currFr=0;this.nextKf=this.map.frame[0];this.currRp=1},start:function(){for(var a in b.root.animations)if(b.root.animations[a]==this)return;b.root.animations.push(this)},isEnd:function(){return this.currFr>this.duration&&this.currRp==this.repeat?!0:!1},logic:function(){if(this.currFr<=this.duration){if(this.currFr==this.nextKf){this.currId++;this.nextKf=this.map.frame[this.currId+
-1];for(var a in this.map){var b=this.map[a][this.currId];switch(a){case "frame":continue;case "pos":this.element.setPos(b[0],b[1]);break;case "size":this.element.setSize(b[0],b[1]);break;case "opacity":this.element.globalAlpha=b;break;case "fontSize":var d=checkFontSize(this.element.font);this.element.font=this.element.font.replace(d,b.toString());break;case "scale":this.element.scale=b;break;case "spriteSeq":this.element.curr=b}}}else if(!this.notransition){var e=(this.currFr-this.map.frame[this.currId])/
-(this.nextKf-this.map.frame[this.currId]);for(a in this.map)switch(b=this.map[a][this.currId],d=this.map[a][this.currId+1],a){case "frame":case "spriteSeq":continue;case "pos":var h=b[2]?this.calTrans[b[2]]?b[2]:2:2,j=this.calTrans[h](e,b[0],d[0]),b=this.calTrans[h](e,b[1],d[1]);this.element.setPos(j,b);break;case "size":h=b[2]?this.calTrans[b[2]]?b[2]:2:2;j=this.calTrans[h](e,b[0],d[0]);b=this.calTrans[h](e,b[1],d[1]);this.element.setSize(j,b);break;case "opacity":h=b[1]?this.calTrans[b[1]]?b[1]:
-2:2;this.element.globalAlpha=this.calTrans[h](e,b[0]?b[0]:b,d[0]?d[0]:d);break;case "fontSize":h=b[1]?this.calTrans[b[1]]?b[1]:2:2;b=Math.floor(this.calTrans[h](e,b[0]?b[0]:b,d[0]?d[0]:d));d=checkFontSize(this.element.font);this.element.font=this.element.font.replace(d,b.toString());break;case "scale":h=b[1]?this.calTrans[b[1]]?b[1]:2:2,this.element.scale=this.calTrans[h](e,b[0]?b[0]:b,d[0]?d[0]:d)}}this.currFr++}else if(0===this.repeat||this.currRp<this.repeat)this.currRp++,this.currFr=this.currId=
-0,this.nextKf=this.map.frame[1];else return this.evtDeleg.eventNotif("end"),!0;return!1},calTrans:{1:function(a,b){return b},2:function(a,b,d){return b+a*(d-b)}}};b.Animation=function(a,d,e,h,j){(this.statiq=e?!0:!1)?b.UIObject.call(this,null,{}):b.UIObject.call(this,h,j?j:{});this.objs={};this.animes=[];this.duration=a;this.repeat=d;this.state=0;this.startCb=new b.Callback(this.start,this);this.block=!1};extend(b.Animation,b.UIObject);e.extend(b.Animation.prototype,{addObj:function(a,d){d instanceof
-b.UIObject&&(this.objs[a]=d,this.statiq&&(d.parent=this))},getObj:function(a){return this.objs[a]},addAnimation:function(a,d,e){if(this.objs[a]&&(a=new b.KeyFrameAnimation(this.objs[a],d,this.repeat)))e&&a.setNoTransition(),this.animes.push(a)},start:function(){this.state=1;if(this.statiq&&-1==e.inArray(this,b.root.animes)){for(var a in this.animes)this.animes[a].resetAnimation();b.root.animes.push(this)}else if(!this.statiq&&-1==e.inArray(this,b.root.animations)){for(a in this.animes)this.animes[a].resetAnimation();
-b.root.animations.push(this)}this.evtDeleg.eventNotif("start")},pause:function(){this.state=0},logic:function(a){if(this.state){for(var b in this.animes)this.animes[b].logic(a);for(b in this.animes)if(!this.animes[b].isEnd())return!1;this.state=0;return!1}this.evtDeleg.eventNotif("end");return!0},draw:function(a){for(var b in this.objs)this.objs[b].draw(a)}});h.mse=b})(window,$);
-(function(h,e){var b="click,doubleClick,longPress,move,swipe,gestureStart,gestureUpdate,gestureEnd,gestureSingle,keydown,keypress,keyup,scroll,swipeleft,swiperight".split(",");h.Script=function(){this.script=null;this.states={};this.expects={};this.success={};this.invoke=function(){"function"==typeof this.script?this.script.call(this):this.script instanceof h.Callback&&this.script.invoke()};this.checkConditions=function(){for(var b in this.success)if(!this.success[b])return;this.invoke()};this.conditionChanged=
-function(b,e){if("everytime"==this.expects[b]||"once"==this.expects[b]&&"triggered"!=this.states[b])this.success[b]=!0,this.checkConditions();this.states[b]="string"==typeof e?e:"triggered"}};h.Script.register=function(d,j,i){var a=new h.Script,f;for(f in d){var g="c"+f;a.states[g]=d[f].initial?d[f].expect:"";a.expects[g]=d[f].expect?d[f].expect:"everytime";a.success[g]=!1;a.delay=i?i:0;var m=d[f].src;-1!=e.inArray(d[f].type,b)&&!(d[f].src instanceof h.BaseContainer)?(m=m.getContainer(),m.evtDeleg.addListener(d[f].type,
-new h.Callback(a.conditionChanged,a,[g]),!1,d[f].src)):m.evtDeleg.addListener(d[f].type,new h.Callback(a.conditionChanged,a,[g]),!1)}a.script=j}})(mse,$);(function(h,e){e.Point2=function(b,d){this.x=b;this.y=d};h.crePoint2=function(b,d){return new e.Point2(b,d)}})(window,mse);
-(function(h){__KEY_S=83;__KEY_D=68;__KEY_O=79;__KEY_N=78;__KEY_B=66;__KEY_V=86;__KEY_C=67;__E=1.0E-6;Number.prototype.toHexString=function(){return this.toString(16)};h.EffectScreen=function(){this.cbProcess=new h.Callback(this.process,this)};h.EffectScreen.prototype={constructor:h.EffectScreen,config:{},startEffect:function(){h.root.evtDistributor.addListener("drawover",this.cbProcess)},process:function(){},endEffect:function(){h.root.evtDistributor.removeListener("drawover",this.cbProcess)},toString:function(){return"[object mse.EffectScreen]"}};
-h.ESDropdownByCss=function(e){h.EffectScreen.call(this);this.config={target:"book",duration:500,g:9.8};e&&$.extend(this.config,e);this.count=0;e=document.getElementById(this.config.target);this.defaultLeft=checkFontSize(e.style.left);this.defaultTop=checkFontSize(e.style.top);this.markFalling=!0;this.buffH=0;this.g=this.config.g;this.t=this.Vt=this.Vo=this.h=0};extend(h.ESDropdownByCss,h.EffectScreen);$.extend(h.ESDropdownByCss.prototype,{label:"dropdownByCss",process:function(e){this.markFalling?
-this.falling():this.rising();h.root.setPos(this.defaultLeft,this.h-e.canvas.height);this.count++;this.t++;this.count>this.config.duration&&this.endEffect()},falling:function(){this.Vt=this.Vo+this.g*this.t;this.h=this.buffH+0.5*this.g*this.t*this.t;600<this.h&&(this.h=600,this.t=0,this.Vo=this.Vt/1.7,this.markFalling=!1)},rising:function(){this.Vt=this.Vo+-this.g*this.t;this.h=600-(this.Vt*this.Vt-this.Vo*this.Vo)/(2*-this.g);0>this.Vt&&(this.buffH=this.h,this.Vo=this.t=0,this.markFalling=!0)},toString:function(){return this.label}});
-h.EffectText=function(e,b,d){this.config=b;this.subject=e;this.multi=d};h.EffectText.prototype={constructor:h.EffectText,config:{},draw:function(){},logic:function(){},toString:function(){return"[object mse.EffectText]"}};h.ETFade=function(e,b,d){h.EffectText.call(this,e,b,d);this.count=0;this.config={duration:30,start:0,end:1};b&&$.extend(this.config,b)};extend(h.ETFade,h.EffectText);$.extend(h.ETFade.prototype,{label:"fade",logic:function(){if(this.count<=this.config.duration){if(this.subject.globalAlpha=
-this.config.start+this.count/this.config.duration*(this.config.end-this.config.start),this.count++,this.multi)return!0}else{if(this.multi)return!1;this.subject.endEffect()}},draw:function(e){e.fillText(this.subject.text,this.subject.getX(),this.subject.getY())},toString:function(){return this.label}});h.ETTypewriter=function(e,b,d){h.EffectText.call(this,e,b,d);this.indice=0;this.phraseAffichage="";this.controlSpeed=0;this.alphabetsDePhrase=this.subject.text.split("");this.config={speed:1};b&&$.extend(this.config,
-b);this.config.speed-=1};extend(h.ETTypewriter,h.EffectText);$.extend(h.ETTypewriter.prototype,{label:"typewriter",logic:function(){if(this.indice!=this.alphabetsDePhrase.length){if(this.config.speed==this.controlSpeed?(this.phraseAffichage+=this.alphabetsDePhrase[this.indice],this.indice++,this.controlSpeed=0):this.controlSpeed++,this.multi)return!0}else{if(this.multi)return!1;this.subject.endEffect()}},draw:function(e){e.fillText(this.phraseAffichage,this.subject.getX(),this.subject.getY())},toString:function(){return this.label}});
-h.MultiEffectContainer=function(e,b){h.EffectText.call(this,e);this.dictObjEffects=b;this.arrayEffectName=Object.keys(this.dictObjEffects);this.filtered=this.filterEffect(this.arrayEffectName)};extend(h.MultiEffectContainer,h.EffectText);$.extend(h.MultiEffectContainer.prototype,{label:"multieffect",classification:{fadein:"param",colored:"param",zoomtext:"zoom",flytext:"trajet",painttext:"imageData",typewriter:"content",twisttext:"content",twistmultitext:"content"},conflict:{param:[],zoom:["imageData"],
-trajet:["imageData","content","trajet"],imageData:["trajet","zoom","content","imageData"],content:["imageData","trajet","content"]},filterEffect:function(e){for(var b=null,d=[],j=[],i=0;i<e.length;i++){var a=h.MultiEffectContainer.prototype.classification[e[i]],f=!1,g;for(g in d)if(d[g]==a){delete e[i];f=!0;break}if(!f)switch(j.push(e[i]),d=d.concat(h.MultiEffectContainer.prototype.conflict[a]),a){case "trajet":case "imageData":case "content":b=e[i];break;default:null==b&&(b=e[i])}}return{filteredEffectArray:j,
-principalDraw:b}},logic:function(e){var b=!0,d;for(d in this.filtered.filteredEffectArray)this.dictObjEffects[this.filtered.filteredEffectArray[d]].logic(e)&&(b=!1);b&&this.subject.endEffect()},draw:function(e){this.dictObjEffects[this.filtered.principalDraw].draw(e)},toString:function(){return this.label}});h.initTextEffect=function(e,b){if(2>Object.keys(e).length){for(var d in e)switch(d){case "fade":return new h.ETFade(b,e[d],!1);case "colored":return new h.ETColored(b,e[d],!1);case "typewriter":return new h.ETTypewriter(b,
-e[d],!1);case "painttext":return new h.ETPainttext(b,e[d],!1);case "flytext":return new h.ETFlytext(b,e[d],!1);case "zoomtext":return new h.ETZoomtext(b,e[d],!1);case "twisttext":return new h.ETTwisttext(b,e[d],!1);case "twistmultitext":return new h.ETTwistMultiText(b,e[d],!1);default:return null}return null}var j={};for(d in e)switch(d){case "fade":j[d]=new h.ETFade(b,e[d],!0);break;case "colored":j[d]=new h.ETColored(b,e[d],!0);break;case "typewriter":j[d]=new h.ETTypewriter(b,e[d],!0);break;case "painttext":j[d]=
-new h.ETPainttext(b,e[d],!0);break;case "flytext":j[d]=new h.ETFlytext(b,e[d],!0);break;case "zoomtext":j[d]=new h.ETZoomtext(b,e[d],!0);break;case "twisttext":j[d]=new h.ETTwisttext(b,e[d],!0);break;case "twistmultitext":j[d]=new h.ETTwistMultiText(b,e[d],!0)}return new h.MultiEffectContainer(b,j)};h.EffectImage=function(e,b,d){this.config=b;this.subject=e;this.multi=d};h.EffectImage.prototype={constructor:h.EffectImage,config:{},draw:function(){},logic:function(){},toString:function(){return"[object mse.EffectImage]"}};
-h.MultiImageEffectContainer=function(e,b){h.EffectImage.call(this,e);this.dictObjEffects=b;this.arrayEffectName=Object.keys(this.dictObjEffects);this.filtered=this.filterEffect(this.arrayEffectName)};extend(h.MultiImageEffectContainer,h.EffectImage);$.extend(h.MultiImageEffectContainer.prototype,{label:"multieffectImage",conflict:{param:[],weather:["weather","pixel","candle"],pixel:["pixel","weather","candle"],candle:["pixel","weather"]},classification:{fade:"param",snow:"weather",rain:"weather",
-fog:"weather",erase:"pixel",vibration:"weather",colorswitch:"pixel",blur:"pixel",sunrise:"pixel",lightcandle:"candle"},filterEffect:function(e){for(var b=null,d=[],j=[],i=0;i<e.length;i++){var a=h.MultiImageEffectContainer.prototype.classification[e[i]],f=!1,g;for(g in d)if(d[g]==a){delete e[i];f=!0;break}if(!f)switch(j.push(e[i]),d=d.concat(h.MultiImageEffectContainer.prototype.conflict[a]),a){case "pixel":case "weather":b=e[i];break;default:null==b&&(b=e[i])}}return{filteredEffectArray:j,principalDraw:b}},
-logic:function(e){var b=!0,d;for(d in this.filtered.filteredEffectArray)this.dictObjEffects[this.filtered.filteredEffectArray[d]].logic(e)&&(b=!1);b&&this.subject.endEffect()},draw:function(e,b,d){this.dictObjEffects[this.filtered.principalDraw].draw(e,b,d)},toString:function(){return this.label}});h.initImageEffect=function(e,b){if(2>Object.keys(e).length){for(var d in e)switch(d){case "fade":return new h.EIFade(b,e[d],!1);case "snow":return new h.EISnow(b,e[d],!1);case "rain":return new h.EIRain(b,
-e[d],!1);case "fog":return new h.EIFog(b,e[d],!1);case "colorswitch":return new h.EIColorSwitch(b,e[d],!1);case "blur":return new h.EIBlur(b,e[d],!1);case "lightcandle":return new h.EILightcandle(b,e[d],!1);case "erase":return new h.EIErase(b,e[d],!1);case "vibration":return new h.EIVibration(b,e[d],!1);case "sunrise":return new h.EISunrise(b,e[d],!1);default:return null}return null}var j={};for(d in e)switch(d){case "fade":j[d]=new h.EIFade(b,e[d],!0);break;case "snow":j[d]=new h.EISnow(b,e[d],!0);
-break;case "rain":j[d]=new h.EIRain(b,e[d],!0);break;case "fog":j[d]=new h.EIFog(b,e[d],!0);break;case "colorswitch":j[d]=new h.EIColorSwitch(b,e[d],!0);break;case "blur":j[d]=new h.EIBlur(b,e[d],!0);break;case "lightcandle":j[d]=new h.EILightcandle(b,e[d],!0);break;case "erase":j[d]=new h.EIErase(b,e[d],!0);break;case "vibration":j[d]=new h.EIVibration(b,e[d],!0);break;case "sunrise":j[d]=new h.EISunrise(b,e[d],!0)}return new h.MultiImageEffectContainer(b,j)};h.distance=function(e,b,d,h){e=Math.abs(e-
-d);b=Math.abs(b-h);return Math.sqrt(e*e+b*b)};h.sin=function(e,b,d,h){void 0==b&&(b=1);void 0==d&&(d=1);void 0==h&&(h=0);return b*Math.sin(d*e*(Math.PI/180))+h};h.cos=function(e,b,d,h){void 0==b&&(b=1);void 0==d&&(d=1);void 0==h&&(h=0);return b*Math.cos(d*e*(Math.PI/180))+h};h.min3num=function(e,b,d){var h=e;e>b&&(h=b);return h>d?d:h};h.max3num=function(e,b,d){var h=e;e<b&&(h=b);return h<d?d:h};h.rgb_hsl=function(e,b,d){var e=e/255,j=b/255,i=d/255,b=h.min3num(e,j,i),d=h.max3num(e,j,i);if(Math.abs(d-
-b)<=__E)e=0;else if(Math.abs(d-e)<=__E)e=60*((j-i)/(d-b))+360,360<e&&(e-=360);else if(Math.abs(d-j)<=__E)e=60*((i-e)/(d-b))+120;else if(Math.abs(d-i)<=__E)e=60*((e-j)/(d-b))+240;else return!1;b=Math.abs(d)<=__E?0:(d-b)/d;return[e,255*b,255*d]};h.hsl_rgb=function(e,b,d){var h,i,a;i=b/255;d/=255;a=Math.floor(e/60)%6;h=e/60-Math.floor(e/60);e=d*(1-i);b=d*(1-h*i);i=d*(1-(1-h)*i);switch(a){case 0:a=d;h=i;d=e;break;case 1:a=b;h=d;d=e;break;case 2:a=e;h=d;d=i;break;case 3:a=e;h=b;break;case 4:a=i;h=e;break;
-case 5:a=d;h=e;d=b;break;default:return!1}return[255*a,255*h,255*d]};h.showFPS=function(e){function b(){d.innerHTML="FPS:"+e.logger.frameCount;e.logger.frameCount=0}if(null!=e){null==e.logger&&(e.logger={frameCount:0});var d=document.getElementById("fpsBar");if(null==d){d=document.createElement("div");document.body.appendChild(d);var h={backgroundColor:"rgba(0,0,0,0.5)",position:"absolute",left:"300px",top:"1px",color:"#fff",width:"100px",height:"30px",border:"solid 1px #ccc",fontSize:"22px",zIndex:99999},
-i;for(i in h)d.style[i]=h[i]}setInterval(b,999)}}})(mse);
-var RatGame=function(){mse.Game.call(this);var h=mse.joinCoor(220),e=mse.joinCoor(0),b=mse.joinCoor(360),d=mse.joinCoor(600);this.offx=mse.coor(h);this.offy=mse.coor(e);this.width=mse.coor(b);this.height=mse.coor(d);mse.src.addSource("ratImg","./games/rat.png","img");var j=new mse.Sprite(this,{pos:[30,this.height-80]},"ratImg",80,50,0,0,400,100),i=new mse.Sprite(this,{pos:[20,this.height-96]},"ratImg",39,34,400,0,39,34),a=new mse.Sprite(this,{pos:[45,this.height-80]},"ratImg",40,113,0,101,400,113);
-mse.src.addSource("sacImg","./games/sac.png","img");var f=new mse.Image(this,{pos:[this.width-160,20],insideRec:[60,40,60,60]},"sacImg"),g=new mse.Sprite(this,{pos:[this.width-100,175]},"sacImg",60,40,60,155,60,40),h=[0,1,2,3,4,5,6,7,8,9],m=new mse.FrameAnimation(j,h,0,2),k=new mse.FrameAnimation(a,h,0,2);this.dragStart=function(b){var d=b.offsetX-this.offx,b=b.offsetY-this.offy;30<d&&110>d&&b>this.height-80&&b<this.height-30&&(this.sit=!1,a.offx=d-20,a.offy=b-14,m.stop(),k.start())};this.dragMove=
-function(b){var d=b.offsetY-this.offy-14;a.offx=b.offsetX-this.offx-20;a.offy=d};this.dragEnd=function(b){var d=b.offsetX-this.offx,e=b.offsetY-this.offy;this.sit||(f.inObj(b.offsetX,b.offsetY)?(b=new mse.KeyFrameAnimation(a,{frame:[0,25,35],pos:[[d,e],[f.offx+70,f.offy+125],[f.offx+70,f.offy+125]]},1),b.evtDeleg.addListener("end",new mse.Callback(this.end,this)),b.start(),this.droped=!0,mse.root.evtDistributor.removeListener("gestureStart",s),mse.root.evtDistributor.removeListener("gestureUpdate",
-u),mse.root.evtDistributor.removeListener("gestureEnd",p)):(this.sit=!0,k.stop(),m.start()))};var s=new mse.Callback(this.dragStart,this),u=new mse.Callback(this.dragMove,this),p=new mse.Callback(this.dragEnd,this);this.init=function(){mse.root.evtDistributor.addListener("gestureStart",s,!0,this);mse.root.evtDistributor.addListener("gestureUpdate",u,!0,this);mse.root.evtDistributor.addListener("gestureEnd",p,!0,this);this.sit=!0;this.droped=!1;m.start()};this.logic=function(){if(this.droped){var b=
-g.offy-a.offy-114;a.fh=0>b?114+b:114;a.height=a.fh}};this.draw=function(b){f.draw(b);this.sit?(j.draw(b),i.draw(b),b.save(),b.fillStyle="#FFF",b.translate(i.getX()+1.2*i.getWidth(),i.getY()-24),b.beginPath(),b.moveTo(-10,30),b.lineTo(0,15),b.lineTo(10,30),b.lineTo(-10,30),b.fill(),b.fillRoundRect(0,0,240,30,10),b.fillStyle="#000",b.font="20px Verdana",b.textBaseline="top",b.fillText("Aide Simon, vite!",10,4),b.restore()):a.draw(b);this.droped&&g.draw(b)}};extend(RatGame,mse.Game);
-function angleFor2Point(h,e){var b=0,b=Math.atan2(e.y-h.y,e.x-h.x);return Math.round(180*b/Math.PI)}function distance2Pts(h,e,b,d){return Math.sqrt(Math.pow(b-h,2)+Math.pow(d-e,2))}function inrect(h,e,b){return h>=b[0]&&h<=b[0]+b[2]&&e>=b[1]&&e<=b[1]+b[3]?!0:!1}function xRelatRect(h,e){return h<e[0]?-1:h>=e[0]&&h<=e[0]+e[2]?0:1}function yRelatRect(h,e){return h<e[1]?-1:h>=e[1]&&h<=e[1]+e[3]?0:1}
-var NPC=function(h,e,b){2>e.length&&mseLog("Array Error","Array 'course' demande minimum 2 elements");e.length!=b.length&&mseLog("Array Error","Array 'course' have to be the same size of array 'dir'");this.sprite=h;this.animes=[];this.animes.run=new mse.FrameAnimation(h,[0,1,2,3,4,5],0,5);this.animes.stand=new mse.FrameAnimation(h,[6],0,1E3);this.v=6;this.visiond=180;this.visiona=40;this.startAngle=this.visiona*Math.PI/180;this.endAngle=-this.startAngle;this.startP=crePoint2(Math.cos(this.startAngle)*
-this.visiond,Math.sin(this.startAngle)*this.visiond);this.course=e;this.dir=b;this.pos=new mse.Point2(e[0].x,e[0].y);this.currStep=0;this.nextStep=1;this.direction=angleFor2Point(this.course[0],this.course[1]);0!=b[this.currStep].length?(this.currDir=0,this.tarDir=this.dir[this.currStep][this.currDir],this.state=1,this.animes.run.stop(),this.animes.stand.start()):(this.tarDir=this.direction,this.state=0,this.animes.run.start(),this.animes.stand.stop());this.logic=function(){switch(this.state){case 0:var b=
-this.course[this.nextStep].x-this.pos.x,e=this.course[this.nextStep].y-this.pos.y;if(b==0)if(e<-this.v){this.pos.y=this.pos.y-this.v;break}else{if(e>this.v){this.pos.y=this.pos.y+this.v;break}}else if(b<-this.v){this.pos.x=this.pos.x-this.v;break}else if(b>this.v){this.pos.x=this.pos.x+this.v;break}this.pos=new mse.Point2(this.course[this.nextStep].x,this.course[this.nextStep].y);if(this.currStep<this.nextStep){this.currStep=this.nextStep;this.nextStep=this.nextStep==this.course.length-1?this.nextStep-
-1:this.nextStep+1}else{this.currStep=this.nextStep;this.nextStep=this.nextStep==0?1:this.nextStep-1}this.state=1;this.animes.run.stop();this.animes.stand.start();if(this.dir[this.currStep].length!=0)this.tarDir=this.dir[this.currStep][this.currDir];else{this.currDir=-1;this.tarDir=angleFor2Point(this.course[this.currStep],this.course[this.nextStep])}break;case 1:b=this.tarDir-this.direction;if(b<-2)this.direction=this.direction-2;else if(b>2)this.direction=this.direction+2;else{this.direction=this.tarDir;
-if(this.currDir==-1){this.currDir=this.state=0;this.animes.run.start();this.animes.stand.stop();break}if(this.currDir<this.dir[this.currStep].length-1){this.currDir++;this.tarDir=this.dir[this.currStep][this.currDir]}else{this.tarDir=angleFor2Point(this.course[this.currStep],this.course[this.nextStep]);this.currDir=-1}}}};this.draw=function(b,e,h){b.save();b.translate(e+this.pos.x,h+this.pos.y);b.rotate(this.direction*Math.PI/180);b.fillStyle="rgba(200,0,0,0.5)";b.beginPath();b.lineTo(this.startP.x,
-this.startP.y);b.arc(0,0,this.visiond,this.startAngle,this.endAngle,true);b.lineTo(0,0);b.fill();b.translate(-20,-18);this.sprite.draw(b);b.restore()}},FindSimon=function(){mse.Game.call(this);this.msg={INIT:"Clique pour aider Simon \u00e0 \u00e9chapper \u00e0 la Meute.",WIN:"Bravo!!! Simon est sauv\u00e9."};this.state="INIT";mse.src.addSource("parc","./games/Parc.jpg","img",!0);mse.src.addSource("perso_parc","./games/personnages.png","img",!0);mse.src.addSource("notice_parc","./games/points-persos.png",
-"img",!0);var h=[];h[0]=new mse.Sprite(null,{},"perso_parc",40,37,0,37,280,37);h[1]=new mse.Sprite(null,{},"perso_parc",40,37,0,74,280,37);h[2]=new mse.Sprite(null,{},"perso_parc",40,37,0,111,280,37);h[3]=new mse.Sprite(null,{},"perso_parc",40,37,0,148,280,37);var e=[[190,250,60,650],[390,250,60,650],[580,250,60,320],[640,960,60,190],[830,570,60,390],[1030,320,60,380],[1350,320,60,770],[1660,190,60,960]],b=[[190,190,450,60],[1090,320,260,60],[640,510,390,60],[1410,570,250,60],[890,700,460,60],[190,
-900,640,60],[700,1090,960,60]],d=[[crePoint2(415,925),crePoint2(415,225)],[crePoint2(810,925),crePoint2(675,925),crePoint2(675,1115)],[crePoint2(1695,335),crePoint2(1695,605),crePoint2(1695,840)],[crePoint2(1060,335),crePoint2(1060,540),crePoint2(1060,735),crePoint2(1370,735)]],j=[[[180,0],[0,180]],[[90],[],[0]],[[180],[180],[180]],[[0],[180],[],[90,-90]]];this.npc=[];for(var i=0;4>i;i++)this.npc[i]=new NPC(h[i],d[i],j[i]);this.simon=new mse.Sprite(null,{},"perso_parc",40,37,0,0,280,37);this.simonrun=
-new mse.FrameAnimation(this.simon,[0,1,2,3,4,5],0,7);this.simonstand=new mse.FrameAnimation(this.simon,[6],0,1E3);this.spark=0;this.init=function(){this.npc[3].v=3;this.simondir=0;this.simonrun.stop();this.simonstand.start();this.onmove=!1;this.sx=this.sy=this.sw=this.sh=this.dx=this.dy=this.dw=this.dh=0;this.sp=new mse.Point2(225,725);this.pos=new mse.Point2(this.width/2-this.sp.x,this.height/2-this.sp.y);this.disx=this.disy=0;mse.root.evtDistributor.addListener("keydown",this.movecb,!0,this);mse.root.evtDistributor.addListener("keyup",
-this.moveovercb,!0,this);MseConfig.mobile&&(mse.root.evtDistributor.addListener("gestureUpdate",this.touchMovecb,!0,this),mse.root.evtDistributor.addListener("gestureEnd",this.moveovercb,!0,this))};this.draw=function(a){a.save();a.translate(this.offx,this.offy);a.beginPath();a.moveTo(0,0);a.lineTo(this.width-5,0);a.lineTo(this.width-5,this.height-5);a.lineTo(0,this.height-5);a.closePath();a.clip();a.drawImage(mse.src.getSrc("parc"),this.sx,this.sy,this.sw,this.sh,this.dx,this.dy,this.dw,this.dh);
-a.save();a.translate(this.width/2,this.height/2);a.rotate(this.simondir*Math.PI/180);a.translate(-20,-18);this.simon.draw(a);a.restore();for(var b=0;4>b;b++)this.npc[b].draw(a,this.pos.x,this.pos.y);a.globalAlpha=0.7;a.drawImage(mse.src.getSrc("parc"),5,5,192,128);a.globalAlpha=1;a.fillStyle="rgb(0,200,0)";a.fillRect(4+this.sp.x/10,4+this.sp.y/10,2,2);a.fillStyle="rgba(250,230,200,0.8)";10==this.spark?(this.spark=0,a.beginPath(),a.arc(174,34,3,0,2*Math.PI,!0),a.fill()):this.spark++;a.restore()};this.logic=
-function(a){0<this.pos.x?(this.sx=0,this.sw=this.width-this.pos.x,this.dx=this.pos.x):(this.sx=-this.pos.x,this.sw=this.pos.x+1920<this.width?1920+this.pos.x:this.width,this.dx=0);0<this.pos.y?(this.sy=0,this.sh=this.height-this.pos.y,this.dy=this.pos.y):(this.sy=-this.pos.y,this.sh=this.pos.y+1280<this.height?1280+this.pos.y:this.height,this.dy=0);this.dw=this.sw;this.dh=this.sh;this.pos.x+=this.disx;this.pos.y+=this.disy;this.colliDetect()&&(this.pos.x-=this.disx,this.pos.y-=this.disy);this.sp.x=
-this.width/2-this.pos.x;this.sp.y=this.height/2-this.pos.y;60>=Math.abs(this.sp.x-1690)&&10>=Math.abs(this.sp.y-290)&&(mse.root.evtDistributor.removeListener("keydown",this.movecb),mse.root.evtDistributor.removeListener("keyup",this.moveoverc),MseConfig.mobile&&(mse.root.evtDistributor.removeListener("gestureUpdate",this.touchMovecb),mse.root.evtDistributor.removeListener("gestureEnd",this.moveovercb)),this.state="WIN",this.end());for(var b=0;4>b;b++){var d=this.npc[b];d.logic(a);var e=Math.round(distance2Pts(this.sp.x,
-this.sp.y,d.pos.x,d.pos.y)),h=angleFor2Point(d.pos,this.sp),h=Math.abs(h-d.direction);180<h&&(h=360-h);170>=e&&h<=d.visiona&&(mse.root.evtDistributor.removeListener("keydown",this.movecb),mse.root.evtDistributor.removeListener("keyup",this.moveovercb),MseConfig.mobile&&(mse.root.evtDistributor.removeListener("gestureUpdate",this.touchMovecb),mse.root.evtDistributor.removeListener("gestureEnd",this.moveovercb)),this.lose())}};this.colliDetect=function(){for(var a=this.width/2-this.pos.x,d=this.height/
-2-this.pos.y,g=0;g<e.length;g++){var h=xRelatRect(a,e[g]);if(-1==h)break;else if(0==h&&0==yRelatRect(d,e[g]))return!1}for(g=0;g<b.length&&!(h=yRelatRect(d,b[g]),-1==h);g++)if(0==h&&0==xRelatRect(a,b[g]))return!1;return!0};this.move=function(a){var b=!1;switch(a.keyCode){case __KEY_LEFT:this.disx=4;this.disy=0;this.simondir=180;b=!0;break;case __KEY_RIGHT:this.disx=-4;this.simondir=this.disy=0;b=!0;break;case __KEY_UP:this.disy=4;this.disx=0;this.simondir=-90;b=!0;break;case __KEY_DOWN:this.disy=-4,
-this.disx=0,this.simondir=90,b=!0}b&&!this.onmove&&(this.onmove=!0,this.simonrun.start(),this.simonstand.stop())};this.touchMove=function(a){var b=!0,a=angleFor2Point({x:a.listX[0],y:a.listY[0]},{x:a.offsetX,y:a.offsetY});0<=a&&15>=a||0>=a&&-15<=a?(this.disx=-4,this.simondir=this.disy=0):75<=a&&105>=a?(this.disy=-4,this.disx=0,this.simondir=90):165<=a||-165>=a?(this.disx=4,this.disy=0,this.simondir=180):-75>=a&&-105<=a?(this.disy=4,this.disx=0,this.simondir=-90):b=!1;b&&!this.onmove&&(this.onmove=
-!0,this.simonrun.start(),this.simonstand.stop())};this.moveover=function(){this.disy=this.disx=0;this.onmove=!1;this.simonrun.stop();this.simonstand.start()};this.movecb=new mse.Callback(this.move,this);this.moveovercb=new mse.Callback(this.moveover,this);this.touchMovecb=new mse.Callback(this.touchMove,this)};extend(FindSimon,mse.Game);mse.coords=JSON.parse('{"cid0":800,"cid1":600,"cid2":0,"cid3":20,"cid4":305,"cid5":46.25,"cid6":342.5,"cid7":35,"cid8":197.5,"cid9":38.75,"cid10":425,"cid11":122.5,"cid12":30,"cid13":190,"cid14":40,"cid15":578.75,"cid16":533.75,"cid17":160,"cid18":27.5,"cid19":601.25,"cid20":543.75,"cid21":13.75,"cid22":400,"cid23":200,"cid24":41.25,"cid25":235,"cid26":108.75,"cid27":32.5,"cid28":177.5,"cid29":61.25,"cid30":320,"cid31":247.5,"cid32":340,"cid33":590,"cid34":230,"cid35":10,"cid36":22.5,"cid37":306,"cid38":417.384,"cid39":17,"cid40":397.8,"cid41":250,"cid42":100,"cid43":300,"cid44":409,"cid45":-200,"cid46":1090,"cid47":33,"cid48":109,"cid49":343,"cid50":41,"cid51":248,"cid52":178,"cid53":61,"cid54":344,"cid55":120,"cid56":255,"cid57":263,"cid58":296,"cid59":301,"cid60":298,"cid61":396,"cid62":201,"cid63":225,"cid64":19,"cid65":70,"cid66":783,"cid67":240,"cid68":771,"cid69":211,"cid70":163,"cid71":124,"cid72":180,"cid73":584,"cid74":144,"cid75":113,"cid76":210,"cid77":214,"cid78":379}');
-initMseConfig();mse.init();
-function createbook(){function h(a,b){b.startEffect(a)}var e=new mse.Root("Voodoo_Ch1",mse.coor("cid0"),mse.coor("cid1"),"portrait"),b,d,j,i,a,f,g,m,k,s,u,p,n,D,w,o,x,q;mse.src.addSource("src0","./images/src0.png","img",!0);mse.src.addSource("src1","./images/src1.jpeg","img",!0);mse.src.addSource("src2","./images/src2.jpeg","img",!0);mse.src.addSource("src3","./images/src3.jpeg","img",!0);mse.src.addSource("src4","./images/src4.jpeg","img",!0);mse.src.addSource("src5","./audios/src5.ogg","aud",!1);
-mse.src.addSource("src6","./images/src6.png","img",!0);mse.src.addSource("src7","./images/src7.png","img",!0);mse.src.addSource("src8","./images/src8.png","img",!0);mse.src.addSource("src9","./images/src9.jpeg","img",!0);n=new mse.WikiLayer;n.addTextCard();n.textCard.addSection("Un Cyclope chez les X-Men","Cyclope est aussi un super-h\u00e9ros cr\u00e9\u00e9 par J. Kirby et S. Lee en 1963. C\u2019est un mutant qui g\u00e9n\u00e8re des rayons extr\u00eamement puissants avec ses yeux mais il \u00e9vite au maximum d\u2019utiliser la violence. Il devient un des leaders des X-Men.");
-n.textCard.addLink("Lien","http://fr.wikipedia.org/wiki/Cyclope_%28comics%29");n.addTextCard();n.textCard.addSection("Cyclope","Nom, masculin\u00a0: Les cyclopes sont des cr\u00e9atures fantastiques de la mythologie grecque. Ce sont des g\u00e9ants qui ne poss\u00e8dent qu\u2019un seul \u0153il au milieu du front. Ils \u00e9taient soit forgerons, b\u00e2tisseurs ou pasteurs.");n.textCard.addLink("Lien","http://fr.wikipedia.org/wiki/Cyclope");n.addImage("src8","Polyph\u00e8me, fils de Pos\u00e9\u00efdon");
-n.addImage("src9","Cyclope, super-h\u00e9ros des X-Men");p=new RatGame;mse.src.addSource("src10","./images/src10.jpeg","img",!0);mse.src.addSource("src13","./images/src13.jpeg","img",!0);mse.src.addSource("src16","./images/src16.png","img",!0);mse.src.addSource("src17","./audios/src17","aud",!1);mse.src.addSource("src18","./audios/src18","aud",!1);mse.src.addSource("src19","./audios/src19","aud",!1);mse.src.addSource("src20","./audios/src20","aud",!1);mse.src.addSource("src21","./audios/src21","aud",
-!1);new FindSimon;D=new mse.WikiLayer;D.addTextCard();D.textCard.addSection("Frondaison","Nom, f\u00e9minin\u00a0:  - Les feuilles et les branches d\u2019un arbre - Epoque o\u00f9 les feuilles commencent \u00e0 pousser");D.textCard.addSection("Synonymes","Feuillage, Ramure, Branchage");mse.src.addSource("src22","./images/src22.jpeg","img",!0);w=new mse.WikiLayer;w.addImage("src22","L'hallali du cerf, peint par Courbet en 1867");w.addTextCard();w.textCard.addSection("Nom masculin"," - Sonnerie de chasse \u00e0 courre qui annonce la prise imminente de l\u2019animal, d\u2019o\u00f9 l\u2019expression\u00a0:\u00a0Sonner l\u2019hallali\u00a0: annoncer la d\u00e9faite de quelqu\u2019un. - Moment o\u00f9 l\u2019animal est pris - Par extension\u00a0: d\u00e9b\u00e2cle, d\u00e9faite");
-w.addTextCard();w.textCard.addSection("L\u2019hallali","Interjection\u00a0: Cri du chasseur qui attrape du gibier lors d\u2019une chasse \u00e0 courre.");mse.src.addSource("src23","./images/src23.jpeg","img",!0);mse.src.addSource("src25","./images/src25.jpeg","img",!0);o=new mse.WikiLayer;o.addImage("src25","Salif Ke\u00efta");o.addImage("src23","Rat albinos");o.addTextCard();o.textCard.addSection("Les c\u00e9l\u00e8bres","Il existe des albinos c\u00e9l\u00e8bres parmi lesquels Salif Ke\u00efta, chanteur et musicien malien. Il a obtenu une Victoire de la musique en 2010 pour son album \u00ab\u00a0La Diff\u00e9rence\u00a0\u00bb");
-o.textCard.addLink("Lien site officiel\u00a0 Salif Ke\u00efta","http://salif-keita.artiste.universalmusic.fr/");o.addTextCard();o.textCard.addSection("Les albinos","Les albinos ont une vision d\u00e9ficiente et sont sujets \u00e0 des\u00a0cancers\u00a0de la peau s'ils ne sont pas prot\u00e9g\u00e9s du soleil. C\u2019est une maladie h\u00e9r\u00e9ditaire (qui se transmet de g\u00e9n\u00e9ration en g\u00e9n\u00e9ration). Il y a environ 1 cas pour 20.000 naissances dans le monde.");o.addTextCard();o.textCard.addSection("Albinos",
-"Adjectif invariable\u00a0:Qui est affect\u00e9 d'albinisme.");o.textCard.addSection("Albinisme","nom masculin\u00a0: maladie g\u00e9n\u00e9tique qui se caract\u00e9rise par une absence du pigment destin\u00e9 \u00e0 colorer la peau, les poils, les cheveux ainsi que par des yeux rouges. Elle affecte les humains ou les animaux.");x=new mse.WikiLayer;x.addTextCard();x.textCard.addSection("Nyctalope","A ne pas confondre avec nyctalope : un adjectif qui d\u00e9signe celui qui a la facult\u00e9 de voir dans la p\u00e9nombre, comme les chats");
-x.textCard.addSection("A moins d\u2019inventer"," - Nyctambule\u00a0: qui recherche les f\u00e9tards \u00e9gar\u00e9s la nuit - Noctalope\u00a0: qui travaille la nuit sans avoir besoin de lumi\u00e8re");x.addTextCard();x.textCard.addSection("Noctambule","Nom masculin ou f\u00e9minin\u00a0:  - personne ou animal qui a l\u2019habitude de se promener la nuit. - personne qui aime faire la f\u00eate la nuit. - Par extension\u00a0: personne qui est en activit\u00e9 la nuit");mse.src.addSource("src26","./images/src26.jpeg",
-"img",!0);mse.src.addSource("src27","./images/src27.jpeg","img",!0);mse.src.addSource("src28","./images/src28.jpeg","img",!0);q=new mse.WikiLayer;q.addTextCard();q.textCard.addSection("La Petite Ceinture","La Petite Ceinture est une ancienne ligne de chemin de fer longue de 32 km qui faisait le tour de Paris.Elle fut termin\u00e9e en 1869 et destin\u00e9e au trafic de marchandises et de voyageurs. Concurrenc\u00e9e par le m\u00e9tro, elle est d\u00e9finitivement ferm\u00e9e au trafic des voyageurs en 1985. Le trafic de marchandise est totalement arr\u00eat\u00e9 au d\u00e9but des ann\u00e9es 1990.");
-q.textCard.addLink("Lien Wikip\u00e9dia","http://fr.wikipedia.org/wiki/Ligne_de_Petite_Ceinture");q.addTextCard();q.textCard.addSection("Biodiversit\u00e9","Elle est consid\u00e9r\u00e9e comme une r\u00e9serve de biodiversit\u00e9. On peut y observer de nombreuses vari\u00e9t\u00e9s d\u2019arbres, de plantes et la plus grande colonie de chauve-souris de l\u2019esp\u00e8ce pipistrelle d\u2019Ile de France. La ville de Paris y am\u00e9nage des parcours p\u00e9dagogiques, proposant ainsi un nouveau type de promenade nature \u00e0 Paris.");
-q.textCard.addLink("Lien Mairie de Paris","http://www.paris.fr/loisirs/se-promener-a-paris/balades-au-vert/decouvrir-les-richesses-de-la-petite-ceinture/rub_9660_stand_53584_port_23803");q.addImage("src26","Vue des voies de la Petite Ceinture dans le 13e arrondissement");q.addImage("src27","La Petite Ceinture traverse le Parc Montsouris");q.addImage("src28","La gare de Charonne, aujourd'hui caf\u00e9 La Fl\u00e8che d'Or");var y,v,r,t,E,z,F,G,H,A,B,I,J,c,M,ia,ja,ka,N,la,ma,O,P,Q,C,na,oa,pa,qa,ra,sa,
-ta,ua,va,wa,xa,ya,za,Aa,Ba,Ca,Da,Ea,Fa,R,Ga,Ha,Ia,Ja,Ka,La,Ma,Na,Oa,Pa,Qa,Ra,Sa,Ta,Ua,Va,Wa,Xa,S,Ya,Za,$a,ab,bb,cb,db,eb,fb,gb,hb,ib,jb,kb,lb,mb,nb,ob,pb,qb,T,rb,sb,tb,ub,vb,wb,xb,yb,U,zb,Ab,V,Bb,Cb,Db,Eb,Fb,Gb,Hb,Ib,W,Jb,Kb,Lb,Mb,Nb,Ob,Pb,Qb,Rb,Sb,Tb,Ub,Vb,Wb,Xb,Yb,Zb,$b,ac,bc,cc,dc,ec,fc,gc,X,hc,ic,jc,kc,lc,mc,nc,oc,Y,Z,pc,aa,qc,rc,sc,tc,uc,vc,wc,xc,yc,zc,Ac,Bc,Cc,Dc,Ec,Fc,Gc,Hc,Ic,ba,Jc,Kc,Lc,Mc,Nc,Oc,Pc,Qc,Rc,Sc,Tc,ca,Uc,Vc,Wc,Xc,Yc,Zc,$c,ad,bd,cd,dd,ed,fd,gd,hd,id,jd,kd,ld,md,nd,od,pd,qd,rd,
-sd,td,ud,vd,wd,xd,yd,da,zd,Ad,Bd,Cd,Dd,Ed,Fd,Gd,Hd,Id,Jd,Kd,Ld,Md,Nd,Od,Pd,Qd,Rd,Sd,Td,Ud,Vd,Wd,Xd,Yd,Zd,$d,ae,be,ce,de,K,ee,fe,ge,he,ie,je,ke,le,ea,me,ne,oe,pe,qe,re,se,te,ue,ve,we,xe,fa,ye,ze,Ae,Be,Ce,De,Ee,Fe,Ge,He,Ie,Je,Ke,Le,Me,Ne,Oe,Pe,Qe,Re,Se,Te,Ue,Ve,We,Xe,Ye,Ze,$e,af,bf,cf,df,ef,ff,gf,hf,jf,kf,lf,mf,nf,of,pf;y=new mse.BaseContainer(e,{size:[mse.coor("cid0"),mse.coor("cid1")]});E=new mse.Layer(y,1,{globalAlpha:1,textBaseline:"top",size:[mse.coor("cid0"),mse.coor("cid1")]});M=new mse.Image(E,
-{size:[mse.coor("cid0"),mse.coor("cid1")],pos:[mse.coor("cid2"),mse.coor("cid2")],fillStyle:"rgb(0, 0, 0)",globalAlpha:1,font:"normal "+mse.coor("cid3")+"px Times",textAlign:"left"},"src3");E.addObject(M);y.addLayer("back",E);z=new mse.Layer(y,2,{globalAlpha:1,textBaseline:"top",size:[mse.coor("cid0"),mse.coor("cid1")]});ia=new mse.Text(z,{size:[mse.coor("cid4"),mse.coor("cid5")],pos:[mse.coor("cid6"),mse.coor("cid5")],fillStyle:"rgb(255, 255, 255)",globalAlpha:1,font:"normal "+mse.coor("cid7")+"px Verdanda",
-textAlign:"left",textBaseline:"top"},"Voodoo Connection",!0);z.addObject(ia);ja=new mse.Text(z,{size:[mse.coor("cid8"),mse.coor("cid9")],pos:[mse.coor("cid10"),mse.coor("cid11")],fillStyle:"rgb(81, 61, 29)",globalAlpha:1,font:"normal "+mse.coor("cid12")+"px Verdanda",textAlign:"left",textBaseline:"top"},"Chris Debien",!0);z.addObject(ja);y.addLayer("Couverturedefault",z);v=new mse.BaseContainer(null,{size:[mse.coor("cid0"),mse.coor("cid1")]});F=new mse.Layer(v,1,{globalAlpha:1,textBaseline:"top",
-size:[mse.coor("cid0"),mse.coor("cid1")]});ka=new mse.Image(F,{size:[mse.coor("cid0"),mse.coor("cid1")],pos:[mse.coor("cid2"),mse.coor("cid2")],fillStyle:"rgb(0, 0, 0)",globalAlpha:1,font:"normal "+mse.coor("cid3")+"px Times"},"src4");F.addObject(ka);v.addLayer("Aidedefault",F);G=new mse.Layer(v,2,{globalAlpha:1,textBaseline:"top",size:[mse.coor("cid0"),mse.coor("cid1")]});N=new mse.Image(G,{size:[mse.coor("cid13"),mse.coor("cid14")],pos:[mse.coor("cid15"),mse.coor("cid16")],fillStyle:"rgb(0, 0, 0)",
-globalAlpha:1,font:"normal "+mse.coor("cid3")+"px Times"},"src7");G.addObject(N);v.addLayer("button",G);H=new mse.Layer(v,3,{globalAlpha:1,textBaseline:"top",size:[mse.coor("cid0"),mse.coor("cid1")]});la=new mse.Text(H,{size:[mse.coor("cid17"),mse.coor("cid18")],pos:[mse.coor("cid19"),mse.coor("cid20")],fillStyle:"rgb(255, 255, 255)",globalAlpha:1,font:"normal "+mse.coor("cid21")+"px Verdana",textAlign:"left",textBaseline:"top"},"Commencer l'histoire",!0);H.addObject(la);v.addLayer("text",H);r=new mse.BaseContainer(null,
-{size:[mse.coor("cid0"),mse.coor("cid1")]});A=new mse.Layer(r,1,{globalAlpha:1,textBaseline:"top",size:[mse.coor("cid0"),mse.coor("cid1")]});ma=new mse.Image(A,{size:[mse.coor("cid0"),mse.coor("cid1")],pos:[mse.coor("cid2"),mse.coor("cid2")]},"src2");A.addObject(ma);O=new mse.Mask(A,{size:[mse.coor("cid22"),mse.coor("cid1")],pos:[mse.coor("cid23"),mse.coor("cid2")],fillStyle:"rgb(0, 0, 0)",globalAlpha:0.8,font:"normal "+mse.coor("cid3")+"px Times"});A.addObject(O);r.addLayer("Chapitredefault",A);
-B=new mse.Layer(r,2,{globalAlpha:1,textBaseline:"top",size:[mse.coor("cid0"),mse.coor("cid1")]});P=new mse.Text(B,{size:[mse.coor("cid6"),mse.coor("cid24")],pos:[mse.coor("cid25"),mse.coor("cid26")],fillStyle:"rgb(255, 255, 255)",globalAlpha:1,font:"normal "+mse.coor("cid27")+"px Verdana",textAlign:"left",textBaseline:"top"},"CHASSE A L'HOMME",!0);B.addObject(P);Q=new mse.Text(B,{size:[mse.coor("cid28"),mse.coor("cid29")],pos:[mse.coor("cid30"),mse.coor("cid31")],fillStyle:"rgb(255, 255, 255)",globalAlpha:1,
-font:"normal "+mse.coor("cid27")+"px Verdana",textAlign:"left",textBaseline:"top"},"Chapitre I",!0);B.addObject(Q);r.addLayer("Text",B);t=new mse.BaseContainer(null,{size:[mse.coor("cid0"),mse.coor("cid1")]});I=new mse.Layer(t,1,{globalAlpha:1,textBaseline:"top",size:[mse.coor("cid0"),mse.coor("cid1")]});C=new mse.Image(I,{size:[mse.coor("cid0"),mse.coor("cid1")],pos:[mse.coor("cid2"),mse.coor("cid2")]},"src2");I.addObject(C);t.addLayer("Contentdefault",I);J=new mse.Layer(t,2,{globalAlpha:1,textBaseline:"top",
-size:[mse.coor("cid0"),mse.coor("cid1")]});na=new mse.Mask(J,{size:[mse.coor("cid22"),mse.coor("cid1")],pos:[mse.coor("cid23"),mse.coor("cid2")],fillStyle:"rgb(0, 0, 0)",globalAlpha:0.8,font:"normal "+mse.coor("cid3")+"px Times",textAlign:"left"});J.addObject(na);t.addLayer("mask",J);c=new mse.ArticleLayer(t,3,{size:[mse.coor("cid32"),mse.coor("cid33")],pos:[mse.coor("cid34"),mse.coor("cid35")],fillStyle:"rgb(255, 255, 255)",globalAlpha:1,font:"normal "+mse.coor("cid36")+"px Verdana",textAlign:"left",
-textBaseline:"top",lineHeight:mse.coor("cid12")},null);oa=new mse.UIObject(c,{fillStyle:"initial"});c.addObject(oa);pa=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Ils \u00e9taient l\u00e0. ",!0);c.addObject(pa);qa=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"\u00c0 moins de cent m\u00e8tres ",!0);c.addObject(qa);ra=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"derri\u00e8re Simon. Bien d\u00e9cid\u00e9s ",!0);c.addObject(ra);sa=new mse.Text(c,{size:[mse.coor("cid32"),
-mse.coor("cid12")]},"\u00e0 lui faire payer l\u2019affront ",!0);c.addObject(sa);ta=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"qu\u2019ils avaient subi.",!0);c.addObject(ta);ua=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"La Meute. ",!0);c.addObject(ua);va=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Quatre adolescents qui ",!0);c.addObject(va);wa=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"faisaient r\u00e9gner leur loi au ",!0);
-c.addObject(wa);xa=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"sein du foyer.",!0);c.addObject(xa);ya=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Recroquevill\u00e9 dans la ",!0);c.addObject(ya);za=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"p\u00e9nombre d\u2019un porche, ",!0);c.addObject(za);Aa=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"L\u2019adolescent contemplait le ",!0);c.addObject(Aa);Ba=new mse.Text(c,{size:[mse.coor("cid32"),
-mse.coor("cid12")]},"ballet des lampes torches qui ",!0);c.addObject(Ba);Ca=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"d\u00e9chiraient la nuit. Des ",!0);c.addObject(Ca);Da=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"yeux, scrutant le moindre ",!0);c.addObject(Da);Ea=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"recoin, repoussant les ",!0);c.addObject(Ea);Fa=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"t\u00e9n\u00e8bres de leurs lueurs ",
-!0);c.addObject(Fa);R=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"cyclopes. ",!0);R.addLink(new mse.Link("cyclopes",18,"wiki",n));c.addObject(R);Ga=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Bient\u00f4t, ils seraient sur lui. ",!0);c.addObject(Ga);Ha=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Simon frissonna en songeant ",!0);c.addObject(Ha);Ia=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"\u00e0 ce qui allait lui arriver. Il ",
-!0);c.addObject(Ia);Ja=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"savait que Kevin, leur chef, ",!0);c.addObject(Ja);Ka=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"serait sans piti\u00e9\u2026  ",!0);c.addObject(Ka);La=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Il fallait qu\u2019il leur \u00e9chappe.",!0);c.addObject(La);Ma=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Absolument. Et tant pis s\u2019il ",!0);c.addObject(Ma);Na=new mse.Text(c,
-{size:[mse.coor("cid32"),mse.coor("cid12")]},"ne pouvait jamais retourner ",!0);c.addObject(Na);Oa=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"au foyer.",!0);c.addObject(Oa);Pa=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Les pas se rapprochaient, de ",!0);c.addObject(Pa);Qa=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"plus en plus. Il pouvait ",!0);c.addObject(Qa);Ra=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"entendre leurs voix \u00e0 ",
-!0);c.addObject(Ra);Sa=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"pr\u00e9sent.",!0);c.addObject(Sa);Ta=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]}," - Trouvez-moi ce sale petit ",!0);c.addObject(Ta);Ua=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"rat ! Il va comprendre qu\u2019on ",!0);c.addObject(Ua);Va=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"ne peut pas se moquer de ",!0);c.addObject(Va);Wa=new mse.Text(c,{size:[mse.coor("cid32"),
-mse.coor("cid12")]},"nous comme \u00e7a !",!0);c.addObject(Wa);Xa=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]}," - Ouaip, on va lui faire sa ",!0);c.addObject(Xa);S=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"f\u00eate !",!0);c.addObject(S);Ya=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Ca, c\u2019\u00e9tait \u00ab La Fouine \u00bb. ",!0);c.addObject(Ya);Za=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Dix sept ans, un m\u00e8tre ",!0);
-c.addObject(Za);$a=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"quatre-vingt, ",!0);c.addObject($a);ab=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"soixante-quinze kilos de ",!0);c.addObject(ab);bb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"violence pure. Une v\u00e9ritable ",!0);c.addObject(bb);cb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"bombe ambulante qui ne ",!0);c.addObject(cb);db=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},
-"demandait qu\u2019\u00e0 exploser. ",!0);c.addObject(db);eb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Simon se pencha un instant ",!0);c.addObject(eb);fb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"hors de son abri pour ",!0);c.addObject(fb);gb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"\u00e9valuer ses chances de leur ",!0);c.addObject(gb);hb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"\u00e9chapper. ",!0);c.addObject(hb);ib=
-new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Proche du z\u00e9ro absolu s\u2019il ne ",!0);c.addObject(ib);jb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"bougeait pas de sa cachette. ",!0);c.addObject(jb);kb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Un peu plus s\u2019il tentait une ",!0);c.addObject(kb);lb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"sortie. \u00c0 condition de tomber ",!0);c.addObject(lb);mb=new mse.Text(c,{size:[mse.coor("cid32"),
-mse.coor("cid12")]},"sur quelqu\u2019un, un adulte qui ",!0);c.addObject(mb);nb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"saurait \u00e9loigner ses ",!0);c.addObject(nb);ob=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"poursuivants. ",!0);c.addObject(ob);pb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]}," - Tu es pr\u00eat ? chuchota-t-il ",!0);c.addObject(pb);qb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"\u00e0 Dark.",!0);c.addObject(qb);
-T=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Dark. Vador. Son rat albinos. ",!0);T.addLink(new mse.Link("albinos",58,"wiki",o));c.addObject(T);rb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Son plus fid\u00e8le compagnon ",!0);c.addObject(rb);sb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"depuis un an. ",!0);c.addObject(sb);tb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Le seul en v\u00e9rit\u00e9. ",!0);c.addObject(tb);ub=new mse.Text(c,
-{size:[mse.coor("cid32"),mse.coor("cid12")]},"Simon repoussa l\u2019\u00e9lan de ",!0);c.addObject(ub);vb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"m\u00e9lancolie qui mena\u00e7ait de ",!0);c.addObject(vb);wb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"le submerger et enfouit Dark ",!0);c.addObject(wb);xb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"au fond de son sac. Il passa ",!0);c.addObject(xb);yb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},
-"les lani\u00e8res autour de ses ",!0);c.addObject(yb);U=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"\u00e9paules et s\u2019\u00e9lan\u00e7a. ",!0);c.addObject(U);zb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Pas de r\u00e9action.",!0);c.addObject(zb);Ab=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Il s\u2019\u00e9tait mis \u00e0 courir comme ",!0);c.addObject(Ab);V=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"si sa vie en d\u00e9pendait. ",
-!0);c.addObject(V);Bb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Si la \u00ab Meute \u00bb lui tombait ",!0);c.addObject(Bb);Cb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"dessus, il \u00e9tait bon pour un ",!0);c.addObject(Cb);Db=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"passage \u00e0 tabac dans les ",!0);c.addObject(Db);Eb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"r\u00e8gles de l\u2019art. Voil\u00e0 ce qui ",!0);c.addObject(Eb);
-Fb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"se passe lorsque l\u2019on refuse ",!0);c.addObject(Fb);Gb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"de soumettre aux plus forts.",!0);c.addObject(Gb);Hb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Simon \u00e9vitait de regarder ",!0);c.addObject(Hb);Ib=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"dans leur direction, les yeux ",!0);c.addObject(Ib);W=new mse.Text(c,{size:[mse.coor("cid32"),
-mse.coor("cid12")]},"riv\u00e9s sur les frondaisons du ",!0);W.addLink(new mse.Link("frondaisons",79,"wiki",D));c.addObject(W);Jb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Parc Montsouris. Des arbres, ",!0);c.addObject(Jb);Kb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"de la p\u00e9nombre et des ",!0);c.addObject(Kb);Lb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"milliards de recoins o\u00f9 il ",!0);c.addObject(Lb);Mb=new mse.Text(c,{size:[mse.coor("cid32"),
-mse.coor("cid12")]},"pourrait se dissimuler en ",!0);c.addObject(Mb);Nb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"attendant l\u2019aube. ",!0);c.addObject(Nb);Ob=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"S\u2019il atteignait le jardin, il ",!0);c.addObject(Ob);Pb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"serait sauv\u00e9.",!0);c.addObject(Pb);Qb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Mais, dans sa pr\u00e9cipitation, il ",
-!0);c.addObject(Qb);Rb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"butta contre le trottoir. Le ",!0);c.addObject(Rb);Sb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"b\u00e9ton lui arracha une ",!0);c.addObject(Sb);Tb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"plainte. Un cri minuscule.",!0);c.addObject(Tb);Ub=new mse.UIObject(c,{fillStyle:"initial"});c.addObject(Ub);Vb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]}," - Il est l\u00e0 !",
-!0);c.addObject(Vb);Wb=new mse.UIObject(c,{fillStyle:"initial"});c.addObject(Wb);Xb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Pas assez minuscule, ",!0);c.addObject(Xb);Yb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"visiblement.",!0);c.addObject(Yb);Zb=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Simon d\u00e9tala tandis que les ",!0);c.addObject(Zb);$b=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"faisceaux accrochaient sa ",!0);
-c.addObject($b);ac=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"silhouette. ",!0);c.addObject(ac);bc=new mse.Image(c,{size:[mse.coor("cid37"),mse.coor("cid38")],pos:[mse.coor("cid39"),mse.coor("cid3")]},"src10");c.addObject(bc);cc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]}," - Choppez-le ! Faut qu\u2019il ",!0);c.addObject(cc);dc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"comprenne !",!0);c.addObject(dc);ec=new mse.Text(c,{size:[mse.coor("cid32"),
-mse.coor("cid12")]},"Que je comprenne quoi ? ",!0);c.addObject(ec);fc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Qu\u2019il faut se laisser faire ? ",!0);c.addObject(fc);gc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Pas question !",!0);c.addObject(gc);X=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Il acc\u00e9l\u00e9ra. ",!0);X.addLink(new mse.Link("acc\u00e9l\u00e9ra",105,"audio",mse.src.getSrc("src17")));c.addObject(X);hc=new mse.Text(c,{size:[mse.coor("cid32"),
-mse.coor("cid12")]},"Il essayait d\u2019oublier que ses ",!0);c.addObject(hc);ic=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"poumons le br\u00fblaient, qu\u2019il ",!0);c.addObject(ic);jc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"\u00e9tait \u00e9puis\u00e9 par cette ",!0);c.addObject(jc);kc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"poursuite qui durait depuis ",!0);c.addObject(kc);lc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},
-"des heures, et surtout que la ",!0);c.addObject(lc);mc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"peur mena\u00e7ait de le ",!0);c.addObject(mc);nc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"paralyser \u00e0 tout instant. ",!0);c.addObject(nc);oc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Il traversa le boulevard, ",!0);c.addObject(oc);Y=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"d\u00e9clenchant le klaxon ",!0);Y.addLink(new mse.Link("klaxon",
-114,"audio",mse.src.getSrc("src18")));c.addObject(Y);Z=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"furieux d\u2019un noctambule ",!0);Z.addLink(new mse.Link("noctambule",115,"wiki",x));c.addObject(Z);pc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"\u00e9gar\u00e9. Puis il s\u2019engouffra \u00e0 ",!0);c.addObject(pc);aa=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"l\u2019abri des arbres. Son sac ",!0);c.addObject(aa);qc=new mse.Text(c,{size:[mse.coor("cid32"),
-mse.coor("cid12")]},"ballotait sur ses \u00e9paules et il ",!0);c.addObject(qc);rc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"pensa au pauvre Dark. ",!0);c.addObject(rc);sc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Sans r\u00e9fl\u00e9chir, il p\u00e9n\u00e9tra ",!0);c.addObject(sc);tc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"dans une petite all\u00e9e. Il ",!0);c.addObject(tc);uc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},
-"d\u00e9passa les angles du ",!0);c.addObject(uc);vc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"pavillon m\u00e9t\u00e9o qui s\u2019\u00e9levait ",!0);c.addObject(vc);wc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"dans la p\u00e9nombre, puis il ",!0);c.addObject(wc);xc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"ralentit sa course. ",!0);c.addObject(xc);yc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Pas un bruit.",!0);c.addObject(yc);
-zc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Rien d\u2019autre que le vent ",!0);c.addObject(zc);Ac=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"dans les feuilles. ",!0);c.addObject(Ac);Bc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"O\u00f9 \u00e9taient-ils pass\u00e9s ?",!0);c.addObject(Bc);Cc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Simon s\u2019arr\u00eata, s\u2019accroupit ",!0);c.addObject(Cc);Dc=new mse.Text(c,{size:[mse.coor("cid32"),
-mse.coor("cid12")]},"derri\u00e8re un banc scarifi\u00e9 de ",!0);c.addObject(Dc);Ec=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"graffitis. ",!0);c.addObject(Ec);Fc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"L\u00e0 ! Sur sa gauche. ",!0);c.addObject(Fc);Gc=new mse.Image(c,{size:[mse.coor("cid37"),mse.coor("cid40")],pos:[mse.coor("cid39"),mse.coor("cid3")]},"src13");c.addObject(Gc);Hc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Il avait reconnu la d\u00e9marche ",
-!0);c.addObject(Hc);Ic=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"chaloup\u00e9e de la Fouine, les ",!0);c.addObject(Ic);ba=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"pas lourds de l\u2019Ours \u2013 seize ",!0);ba.addLink(new mse.Link("pas",137,"audio",mse.src.getSrc("src19")));c.addObject(ba);Jc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"ans, un QI inversement ",!0);c.addObject(Jc);Kc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},
-"proportionnel \u00e0 sa force - \u00e0 ",!0);c.addObject(Kc);Lc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"ses c\u00f4t\u00e9s. Les deux autres ",!0);c.addObject(Lc);Mc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"suivaient la ligne de ",!0);c.addObject(Mc);Nc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"tramway qui longeait le parc, ",!0);c.addObject(Nc);Oc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"sur sa droite.",!0);c.addObject(Oc);
-Pc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Le groupe s\u2019\u00e9tait s\u00e9par\u00e9 en ",!0);c.addObject(Pc);Qc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"deux et tentait de ",!0);c.addObject(Qc);Rc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"l\u2019encercler.",!0);c.addObject(Rc);Sc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Simon r\u00e9fl\u00e9chit \u00e0 toute ",!0);c.addObject(Sc);Tc=new mse.Text(c,{size:[mse.coor("cid32"),
-mse.coor("cid12")]},"allure. ",!0);c.addObject(Tc);ca=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Le RER ! ",!0);ca.addLink(new mse.Link("RER",149,"audio",mse.src.getSrc("src20")));c.addObject(ca);Uc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"La station ne devait \u00eatre ",!0);c.addObject(Uc);Vc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"qu\u2019\u00e0 quelques dizaines de ",!0);c.addObject(Vc);Wc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},
-"m\u00e8tres devant lui et, m\u00eame ",!0);c.addObject(Wc);Xc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"en ces heures tardives, il y ",!0);c.addObject(Xc);Yc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"aurait sans doute un peu de ",!0);c.addObject(Yc);Zc=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"monde. ",!0);c.addObject(Zc);$c=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Il reprit sa progression, ",!0);c.addObject($c);ad=new mse.Text(c,
-{size:[mse.coor("cid32"),mse.coor("cid12")]},"lentement, veillant \u00e0 rester ",!0);c.addObject(ad);bd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"invisible. ",!0);c.addObject(bd);cd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Plus que cinquante m\u00e8tres.",!0);c.addObject(cd);dd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Il entendait d\u00e9j\u00e0 le ",!0);c.addObject(dd);ed=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"crissement des rames sur les ",
-!0);c.addObject(ed);fd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"rails.",!0);c.addObject(fd);gd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Quarante.",!0);c.addObject(gd);hd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]}," - L\u00e0 sur le pont ! Il essaye ",!0);c.addObject(hd);id=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"de rejoindre la gare !",!0);c.addObject(id);jd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]}," - Merde ! l\u00e2cha Simon en ",
-!0);c.addObject(jd);kd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"reprenant sa course.",!0);c.addObject(kd);ld=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Trente.",!0);c.addObject(ld);md=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Mais la meute, galvanis\u00e9e ",!0);c.addObject(md);nd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"par la proximit\u00e9 de sa proie, ",!0);c.addObject(nd);od=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},
-"se rapprochait rapidement. ",!0);c.addObject(od);pd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Ils avaient de la lumi\u00e8re, ils ",!0);c.addObject(pd);qd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"\u00e9vitaient les obstacles. ",!0);c.addObject(qd);rd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Surtout ils \u00e9taient plus \u00e2g\u00e9s, ",!0);c.addObject(rd);sd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"plus forts alors que lui \u00e9tait ",
-!0);c.addObject(sd);td=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"\u00e9reint\u00e9, les jambes ",!0);c.addObject(td);ud=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"\u00e9corch\u00e9es par les ronces, au ",!0);c.addObject(ud);vd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"bord de l\u2019asphyxie.",!0);c.addObject(vd);wd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Les deux groupes gagnaient ",!0);c.addObject(wd);xd=new mse.Text(c,
-{size:[mse.coor("cid32"),mse.coor("cid12")]},"insensiblement du terrain. ",!0);c.addObject(xd);yd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Bient\u00f4t ils se rejoindraient et ",!0);c.addObject(yd);da=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"ce serait l\u2019hallali.",!0);da.addLink(new mse.Link("l\u2019hallali",182,"wiki",w));c.addObject(da);zd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Simon obliqua brutalement ",!0);c.addObject(zd);Ad=new mse.Text(c,
-{size:[mse.coor("cid32"),mse.coor("cid12")]},"vers le nord pour essayer de ",!0);c.addObject(Ad);Bd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"rejoindre un bouquet ",!0);c.addObject(Bd);Cd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"d\u2019arbres denses. Avec un ",!0);c.addObject(Cd);Dd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"peu de chance, il pourrait les ",!0);c.addObject(Dd);Ed=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"semer. Au pire, il grimperait ",
-!0);c.addObject(Ed);Fd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"sur l\u2019un des troncs ",!0);c.addObject(Fd);Gd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"centenaires. ",!0);c.addObject(Gd);Hd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Il se pr\u00e9cipita dans le ",!0);c.addObject(Hd);Id=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"bosquet. Les branches ",!0);c.addObject(Id);Jd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},
-"basses fouett\u00e8rent son ",!0);c.addObject(Jd);Kd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"visage, lui arrachant des ",!0);c.addObject(Kd);Ld=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"larmes. ",!0);c.addObject(Ld);Md=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Mais il \u00e9tait presqu\u2019\u00e0 l\u2019abri : ",!0);c.addObject(Md);Nd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"l\u2019obscurit\u00e9 \u00e9tait totale. ",
-!0);c.addObject(Nd);Od=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Il ignorait vers quoi il ",!0);c.addObject(Od);Pd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"courrait mais il s\u2019en fichait. ",!0);c.addObject(Pd);Qd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Il acc\u00e9l\u00e9ra encore et\u2026",!0);c.addObject(Qd);Rd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"S\u2019effondra brutalement, le ",!0);c.addObject(Rd);Sd=new mse.Text(c,
-{size:[mse.coor("cid32"),mse.coor("cid12")]},"souffle coup\u00e9, une violente ",!0);c.addObject(Sd);Td=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"douleur barrant sa poitrine. ",!0);c.addObject(Td);Ud=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Il venait de heurter quelque ",!0);c.addObject(Ud);Vd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"chose de plein fouet. ",!0);c.addObject(Vd);Wd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},
-"Abasourdi, Simon fouilla ",!0);c.addObject(Wd);Xd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"l\u2019obscurit\u00e9. Il entendait ses ",!0);c.addObject(Xd);Yd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"poursuivants battre les talus ",!0);c.addObject(Yd);Zd=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"et les fourr\u00e9s. ",!0);c.addObject(Zd);$d=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Il t\u00e2tonna un instant dans ",!0);c.addObject($d);
-ae=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"son sac. ",!0);c.addObject(ae);be=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Sa torche.",!0);c.addObject(be);ce=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Un faible halo de lumi\u00e8re.",!0);c.addObject(ce);de=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Un grillage. ",!0);c.addObject(de);K=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Pi\u00e9g\u00e9 !",!0);c.addObject(K);
-ee=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Il se redressa en grima\u00e7ant, ",!0);c.addObject(ee);fe=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"s\u2019approcha.  ",!0);c.addObject(fe);ge=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Une dizaine de m\u00e8tres en ",!0);c.addObject(ge);he=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"contrebas, le faisceau de sa ",!0);c.addObject(he);ie=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},
-"lampe illumina les reliefs ",!0);c.addObject(ie);je=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"mang\u00e9s de rouille d\u2019une ",!0);c.addObject(je);ke=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"ligne de chemin de fer ",!0);c.addObject(ke);le=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"abandonn\u00e9e.",!0);c.addObject(le);ea=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"La Petite Ceinture. ",!0);ea.addLink(new mse.Link("La Petite Ceinture",
-224,"wiki",q));c.addObject(ea);me=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Un \u00e9clat de voix derri\u00e8re lui ",!0);c.addObject(me);ne=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"le fit sursauter.",!0);c.addObject(ne);oe=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]}," - On le tient !",!0);c.addObject(oe);pe=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Simon fixa le puits de ",!0);c.addObject(pe);qe=new mse.Text(c,{size:[mse.coor("cid32"),
-mse.coor("cid12")]},"t\u00e9n\u00e8bres qui s\u2019\u00e9tendait ",!0);c.addObject(qe);re=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"au-del\u00e0 du grillage.",!0);c.addObject(re);se=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]}," - Alors, t\u2019es enfin pr\u00eat \u00e0 ",!0);c.addObject(se);te=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"recevoir ta le\u00e7on ?",!0);c.addObject(te);ue=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Kevin s\u2019approcha dans la ",
-!0);c.addObject(ue);ve=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"clart\u00e9 de la lune. Il tendit le ",!0);c.addObject(ve);we=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"bras. Un bruit de ressort. ",!0);c.addObject(we);xe=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Une lame apparut au bout ",!0);c.addObject(xe);fa=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"de sa main. ",!0);c.addObject(fa);ye=new mse.Text(c,{size:[mse.coor("cid32"),
-mse.coor("cid12")]},"L\u2019adolescent sentait le sang ",!0);c.addObject(ye);ze=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"battre contre ses tempes, ",!0);c.addObject(ze);Ae=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"l\u2019adr\u00e9naline inonder son ",!0);c.addObject(Ae);Be=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"corps. Il voulait gagner du ",!0);c.addObject(Be);Ce=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"temps pour r\u00e9cup\u00e9rer. Pour ",
-!0);c.addObject(Ce);De=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"tenter quelque chose. ",!0);c.addObject(De);Ee=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Il se retourna face \u00e0 ses ",!0);c.addObject(Ee);Fe=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"adversaires.",!0);c.addObject(Fe);Ge=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]}," - Je n\u2019ai fait que d\u00e9fendre ",!0);c.addObject(Ge);He=new mse.Text(c,{size:[mse.coor("cid32"),
-mse.coor("cid12")]},"Rachel. Vous n\u2019aviez pas le ",!0);c.addObject(He);Ie=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"droit de vous en prendre \u00e0 ",!0);c.addObject(Ie);Je=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"elle. ",!0);c.addObject(Je);Ke=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]}," - T\u2019avais qu\u2019\u00e0 pas te m\u00ealer ",!0);c.addObject(Ke);Le=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"de nos affaires.",
-!0);c.addObject(Le);Me=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]}," - Quatre contre un, vous ",!0);c.addObject(Me);Ne=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"n\u2019\u00eates que des l\u00e2ches !",!0);c.addObject(Ne);Oe=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Simon avait lanc\u00e9 \u00e7a tout en ",!0);c.addObject(Oe);Pe=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"jetant un bref coup d\u2019\u0153il ",!0);c.addObject(Pe);
-Qe=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"autour de lui. Il avait aper\u00e7u ",!0);c.addObject(Qe);Re=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"la grosse pierre au pied du ",!0);c.addObject(Re);Se=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"grillage. Un bon tremplin\u2026",!0);c.addObject(Se);Te=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Kevin fulminait. ",!0);c.addObject(Te);Ue=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},
-" - Amenez-le moi ! ",!0);c.addObject(Ue);Ve=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Les trois autres s\u2019\u00e9lanc\u00e8rent. ",!0);c.addObject(Ve);We=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Mais, juste avant que leurs ",!0);c.addObject(We);Xe=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"mains ne se referment sur ",!0);c.addObject(Xe);Ye=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"lui, il s\u2019\u00e9tait jet\u00e9 sur le c\u00f4t\u00e9. ",
-!0);c.addObject(Ye);Ze=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"D\u2019une roulade il avait atteint ",!0);c.addObject(Ze);$e=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"la pierre. Il se redressa d\u2019un ",!0);c.addObject($e);af=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"bond, prit appui sur le rocher ",!0);c.addObject(af);bf=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"et entreprit l\u2019escalade du ",!0);c.addObject(bf);cf=
-new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"grillage.",!0);c.addObject(cf);df=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]}," - Il va s\u2019\u00e9chapper ! Faites ",!0);c.addObject(df);ef=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"quelque chose !",!0);c.addObject(ef);ff=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]}," - Mais\u2026 Il ne peut pas aller ",!0);c.addObject(ff);gf=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},
-"loin, il n\u2019y a rien apr\u00e8s.",!0);c.addObject(gf);hf=new FindSimon;c.addGame(hf);jf=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"C\u2019\u00e9tait vrai.",!0);c.addObject(jf);kf=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Il n\u2019y avait plus rien. Rien ",!0);c.addObject(kf);lf=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"d\u2019autre qu\u2019un \u00e9norme trou ",!0);c.addObject(lf);mf=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},
-"de t\u00e9n\u00e8bres. ",!0);c.addObject(mf);nf=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Mais il \u00e9tait trop tard pour ",!0);c.addObject(nf);of=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"reculer. ",!0);c.addObject(of);pf=new mse.Text(c,{size:[mse.coor("cid32"),mse.coor("cid12")]},"Simon s\u2019\u00e9lan\u00e7a dans le vide.",!0);c.addObject(pf);c.addObject(new mse.UIObject(c,{size:[c.width,45]}));c.addObject(new mse.Text(c,{pos:[150,0],font:"italic 40px Verdana",
-textBaseline:"top",textAlign:"center",fillStyle:"#FFF"},"\u00c0 suivre ...",!0));c.setDefile(1300);t.addLayer("content",c);a=new mse.Animation(22,1,!0);a.block=!0;b=new mse.Mask(null,{pos:[mse.coor("cid2"),mse.coor("cid2")],size:[mse.coor("cid0"),mse.coor("cid1")],fillStyle:"rgb(255, 255, 255)"});a.addObj("obj567",b);b=new mse.Image(null,{pos:[mse.coor("cid41"),mse.coor("cid42")],size:[mse.coor("cid43"),mse.coor("cid44")]},"src0");a.addObj("src0",b);a.addAnimation("obj567",{frame:JSON.parse("[0,1,9,15,21,22]"),
-opacity:JSON.parse("[1,0,1,1,0,0]")});a.addAnimation("src0",{frame:JSON.parse("[0,1,9,15,21,22]"),opacity:JSON.parse("[1,0,1,1,0,0]"),pos:[[mse.coor("cid41"),mse.coor("cid42")],[mse.coor("cid41"),mse.coor("cid42")],[mse.coor("cid41"),mse.coor("cid42")],[mse.coor("cid41"),mse.coor("cid42")],[mse.coor("cid2"),mse.coor("cid45")],[mse.coor("cid2"),mse.coor("cid45")]],size:[[mse.coor("cid43"),mse.coor("cid44")],[mse.coor("cid43"),mse.coor("cid44")],[mse.coor("cid43"),mse.coor("cid44")],[mse.coor("cid43"),
-mse.coor("cid44")],[mse.coor("cid0"),mse.coor("cid46")],[mse.coor("cid0"),mse.coor("cid46")]]});f=new mse.Animation(89,1,!1);f.block=!0;f.addObj("obj12",O);f.addAnimation("obj12",{frame:JSON.parse("[0,75,88,89]"),opacity:JSON.parse("[0,0,0.800000011921,0.800000011921]")});g=new mse.Animation(101,1,!1);g.block=!0;g.addObj("obj13",P);g.addAnimation("obj13",{frame:JSON.parse("[0,75,88,101]"),opacity:JSON.parse("[0,0,1,1]")});m=new mse.Animation(101,1,!1);m.block=!0;m.addObj("obj14",Q);m.addAnimation("obj14",
-{frame:JSON.parse("[0,75,88,101]"),opacity:JSON.parse("[0,0,1,1]")});k=new mse.Animation(58,1,!0);k.block=!0;b=new mse.Sprite(null,{pos:[mse.coor("cid23"),mse.coor("cid54")],size:[mse.coor("cid55"),mse.coor("cid56")]},"src6",[[186,0,119,254]]);k.addObj("src6",b);b.appendFrame([362,0,260,254]);b.appendFrame([0,0,299,254]);b.appendFrame([302,0,199,254]);k.addAnimation("src6",{frame:JSON.parse("[0,13,16,19,22,25,28,31,34,37,40,43,46,49,52,55,58]"),opacity:JSON.parse("[0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0]"),
-spriteSeq:JSON.parse("[0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,3]"),size:[[mse.coor("cid55"),mse.coor("cid56")],[mse.coor("cid55"),mse.coor("cid56")],[mse.coor("cid55"),mse.coor("cid56")],[mse.coor("cid55"),mse.coor("cid56")],[mse.coor("cid57"),mse.coor("cid56")],[mse.coor("cid57"),mse.coor("cid56")],[mse.coor("cid57"),mse.coor("cid56")],[mse.coor("cid57"),mse.coor("cid56")],[mse.coor("cid59"),mse.coor("cid56")],[mse.coor("cid59"),mse.coor("cid56")],[mse.coor("cid59"),mse.coor("cid56")],[mse.coor("cid59"),
-mse.coor("cid56")],[mse.coor("cid62"),mse.coor("cid56")],[mse.coor("cid62"),mse.coor("cid56")],[mse.coor("cid62"),mse.coor("cid56")],[mse.coor("cid62"),mse.coor("cid56")],[mse.coor("cid62"),mse.coor("cid56")]],pos:[[mse.coor("cid23"),mse.coor("cid54")],[mse.coor("cid23"),mse.coor("cid54")],[mse.coor("cid23"),mse.coor("cid54")],[mse.coor("cid23"),mse.coor("cid54")],[mse.coor("cid23"),mse.coor("cid54")],[mse.coor("cid23"),mse.coor("cid54")],[mse.coor("cid23"),mse.coor("cid54")],[mse.coor("cid23"),mse.coor("cid54")],
-[mse.coor("cid58"),mse.coor("cid54"),1],[mse.coor("cid58"),mse.coor("cid54"),1],[mse.coor("cid58"),mse.coor("cid54"),1],[mse.coor("cid60"),mse.coor("cid54")],[mse.coor("cid61"),mse.coor("cid54")],[mse.coor("cid61"),mse.coor("cid54")],[mse.coor("cid61"),mse.coor("cid54")],[mse.coor("cid61"),mse.coor("cid54")],[mse.coor("cid61"),mse.coor("cid54")]]});s=new mse.Animation(63,1,!0);s.block=!0;b=new mse.Image(null,{pos:[mse.coor("cid2"),mse.coor("cid2")],size:[mse.coor("cid0"),mse.coor("cid1")]},"src16");
-s.addObj("src16",b);b=new mse.Text(null,{pos:[mse.coor("cid64"),mse.coor("cid65")],size:[mse.coor("cid66"),mse.coor("cid67")],fillStyle:"rgb(255, 255, 255)",textBaseline:"top",font:"normal "+mse.coor("cid63")+"px Verdana",textAlign:"left"},"Pi\u00e9g\u00e9 !!!",!0);s.addObj("obj571",b);s.addAnimation("src16",{frame:JSON.parse("[0,6,22,25,44,50,63]"),opacity:JSON.parse("[0,1,1,1,1,0,0]")});s.addAnimation("obj571",{frame:JSON.parse("[0,6,22,25,44,50,63]"),size:[[mse.coor("cid66"),mse.coor("cid67")],
-[mse.coor("cid68"),mse.coor("cid69")],[mse.coor("cid73"),mse.coor("cid74")],[mse.coor("cid78"),mse.coor("cid48")],[mse.coor("cid78"),mse.coor("cid48")],[mse.coor("cid78"),mse.coor("cid48")],[mse.coor("cid78"),mse.coor("cid48")]],fontSize:[mse.coor("cid63"),mse.coor("cid63"),mse.coor("cid70"),mse.coor("cid75"),mse.coor("cid75"),mse.coor("cid75"),mse.coor("cid75")],pos:[[mse.coor("cid64"),mse.coor("cid65")],[mse.coor("cid64"),mse.coor("cid65")],[mse.coor("cid71"),mse.coor("cid72")],[mse.coor("cid76"),
-mse.coor("cid77")],[mse.coor("cid76"),mse.coor("cid77")],[mse.coor("cid76"),mse.coor("cid77")],[mse.coor("cid76"),mse.coor("cid77")]],opacity:JSON.parse("[0,0,0.800000011921,1,1,0,0]")});var qf,rf;mse.Script.register([{src:S,type:"show"}],function(){a.start()});mse.Script.register([{src:M,type:"click"}],function(){e.transition(v)});mse.Script.register([{src:N,type:"click"}],function(){e.transition(r)});mse.Script.register([{src:U,type:"firstShow"}],function(){p.start()});mse.Script.register([{src:r,
-type:"show"}],function(){f.start()});mse.Script.register([{src:r,type:"show"}],function(){g.start()});mse.Script.register([{src:r,type:"show"}],function(){m.start()});qf=[{src:r,type:"click"}];rf=function(){e.transition(t)};mse.Script.register([{src:f,type:"end"}],function(){mse.setCursor("pointer");mse.Script.register(qf,rf)});mse.Script.register([{src:V,type:"show"}],function(){k.start()});mse.Script.register([{src:aa,type:"firstShow"}],function(){d=C.getWidth();j=C.getHeight();i=imgBoundingInBox("src1",
-d,j);b=new mse.Image(C.parent,i,"src1");mse.transition(C,b,25)});mse.Script.register([{src:K,type:"show"}],function(){s.start()});mse.Script.register([{src:K,type:"firstShow"}],function(){mse.src.getSrc("src21").play()});y.evtDeleg.addListener("show",new mse.Callback(mse.setCursor,window,"pointer"));r.evtDeleg.addListener("show",new mse.Callback(mse.setCursor,mse.root,"default"));t.evtDeleg.addListener("show",new mse.Callback(mse.setCursor,window,"default"));for(var ga=0;ga<c.objList.length;ga++){var ha=
-c.getObject(ga);ha instanceof mse.Text&&ha.evtDeleg.addListener("firstShow",new mse.Callback(h,null,{typewriter:{}},ha))}mse.src.addSource("cran","./images/cran.png","img",!0);mse.src.addSource("audCran","./audios/cran","aud",!1);var sf=(mse.coor("cid0")-51)/2,tf=(mse.coor("cid1")-350)/2+140,uf=new mse.Sprite(null,{},"cran",51,210,0,0,51,210),vf=new mse.Sprite(null,{pos:[-12,-127]},"cran",25,196,51,0,25,139),L=new mse.UIObject(null,{});L.count=0;L.angle=-180;L.draw=function(a){10==this.count&&mse.src.getSrc("audCran").play();
-10<=this.count&&14>=this.count&&(this.angle=-180+180*(this.count-10)/4);this.count++;a.save();a.globalAlpha=this.globalAlpha;a.translate(sf+24,tf+16);a.rotate(this.angle*Math.PI/180);vf.draw(a);a.rotate(-this.angle*Math.PI/180);a.translate(-24,-16);uf.draw(a);a.restore()};u=new mse.Animation(36,1,!0);u.block=!0;u.addObj("couteau",L);u.addAnimation("couteau",{frame:[0,6,30,36],opacity:[0,1,1,0]});mse.Script.register([{src:fa,type:"show"}],function(){u.start()});mse.currTimeline.start()}createbook();
+
+(function( window, $ ) {
+
+var mse = function() {};
+
+mse.configs = {
+	font 	: 'Verdana',
+	srcPath	: ''
+};
+// Shortcut
+var cfs = mse.configs;
+
+mse.root = null;
+mse.currTimeline = null;
+
+
+// Gestion de ressources
+mse.src = function() {
+    return {
+	    list 		: {},
+	    loading		: [],
+	    preload		: new Array(),
+	    loadInfo	: 'Chargement ressources: ',
+	    waitinglist : {},
+	    audExtCheck : /(.ogg|.mp3)/,
+	    init		: function() {
+	    	var ctx, angle;
+	    	for(var i = 0; i < 12; i++) {
+	    		this.loading[i] = document.createElement('canvas');
+	    		this.loading[i].width = 300; this.loading[i].height = 300;
+	    		ctx = this.loading[i].getContext('2d');
+	    		ctx.translate(150,150);
+	    		//ctx.fillStyle = 'rgba(0,0,0,0.4)';
+	    		//ctx.fillRoundRect(-50,-50, 100,100, 10);
+	    		angle = 2*Math.PI / 12;
+	    		ctx.fillStyle = '#AAAAAA';
+	    		for(var j = 0; j < 12; j++) {
+	    			if(j == i) {
+	    				ctx.fillStyle = '#EEEEEE';
+	    				ctx.fillRect(60, -9, 60, 18);
+	    				ctx.fillStyle = '#AAAAAA';
+	    			}
+	    			else ctx.fillRect(60, -9, 60, 18);
+	    			ctx.rotate(angle);
+	    		}
+	    	}
+	    },
+	    addSource	: function(name, file, type, pre) {
+	    	switch(type) {
+	    	case 'img' : case 'image':
+	    		this.list[name] = new Image();
+	    		this.list[name].src = cfs.srcPath + file;
+	    		this.list[name].lid = 0; // Loading current index
+	    		break;
+	    	case 'aud' : case 'audio':
+	    		this.list[name] = document.createElement('audio');
+	    		if(file.search(this.audExtCheck) == -1) {
+	    		    switch(MseConfig.browser) {
+	    		    case 'Chrome': case 'Firefox': case 'Opera':
+	    			    this.list[name].src = cfs.srcPath+file+'.ogg';break;
+	    		    case 'Safari': case 'Explorer':
+	    			    this.list[name].src = cfs.srcPath+file+'.mp3';break;
+	    		    }
+	    		}
+	    		else this.list[name].src = cfs.srcPath+file;
+	    		this.list[name].load();
+	    		break;
+	    	default: return;
+	    	}
+	    	this.list[name].type = type;
+	    	if(pre && type != 'aud' && type != 'audio') this.preload.push(this.list[name]);
+	    },
+	    getSrc		: function(name) {
+	    	var res = this.list[name];
+	    	if(!res) return null;
+	    	switch(res.type) {
+	    	case 'img': case 'image':
+	    		if(!res || res.complete) return res;
+	    		else {
+	    			if(res.lid == 12) res.lid = 0;
+	    			return this.loading[(res.lid++)];
+	    		}
+	    	case 'aud': case 'audio':
+	    		return res;
+	    	}
+	    },
+	    waitSrc     : function(name, callback) {
+	        if(!this.list[name]) return;
+	        if(this.list[name].complete) {
+	            callback.invoke();
+	            return;
+	        }
+	        if(!this.waitinglist[name]) this.waitinglist[name] = new Array();
+	        var wlist = this.waitinglist[name];
+	        wlist.push(callback);
+	        this.list[name].onload = function() {
+	            for(var cb in wlist) wlist[cb].invoke();
+	        };
+	    },
+	    preloadProc	: function() {
+	    	var count = 0;
+	    	for(var i = 0; i < this.preload.length; i++)
+	    		if(this.preload[i].complete) count++;
+	    	return [count, this.preload.length];
+	    },
+	    preloadPage	: function(ctx, fini, total) {
+	    	ctx.clearRect(0, 0, mse.root.width, mse.root.height);
+	    	ctx.save();
+	    	ctx.strokeStyle = '#333333';
+	    	ctx.lineWidth = 2;
+	    	ctx.strokeRoundRect((mse.root.width-280)/2, mse.root.height-100, 281, 11, 5);
+	    	ctx.fillStyle = '#555555';
+	    	ctx.fillRoundRect((mse.root.width-280)/2, mse.root.height-100, (fini/total)*280, 10, 5);
+	    	var txt = this.loadInfo + fini + '/' + total;
+	    	var w = ctx.measureText(txt).width;
+	    	ctx.font = '20px '+cfs.font;
+	    	ctx.fillStyle = '#000000';
+	    	ctx.fillText(txt, (mse.root.width-w)/2, mse.root.height-60);
+	    	ctx.restore();
+	    }
+	};
+}();
+
+var initCoordinateSys = function(){
+    mse.coords = {};
+    mse.coorRatio = 1;
+    mse.joinCoor = function(coor) {
+        if(isNaN(coor)) return "";
+        var cid = 0;
+        for (var i in mse.coords) {
+            if (coor == mse.coords[i]) return i;
+            
+            var reg = i.match(/cid(\d+)/);
+            if(reg[1]) var id = parseInt(reg[1]);
+            if(!isNaN(id) && id >= cid) cid = id + 1;
+        }
+        var key = "cid"+cid;
+        mse.coords[key] = mse.coorRatio == 1 ? coor : parseFloat(new Number(mse.coorRatio * coor).toFixed(2));
+        return key;
+    };
+    mse.coor = function(key) {
+        if(isNaN(mse.coords[key])) return 0;
+        else return mse.coords[key];
+    };
+    mse.realCoor = function(coor) {
+        if(isNaN(coor)) return 0;
+        else return mse.coorRatio == 1 ? coor : parseFloat(new Number(mse.coorRatio * coor).toFixed(2));
+    };
+}();
+
+function changeCoords() {
+    mse.coorRatio = MseConfig.pageHeight / mse.coords['cid1'];
+    for(var i in mse.coords) {
+        mse.coords[i] = parseFloat(new Number(mse.coorRatio * mse.coords[i]).toFixed(2));
+    }
+    if(window.autoFitCallback) window.autoFitCallback();
+    window.autoFitCallback = null;
+}
+
+mse.autoFitToWindow = function(f) {
+    if(f) window.autoFitCallback = f;
+    if(mse.coords['cid1']) {
+        if(MseConfig.pageHeight > 250) changeCoords();
+        else setTimeout(mse.autoFitToWindow, 1000);
+    }
+}
+
+mse.init = function(configs) {
+	$.extend(cfs, configs);
+
+    mse.src.init();
+	mse.src.addSource('imgNotif', '../images/turn_comp.png', 'img');
+	mse.src.addSource('fbBar', '../images/barre/fb.png', 'img');
+	mse.src.addSource('wikiBar', '../images/barre/wiki.png', 'img');
+	mse.src.addSource('wikiBn', '../images/button/wiki.png', 'img');
+	mse.src.addSource('bookBn', '../images/button/book.png', 'img');
+	mse.src.addSource('illuBn', '../images/button/illu.png', 'img');
+	mse.src.addSource('audBn', '../images/button/audIcon.png', 'img');
+	mse.src.addSource('accelerBn', '../images/button/accelere.png', 'img', true);
+	mse.src.addSource('upBn', '../images/button/monter.png', 'img', true);
+	mse.src.addSource('ralentiBn', '../images/button/ralenti.png', 'img', true);
+	mse.src.addSource('downBn', '../images/button/descend.png', 'img', true);
+	mse.src.addSource('playBn', '../images/button/play.png', 'img', true);
+	mse.src.addSource('pauseBn', '../images/button/pause.png', 'img', true);
+};
+
+
+var DIST_PARAG = 15;
+var __count__ = 0;
+
+var linkColor = {fb		: 'rgb(74,108,164)',
+				 wiki	: 'rgb(230,82,82)',
+				 audio	: '#FFB11B'};
+				 
+var __bgLayers = {};
+
+// Animations
+mse.fade = function(obj, t, begin, end, callback) {
+	if(!obj) return;
+	var fade = new mse.KeyFrameAnimation(obj, {
+			frame	: [0, t],
+			opacity	: [begin, end]
+		}, 1);
+	if(callback) fade.evtDeleg.addListener('end', callback);
+	fade.start();
+};
+mse.fadein = function(obj, t, callback) {
+	mse.fade(obj, t, 0, 1, callback);
+};
+mse.fadeout = function(obj, t, callback) {
+	mse.fade(obj, t, 1, 0, callback);
+};
+mse.slidein = function(obj, t, movement, callback, destalpha) {
+	if(!obj instanceof mse.UIObject) return;
+	if(isNaN(destalpha)) destalpha = 1;
+	var slide = new mse.KeyFrameAnimation(obj, {
+			frame	: [0, t],
+			pos		: movement,
+			opacity	: [0, destalpha]
+		}, 1);
+	if(callback) slide.evtDeleg.addListener('end', callback);
+	slide.start();
+};
+mse.slideout = function(obj, t, movement, callback) {
+	if(!obj instanceof mse.UIObject) return;
+	var slide = new mse.KeyFrameAnimation(obj, {
+			frame	: [0, t],
+			pos		: movement,
+			opacity	: [obj.globalAlpha, 0]
+		}, 1);
+	if(callback) slide.evtDeleg.addListener('end', callback, false);
+	slide.start();
+};
+mse.transition = function(obj1, obj2, t, callback) {
+    var layer = obj1.parent;
+    if(layer instanceof mse.Layer) {
+        layer.insertBefore(obj2, obj1);
+    }
+	mse.fadein(obj2, t, callback);
+	mse.fadeout(obj1, t, new mse.Callback(layer.delObject, layer, obj1));
+};
+mse.setCursor = function(cursor) {
+    if(cursor.indexOf(".") != -1) 
+        mse.root.jqObj.css('cursor', 'url("'+cursor+'"), auto');
+	else mse.root.jqObj.get(0).style.cursor = cursor;
+};
+
+mse.changePage = function(tar, quitonclick) {
+	if(quitonclick)
+	    tar.evtDeleg.addListener(
+			'click', 
+			new mse.Callback(mse.root.transition, mse.root, mse.root.container), 
+			true);
+	mse.root.transition(tar);
+};
+
+mse.createBackLayer = function(img) {
+	if(__bgLayers[img]) return __bgLayers[img];
+	var bg = new mse.Layer(null, 0, {size:[mse.root.width,mse.root.height]});
+	bg.addObject(new mse.Image(bg, {size:[mse.root.width,mse.root.height]}, img));
+	__bgLayers[img] = bg;
+	return bg;
+};
+
+
+// Event System
+
+mse.Callback = function(func, caller) {
+    if(!func) return null; 
+	this.func = func;
+	this.caller = caller;
+	if(arguments.length > 2) {
+		this.args = new Array();
+		for(var i = 2; i < arguments.length; i++)
+			this.args.push(arguments[i]);
+	}
+	
+	this.link = function(cb) {
+		if(!this.linked) this.linked = new Array();
+		this.linked.push(cb);
+	};
+	
+	this.invoke = function(paramSup) {
+		var arr = null;
+		if(this.args) arr = (paramSup ? this.args.concat(paramSup) : this.args);
+		else if(!this.args && paramSup) var arr = [paramSup];
+		this.func.apply(caller, arr);
+		
+		if(this.linked) {
+			for(var i in this.linked) this.linked[i].invoke();
+		}
+	};
+}
+
+mse.EventListener = function(evtName, callback, prevent, target) {
+	this.evtName = evtName;
+	this.callback = callback;
+	this.target = (target ? target : callback.caller);
+	this.preventBubbling = prevent ? prevent : false;
+	
+	this.inObj = function(x, y) {
+//??? Attention: x, y undefined means not in object???
+		if(x && y) {
+			if(!this.target.inObj) return true;
+			else if(this.target.inObj(x,y))
+				return true;
+			else return false;
+		}
+		else return true;
+	};
+	
+	this.notify = function(evt) {
+		this.callback.invoke(evt);
+	};
+};
+
+
+// Event delegate
+mse.EventDelegateSystem = function() {
+	this.listeners = {};
+	this.domObj = null;
+	
+	// Sort function for sort the obj in z-index order
+	function zSort(la, lb) {
+		var a = la.target;
+		var b = lb.target;
+//!!! Attention if a or b null
+		if(!a || !a.getZindex) return -1;
+		else if(!b || !b.getZindex) return 1;
+		
+		else if(a.getZindex() < b.getZindex()) 
+			return 1;
+		else if(a.getZindex() > b.getZindex())
+			return -1;
+		else return 0;
+	};
+	
+	this.setDominate = function(dom) {
+		this.domObj = dom;
+	};
+
+	// Managerment of listeners
+	this.addListener = function(evtName, callback, prevent, target) {
+	    if(typeof evtName != "string" || !callback) return;
+		// Listener array not until exist
+		if( !this.listeners[evtName] ) this.listeners[evtName] = new Array();
+		var exist = false;
+		var listener = new mse.EventListener(evtName,callback,prevent,target);
+		var arr = this.listeners[evtName];
+		for(var i in arr) {
+			if(arr[i].callback==callback && (!target || arr[i].target==target)) {
+				exist = true;
+				// Replace in listener list
+				arr.splice(i, 1, listener);
+			}
+		}
+		// Push to the listener list
+		if(!exist) this.listeners[evtName].push(listener);
+	
+		this.listeners[evtName].sort(zSort);
+	};
+	this.removeListeners = function(evtName) {
+		delete this.listeners[evtName];
+	};
+	this.removeListener = function(evtName, callback) {
+		var arr = this.listeners[evtName];
+		if(arr) {
+			for(var i = 0; i < arr.length; i++) {
+				if(arr[i].callback == callback){
+					// Delete listener
+					arr.splice(i,1); break;
+				}
+			}
+		}
+	};
+	this.eventNotif = function(evtName, evt) {
+	    var success = false;
+		switch(evtName) {
+		case 'move':
+			var ls = this.listeners['enter'];
+			if(ls) {
+				for(var i in ls) {
+					if( ls[i].target.inObj(evt.offsetX, evt.offsetY) 
+						&& !ls[i].target.inObj(evt.prev[0], evt.prev[1]) ) {
+						ls[i].notify(evt);
+						success = true;
+						break;
+					}
+				}
+			}
+		break;
+		}
+        
+		var arr = this.listeners[evtName];
+		if(arr) {
+			// No dominate listener
+			for(var val in arr) {
+				if( (!this.domObj || this.domObj==arr[val].target || this.domObj==arr[val].target.parent) 
+					&& (!evt || arr[val].inObj(evt.offsetX, evt.offsetY)) ) {
+					var prev = arr[val].preventBubbling;
+					arr[val].notify(evt);
+					success = true;
+				}
+				if(prev) break;
+			}
+		}
+		return success;
+	};
+};
+// Event distributor
+mse.EventDistributor = function(src, jqObj, deleg) {
+	this.distributor = function(e) {
+		this.rootEvt.eventNotif(e.type, e);
+		if(this.delegate) this.delegate.eventNotif(e.type, e);
+	};
+	this.setDelegate = function(deleg) {
+		this.delegate = deleg;
+	};
+
+	this.src = src;
+	jqObj.mseInteraction(this);
+	jqObj.mseInteraction('setDelegate', this.distributor);
+	
+	this.rootEvt = new mse.EventDelegateSystem();
+	
+	if(deleg) this.setDelegate(deleg);
+	
+	this.setDominate = function(dom) {
+		this.rootEvt.setDominate(dom);
+		if(this.delegate) this.delegate.setDominate(dom);
+	}
+	this.addListener = function(evtName, callback, pr, target) {
+		this.rootEvt.addListener(evtName,callback,pr,target);
+	};
+	this.removeListeners = function(evtName) {
+		this.rootEvt.removeListeners(evtName);
+	};
+	this.removeListener = function(evtName, callback) {
+		this.rootEvt.removeListener(evtName, callback);
+	};
+};
+
+
+// Link system
+mse.Link = function(src, index, type, link, width, height) {
+	this.src = src;
+	this.index = index;
+	this.type = type;
+	this.link = link;
+	switch(this.type) {
+	case 'fb':
+		this.image='fbBar'; break;
+	case 'wiki':
+		this.image='wikiBar'; break;
+	case 'illu':
+		this.width = (width ? width : 300);
+		this.height = (height ? height : 400);
+		break;
+	}
+};
+function sortLink(a, b) {
+	return (a.index > b.index ? -1 : (a.index == b.index ? 0 : 1));
+};
+
+
+
+// Librarie canvas goes here
+// Root object for all the UI object
+mse.UIObject = function(parent, param) {
+    if(parent) {
+    	this.parent = parent;
+    	this.fixed = false;
+    }
+    else this.parent = null;
+    
+    // Event handling
+    this.evtDeleg = new mse.EventDelegateSystem();
+    
+    // Parameters
+    if(param) {
+    	if(param.pos)
+    		this.setPos(param.pos[0], param.pos[1]);
+    	if(param.size)
+    		this.setSize(param.size[0], param.size[1]);
+    	if(param.font)
+    		this.font = param.font;
+    	if(param.fillStyle)
+    		this.fillStyle = param.fillStyle;
+    	if(param.strokeStyle)
+    		this.strokeStyle = param.strokeStyle;
+    	if(!isNaN(param.globalAlpha))
+    		this.globalAlpha = param.globalAlpha;
+    	else this.globalAlpha = 1;
+    	if(param.lineWidth)
+    		this.lineWidth = param.lineWidth;
+    	if(param.shadow)
+    		this.shadow = param.shadow;
+    	if(param.textAlign)
+    		this.textAlign = param.textAlign;
+    	if(param.textBaseline)
+    		this.textBaseline = param.textBaseline;
+    	if(param.insideRec)
+    		this.insideRec = param.insideRec;
+    }
+};
+mse.UIObject.prototype = {
+    offx: 0,
+    offy: 0,
+    width: 0,
+    height:0,
+    // Position fixed or not to the parent
+    fixed: true,
+	// Setter of position, the position can be fixed or related to another object
+	setPos: function(x, y, relat) {
+		if(relat) {
+			this.offx = x + (this.fixed ? relat.getX() : relat.offx);
+			this.offy = y + (this.fixed ? relat.getY() : relat.offy);
+		}
+		else {
+			this.offx = x;
+			this.offy = y;
+		}
+	},
+	setX: function(x, relat) {
+		if(relat) this.offx = x + (this.fixed ? relat.getX() : relat.offx);
+		else this.offx = x;
+	},
+	setY: function(y, relat) {
+		if(relat) this.offy = y + (this.fixed ? relat.getY() : relat.offy);
+		else this.offy = y;
+	},
+	// Getter of position in Root Canvas object, chaining to the parent if not fixed
+	getX: function() {
+		if(this.parent) return (this.parent.getX() + this.offx);
+		else return this.offx;
+	},
+	getY: function() {
+		if(this.parent) return (this.parent.getY() + this.offy);
+		else return this.offy;
+	},
+	//
+	getCanvasX: function(){
+	    if(this.parent) return (this.parent.getCanvasX() + this.offx);
+	    else {
+	        var vx = 0;
+	        if(mse.root.viewport) vx = -mse.root.viewport.x;
+	        return vx+this.offx;
+	    }
+	},
+	getCanvasY: function(){
+	    if(this.parent) return (this.parent.getCanvasY() + this.offy);
+	    else {
+	        var vy = 0;
+	        if(mse.root.viewport) vy = -mse.root.viewport.y;
+	        return vy+this.offy;
+	    }
+	},
+	
+	// Setter for size
+	setSize: function(width, height) {
+		this.width = width;
+		this.height = height;
+	},
+	// Getter for size
+	getWidth: function() {
+		return this.width;
+	},
+	getHeight: function() {
+		return this.height;
+	},
+	
+	// Check if a point located in the bounding box
+	inObj: function(x,y) {
+		if(this.getAlpha() < 1) return false;
+		if(this.insideRec) {
+			var ox = this.getCanvasX()+this.insideRec[0], oy = this.getCanvasY()+this.insideRec[1], w = this.insideRec[2], h = this.insideRec[3];
+		}
+		else var ox = this.getCanvasX(), oy = this.getCanvasY(), w = this.getWidth(), h = this.getHeight();
+		
+		if(x>ox && x<ox+w && y>oy && y<oy+h) return true;
+		else return false;
+	},
+	
+	// Z-index
+	getZindex: function() {
+		return this.zid ? this.zid : (this.parent ? this.parent.zid : 0);
+	},
+	
+	// Container
+	getContainer: function() {
+		if(this instanceof mse.BaseContainer) return this;
+		else if(this.parent) return this.parent.getContainer();
+		else return mse.root.container;
+	},
+	
+	setAlpha: function(a) {this.globalAlpha = a;},
+	// Alpha composition
+	getAlpha: function() {
+		if(this.parent) return (this.parent.getAlpha() * this.globalAlpha);
+		else return this.globalAlpha;
+	},
+	// Scale composition
+	getScale: function() {
+		if(isNaN(this.scale)) {
+			if(this.parent) return this.parent.getScale();
+			else return 1;
+		}
+		else {
+			if(this.parent) return (this.parent.getScale() * this.scale);
+			else return this.scale;
+		}
+	},
+	
+	// Mouvement
+	move: function(dx, dy) {
+		this.offx += dx;
+		this.offy += dy;
+	},
+	
+	addListener: function() {
+		this.evtDeleg.addListener.apply(this.evtDeleg, arguments);
+	},
+	removeListener: function() {
+		this.evtDeleg.removeListener.apply(this.evtDeleg, arguments);
+	},
+	
+	// Config drawing context
+	configCtxFlex: function(ctx) {
+		if(this.font)
+			ctx.font = this.font;
+		if(this.fillStyle)
+			ctx.fillStyle = this.fillStyle;
+		if(this.strokeStyle)
+			ctx.strokeStyle = this.strokeStyle;
+		if(this.lineWidth)
+			ctx.lineWidth = this.lineWidth;
+		if(this.shadow) {
+			ctx.shadowOffsetX = this.shadow.shadowOffsetX;
+			ctx.shadowOffsetY = this.shadow.shadowOffsetY;
+			ctx.shadowBlur = this.shadow.shadowBlur;
+			ctx.shadowColor = this.shadow.shadowColor;
+		}
+		else ctx.shadowOffsetX = ctx.shadowOffsetY = ctx.shadowBlur = 0;
+		if(this.textAlign)
+			ctx.textAlign = this.textAlign;
+		if(this.textBaseline)
+			ctx.textBaseline = this.textBaseline;
+		ctx.globalAlpha = this.getAlpha();
+	},
+	configCtx: function(ctx) {
+	    ctx.restore();
+	    ctx.save();
+		this.configCtxFlex(ctx);
+		var s = this.getScale();
+		if(s != 1) ctx.scale(s, s);
+	},
+	
+	// Abstract methods
+	draw: function(ctx) {},
+    logic: function(delta) {},
+    toString: function() {
+    	return "[object MseUIObject]";
+    }
+};
+
+
+
+// Root object, a canvas Dom element
+mse.Root = function(id, width, height, orientation) {
+	this.setPos = function(x, y) {
+		this.jqObj.css({'left':x+'px', 'top':y+'px'});
+	};
+	this.setSize = function(width, height) {
+		this.width = width;
+		this.height = height;
+		this.jqObj.attr({'width':width, 'height':height});
+	};
+	this.setScale = function(scale) {
+		// Scale
+		if(scale > 1) {
+			if(this.height*scale > MseConfig.pageHeight) scale = MseConfig.pageHeight/this.height;
+			if(this.width*scale > MseConfig.pageWidth) scale = MseConfig.pageWidth/this.width;
+			var width = this.width * scale;
+			var height = this.height * scale;
+			var x = (MseConfig.pageWidth - width)/2;
+			var y = (MseConfig.pageHeight - height)/2;
+			this.setPos(x,y);
+			this.setSize(width, height);
+			this.scale = scale;
+		}
+	};
+	this.setCenteredViewport = function(){
+	    this.viewport = {};
+	    this.viewport.x = (this.width - MseConfig.pageWidth)/2;
+	    this.viewport.y = (this.height - MseConfig.pageHeight)/2;
+	    this.jqObj.attr({'width':MseConfig.pageWidth, 'height':MseConfig.pageHeight});
+	    this.jqObj.css({'left':"0px",'top':"0px"});
+	    this.ctx.translate(-this.viewport.x, -this.viewport.y);
+	};
+	
+	this.setContainer = function(container) {
+		// Reset first show state to prepare for calling the show event
+		if(this.container) this.container.firstShow = false;
+		container.root = this;
+		this.container = container;
+		this.evtDistributor.setDelegate(container.evtDeleg);
+		this.dest = null;
+		this.container.scale = this.scale;
+	};
+	
+	this.transition = function(container) {
+		if(this.dest) return;
+		if(this.container) {
+			mse.fadeout( this.container, 20, new mse.Callback(this.setContainer, this, container) );
+			this.dest = container;
+		}
+		else this.setContainer(container);
+		mse.fadein(container, 20);
+	};
+	
+	this.inObj = function(x,y) {return true;};
+		
+	this.logic = function(delta) {
+		for(var i in this.animations)
+			if(this.animations[i].logic(delta))
+				// Delete finish animation
+				this.animations.splice(i,1);
+		
+		var block = false;
+		for(var i in this.animes) {
+		    if(this.animes[i].block) block = true;
+			if(this.animes[i].logic(delta))
+			    // Delete finish animation
+			    this.animes.splice(i,1);
+		}
+		if(block) return;
+		
+		if(this.gamewindow.logic(delta)) return;
+		
+		if(this.container) this.container.logic(delta);
+	};
+	
+	this.draw = function() {
+	    if(MseConfig.mobile)
+	        this.ctx.clearRect(0, 0, MseConfig.pageWidth, MseConfig.pageHeight);
+		else this.ctx.clearRect(0, 0, this.width, this.height);
+		
+        if(!(MseConfig.mobile && this.gamewindow.currGame && this.gamewindow.currGame.type == "INDEP")){
+		    if(this.container) this.container.draw(this.ctx);
+		    if(this.dest) this.dest.draw(this.ctx);
+		}
+		if(this.gamewindow.currGame) this.gamewindow.draw(this.ctx);
+		
+		for(var i in this.animes) this.animes[i].draw(this.ctx);
+				
+		this.evtDistributor.rootEvt.eventNotif("drawover",this.ctx);
+	};
+	
+	// Timeline delegate
+	this.initTimeline = function(timeline) {};
+	
+	this.runTimeline = function(delta) {
+		if(!this.init) {
+			var proc = mse.src.preloadProc();
+			if(proc[0] < proc[1]) {
+				mse.src.preloadPage(this.ctx, proc[0], proc[1]);
+			}
+			else this.init = true;
+		}
+		else if(!this.end) {
+			this.logic(delta);
+			this.draw();
+		}
+		else mse.currTimeline.end = true;
+	};
+	
+	mse.root = this;
+	// Canvas obj parameters
+	this.jqObj = $('<canvas></canvas>');
+	this.jqObj.attr({'id':id});
+	var x = (MseConfig.pageWidth - width)/2;
+	this.jqObj.css({'margin':'0px auto',
+				   'padding':'0px',
+				  'position':'absolute',
+				  	  'left':x+'px',
+				  	   'top':'0px'});
+	$('body').css({'position':'relative'}).append(this.jqObj);
+	this.scale = 1;
+	this.setSize(width, height);
+	this.interval = 40;
+	this.ctx = this.jqObj.get(0).getContext("2d");
+	
+	if(MseConfig.mobile) {
+	    this.setCenteredViewport();
+	    $(window).bind('orientationchange', 
+	    	function(e){
+	    		mse.root.setCenteredViewport();
+	    	});
+	}
+	
+	this.evtDistributor = new mse.EventDistributor(this, this.jqObj);
+	
+	this.container = null;
+	this.end = false;
+	this.init = false;
+	this.animations = new Array();
+	// Animation complete
+	this.animes = [];
+	// Video element
+	var video = $('<div id="video">');
+	video.css({'position':'absolute',
+	           'width':width*0.8+'px',
+	           'height':height*0.8+'px',
+	           'left':x+width*0.1+'px',
+	           'top':height*0.1+'px'
+	           });
+	$('body').prepend(video);
+	this.video = video.flareVideo($('body'));
+	this.video.hide();
+	// Game element
+	this.gamewindow = new mse.GameShower();
+	
+	// Stack of containers
+	//this.stack = new Array();
+	//this.setScale(1.5);
+	
+	// Launch Timeline
+	mse.currTimeline = new mse.Timeline(this, this.interval);
+};
+
+
+
+// Container object
+mse.BaseContainer = function(root, param, orientation) {
+	// Super constructor
+	mse.UIObject.call(this, null, param);
+	
+	this._layers = new Array();
+	this._changed = new Array();
+	this.deleg = null;
+	
+	// Parametres
+	this.scale = 1.0;
+	this.count = 0;
+	this.firstShow = false;
+	
+	if(MseConfig.mobile) {
+		// Initialization for orientation
+		this.orientation = MseConfig.orientation;
+		this.normal = true;
+		
+		this.setOrientation(orientation ? orientation : 'portrait');
+	}
+	else this.normal = true;
+	
+	if(root)
+		root.setContainer(this);
+};
+extend(mse.BaseContainer, mse.UIObject);
+$.extend(mse.BaseContainer.prototype, {
+    // Orientation management
+    setOrientation: function(orien) {
+    	if(!MseConfig.mobile || (orien != 'landscape' && orien != 'portrait')) return;
+    	
+    	this.orientation = orien;
+    },
+    orientChange: function(orien) {
+    	__currContextOwner__ = mse.root;
+    	// Normal state
+    	if(orien == this.orientation) this.normal = true;
+    	else this.normal = false;
+    		
+    	mse.root.jqObj.attr({'width':MseConfig.pageWidth, 
+    						'height':MseConfig.pageHeight});
+    	mse.root.width = MseConfig.pageWidth;
+    	mse.root.height = MseConfig.pageHeight;
+    },
+    // Layer managerment
+    addLayer: function(name, layer){
+    	if(name != null && layer instanceof mse.UIObject) {
+    		layer.name = name;
+    		this._layers.push(layer);
+    		this.sortLayer();
+    	}
+    },
+    delLayer: function(name) {
+    	if(name == null) return;
+    	for(var i in this._layers) {
+    		if(this._layers[i].name == name) this._layers.splice(i,1);
+    	}
+    },
+    getLayer: function(name) {
+    	if(name == null) return;
+    	for(var i in this._layers) {
+    		if(this._layers[i].name == name) return this._layers[i];
+    	}
+    },
+    sortLayer: function() {
+    	this._layers.sort(function(a, b) {
+    		if(a.zid < b.zid)
+    			return -1;
+    		else if(a.zid > b.zid)
+    			return 1;
+    		else return 0;
+    	});
+    },
+    setLayerActivate: function(name, active) {
+    	if(name != null && this._layers[name] != null) {
+    		this._layers[name].setActivate(active);
+    	}
+    },
+    desactiveOthers: function(name) {
+    	for(var i in this._layers) {
+    		if(this._layers[i].active && this._layers[i].name != name) {
+    			this._layers[i].setActivate(false);
+    			this._changed.push(i);
+    		}
+    	}
+    },
+    reactiveOthers: function() {
+    	var l = this._changed.length;
+    	for(var i = 0; i < l; i++)
+    		this._layers[this._changed.pop()].setActivate(true);
+    },
+    logic: function(delta) {
+    	if(!this.firstShow) {
+    		this.firstShow = true;
+    		this.evtDeleg.eventNotif('show');
+    		for(var i in this._layers) 
+    			this._layers[i].evtDeleg.eventNotif('show');
+    	}
+    	
+    	if(MseConfig.mobile) {
+    		if(this.normal && MseConfig.orientation!=this.orientation)
+    			this.orientChange(MseConfig.orientation);
+    		else if(!this.normal && MseConfig.orientation==this.orientation)
+    			this.orientChange(MseConfig.orientation);
+    	}
+    	if(this.normal) {
+    		if(this.deleg) this.deleg.logic(delta);
+    		else {
+    			for(var i in this._layers) {
+    				this._layers[i].logic(delta);
+    			}
+    		}
+    	}
+    	this.count++;
+    },
+    // Draw
+    draw: function(ctx) {
+    	if(this.normal){
+    		if(this.deleg) this.deleg.draw(ctx);
+    		else {
+    			this.configCtx(ctx);
+    			for(var i in this._layers) {
+    				this._layers[i].draw(ctx);
+    			}
+    		}
+    	}
+    	else{
+    		// Draw orientation change notification page
+    		ctx.drawImage(mse.src.getSrc('imgNotif'), (ctx.canvas.width-50)/2, (ctx.canvas.height-80)/2, 50, 80);
+    	}
+    },
+    toString: function() {
+	    return "[object MseBaseContainer]";
+    }
+});
+
+
+
+// Layer object
+mse.Layer = function(container, z, param) {
+	// Super constructor
+	mse.UIObject.call(this, container, param);
+	// Parametres
+	this.zid = z;
+	
+	this.active = true;
+	this.objList = new Array();
+}
+extend(mse.Layer, mse.UIObject);
+$.extend(mse.Layer.prototype, {
+	// Objects managerment
+	getObjectIndex: function(o){
+	    // Sauf IE
+	    if(this.objList.indexOf)
+	    	var id = this.objList.indexOf(o);
+	    // IE
+	    else {
+	    	for(var i in this.objList)
+	    		if(this.objList[i] === o) {
+	    			var id = i;
+	    			break;
+	    		}
+	    }
+	    // Found
+	    if(id != null && id != -1) return id;
+	    // Not found
+	    else return -1;
+	},
+	addObject: function(obj) {
+		if(obj instanceof mse.UIObject) {
+			this.objList.push(obj);
+			return true;
+		}
+		else return false;
+	},
+	insertObject: function(obj, index) {
+		if(obj instanceof mse.UIObject && index>=0 && index<this.objList.length) {
+			this.objList.splice(index, 0, obj);
+			return true;
+		}
+		else return false;
+	},
+	insertBefore: function(obj, tar) {
+	    var index = this.getObjectIndex(tar);
+	    if(index != -1) this.insertObject(obj, index);
+	},
+	insertAfter: function(obj, tar) {
+	    var index = this.getObjectIndex(tar);
+	    if(index != -1) {
+	        if(index+1 == this.objList.length) this.addObject(obj);
+	        else this.insertObject(obj, index+1);
+	    }
+	},
+	delObject: function(o) {
+		// Index of object
+		if( !isNaN(o) ) {
+			this.objList.splice(o, 1);
+			return o;
+		}
+		// Object itself
+		else if(o instanceof mse.UIObject) {
+			// Sauf IE
+			if(this.objList.indexOf) {
+				var id = this.objList.indexOf(o);
+			}
+			// IE
+			else {
+				for(var i in this.objList)
+					if(this.objList[i] === o) {
+						var id = i;
+						break;
+					}
+			}
+			// Found
+			if(id != null && id != -1) {
+				this.objList.splice(id, 1);
+				return id;
+			}
+			// Not found
+			else return false;
+		}
+	},
+	delAll: function() {
+		for(var i in this.objList)
+			delete this.objList[i];
+		this.objList.length = 0;
+	},
+	getObject: function(i) {
+		if(i >= 0 && i < this.objList.length)
+			return this.objList[i];
+		return null;
+	},
+	delSelf: function() {
+		if(this.parent instanceof mse.BaseContainer) this.parent.delLayer(this.name);
+	},
+	
+	// Activate or desactivate the layer
+	setActivate: function(active) {
+		this.active = active;
+	},
+	
+	// Logic
+	logic: function(delta) {
+		if(this.active) {
+			for(var i = 0; i < this.objList.length; i++) {
+				this.objList[i].logic(delta);
+			}
+		}
+	},
+	// Draw
+	draw: function(ctx) {
+		this.configCtx(ctx);
+		for(var i = 0; i < this.objList.length; i++) {
+			this.objList[i].draw(ctx);
+		}
+	}
+});
+
+
+
+
+// Text obj
+mse.Text = function(parent, param, text, styled) {
+	// Super constructor
+	mse.UIObject.call(this, parent, param);
+	this.text = text;
+	this.styled = styled ? true : false;
+	this.linkInit = false;
+	this.zid = 12;
+	
+	//Integraion d'effets
+	this.currentEffect = null;
+	this.firstShow = false;
+	
+	this.addLink = function(linkObj){
+	    switch(linkObj.type) {
+	    case 'audio':
+	    	this.evtDeleg.addListener('firstShow', new mse.Callback(linkObj.link.play, linkObj.link));
+	    	this.getContainer().evtDeleg.addListener(
+	    			'click', 
+	    			new mse.Callback(linkObj.link.play, linkObj.link), 
+	    			true, 
+	    			this);
+	    	break;
+	    case 'wiki':
+	        //linkObj.link.getLayer('content').setQuitTarget(this.getContainer());
+	    	this.getContainer().evtDeleg.addListener(
+	    			'click', 
+	    			new mse.Callback(linkObj.link.init, linkObj.link, this.getContainer()), 
+	    			true, 
+	    			this);
+	    	break;
+	    case 'fb':
+	        this.getContainer().evtDeleg.addListener(
+	        		'click', 
+	        		new mse.Callback(window.open, window, linkObj.link, '_newtab'), 
+	        		true, 
+	        		this);
+	        break;
+	    }
+	    linkObj.offset = this.text.indexOf(linkObj.src);;
+	    linkObj.owner = this;
+	    this.link = linkObj;
+	};
+		
+	this.startEffect = function (dictEffectAndConfig) {
+		this.styled = true;
+		if(mse.initTextEffect) this.currentEffect = mse.initTextEffect(dictEffectAndConfig,this);
+	};
+	this.endEffect = function (){
+		this.currentEffect = null;
+	};
+	
+	this.inObj = function(x, y) {
+		if(this.link) {
+			if(x >= this.getCanvasX()+this.linkOffs && x <= this.getCanvasX()+this.endOffs+20 && y >= this.getCanvasY() && y <= this.getCanvasY()+20) return true;
+			else return false;
+		}
+		else return this.constructor.prototype.inObj.call(this, x, y);
+	};
+
+    this.logic = function(delta){
+    	if(this.currentEffect != null)this.currentEffect.logic(delta);
+    };
+	this.draw = function(ctx, x, y) {
+	    if(!this.firstShow) {
+	    	this.firstShow = true;
+	    	this.evtDeleg.eventNotif('firstShow');
+	    }
+	    
+		if(x!=null && y!=null) this.setPos(x, y);
+		var loc = [ this.getX(), this.getY() ];
+		
+		if(this.styled) {ctx.save();this.configCtxFlex(ctx);}
+		
+		if(this.currentEffect != null) this.currentEffect.draw(ctx);
+		else {
+		    // Link inside
+		    if(this.link && this.link.offset>=0) {
+		    	if(!this.linkInit) {
+		    		this.begin = this.text.substring(0,this.link.offset);
+		    		this.linkOffs = ctx.measureText(this.begin).width;
+		    		this.endOffs = this.linkOffs + ctx.measureText(this.link.src).width;
+		    		this.end = this.text.substr(this.link.offset+this.link.src.length);
+		    		if(this.link.type == 'audio')
+		    			this.evtDeleg.removeListener('show', this.link.link.play);
+		    		this.linkInit = true;
+		    	}
+		    	ctx.fillText(this.begin, loc[0], loc[1]);
+		    	ctx.save();
+		    	ctx.fillStyle = linkColor[this.link.type];
+		    	ctx.fillText(this.link.src, loc[0]+this.linkOffs, loc[1]);
+		    	ctx.restore();
+		    	ctx.fillText(this.end, loc[0]+this.endOffs, loc[1]);
+		    }
+		    else ctx.fillText(this.text, loc[0], loc[1]);
+		}
+		
+		if(this.styled) ctx.restore();
+	};
+};
+extend(mse.Text, mse.UIObject);
+mse.Text.prototype.toString = function() {
+	return "[object mse.Text]";
+};
+
+
+
+// Article Layer for showing the article content
+mse.ArticleLayer = function(container, z, param, article) {
+	mse.Layer.call(this, container, z, param);
+	
+	this.setDefile = function(interval) {
+		this.currTime = 0;
+		this.currIndex = 0;
+		this.interval = interval;
+		this.complete = false;
+		this.endId = 0;
+		this.setSlider();
+		
+		this.ctrUI = new mse.UIObject(null, {pos:[this.getX()+50,mse.root.height-45], size:[this.width-100,50]});
+		this.ctrUI.accelere = new mse.Image(null, {size:[30,30]}, 'accelerBn');
+		this.ctrUI.ralenti = new mse.Image(null, {size:[30,30]}, 'ralentiBn');
+		this.ctrUI.up = new mse.Image(null, {size:[30,30]}, 'upBn');
+		this.ctrUI.down = new mse.Image(null, {size:[30,30]}, 'downBn');
+		this.ctrUI.play = new mse.Image(null, {size:[30,30]}, 'playBn');
+		this.ctrUI.pause = new mse.Image(null, {size:[30,30]}, 'pauseBn');
+		this.ctrUI.tip = new mse.Text(null, {textBaseline:'middle',textAlign:'center',font:'italic 20px '+cfs.font,fillStyle:'#FFF'}, '', true);
+		this.ctrUI.layer = this;
+		this.ctrUI.draw = function(ctx) {
+			ctx.save();
+			ctx.translate(this.offx, this.offy);
+			this.accelere.draw(ctx, this.width-30, 0);
+			this.up.draw(ctx, this.width-70, 0);
+			if(this.layer.pause) this.play.draw(ctx, this.width/2-15, 0);
+			else this.pause.draw(ctx, this.width/2-15, 0);
+			this.ralenti.draw(ctx, 0, 0);
+			this.down.draw(ctx, 40, 0);
+			ctx.restore();
+			this.tip.draw(ctx);
+		};
+		
+		this.ctrEffect = function(e) {
+		    var vx = 0, vy = 0;
+		    if(mse.root.viewport) {vx = mse.root.viewport.x;vy = mse.root.viewport.y;}
+			var ex = vx+e.offsetX - this.ctrUI.offx;
+			var ey = vy+e.offsetY - this.ctrUI.offy;
+			if(ey < 0 || ey > 50) return;
+			if(ex >= 0 && ex <= 30) {
+				// Left button clicked, Reduce the speed
+				this.interval += 200;
+				this.interval = (this.interval > 2000) ? 2000 : this.interval;
+				this.ctrUI.tip.text = 'moins rapide';
+			}
+			else if(ex >= this.width-130 && ex <= this.width-100) {
+				// Right button clicked, augmente the speed
+				this.interval -= 200;
+				this.interval = (this.interval < 300) ? 300 : this.interval;
+				this.ctrUI.tip.text = 'plus rapide';
+			}
+			else if(ex >= this.ctrUI.width/2-15 && ex <= this.ctrUI.width/2+15) {
+			    this.pause = !this.pause;
+			    if(this.pause) this.ctrUI.tip.text = 'pause';
+			    else this.ctrUI.tip.text = 'reprendre'; 
+			}
+			else return;
+			this.ctrUI.tip.globalAlpha = 1;
+			mse.slideout(this.ctrUI.tip, 10, [[e.offsetX+vx, e.offsetY+vy], [e.offsetX+vx, e.offsetY+vy-50]]);
+		};
+		
+		this.upDownStart = function(e) {
+		    var vx = 0, vy = 0;
+		    if(mse.root.viewport) {vx = mse.root.viewport.x;vy = mse.root.viewport.y;}
+		    var ex = vx+e.offsetX - this.ctrUI.offx;
+		    var ey = vy+e.offsetY - this.ctrUI.offy;
+		    if(ex >= 40 && ex <= 70) {
+		        // Down button clicked, scroll up the layer
+		        this.scrollEvt.rolled = -10;
+		    }
+		    else if(ex >= this.width-170 && ex <= this.width-140) {
+		        // Up button clicked, scroll down the layer
+		        this.scrollEvt.rolled = 10;
+		    }
+		};
+		this.upDownEnd = function(e) {
+		    this.scrollEvt.rolled = 0;
+		};
+		
+		var cb = new mse.Callback(this.ctrEffect, this);
+		this.getContainer().evtDeleg.addListener('click', cb, true, this.ctrUI);
+		// Listener to scroll the layer with up down buttons
+		this.getContainer().evtDeleg.addListener('gestureStart', new mse.Callback(this.upDownStart, this), true, this.ctrUI);
+		this.getContainer().evtDeleg.addListener('gestureEnd', new mse.Callback(this.upDownEnd, this));
+		
+		// Key event for control of speed
+		this.speedCtr = function(e) {
+			switch(e.keyCode) {
+			case __KEY_LEFT:
+				this.interval += 100;
+				this.interval = (this.interval > 2000) ? 2000 : this.interval;
+				break;
+			case __KEY_RIGHT:
+				this.interval -= 100;
+				this.interval = (this.interval < 300) ? 300 : this.interval;
+				break;
+			}
+		};
+		cb = new mse.Callback(this.speedCtr, this);
+		this.getContainer().evtDeleg.addListener('keydown', cb);
+	};
+	
+	this.setSlider = function() {
+		// Slider
+		this.slider = new mse.Slider(this, {}, 'vertical');
+		this.updateListScreen();
+		
+		// Scroll event
+		this.slider.evtDeleg.addListener('rolling', new mse.Callback(function(){
+		    //if(this.active && this.dominate instanceof mse.UIObject) return;
+		    this.pause = true;
+		}, this) );
+		this.slider.evtDeleg.addListener('hide', new mse.Callback(function(){
+		    var nb = this.complete ? this.objList.length : this.currIndex;
+		    if( nb==0 || this.objList[nb-1].getY() < mse.root.height*0.55 ) {
+		    	this.pause = false;
+		    }
+		}, this) );
+	};
+	
+	this.updateIndexs = function(start, offset) {
+		for(var i in this.phraseIndexs) {
+			if(this.phraseIndexs[i] >= start) this.phraseIndexs[i] += offset;
+		}
+	};
+	
+	this.setLinklist = function(list) {
+		for(var l in list) {
+			// Change the initial paragraph index to line index for identifing the link more precisely
+			var parag = list[l].index;
+			for(var i = this.phraseIndexs[parag]; i < this.phraseIndexs[parag+1]; i++) {
+				if( !this.objList[i].text ) continue;
+				var offset = this.objList[i].text.indexOf(list[l].src);
+				if( offset >= 0 ) {
+					list[l].index = i;
+					this.objList[i].addLink(list[l]);
+					break;
+				}
+			}
+		}
+		this.links = list;
+	};
+	
+	this.setLinkDelegate = function(deleg, type) {
+		if(!this.links) return;
+		
+		for(var l in this.links) {
+			if(this.links[l].type == type) {
+				this.objList[this.links[l].index].evtDeleg.addListener('show', new mse.Callback(deleg.linkShowHandler, deleg, this.links[l]));
+				this.objList[this.links[l].index].evtDeleg.addListener('disapear', new mse.Callback(deleg.linkDisapearHandler, deleg, this.links[l]));
+			}
+		}
+	};
+	
+	this.addObject = function(obj) {
+		var last = this.objList.length-1;
+		if(last >= 0)
+			obj.setY(this.objList[last].height, this.objList[last]);
+		else obj.setY(0);
+		this.length += obj.height;
+		this.endId = this.objList.length-1;
+		return this.constructor.prototype.addObject.call(this, obj);
+	};
+	this.addGame = function(game) {
+	    var expose = new mse.GameExpose(this, {size:[this.width*0.8, this.width*0.65]}, game);
+	    expose.setX(this.width*0.1);
+	    this.addObject(expose);
+	};
+	this.insertObject = function(obj, index) {
+		var res = this.constructor.prototype.insertObject.call(this, obj, index);
+		if(!res) return res;
+		
+		this.updateIndexs(index, 1);
+		
+		if(index == 0) {
+			obj.setY(0);
+			index = 1;
+		}
+		for(var i = index; i < this.objList.length; i++)
+			this.objList[i].setY(this.objList[i-1].height, this.objList[i-1]);
+		this.length += obj.height;
+		return res;
+	};
+	this.insertGame = function(game, index) {
+	    var expose = new mse.GameExpose(this, {size:[this.width*0.8, this.width*0.65]}, game);
+	    expose.setX(this.width*0.1);
+	    this.insertObject(expose, index);
+	};
+	this.delObject = function(obj) {
+		var res = this.constructor.prototype.delObject.call(this, obj);
+		if(!isNaN(res)) {
+			this.length -= obj.height;
+			this.updateIndexs(res, -1);
+			this.endId = this.objList.length-1;
+		}
+		return res;
+	};
+	this.getHeight = function() {
+		var nb = this.complete ? this.objList.length : this.currIndex;
+		if(nb == 0) return 0;
+		return this.objList[nb-1].offy+this.objList[nb-1].height;
+	};
+	
+	// Get obj list on screen
+	this.updateListScreen = function() {
+		// Screen offset
+		var topOffy = this.oy-this.offy;
+		topOffy = (topOffy < 0 ? 0 : topOffy);
+		var botOffy = topOffy + this.height*0.8;
+		var last = this.complete ? this.objList.length-1 : this.currIndex-1;
+		last = last < 0 ? 0 : last;
+		var start = -1, end = -1;
+		// Layer up : position of start obj in previous objs on screen less than current screen position
+		if(this.prevOffy <= topOffy) {
+			for(var i = this.startId; i <= last; i++) {
+				if(start==-1 && this.objList[i].offy+this.objList[i].height > topOffy) start = i;
+				if(end==-1 && this.objList[i].offy > botOffy) {end = i;break;}
+			}
+			start = start==-1 ? last : start;
+			end = end==-1 ? last : end;
+		}
+		// Layer down
+		else {
+			for(var i = this.endId; i >= 0; i--) {
+				if(end==-1 && this.objList[i].offy <= botOffy) end = i;
+				if(start==-1 && this.objList[i].offy+this.objList[i].height <= topOffy) {start = i;break;}
+			}
+			start = start==-1 ? 0 : start;
+			end = end==-1 ? 0 : end;
+		}
+		
+		// Link show or disapear event notification
+		if(start > this.startId) {
+			for(var i = this.startId; i < start; i++)
+				if(this.objList[i].link)
+					this.objList[i].evtDeleg.eventNotif('disapear');
+				else this.objList[i].evtDeleg.eventNotif('disapear');
+		}
+		else if(start < this.startId) {
+			for(var i = start; i < this.startId; i++)
+				if(this.objList[i].link)
+					this.objList[i].evtDeleg.eventNotif('show');
+				else this.objList[i].evtDeleg.eventNotif('show');
+		}
+		if(end > this.endId) {
+			for(var i = this.endId+1; i <= end; i++)
+				if(this.objList[i].link)
+					this.objList[i].evtDeleg.eventNotif('show');
+				else this.objList[i].evtDeleg.eventNotif('show');
+		}
+		else if(end < this.endId) {
+			for(var i = end+1; i <= this.endId; i++)
+				if(this.objList[i].link)
+					this.objList[i].evtDeleg.eventNotif('disapear');
+				else this.objList[i].evtDeleg.eventNotif('disapear');
+		}
+		
+		this.startId = start;
+		this.endId = end;
+	};
+		
+	this.logic = function(delta) {
+		if(this.active && this.dominate instanceof mse.UIObject) {
+			this.dominate.logic(delta);
+			return;
+		}
+		
+		if(this.scrollEvt.rolled) this.slider.scroll(this.scrollEvt);
+		
+		if(this.slider) this.updateListScreen();
+		for(var i = this.startId; i <= this.endId; i++)
+			this.objList[i].logic(delta);
+		if(this.complete || !this.active) {
+			this.prevOffy = (this.oy-this.offy<0 ? 0 : this.oy-this.offy);
+			return;
+		}
+	
+		if(!this.pause) {
+			this.currTime += delta;
+			var dt = (this.currIndex!=0 && this.objList[this.currIndex-1] instanceof mse.Image) ? 3000 : this.interval;
+			if(this.currTime >= dt) {
+				this.currTime = 0;
+				// Move layer to right place
+				if(this.currIndex < this.objList.length) {
+					var focusy = this.objList[this.currIndex].offy + this.objList[this.currIndex].height/2;
+					if(focusy > mse.root.height/2) {
+						var move = new mse.KeyFrameAnimation(this, {
+								frame	: [0, 15],
+								pos		: [[this.offx,this.offy], [this.offx, this.height/2-focusy]]
+							}, 1);
+						move.start();
+					}
+					this.currIndex++;
+				}
+				else this.complete = true;
+			}
+		}
+		
+		this.prevOffy = (this.oy-this.offy<0 ? 0 : this.oy-this.offy);
+	};
+	
+	this.draw = function(ctx) {
+	    this.configCtx(ctx);
+		for(var i = this.startId; i <= this.endId; i++) {
+			this.objList[i].draw(ctx);
+		}
+		if(this.ctrUI) this.ctrUI.draw(ctx);
+	};
+	this.inObj = function(x, y) {
+		return this.parent.inObj(x,y);
+	};
+	
+	this.interrupt = function() {
+		this.dominate = this.vide;
+	};
+	this.play = function() {
+		this.dominate = null;
+	};
+	
+	
+//!!! Strange fontSize access
+	// Init the size and lines information
+	this.length = 0;
+	this.oy = this.offy;
+	this.prevOffy = this.oy;
+	this.lineHeight = param.lineHeight ? param.lineHeight : Math.round( 1.4*(this.font ? checkFontSize(this.font) : 16) );
+	this.phraseIndexs = new Array();
+
+	if(article) {
+		var ctx = mse.root.ctx;
+		this.configCtx(ctx);
+		var maxM = Math.floor( this.width/ctx.measureText('A').width );	
+		
+		var arr = article.split('\n');
+		var sep = 0;
+		for(var i = 0; i < arr.length; i++) {
+			if(arr[i].length == 0) { // Separator paragraph
+				this.addObject( new mse.UIObject(this, {size:[this.width, DIST_PARAG]}) );
+				sep++;
+				continue;
+			}
+			
+			this.phraseIndexs[i-sep] = this.objList.length;
+			for(var j = 0; j < arr[i].length;) {
+				// Find the index of next line
+				var next = checkNextLine(ctx, arr[i].substr(j), maxM, this.width);
+				this.addObject( new mse.Text( this, {size:[this.width, this.lineHeight]}, arr[i].substr(j, next) ) );
+				j += next;
+			}
+			// Separator phrase
+			//this.addObject( new mse.UIObject(this, {size:[this.width, DIST_PARAG]}) );
+		}
+	}
+	this.startId = 0;
+	this.endId = this.objList.length-1;
+	this.complete = true;
+	this.pause = false;
+	this.scrollEvt = {}; this.scrollEvt.rolled = 0;
+	this.vide = new mse.UIObject();
+	// Dominate obj, if exist, logic and draw dominated by this obj
+	this.dominate = null;
+};
+extend(mse.ArticleLayer, mse.Layer);
+
+
+
+
+// Image object
+mse.Image = function(parent, param, src) {
+	// Super constructor
+	mse.UIObject.call(this, parent, param);
+	
+	this.img = src;
+    //Integraion d'effets
+	this.currentEffect = null;
+	this.firstShow = false;
+	mse.src.waitSrc(this.img, new mse.Callback(this.init, this));
+};
+extend(mse.Image, mse.UIObject);
+$.extend(mse.Image.prototype, {
+    init: function() {
+        if(!this.width){
+        	var img = mse.src.getSrc(this.img);
+        	this.width = img.width;
+        	this.height = img.height;
+        }
+    },
+    startEffect: function (dictEffectAndConfig) {
+    	if(mse.initImageEffect) this.currentEffect = mse.initImageEffect(dictEffectAndConfig,this);
+    },
+    endEffect: function (){
+    	this.currentEffect = null;
+    },
+    logic: function(delta){
+		if(!this.firstShow) {
+			this.firstShow = true;
+			this.evtDeleg.eventNotif('firstShow');
+		}
+
+		if(this.currentEffect != null)this.currentEffect.logic(delta);		
+	},
+    draw: function(ctx, x, y) {
+    	var img = mse.src.getSrc(this.img);
+    	this.configCtxFlex(ctx);
+    	if(isNaN(x) || isNaN(y)) {x = this.getX(); y = this.getY();}
+    	
+    	if(this.currentEffect != null) this.currentEffect.draw(ctx,x,y);
+    	else ctx.drawImage(img, x, y, this.width, this.height);
+    },
+    toString: function() {
+    	return "[object mse.Image]";
+    }
+});
+
+
+// Mask object
+mse.Mask = function(parent, param, z) {
+	// Super constructor
+	mse.UIObject.call(this, parent, param);
+	if(z != null) this.zid = z;
+	if(param.cornerRatio) this.cr = param.cornerRatio;
+	
+	this.draw = function(ctx) {
+		this.configCtxFlex(ctx);
+		if(!this.cr) ctx.fillRect(this.getX(), this.getY(), this.width, this.height);
+		else ctx.fillRoundRect(this.getX(),this.getY(),this.width,this.height,this.cr);
+	};
+};
+mse.Mask.prototype = new mse.UIObject();
+mse.Mask.prototype.constructor = mse.Mask;
+
+
+
+// Sprite
+mse.Sprite = function(parent, param, src, fw0frames, fh, sx, sy, sw, sh) {
+	mse.Image.call(this, parent, param, src);
+	if(arguments.length == 4) this.frames = fw0frames;
+	else {
+		// Frame width and height
+		this.fw = fw0frames; this.fh = fh;
+		// Source region
+		if(arguments.length == 9) {
+			this.sx = sx; this.sy = sy; this.sw = sw; this.sh = sh;
+		}
+		else {
+			this.sx = 0; this.sy = 0; 
+			this.sw = this.img.width; this.sh = this.img.height;
+		}
+		// Number of column and row in the sprite
+		if(fw0frames < this.sw) this.col = Math.floor(this.sw/fw0frames);
+		else {
+			this.fw = this.sw; this.col = 1;
+		}
+		if(fh < this.sh) this.row = Math.floor(this.sh/fh);
+		else {
+			this.fh = this.sh; this.row = 1;
+		}
+		// Number of frame
+		this.nb = this.col * this.row;
+		// Destination region
+		if(this.width==0) this.width = this.fw;
+		if(this.height==0) this.height = this.fh;
+	}
+	this.curr = 0;
+};
+extend(mse.Sprite, mse.Image);
+$.extend(mse.Sprite.prototype, {
+    init: function(){},
+    appendFrames: function(frames){
+        if(this.frames) this.frames = this.frames.concat(frames);
+    },
+    appendFrame: function(frame){
+        if(this.frames) this.frames.push(frame);
+    },
+    draw: function(ctx, ox, oy) {
+    	this.configCtxFlex(ctx);
+    	if(isNaN(ox)) var ox = this.getX();
+    	if(isNaN(oy)) var oy = this.getY();
+    	var img = mse.src.getSrc(this.img);
+    	if(!this.frames) {
+    		var x = this.sx + (this.curr % this.col) * this.fw;
+    		var y = this.sy + (Math.floor(this.curr / this.col)) * this.fh;
+    		ctx.drawImage(img, x, y, this.fw,this.fh, ox,oy, this.getWidth(), this.getHeight());
+    	}
+    	else {
+    		var x = this.frames[this.curr][0]; var y = this.frames[this.curr][1];
+    		var fw = this.frames[this.curr][2]; var fh = this.frames[this.curr][3];
+    		ctx.drawImage(img, x, y, fw,fh, ox,oy, this.getWidth(), this.getHeight());
+    	}
+    }
+});
+
+
+
+// Game object
+mse.Game = function() {
+    mse.UIObject.call(this, null, {});
+    
+    this.offx = 0.2*mse.root.width;
+    this.offy = 0.2*mse.root.height;
+    this.width = 0.6*mse.root.width;
+    this.height = 0.6*mse.root.height;
+    this.type = "DEP";
+};
+extend(mse.Game, mse.UIObject);
+$.extend(mse.Game.prototype, {
+    state: "DEFAULT",
+    msg: {
+        "DEFAULT": "C'est un jeu, sans message......"
+    },
+    getMsg: function() {
+        return this.msg[this.state];
+    },
+    setExpose: function(expo) {
+        this.expo = expo;
+        this.type = "INDEP";
+    },
+    addTo: function(layer) {
+        this.parent = layer;
+        this.setPos(0,0);
+        this.setSize(layer.getWidth(), layer.getHeight());
+        layer.addObject(this);
+    },
+    start: function() {
+    	mse.root.container.evtDeleg.setDominate(this);
+        mse.root.gamewindow.loadandstart(this);
+    },
+    draw: function(ctx) {},
+    end: function() {
+        mse.root.gamewindow.end();
+        if(this.expo) this.expo.endGame();
+    },
+    lose: function() {
+        mse.root.gamewindow.lose();
+    }
+});
+
+
+// GameShower object, window of the games, one object for all the games
+mse.GameShower = function() {
+	// Super constructor
+	mse.UIObject.call(this, null, {});
+	
+	this.currGame = null;
+	this.globalAlpha = 0;
+	this.state = "DESACTIVE";
+	mse.src.addSource('gameover', '../images/gameover.jpg', 'img', true);
+	this.loseimg = new mse.Image(this, {pos:[0,0]}, 'gameover');
+	this.losetext = new mse.Text(this, {font:'Bold 36px '+mse.configs.font,fillStyle:'#FFF',textBaseline:'middle',textAlign:'center'},'GAME OVER...',true);
+	this.losetext.evtDeleg.addListener('show', new mse.Callback(this.losetext.startEffect, this.losetext, {"typewriter":{speed:2}}));
+	this.passBn = new mse.Button(this, {size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je ne joue plus', 'aideBar');
+	this.firstShow = false;
+	
+	this.load = function(game) {
+	    if(!game || !(game instanceof mse.Game)) return;
+	    this.currGame = game;
+	    this.firstShow = false;
+	    this.state = "LOAD";
+	    mse.fadein(this, 15);
+	    mse.fadein(this.currGame, 15);
+	};
+	this.start = function() {
+	    if(!this.currGame) return;
+	    // Init game shower size and pos
+	    this.setPos(this.currGame.offx, this.currGame.offy);
+	    this.setSize(this.currGame.width, this.currGame.height);
+	    this.loseimg.setSize(this.width-5, this.height-5);
+	    this.losetext.setPos(this.width/2, this.height/2);
+	    this.passBn.setPos(this.currGame.width-115, this.currGame.height-50);
+	    // Init game
+	    if(this.currGame.init) this.currGame.init();
+	    this.state = "START";
+	};
+	this.loadandstart = function(game) {
+	    this.load(game);
+	    this.start();
+	};
+	this.restart = function(e){
+	    mse.root.evtDistributor.removeListener('click', cbrestart);
+	    if(this.passBn.inObj(e.offsetX, e.offsetY)) {
+	        this.currGame.end();
+	    }
+	    else {
+	        this.state = "START";
+	        this.currGame.init();
+	    }
+	};
+	var cbrestart = new mse.Callback(this.restart, this);
+	this.lose = function() {
+	    this.state = "LOSE";
+	    //mse.fadein(this.loseimg, 5);
+	    this.losetext.evtDeleg.eventNotif('show');
+	    mse.root.evtDistributor.addListener('click', cbrestart, true, this.currGame);
+	};
+	this.end = function() {
+	    mse.fadeout(this.currGame, 25);
+	    mse.fadeout(this, 25, this.cbdesact);
+	};
+	this.desactive = function() {
+	    this.state = "DESACTIVE";
+	    mse.root.evtDistributor.setDominate(null);
+	};
+	this.cbdesact = new mse.Callback(this.desactive, this);
+	
+	this.logic = function(delta) {
+	    if(this.state == "LOSE") this.losetext.logic();
+	    if(this.state != "START" && this.state != "LOAD") return false;
+	    // Mobile orientation fault
+	    else if(MseConfig.mobile && MseConfig.orientation != "landscape") return true;
+	    else this.currGame.logic(delta);
+	    return true;
+	};
+	this.draw = function(ctx) {
+	    if(this.globalAlpha == 0) return;
+	    
+	    this.configCtx(ctx);
+	    
+	    // Border
+	    if(!MseConfig.mobile){
+	        ctx.strokeStyle = 'rgb(188,188,188)';
+	        ctx.lineWidth = 5;
+	        ctx.strokeRect(this.offx-2.5, this.offy-2.5, this.width, this.height);
+	        ctx.lineWidth = 1;
+	    }
+	    
+	    if(this.currGame.type == "INDEP" && MseConfig.mobile && MseConfig.orientation != "landscape") {
+	        // Draw orientation change notification page
+	        ctx.drawImage(mse.src.getSrc('imgNotif'), (ctx.canvas.width-50)/2, (ctx.canvas.height-80)/2, 50, 80);
+	        return;
+	    }
+	    else if(this.state == "START") {
+	        if(!this.firstShow){
+	            this.firstShow = true;
+	            if(this.currGame.type == "INDEP") {
+	                this.evtDeleg.eventNotif("firstShow");
+	            }
+	            if(MseConfig.mobile){
+	                this.currGame.setPos(0,0);
+	                this.currGame.setSize(MseConfig.pageWidth, MseConfig.pageHeight);
+	            }
+	        }
+    	    this.currGame.draw(ctx);
+    	}
+    	else if(this.state == "LOSE") {
+    	    //this.loseimg.draw(ctx);
+    	    ctx.fillStyle = "#000";
+    	    ctx.fillRect(this.getX(),this.getY(),this.width-5,this.height-5);
+    	    this.losetext.draw(ctx);
+    	    this.passBn.draw(ctx);
+    	}
+	};
+};
+mse.GameShower.prototype = new mse.UIObject();
+mse.GameShower.prototype.constructor = mse.GameShower;
+
+
+// GameExpose is the small object integrate in the articles, it can be clicked for load the game in GameShower and start it
+mse.GameExpose = function(parent, param, game) {
+    // Super constructor
+    mse.UIObject.call(this, parent, param);
+    
+    this.firstShow = false;
+    this.game = game;
+    this.game.setExpose(this);
+    this.msg = "";
+    this.msginlines = new Array();
+    if(!this.font) this.font = "12px Verdana";
+    this.lineHeight = Math.round( 1.2*checkFontSize(this.font) );
+    this.evtDeleg.addListener('firstShow', new mse.Callback(parent.interrupt, parent));
+    this.passBn = new mse.Button(this, {pos:[this.width-115,this.height-60],size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je ne joue pas', 'aideBar');
+    
+    this.launchGame = function(e) {
+        this.getContainer().evtDeleg.removeListener('click', this.launchcb);
+        if(this.passBn.inObj(e.offsetX, e.offsetY)) this.endGame();
+        else this.game.start();
+    };
+    this.launchcb = new mse.Callback(this.launchGame, this);
+    
+    this.endGame = function() {
+        if(parent.play) parent.play();
+    };
+    
+    this.logic = function() {
+        if(!this.firstShow) {
+            this.firstShow = true;
+            this.evtDeleg.eventNotif('firstShow');
+            this.getContainer().evtDeleg.addListener('click',  this.launchcb, true);
+        }
+        // Message changed
+        if(this.msg != this.game.getMsg()) {
+            this.msg = this.game.getMsg();
+            this.msginlines.splice(0,this.msginlines.length);
+            this.bullWidth = this.width; this.bullHeight = 0;
+            
+            if(!this.msg || this.msg == '') {this.bullHeight = 0; return;}
+            var ctx = mse.root.ctx;
+            ctx.save();
+            ctx.font = this.font;
+            var maxM = Math.floor( (this.bullWidth-20)/ctx.measureText('A').width );
+            
+            for(var j = 0; j < this.msg.length;) {
+            	// Find the index of next line
+            	var next = checkNextLine(ctx, this.msg.substr(j), maxM, this.bullWidth-20);
+            	this.msginlines.push( this.msg.substr(j, next) );
+            	j += next;
+            }
+            ctx.restore();
+        }
+    };
+    
+    this.draw = function(ctx) {
+        ctx.save();
+        ctx.translate(this.getX(), this.getY()+15);
+        
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, this.width, this.height-30);
+        // Border
+        ctx.strokeStyle = 'rgb(188,188,188)';
+        ctx.lineWidth = 5;
+        ctx.strokeRect(0, -2.5, this.width, this.height-30);
+        ctx.lineWidth = 1;
+        
+        // Msg
+        ctx.font = this.font;
+        ctx.textBaseline = "top";
+        ctx.fillStyle = "#FFF";
+        var top = (this.height-30 - this.msginlines.length * this.lineHeight)/2;
+        for(var i = 0; i < this.msginlines.length; i++) {
+            ctx.fillText(this.msginlines[i], 10, top+i*this.lineHeight);
+        }
+        
+        ctx.restore();
+        ctx.save();
+        this.passBn.draw(ctx);
+        ctx.restore();
+    };
+};
+mse.GameExpose.prototype = new mse.UIObject();
+mse.GameExpose.prototype.constructor = mse.GameExpose;
+
+
+
+// Slider
+mse.Slider = function(target, param, orientation, offset, parent) {
+    if(!parent) parent = target.parent ? target.parent : mse.root.container;
+	// Super constructor
+	mse.UIObject.call(this, parent, param);
+	if(parent.addLayer) parent.addLayer('slider', this);
+	else if(parent.addObject) parent.addObject(this);
+	
+	this.fillStyle = 'rgba(145,152,159, 0.7)';
+	this.tar = target;
+	if(!offset) offset = 0;
+	this.enScroll = false;
+	this.scrollT = 0;
+	this.globalAlpha = 0;
+	
+	if(orientation=='horizontal') {
+		this.orientation = 'horizontal';
+		this.setPos(this.tar.getX(), this.tar.getY()+this.tar.getHeight()+offset);
+		this.setSize(this.tar.getWidth(), 10);
+		// Location of cursor
+		this.loc = 0;
+		this.length = this.width;
+	}
+	else {
+		this.orientation = 'vertical';
+		this.setPos(this.tar.getX()+this.tar.getWidth()+offset, this.tar.getY());
+		this.setSize(10, this.tar.getHeight());
+		this.loc = 0;
+		this.length = this.height;
+	}
+	
+	this.cbScroll = new mse.Callback(this.scroll, this);
+	this.cbGest = new mse.Callback(this.gestUpdate, this);
+	this.getContainer().evtDeleg.addListener('gestureUpdate', this.cbGest, false, this.tar);
+	if(!MseConfig.mobile)
+		this.getContainer().evtDeleg.addListener('mousewheel', this.cbScroll, false, this.tar);
+};
+extend(mse.Slider, mse.UIObject);
+$.extend(mse.Slider.prototype, {
+    show: function() {
+        mse.fadein(this, 4);
+        this.enScroll = true;
+        this.evtDeleg.eventNotif("show");
+    },
+    hide: function() {
+        if(this.globalAlpha == 1) mse.fadeout(this, 4);
+        this.enScroll = false;
+        this.evtDeleg.eventNotif("hide");
+    },
+    scroll: function(e) {
+        if(this.globalAlpha == 0) this.show();
+        this.scrollT = 0;
+        if(this.orientation == 'vertical') {
+            this.tar.offy += e.rolled;
+            // Adjustement
+            if(this.tar.offy > 100 || this.tar.offy+this.tar.getHeight() < this.tar.parent.getHeight()/2)
+                this.tar.offy -= e.rolled;
+        }
+        else {
+            this.tar.offx += e.rolled;
+            // Adjustement
+            if(this.tar.offx > 100 || this.tar.offx+this.tar.getWidth() < this.tar.parent.getWidth()/2)
+                this.tar.offx -= e.rolled;
+        }
+        this.evtDeleg.eventNotif("rolling", e.rolled);
+    },
+    gestUpdate: function(e) {
+    	if(e.listX.length > 4) {
+    		e.rolled = e.listY[e.listY.length-1] - e.listY[e.listY.length-2];
+    		this.scroll(e);
+    	}
+    },
+    logic: function(delta) {
+        // Scroll timeout
+        if(this.enScroll) {
+        	this.scrollT += delta;
+        	if(this.scrollT > 600) {
+        	    this.hide();
+        	    return;
+        	}
+        	
+        	if(this.orientation == 'vertical') {
+        	    var ph = this.tar.parent.getHeight();
+        	    var height = this.tar.getHeight();
+        	    var offset = -this.tar.offy;
+        	}
+        	else {
+        	    var ph = this.tar.parent.getWidth();
+        	    var height = this.tar.getWidth();
+        	    var offset = -this.tar.offx;
+        	}
+        	this.length = ph*ph/height;
+        	this.loc = ph*offset/height;
+        	if(this.loc + this.length > ph-30) this.length = ph-this.loc-30;
+        	else if(this.loc < 0) {
+        	    this.length = this.length+this.loc;
+        	    this.loc = 0;
+        	}
+        }
+    },
+    draw: function(ctx) {
+        if(this.globalAlpha == 0) return;
+        ctx.save();
+        this.configCtxFlex(ctx);
+        ctx.translate(this.getX(), this.getY());
+        ctx.beginPath();
+        if(this.orientation == 'vertical') {
+        	var r = this.width/2;
+        	// Top semi elipse
+        	ctx.arc(r,this.loc+r,r,0,Math.PI,true);
+        	// Body left
+        	ctx.lineTo(0, this.loc+this.length-r);
+        	// Bottom semi elipse
+        	ctx.arc(r,this.loc+this.length-r,r,Math.PI,2*Math.PI,true);
+        	// Body right
+        	ctx.lineTo(this.width, this.loc+r);
+        }
+        else {
+        	var r = this.height/2;
+        	// Left semi elipse
+        	ctx.arc(this.loc+r,r,r,1.5*Math.PI,0.5*Math.PI,false);
+        	// Body top
+        	ctx.lineTo(this.loc+l-r, 0);
+        	// Right semi elipse
+        	ctx.arc(this.loc+l-r,r,r,0.5*Math.PI,1.5*Math.PI,false);
+        	// Body bottom
+        	ctx.lineTo(this.loc+r, this.height);
+        }
+        ctx.fill();
+        ctx.restore();
+    }
+});
+
+
+
+// Button
+mse.Button = function(parent, param, txt, image, link, type) {
+	// Super constructor
+	mse.UIObject.call(this, parent, param);
+	
+	this.txt = txt;
+	this.img = image;
+	this.setLink(link, type);
+};
+extend(mse.Button, mse.UIObject);
+$.extend(mse.Button.prototype, {
+    urlClicked: function() {
+        window.open(this.link, '_newtab');
+    },
+    setLink: function(link, type) {
+        if(link) this.link = link;
+        if(type == 'url') {
+            this.getContainer().evtDeleg.addListener('click', new mse.Callback(this.urlClicked, this), true, this);
+        }
+    },
+    draw: function(ctx, x, y) {
+    	this.configCtxFlex(ctx);
+    	ctx.fillStyle = "rgb(255,255,255)";
+    	ctx.textAlign = "center";
+    	ctx.textBaseline = "middle";
+    	
+    	if(x == null) var ox = this.getX(), oy = this.getY();
+    	else var ox = x, oy = y;
+    	var img = mse.src.getSrc(this.img);
+    	if(img) ctx.drawImage(img, ox, oy, this.width, this.height);
+    	
+    	if(this.txt)
+    		ctx.fillText(this.txt, ox+this.width/2, oy+this.height/2);
+    }
+});
+
+
+// Menu item
+mse.MenuItem = function(parent, param, txt, image, linkType, link) {
+	// Super constructor
+	mse.UIObject.call(this, parent, param);
+	
+	this.txt = txt;
+	this.img = image;
+	this.zid = 11;
+	// Guarentee the link works
+	this.linkType = ((linkType!=null && link!=null) ? linkType : 'None');
+	this.link = link;
+	
+	this.linkClicked = function(e) {
+		// A new container link, transition from current container to the link
+		switch(this.linkType) {
+		case 'None' : break;
+		case 'SubMenu' :
+			this.parent.subShow = this.link;
+			var items = this.parent.subMenu[this.link];
+			for(var i in items)
+				mse.fadein(items[i], 8);
+			break;
+		case 'Card' :
+			this.link.evtDeleg.addListener('click', new mse.Callback(mse.root.revealCard, mse.root, mse.root.container), true);
+			mse.root.poseCard(this.link);
+			break;
+		case 'Page' : default :
+			mse.changePage(this.link);
+			break;
+		}
+	};
+	
+	var cbLink = new mse.Callback(this.linkClicked, this);
+	switch(this.linkType) {
+	case 'None' : break;
+	case 'SubMenu' :
+		if(MseConfig.mobile) mse.root.evtDistributor.addListener('click', cbLink, true);
+		else mse.root.evtDistributor.addListener('enter', cbLink, true);
+		break;
+	case 'Page': case 'Card': default : 
+		 mse.root.evtDistributor.addListener('click', cbLink, true);
+		break;
+	}
+	
+	this.draw = function(ctx) {
+		this.configCtxFlex(ctx);
+		if(this.img) {
+			var img = mse.src.getSrc(this.img);
+			ctx.drawImage(img, this.getX(), this.getY(), this.width, this.height);
+		}
+		else ctx.fillRect(this.getX(), this.getY(), this.width, this.height);
+		
+		if(this.txt) ctx.fillText(this.txt, this.getX()+this.width/2, this.getY()+this.height/2);
+	};
+};
+mse.MenuItem.prototype = new mse.UIObject();
+mse.MenuItem.prototype.constructor = mse.MenuItem;
+
+
+// Menu
+var SLIDETIME = 500;
+mse.Menu = function(parent, param, iwidth, iheight) {
+	// Super constructor
+	mse.Layer.call(this, parent, 10, param);
+	
+	this.iwidth = iwidth;
+	this.iheight = iheight;
+	this.ioffx = (this.width - iwidth)/2;
+	this.espace = iheight/2 > 20 ? iheight/2 : 20;
+	this.fillStyle = 'rgb(145,152,159)';
+	this.maskAlpha = 0.45;
+	this.shadow = {shadowOffsetX:0, shadowOffsetY:0, shadowBlur:5, shadowColor:'rgb(67, 67, 67)'};
+	this.subMenu = new Array();
+	this.subShow = -1;
+	this.offx -= this.width;
+	this.state = 'PRESENT';
+	this.zonex = this.width;
+	
+	this.inObj = function(x, y) {
+		if(this.insideRec)
+			var ox = this.getCanvasX()-this.zonex+this.insideRec[0], oy = this.getCanvasY()+this.insideRec[1], w = this.insideRec[2], h = this.insideRec[3];
+		else var ox = this.getCanvasX()-this.zonex, oy = this.getCanvasY(), w = 2*this.getWidth(), h = 2*this.getHeight();
+		
+		if(x>ox && x<ox+w && y>oy && y<oy+h) return true;
+		else return false;
+	};
+	this.getX = function() {
+		var x = (this.parent ? this.parent.getX() : 0);
+		return x+this.offx+this.zonex;
+	};
+	
+	this.slideInOut = function(evt) {
+		switch(this.state) {
+		case 'HIDE': 
+			if(this.name) mse.root.container.desactiveOthers(this.name);
+			this.state = 'IN';break;
+		case 'PRESENT': 
+			if(this.name) mse.root.container.reactiveOthers();
+			this.state = 'OUT';break;
+		}
+	};
+	this.hide = function(){
+		this.state = 'HIDE';
+		this.zonex = 0;
+		this.globalAlpha = 0;
+	};
+	
+	this.addItem = function(txt, image, type, link) {
+		var l = this.objList.length;
+		if(type == "SubMenu") link = l;
+		if(l == 0) y = this.espace;
+		else var y = this.objList[l-1].offy + this.iheight + this.espace;
+		var item=new mse.MenuItem(this,{pos:[this.ioffx,y],size:[this.iwidth,this.iheight]},txt,image,type,link);
+		this.addObject(item);
+		return item;
+	};
+	this.addSubItem = function(subTo, txt, image, type, link) {
+		if(!this.objList[subTo]) return;
+		var y = this.objList[subTo].offy;
+		var item=new mse.MenuItem(this,{pos:[this.width+6,y],size:[180,this.iheight],globalAlpha:0,font:'Bold 16px '+cfs.font,textAlign:'center',fillStyle:'#FFF',textBaseline:'middle'},txt,image,type,link);
+		if(!this.subMenu[subTo]) this.subMenu[subTo] = new Array();
+		this.subMenu[subTo].push(item);
+		return item;
+	};
+	this.delItem = function(i) {
+		this.objList.splice(i, 1);
+	};
+	this.delSubItem = function(i, subTo) {
+		if(this.subMenu[subTo]) this.subMenu[subTo].splice(i, 1);
+	};
+	
+	this.logic = function(delta) {
+		switch(this.state) {
+		case 'HIDE': case 'PRESENT': break;
+		case 'OUT':
+			if(this.zonex > 0) {
+				this.globalAlpha -= delta/SLIDETIME;
+				if(this.globalAlpha < 0) this.globalAlpha = 0;
+				this.zonex -= delta/SLIDETIME * this.width;
+			}
+			else {this.state = 'HIDE';this.globalAlpha = 0;}
+			break;
+		case 'IN':
+			if(this.zonex < this.width) {
+				this.globalAlpha += delta/SLIDETIME;
+				if(this.globalAlpha > 1) this.globalAlpha = 1;
+				this.zonex += delta/SLIDETIME * this.width;
+			}
+			else {this.state = 'PRESENT';this.globalAlpha = 1;}
+			break;
+		}
+	};
+	this.draw = function(ctx) {
+		if(this.state != 'HIDE'){
+			// Background mask
+			var a = this.maskAlpha*this.getAlpha();
+			ctx.fillStyle = 'rgba(0,0,0,'+a+')';
+			ctx.fillRect(this.getX(), this.getY(), 256, this.height);
+			
+			// Menu items
+			this.configCtxFlex(ctx);
+			ctx.fillRect(this.getX(), this.getY(), this.width, this.height);
+			for(var i in this.objList) this.objList[i].draw(ctx);
+			
+			// Submenu items
+			if(this.subShow >= 0) {
+				for(var i in this.subMenu[this.subShow])
+					this.subMenu[this.subShow][i].draw(ctx);
+			}
+		}
+	};
+	
+	this.getContainer().evtDeleg.addListener('click', new mse.Callback(this.slideInOut, this), true);
+};
+mse.Menu.prototype = new mse.Layer();
+mse.Menu.prototype.constructor = mse.Menu;
+
+
+
+mse.Card = function(parent, param, ui) {
+    mse.UIObject.call(this, parent, param);
+    this._layers = new Array();
+    
+    this.ui = ui;
+    if(ui) this.addLayer('ui', ui);
+    this.margin = [15, 15, 15, 15];
+    // Angle between -10 and 10
+    this.angle = randomInt(20) - 10;
+    this.lw = this.width - this.margin[1] - this.margin[3];
+    this.lh = this.height - this.margin[0] - this.margin[2];
+};
+extend(mse.Card, mse.UIObject);
+$.extend(mse.Card.prototype, {
+    addLayer: mse.BaseContainer.prototype.addLayer,
+    delLayer: mse.BaseContainer.prototype.delLayer,
+    getLayer: mse.BaseContainer.prototype.getLayer,
+    sortLayer: mse.BaseContainer.prototype.sortLayer,
+    
+    draw: function(ctx){
+        if(!this.ui) {
+            ctx.fillStyle = "rgb(252,250,242)";
+            ctx.fillRoundRect(this.getX(), this.getY(), this.width, this.height, 20);
+        }
+    },
+    ptRotate: function(x, y) {
+        var ox = this.getX()+this.width/2, oy = this.getY()+this.height/2;
+        var dx = x-ox, dy = y-oy;
+        var a = this.angle*Math.PI/180;
+        var sina = Math.sin(a), cosa = Math.cos(a);
+        var xp = dx*cosa + dy*sina;
+        var yp = -dx*sina + dy*cosa;
+        return [ox+xp, oy+yp];
+    },
+    inObj: function(x, y) {
+        var pt = this.ptRotate(x, y);
+        if(mse.UIObject.prototype.inObj.call(this, pt[0], pt[1])) return true;
+        else return false;
+    }
+});
+
+mse.ImageCard = function(parent, param, ui, img, legend) {
+    mse.Card.call(this, parent, param, ui);
+    
+    if(img && mse.src.getSrc(img)) {
+        this.img = img;
+        this.legend = legend;
+    }
+    mse.src.waitSrc(this.img, new mse.Callback(this.init, this));
+};
+extend(mse.ImageCard, mse.Card);
+$.extend(mse.ImageCard.prototype, {
+    legendheight: 35,
+    setImage: function(img, legend) {
+        if(img && mse.src.getSrc(img)) {
+            this.img = img;
+            this.legend = legend;
+        }
+    },
+    init: function() {
+        var iw = this.lw;
+        var ih = this.height - this.margin[0] - this.margin[2] - this.legendheight;
+        var src = mse.src.getSrc(this.img);
+        var rx = iw/src.width, ry = ih/src.height;
+        var r = (rx < ry) ? rx : ry;
+        this.iw = src.width * r;
+        this.ih = src.height * r;
+        this.ix = this.margin[3] + (iw-this.iw)/2;
+        this.iy = this.margin[0] + (ih-this.ih)/2;
+    },
+    draw: function(ctx){
+        ctx.save();
+        // Rotation
+        ctx.translate(this.getX()+this.width/2, this.getY()+this.height/2);
+        ctx.rotate(this.angle * Math.PI / 180);
+        ctx.translate(-this.width/2, -this.height/2);
+        
+        for(var i in this._layers) {
+        	this._layers[i].draw(ctx);
+        }
+        // Default UI
+        if(!this.ui) {
+            ctx.fillStyle = "rgb(252,250,242)";
+            ctx.fillRoundRect(0, 0, this.width, this.height, 20);
+        }
+        if(!this.img) return;
+        
+        ctx.drawImage(mse.src.getSrc(this.img), this.ix, this.iy, this.iw, this.ih);
+        ctx.font = "italic 12px Verdana";
+        ctx.textBaseline = "top";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#000";
+        ctx.fillTextWrapped(this.legend, this.ix+this.iw/2, this.iy+this.ih+5, this.lw, 15);
+        ctx.restore();
+    }
+});
+
+mse.TextContent = function(parent, param) {
+    mse.UIObject.call(this, parent, param);
+    if(!this.font) this.font = "14px Verdana";
+    if(!this.textAlign) this.textAlign = "left";
+    if(!this.fillStyle) this.fillStyle = "#000";
+    this.textBaseline = "top";
+    
+    this.sections = new Array();
+    this.length = 0;
+};
+extend(mse.TextContent, mse.UIObject);
+$.extend(mse.TextContent.prototype, {
+    seplineoff: -3.5,
+    titletextoff: 5,
+    sectionsep: 12,
+    lineHeight: 18,
+    addSection: function(type, title, text){
+        if(typeof title != 'string' || typeof text != 'string') return;
+        switch(type) {
+        case "text": var content = text;break;
+        case "link": 
+            var content = new mse.Button(this, {pos:[15,this.length+this.titletextoff+this.lineHeight],size:[80,this.lineHeight],font:this.font,fillStyle:'#FFF'}, 'Lien', 'wikiBar', text, 'url');
+        break;
+        }
+        this.sections.push([type, title, content]);
+        this.configCtx(mse.root.ctx);
+        var l = wrapText(title, mse.root.ctx, this.width).length;
+        l += wrapText(text, mse.root.ctx, this.width-15).length;
+        l = l*this.lineHeight + this.titletextoff + this.sectionsep;
+        this.length += l;
+    },
+    getHeight: function() {
+        return this.length;
+    },
+    draw: function(ctx) {
+        ctx.save();
+        ctx.translate(this.offx, this.offy);
+        this.configCtxFlex(ctx);
+        ctx.lineCap = "round";
+        var y = 0;
+        for(var i = 0; i < this.sections.length; i++) {
+            ctx.font = "bold "+this.font;
+            y += ctx.fillTextWrapped(this.sections[i][1], 0, y, this.width, this.lineHeight) + this.titletextoff;
+            ctx.beginPath();
+            ctx.moveTo(0, y+this.seplineoff);
+            ctx.lineTo(this.width, y+this.seplineoff);
+            ctx.stroke();
+            ctx.font = this.font;
+            switch(this.sections[i][0]) {
+            case "text":
+                y += ctx.fillTextWrapped(this.sections[i][2], 15, y, this.width-15, this.lineHeight) + this.sectionsep;break;
+            case "link":
+                this.sections[i][2].draw(ctx, 15, y);
+                y += this.lineHeight + this.sectionsep;break;
+            }
+        }
+        ctx.restore();
+    }
+});
+mse.TextCard = function(parent, param, ui) {
+    mse.Card.call(this, parent, param, ui);
+    this.content = new mse.TextContent(this, {pos:[this.margin[3], this.margin[0]], size:[this.lw, this.lh]});
+    this.addLayer('content', this.content);
+    
+    this.slider = new mse.Slider(this.content, {}, 'vertical');
+    this.slider.setPos(this.width-this.margin[1], 0);
+};
+extend(mse.TextCard, mse.Card);
+$.extend(mse.TextCard.prototype, {
+    getContainer: function() {
+        return this;
+    },
+    addSection: function(title, text) {
+        this.content.addSection('text', title, text);
+    },
+    addLink: function(title, url) {
+        this.content.addSection('link', title, url);
+    },
+    draw: function(ctx) {
+        ctx.save();
+        // Rotation
+        ctx.translate(this.getX()+this.width/2, this.getY()+this.height/2);
+        ctx.rotate(this.angle * Math.PI / 180);
+        ctx.translate(-this.width/2, -this.height/2);
+        
+        // Default UI
+        if(!this.ui) {
+            ctx.fillStyle = "rgb(252,250,242)";
+            ctx.fillRoundRect(0, 0, this.width, this.height, 20);
+        }
+        for(var i in this._layers) {
+        	this._layers[i].draw(ctx);
+        }
+        
+        ctx.restore();
+    }
+});
+
+mse.WikiLayer = function() {
+    mse.Layer.call(this, null, 11, {});
+    
+    this.currCard = null;
+    this.cbDragStart = new mse.Callback(this.dragStart, this);
+    this.cbDragMove = new mse.Callback(this.dragMove, this);
+    this.cbDragEnd = new mse.Callback(this.dragEnd, this);
+};
+extend(mse.WikiLayer, mse.Layer);
+$.extend(mse.WikiLayer.prototype, {
+    cardw: 250,
+    cardh: 320,
+    hide: function() {
+        var container = this.getContainer();
+        if(container) {
+            container.evtDeleg.removeListener('gestureStart', this.cbDragStart);
+            container.evtDeleg.removeListener('gestureUpdate', this.cbDragMove);
+            container.evtDeleg.removeListener('gestureEnd', this.cbDragEnd);
+        }
+        
+        this.parent.reactiveOthers();
+        this.globalAlpha = 0;
+        this.parent.delLayer('wiki');
+    },
+    init: function(container) {
+        if(!container instanceof mse.UIObject) return;
+        this.parent = container;
+        this.setSize(container.getWidth(), container.getHeight());
+        this.setPos(0,0);
+        this.cardx = (this.width - this.cardw)/2;
+        this.cardy = (this.height - this.cardh)/2;
+        for(var card in this.objList)
+            this.objList[card].setPos(this.cardx, this.cardy);
+        
+        container.evtDeleg.addListener('gestureStart', this.cbDragStart, true, this);
+        container.evtDeleg.addListener('gestureUpdate', this.cbDragMove, true, this);
+        container.evtDeleg.addListener('gestureEnd', this.cbDragEnd, true, this);
+        
+        container.addLayer('wiki', this);
+        this.globalAlpha = 1;
+        container.desactiveOthers('wiki');
+    },
+    addImage: function(img, legend) {
+        var param = {size: [this.cardw, this.cardh]};
+        this.addObject(new mse.ImageCard(this, param, null, img, legend));
+    },
+    addTextCard: function() {
+        var param = {size: [this.cardw, this.cardh]};
+        this.textCard = new mse.TextCard(this, param, null);
+        this.addObject(this.textCard);
+    },
+    addExplication: function(title, text) {
+        this.addTextCard();
+        this.textCard.addSection(title, text);
+    },
+    addLink: function(title, link) {
+        if(!this.textCard) this.addTextCard();
+        this.textCard.addLink(title, link);
+    },
+    dragStart: function(e){
+        for(var i = this.objList.length-1; i >= 0; i--) {
+            if(this.objList[i].inObj(e.offsetX, e.offsetY)) {
+                if( !this.objList[i].evtDeleg.eventNotif('click', e) )
+                    this.currCard = this.objList[i];
+                return;
+            }
+        }
+        this.hide();
+    },
+    dragMove: function(e){
+        if(!this.currCard) return;
+        var dx = e.listX[e.listX.length-1] - e.listX[e.listX.length-2];
+        var dy = e.listY[e.listY.length-1] - e.listY[e.listY.length-2];
+        this.currCard.move(dx, dy);
+    },
+    dragEnd: function(e){
+        this.currCard = null;
+    }
+});
+
+
+
+// Page Wiki, Title + Galery Photo + Wiki Content
+mse.PageWiki = function(parent, z, param, title, photos, content) {
+	// Super constructor
+	mse.Layer.call(this, parent, z, param);
+	parent.addLayer('content', this);
+	// Define the size of title
+	var ctx = mse.root.ctx;
+	ctx.font = '22px '+cfs.font;
+	var w = ctx.measureText(title).width * 1.2;
+	// Title wiki
+	// Problem of offset X of mask and title
+	this.title = new mse.Button(this, {pos:[(this.width-w)/2,15],size:[w,35],font:'22px '+cfs.font,fillStyle:'#FFF'}, title, 'wikiBar');
+	// Quit button
+	var text = "Revenir à l'histoire";
+	ctx.font = 'bold 14px Arial Narrow';
+	w = ctx.measureText(text).width * 1.2;
+	this.quit = new mse.Button(this, {pos:[this.width-w-30,this.height-30],size:[w,25],font:'bold 14px Arial Narrow',fillStyle:'#FFF'}, text, 'wikiBar');
+	// Photo list
+	this.photos = photos;
+	this.phOff = this.width/2; // Photos offset
+	this.espace = this.width/10;
+	// Mask for title and photos
+	this.mask = new mse.Mask(this, {
+		pos:[0,0],
+		size:[this.width,185],
+		fillStyle:'#434343'
+		});
+	
+	// Define the content of wiki
+	param.pos = [this.offx+30,this.offy+210];
+	param.size = [this.width-60,this.height-165];
+	this.content = new mse.ArticleLayer(parent, z, param, content);
+	this.content.setSlider();
+	
+	this.v = 0;
+	
+	this.setQuitTarget = function(tar) {
+	    this.getContainer().evtDeleg.addListener(
+	    	'click', 
+	    	new mse.Callback(mse.root.transition, mse.root, tar), 
+	    	true,
+	    	this.quit);
+	};
+	
+	this.addPhoto = function(img) {
+		this.photos.push(img);
+	};
+	
+	this.logic = function(delta) {
+		if(this.v != 0 && this.photos != null) {
+			// Movement of photos
+			this.phOff += this.v;
+			// Adjustment
+			// The photos width
+			var phWidth = -this.espace*3, src;
+			for(var i in this.photos) {
+				src = mse.src.getSrc(this.photos[i]);
+				phWidth += 100*src.width/src.height+this.espace;
+			}
+			if(this.phOff > this.width/2) this.phOff = this.width/2;
+			if(this.phOff+phWidth < this.width/2) this.phOff = this.width/2-phWidth;
+		}
+
+		this.content.logic(delta);
+	};
+	
+	this.draw = function(ctx) {	
+		// Content
+		this.content.draw(ctx);
+		
+		this.mask.draw(ctx);		
+		this.title.draw(ctx);
+		this.quit.draw(ctx);
+		
+		// Galery photos
+		ctx.save();
+		ctx.globalAlpha = 1;
+		ctx.strokeStyle = '#FFF';
+		ctx.fillStyle = '#727272';
+		ctx.translate(this.getX(), this.getY()+65);
+		ctx.fillRect(0,1,this.width,118);
+		ctx.beginPath();
+		ctx.moveTo(0,0);
+		ctx.lineTo(this.width,0);
+		ctx.moveTo(0,120);
+		ctx.lineTo(this.width,120);
+		ctx.stroke();
+		
+		// No Photos
+		if(this.photos == null) {
+		    ctx.restore();
+		    return;
+		}
+		
+		if(this.photos.length > 0) var x = this.phOff-50;
+		var w, src;
+		for(var i in this.photos) {
+			src = mse.src.getSrc(this.photos[i]);
+			w = 100*src.width/src.height;
+			if(x < 0) {
+				if(x+w > 0) {// A part of photo to draw
+					var sx = -x*src.width/w;
+					ctx.drawImage(src, sx,0, src.width-sx,src.height, 0, 10, w+x, 100);
+				}
+			}
+			else if(x+w > this.width) {
+				if(x < this.width) {// A part of photo to draw
+					var sw = (this.width-x)*src.width/w;
+					ctx.drawImage(src, 0,0, sw,src.height, x, 10, this.width-x, 100);
+				}
+			}
+			else ctx.drawImage(src, x, 10, w, 100);
+			x += w + this.espace;
+		}
+		ctx.restore();
+	};
+	
+	this.onMove = function(e) {
+		var x = e.offsetX - this.getX();
+		var y = e.offsetY - this.getY();
+		// Out the region of galery photo
+		if(y <= 65 || y >= 185) {this.v = 0; return;}
+		// Distance from the center
+		var dis = x - this.width/2;
+		if(Math.abs(dis) > 30)
+			this.v = dis/20;
+		else this.v = 0;
+	};
+	this.getContainer().evtDeleg.addListener('move', new mse.Callback(this.onMove, this), true);
+};
+mse.PageWiki.prototype = new mse.Layer();
+mse.PageWiki.prototype.constructor = mse.PageWiki;
+
+
+// Video element
+mse.Video = function(parent, param, srcs) {
+	// Super constructor
+	mse.UIObject.call(this, parent, param);
+	this.srcs = srcs;
+	
+	this.launch = function() {
+	    mse.root.video.load(srcs);
+	    mse.root.video.show();
+	};
+	
+	this.draw = function(ctx) {
+	    ctx.save();
+	    ctx.fillStyle = "#000";
+	    ctx.strokeStyle = "#FFF";
+	    ctx.lineWidth = 4;
+	    ctx.translate(this.getX(), this.getY());
+	    ctx.strokeRoundRect(0, 0, this.width, this.height, 5);
+	    ctx.fillRoundRect(0, 0, this.width, this.height, 5);
+	    ctx.beginPath();
+	    ctx.moveTo(this.width/2-25, this.height/2-20);
+	    ctx.lineTo(this.width/2+25, this.height/2);
+	    ctx.lineTo(this.width/2-25, this.height/2+20);
+	    ctx.lineTo(this.width/2-25, this.height/2-20);
+	    ctx.fillStyle = "#FFF";
+	    ctx.fill();
+	    ctx.restore();
+	};
+	
+	this.getContainer().evtDeleg.addListener('click', new mse.Callback(this.launch, this), true, this);
+};
+mse.Video.prototype = new mse.UIObject();
+mse.Video.prototype.constructor = mse.Video;
+
+
+
+
+// Time line
+// It can be either interval fixed "interval" or interval no fixed define by a list of timestamp progressive "timeprog"
+mse.Timeline = function(src, interval, timeprog, length) {
+	if(!src.initTimeline || !src.runTimeline)
+		return null;
+	// Parameters
+	this.src = src;
+	if(interval > 0) {
+		this.tsFixed = true;
+		this.interval = interval;
+		this.length = length != null ? length : 0;
+	}
+	else {
+		if(!timeprog instanceof Array) return null;
+		this.tsFixed = false;
+		this.timeprog = timeprog;
+		this.length = timeprog.length;
+	}
+	
+	this.src.initTimeline(this);
+	
+	this.start = function() {
+		// Parameters
+		this.currTimestamp = 0;
+		this.currIndex = 0;
+		this.end = false;
+		this.inPause = false;
+	
+		// First run
+		this.src.runTimeline();
+	
+		// Start timer
+		mse.currTimeline = this;
+		if(this.tsFixed)
+			this.timer = setInterval("mse.currTimeline.run()", this.interval);
+		else this.timer = setTimeout("mse.currTimeline.run()", this.timeprog[this.currIndex]);
+	};
+	
+	this.run = function() {
+		if(this.end) {
+			if(this.tsFixed)
+				clearInterval(this.timer);
+			else clearTimeout(this.timer);
+			return;
+		}
+		if(this.inPause)
+			return;
+			
+		this.currTimestamp += this.tsFixed ? this.interval : this.timeprog[this.currIndex];
+		this.currIndex++;
+		// Not End
+		if(this.length == 0 || this.currIndex < length) {	
+			// Interval no fixed
+			if(!this.tsFixed) {
+				this.timer = setTimeout("mse.currTimeline.run()", this.timeprog[this.currIndex]);
+				this.src.runTimeline(this.timeprog[this.currIndex-1]);
+			}
+			else this.src.runTimeline(this.interval);
+		}
+		// END
+		else {
+			this.end = true;
+		}
+	};
+	
+	this.playpause = function() {
+		if(this.end) return;
+		this.inPause = !this.inPause;
+		if(!this.inPause) {
+			if(mse.currTimeline != this) mse.currTimeline = this;
+			this.timer = setTimeout("mse.currTimeline.run()", 1200);
+		}
+	};
+	this.play = function() {
+		if(this.end) return;
+		this.inPause = false;
+		if(mse.currTimeline != this) mse.currTimeline = this;
+		this.timer = setTimeout("mse.currTimeline.run()", 1200);
+	};
+	this.pause = function() {
+		if(this.end) return;
+		this.inPause = true;
+	};
+};
+
+
+
+// Frame Animation
+mse.FrameAnimation = function(sprite, seq, rep, delay){
+	if(!seq instanceof Array || !sprite instanceof mse.Sprite) return null;
+	
+	this.sprite = sprite;
+	this.seq = seq;
+	this.rep = isNaN(rep) ? 1 : rep;
+	this.delay = delay ? delay : 0;
+	this.active = false;
+	this.evtDeleg = new mse.EventDelegateSystem();
+	mse.root.animations.push(this);
+	
+	this.start = function() {
+		this.currFr = 0;
+		this.currRep = 1;
+		this.delayCount = this.delay;
+		this.active = true;
+		this.evtDeleg.eventNotif('start');
+	};
+	
+	this.stop = function() {
+		this.currFr = 0;
+		this.currRep = 0;
+		this.active = false;
+		this.evtDeleg.eventNotif('end');
+	};
+	
+	this.logic = function(delta) {
+		if (!this.active) return false;
+		
+		if (this.currFr < this.seq.length-1) {
+			if (this.delay != 0) {
+				if (this.delayCount == 0) {
+					this.currFr++;
+					this.delayCount = this.delay;
+				}
+				this.delayCount--;
+			}
+			else this.currFr++;
+		}
+		else {
+			if (this.currRep < this.rep || this.rep == 0) {
+				this.currRep++;
+				this.currFr = 0;
+			}
+			else {
+				this.active = false;
+				this.evtDeleg.eventNotif('end');
+				return true;
+			}
+		}
+		this.sprite.curr = this.seq[this.currFr];
+		return false;
+	};
+};
+
+
+
+
+// Key Frame Animation
+mse.KeyFrameAnimation = function(elem, keyFrameMap, repeat) {
+	if(!elem instanceof mse.UIObject) {mseLog('Type Error', 'Element isn\'t a Mse UI Element');return null;}
+	// No time stamp defined
+	if( !keyFrameMap || !keyFrameMap['frame'] ) {mseLog('Parameter Error','No frame stamp defined');return null;}
+	// Length error
+	for(var key in keyFrameMap) {
+		if(keyFrameMap[key].length != keyFrameMap['frame'].length)
+		{mseLog('Parameter Error','KeyFrame length not compatible with the frame stamp');return null;}
+	}
+	this.length = keyFrameMap['frame'].length;
+	if(this.length < 2) {mseLog('Length Error','KeyFrame Length must be larger than 2');return null;}
+	// First frame stamp isn't 0
+	if(keyFrameMap['frame'][0] != 0) {mseLog('Error','Frame start point is not 0');return null;}
+	
+	this.duration = keyFrameMap['frame'][this.length-1];
+	
+	this.element = elem;
+	this.repeat = (repeat == null) ? 1 : repeat;
+	this.map = keyFrameMap;
+	
+	this.resetAnimation();
+	this.evtDeleg = new mse.EventDelegateSystem();
+	
+	if(this.map['opacity']) // Avoid the bug of opacity in javacript
+		this.element.globalAlpha = this.map['opacity'][0]==0 ? 0.01 : this.map['opacity'][0];
+};
+mse.KeyFrameAnimation.prototype = {
+    construction: mse.KeyFrameAnimation,
+    setNoTransition: function() {
+    	this.notransition = true;
+    },
+    resetAnimation: function() {
+    	this.currId = -1;
+    	this.currFr = 0;
+    	this.nextKf = this.map['frame'][0];
+    	this.currRp = 1;
+    },
+    start: function() {
+    	for(var i in mse.root.animations)
+    		if(mse.root.animations[i] == this) return;
+    	mse.root.animations.push(this);
+    },
+    isEnd: function() {
+        if(this.currFr > this.duration && this.currRp == this.repeat) return true;
+        else return false;
+    },
+    
+    logic: function(delta) {
+    	if(this.currFr <= this.duration) {
+    		// Passed a timestamp, move to next
+    		if(this.currFr == this.nextKf) {
+    			// Update states
+    			this.currId++;
+    			this.nextKf = this.map['frame'][this.currId+1];
+    			
+    			for( var key in this.map ) {
+    			    var curr = this.map[key][this.currId];
+    				switch(key) {
+    				case 'frame': continue; // Ignore timestamps
+    				case 'pos':
+    					this.element.setPos(curr[0], curr[1]);break;
+    				case 'size':
+    					this.element.setSize(curr[0], curr[1]);break;
+    				case 'opacity':
+    					this.element.globalAlpha = curr;break;
+    				case 'fontSize':
+    					var size = curr;
+    					var s = checkFontSize(this.element.font);
+    					this.element.font=this.element.font.replace(s,size.toString());
+    					break;
+    				case 'scale':
+    					this.element.scale = curr;break;
+    				case 'spriteSeq':
+    				    this.element.curr = curr;break;
+    				}
+    			}
+    		}
+    		// No transition calculated between the frames
+    		else if(!this.notransition){
+    			// Play the transition between currFr and nextKf
+    			var ratio = (this.currFr - this.map['frame'][this.currId]) / (this.nextKf - this.map['frame'][this.currId]);
+    			// Iterate in attributes for animation
+    			for( var key in this.map ) {
+    			    var curr = this.map[key][this.currId];
+    			    var next = this.map[key][this.currId+1];
+    				switch(key) {
+    				case 'frame': case 'spriteSeq': continue; // Ignore timestamps and sprite sequences
+    				case 'pos':
+    				    var trans = curr[2] ? (this.calTrans[curr[2]] ? curr[2] : 2) : 2;
+    					var x = this.calTrans[trans](ratio, curr[0], next[0]);
+    					var y = this.calTrans[trans](ratio, curr[1], next[1]);
+    					this.element.setPos(x, y);break;
+    				case 'size':
+    				    var trans = curr[2] ? (this.calTrans[curr[2]] ? curr[2] : 2) : 2;
+    					var w = this.calTrans[trans](ratio, curr[0], next[0]);
+    					var h = this.calTrans[trans](ratio, curr[1], next[1]);
+    					this.element.setSize(w, h);break;
+    				case 'opacity':
+    				    var trans = curr[1] ? (this.calTrans[curr[1]] ? curr[1] : 2) : 2;
+    					this.element.globalAlpha = this.calTrans[trans](ratio, (curr[0]?curr[0]:curr), (next[0]?next[0]:next));
+    					break;
+    				case 'fontSize': 
+    				    var trans = curr[1] ? (this.calTrans[curr[1]] ? curr[1] : 2) : 2;
+    					var size = Math.floor(this.calTrans[trans](ratio, (curr[0]?curr[0]:curr), (next[0]?next[0]:next)));
+    					var s = checkFontSize(this.element.font);
+    					this.element.font=this.element.font.replace(s,size.toString());
+    					break;
+    				case 'scale':
+    				    var trans = curr[1] ? (this.calTrans[curr[1]] ? curr[1] : 2) : 2;
+    					this.element.scale = this.calTrans[trans](ratio, (curr[0]?curr[0]:curr), (next[0]?next[0]:next));
+    					break;
+    				}
+    			}
+    		}
+    		// Time increase
+    		this.currFr++;
+    	}
+    	// Repeat or not
+    	else if( this.repeat === 0 || this.currRp < this.repeat ) {
+    		this.currRp++;
+    		// Reset all states
+    		this.currId = 0;
+    		this.currFr = 0;
+    		this.nextKf = this.map['frame'][1];
+    	}
+    	// Stop
+    	else {
+    		this.evtDeleg.eventNotif('end');
+    		return true;
+    	}
+    	return false;
+    },
+    
+    calTrans: {
+        // No transition
+        1:function(ratio, prevState, nextState) {
+            return prevState;
+        },
+        // Float interpolation
+    	2:function(ratio, prevState, nextState) {
+    		return prevState + ratio * (nextState-prevState);
+    	}
+    }
+};
+
+
+mse.Animation = function(duration, repeat, statiq, container, param){
+    this.statiq = statiq ? true : false;
+    // Super constructor
+    if(this.statiq) mse.UIObject.call(this, null, {});
+	else mse.UIObject.call(this, container, param?param:{});
+	this.objs = {};
+	this.animes = [];
+	this.duration = duration;
+	this.repeat = repeat;
+	this.state = 0;
+	this.startCb = new mse.Callback(this.start, this);
+	this.block = false;
+};
+extend(mse.Animation, mse.UIObject);
+$.extend(mse.Animation.prototype, {
+    addObj: function(name, obj){
+        if(obj instanceof mse.UIObject){
+            this.objs[name] = obj;
+            if(this.statiq) obj.parent = this;
+        }
+    },
+    getObj: function(name){
+        return this.objs[name];
+    },
+    addAnimation: function(objname, keyFrameMap, notransition){
+        if(!this.objs[objname]) return;
+        var anime = new mse.KeyFrameAnimation(this.objs[objname], keyFrameMap, this.repeat);
+        if(anime) {
+            if(notransition) anime.setNoTransition();
+            this.animes.push(anime);
+        }
+    },
+    start: function(){
+        this.state = 1;
+        if(this.statiq && $.inArray(this, mse.root.animes) == -1) {
+            for(var i in this.animes)
+                this.animes[i].resetAnimation();
+            mse.root.animes.push(this);
+        }
+        else if(!this.statiq && $.inArray(this, mse.root.animations) == -1) {
+            for(var i in this.animes)
+                this.animes[i].resetAnimation();
+            mse.root.animations.push(this);
+        }
+        this.evtDeleg.eventNotif('start');
+    },
+    pause: function(){
+        this.state = 0;
+    },
+    logic: function(delta){
+        if(this.state){
+            for(var i in this.animes)
+        	    this.animes[i].logic(delta);
+        	    
+        	for(var i in this.animes){
+        	    if(!this.animes[i].isEnd())
+        	        return false;
+        	}
+        	this.state = 0;
+        	return false;
+        }
+        else {
+            this.evtDeleg.eventNotif('end');
+            return true;
+        }
+    },
+    draw: function(ctx){
+        for(var key in this.objs)
+            this.objs[key].draw(ctx);
+    }
+});
+
+
+
+window.mse = mse;
+
+})(window, $);
+
+// System of script
+(function (mse, $) {
+
+	var defaultEvents = ['click', 'doubleClick', 'longPress', 'move', 'swipe', 'gestureStart', 'gestureUpdate', 'gestureEnd', 'gestureSingle', 'keydown', 'keypress', 'keyup', 'scroll', 'swipeleft', 'swiperight'];
+	
+	mse.Script = function(cds) {
+	    if(!cds) return;
+		this.scripts = [];
+		this.states = {};
+		this.expects = {};
+		this.success = {};
+		
+		// Initialize script
+		for(var i in cds) {
+			var id = "c"+i;
+			this.states[id] = cds[i].initial ? cds[i].expect : "";
+			this.expects[id] = cds[i].expect ? cds[i].expect : "everytime";
+			this.success[id] = false;
+			var src = cds[i].src;
+			if($.inArray(cds[i].type, defaultEvents)!=-1 && !(cds[i].src instanceof mse.BaseContainer)) {
+			    src = src.getContainer();
+			    src.evtDeleg.addListener(cds[i].type, new mse.Callback(this.conditionChanged, this, [id]), false, cds[i].src);
+			}
+			else 
+			    src.evtDeleg.addListener(cds[i].type, new mse.Callback(this.conditionChanged, this, [id]), false);
+		}
+	};
+	mse.Script.prototype = {
+	    constructor: mse.Script,
+	    invoke: function() {
+	        for(var i in this.scripts) {
+//			    if(this.scripts[i].delay) setTimeout(this.scripts[i].delay, );
+				if(typeof(this.scripts[i].script) == 'function') this.scripts[i].script.call(this);
+				else this.scripts[i].script.invoke();
+	        }
+		},
+		checkConditions: function() {
+			for(var i in this.success)
+				if(!this.success[i]) return;
+				
+			this.invoke();
+		},
+		conditionChanged: function(id, state) {
+			if(this.expects[id] == "everytime" || (this.expects[id]== "once" && this.states[id] != "triggered")) {
+				this.success[id] = true;
+				this.checkConditions();
+			}
+			this.states[id] = (typeof(state)=="string" ? state : "triggered");
+		},
+		register: function(script, delay) {
+		    if((script.invoke instanceof mse.Callback) || typeof(script) == 'function') {
+		        this.scripts.push({'script':script, 'delay':delay?delay:0});
+		    }
+		}
+	};
+
+
+})(mse, $);
+
+
+
+
+// System of 2D coordinates
+(function (window, mse) {
+
+
+    mse.Point2 = function(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    
+    window.crePoint2 = function(x,y) {
+        return new mse.Point2(x,y);
+    }
+
+
+})(window, mse);var RatGame = function() {
+	mse.Game.call(this);
+	
+	var oxid = mse.joinCoor(220);
+	var oyid = mse.joinCoor(0);
+	var wid = mse.joinCoor(360);
+	var hid = mse.joinCoor(600);
+	
+	this.offx = mse.coor(oxid); this.offy = mse.coor(oyid);
+	this.width = mse.coor(wid); this.height = mse.coor(hid);
+	
+	mse.src.addSource('ratImg', './games/rat.png', 'img');
+	var ratSit = new mse.Sprite(this,{pos:[30,this.height-80]}, 'ratImg', 80,50, 0,0,400,100);
+	var ratHead = new mse.Sprite(this,{pos:[20,this.height-96]}, 'ratImg', 39,34, 400,0,39,34);
+	var ratHang = new mse.Sprite(this, {pos:[45,this.height-80]}, 'ratImg', 40,113, 0,101,400,113);
+	mse.src.addSource('sacImg', './games/sac.png', 'img');
+	var sac = new mse.Image(this, {pos:[this.width-160,20], insideRec:[60,40,60,60]}, 'sacImg');
+	var pochet = new mse.Sprite(this, {pos:[this.width-100,175]}, 'sacImg', 60,40, 60,155,60,40);
+	
+	var seq = [0,1,2,3,4,5,6,7,8,9];
+	var sitAnim = new mse.FrameAnimation(ratSit, seq, 0, 2);
+	var hangAnim = new mse.FrameAnimation(ratHang, seq, 0, 2);
+	
+	this.dragStart = function(e) {
+		var x = e.offsetX - this.offx;
+		var y = e.offsetY - this.offy;
+		if(x>30 && x<110 && y>this.height-80 && y<this.height-30) {
+			this.sit = false;
+			ratHang.offx = x-20; ratHang.offy = y-14;
+			
+			sitAnim.stop();
+			hangAnim.start();
+		}
+	};
+	this.dragMove = function(e) {
+		var x = e.offsetX - this.offx-20;
+		var y = e.offsetY - this.offy-14;
+		ratHang.offx = x; ratHang.offy = y;
+	};
+	this.dragEnd = function(e) {
+		var x = e.offsetX - this.offx;
+		var y = e.offsetY - this.offy;
+		if(this.sit) return;
+		if(sac.inObj(e.offsetX, e.offsetY)) {
+			var drop = new mse.KeyFrameAnimation(ratHang, {
+					frame	: [0, 25, 35],
+					pos		: [[x, y], [sac.offx+70,sac.offy+125], [sac.offx+70,sac.offy+125]]
+				}, 1);
+			drop.evtDeleg.addListener('end', new mse.Callback(this.end, this));
+			drop.start();
+			this.droped = true;
+			mse.root.evtDistributor.removeListener('gestureStart', cbStart);
+			mse.root.evtDistributor.removeListener('gestureUpdate', cbMove);
+			mse.root.evtDistributor.removeListener('gestureEnd', cbEnd);
+		}
+		else {
+			this.sit = true;
+			hangAnim.stop();
+			sitAnim.start();
+		}
+	};
+	
+	var cbStart = new mse.Callback(this.dragStart, this);
+	var cbMove = new mse.Callback(this.dragMove, this);
+	var cbEnd = new mse.Callback(this.dragEnd, this);
+	
+	this.init = function() {
+		mse.root.evtDistributor.addListener('gestureStart', cbStart, true, this);
+		mse.root.evtDistributor.addListener('gestureUpdate', cbMove, true, this);
+		mse.root.evtDistributor.addListener('gestureEnd', cbEnd, true, this);
+		
+		this.sit = true;
+		this.droped = false;
+		sitAnim.start();
+	};
+	
+	this.logic = function(delta) {
+		if(this.droped) {
+			var d = pochet.offy - ratHang.offy - 114;
+			ratHang.fh = d < 0 ? 114+d : 114;
+			ratHang.height = ratHang.fh;
+		}
+	};
+    
+	this.draw = function(ctx) {
+		sac.draw(ctx);
+		if(this.sit) {
+			ratSit.draw(ctx);
+			ratHead.draw(ctx);
+			// Draw text
+			ctx.save();
+			// Draw bull
+			ctx.fillStyle = "#FFF";
+			ctx.translate(ratHead.getX()+ratHead.getWidth()*1.2, ratHead.getY()-24);
+			ctx.beginPath();
+			ctx.moveTo(-10,30);
+			ctx.lineTo(0,30-15);
+			ctx.lineTo(10,30);
+			ctx.lineTo(-10,30);
+			ctx.fill();
+			ctx.fillRoundRect(0, 0, 240, 30, 10);
+			ctx.fillStyle = "#000";
+			ctx.font = "20px Verdana";
+			ctx.textBaseline = 'top';
+			ctx.fillText("Aide Simon, vite!", 10, 4);
+			ctx.restore();
+		}
+		else ratHang.draw(ctx);
+		if(this.droped) pochet.draw(ctx);
+	};
+};
+extend(RatGame, mse.Game);// Game : Find Simon
+function angleFor2Point(p1, p2) {
+	var angle = 0;
+	var dx = p2.x - p1.x;
+	var dy = p2.y - p1.y;
+	angle = Math.atan2(dy, dx);
+	return Math.round(180 * angle/(Math.PI));
+};
+
+function distance2Pts(x1,y1,x2,y2) {
+    return Math.sqrt(Math.pow(x2-x1, 2)+Math.pow(y2-y1, 2));
+};
+
+function inrect(x, y, rect) {
+    if(x >= rect[0] && x <= rect[0]+rect[2] && y >= rect[1] && y <= rect[1]+rect[3]) return true;
+    else return false;
+};
+function xRelatRect(x, rect) {
+    if(x < rect[0]) return -1;
+    else if(x >= rect[0] && x <= rect[0]+rect[2]) return 0;
+    else return 1;
+};
+function yRelatRect(y, rect) {
+    if(y < rect[1]) return -1;
+    else if(y >= rect[1] && y <= rect[1]+rect[3]) return 0;
+    else return 1;
+};
+
+var NPC = function(sprite, course, dir) {
+    if(course.length < 2) {mseLog('Array Error', 'Array \'course\' demande minimum 2 elements');}
+    if(course.length != dir.length) {mseLog('Array Error', 'Array \'course\' have to be the same size of array \'dir\'');}
+    this.sprite = sprite;
+    this.animes = new Array();
+    // Animations
+    this.animes['run'] = new mse.FrameAnimation(sprite, [0,1,2,3,4,5], 0, 5);
+    this.animes['stand'] = new mse.FrameAnimation(sprite, [6], 0, 1000);
+    // Velocity
+    this.v = 6;
+    // Vision
+    this.visiond = 180;
+    this.visiona = 40;
+    // Start and end angle of view
+    this.startAngle = this.visiona*Math.PI/180;
+    this.endAngle = -this.startAngle;
+    this.startP = crePoint2(Math.cos(this.startAngle)*this.visiond, Math.sin(this.startAngle)*this.visiond);
+    // Course predefined
+    this.course = course;
+    // Direction of view
+    this.dir = dir;
+    // Position
+    this.pos = new mse.Point2(course[0].x, course[0].y);
+    this.currStep = 0;
+    this.nextStep = 1;
+    // Orientation
+    this.direction = angleFor2Point(this.course[0], this.course[1]);
+    if(dir[this.currStep].length != 0) {
+        this.currDir = 0;
+        this.tarDir = this.dir[this.currStep][this.currDir];
+        this.state = 1;
+        this.animes['run'].stop();
+        this.animes['stand'].start();
+    }
+    else {
+        this.tarDir = this.direction;
+        this.state = 0;
+        this.animes['run'].start();
+        this.animes['stand'].stop();
+    }
+    
+    this.logic = function(delta) {
+        switch(this.state) {
+        case 0:// Run
+            // Direction not right
+            //if(this.direction != this.tarDir) {
+              //  this.state = 1;
+              //  return;
+            //}
+            
+            var dx = this.course[this.nextStep].x - this.pos.x;
+            var dy = this.course[this.nextStep].y - this.pos.y;
+            if(dx == 0) {
+                // Movement vertical
+                if(dy < -this.v) {this.pos.y -= this.v;return;}
+                else if(dy > this.v) {this.pos.y += this.v;return;}
+            }
+            else {
+                // Movement horizontal
+                if(dx < -this.v) {this.pos.x -= this.v;return;}
+                else if(dx > this.v) {this.pos.x += this.v;return;}
+            }
+            // Movement over
+            this.pos = new mse.Point2(this.course[this.nextStep].x, this.course[this.nextStep].y);
+            if(this.currStep < this.nextStep) {
+                this.currStep = this.nextStep;
+                this.nextStep = (this.nextStep == this.course.length-1) ? this.nextStep-1 : this.nextStep+1;
+            }
+            else {
+                this.currStep = this.nextStep;
+                this.nextStep = (this.nextStep == 0) ? 1 : this.nextStep-1;
+            }
+            // Change to turn state
+            this.state = 1;
+            this.animes['run'].stop();
+            this.animes['stand'].start();
+            if(this.dir[this.currStep].length != 0) this.tarDir = this.dir[this.currStep][this.currDir];
+            else {
+                this.currDir = -1;
+                this.tarDir = angleFor2Point(this.course[this.currStep], this.course[this.nextStep]);
+            }
+        break;
+        case 1:// Turn
+            var dis = this.tarDir - this.direction;
+            // Turning
+            if(dis < -2) this.direction -= 2;
+            else if(dis > 2) this.direction += 2;
+            else {
+            // Turn over
+                this.direction = this.tarDir;
+                // CurrDir is marked, start to run
+                if(this.currDir == -1) {
+                    this.state = 0;
+                    this.currDir = 0;
+                    this.animes['run'].start();
+                    this.animes['stand'].stop();
+                    return;
+                }
+                // Found next turn target
+                if(this.currDir < this.dir[this.currStep].length-1) {
+                    this.currDir++;
+                    this.tarDir = this.dir[this.currStep][this.currDir];
+                }
+                // No more turn target, turn to the run direction
+                else {
+                    this.tarDir = angleFor2Point(this.course[this.currStep], this.course[this.nextStep]);
+                    // Mark the currDir to ignore the verification
+                    this.currDir = -1;
+                }
+            }
+        break;
+        case 2:// Notice
+        break;
+        case 3:// Stand
+        break;
+        }
+    };
+    this.draw = function(ctx, x, y) {
+        ctx.save();
+        // To center point
+        ctx.translate(x + this.pos.x,  y + this.pos.y);
+        ctx.rotate(this.direction*Math.PI/180);
+        // Draw view
+        ctx.fillStyle = 'rgba(200,0,0,0.5)';
+        ctx.beginPath();
+        ctx.lineTo(this.startP.x, this.startP.y);
+        ctx.arc(0,0, this.visiond, this.startAngle,this.endAngle, true);
+        ctx.lineTo(0, 0);
+        ctx.fill();
+        // Draw sprite
+        ctx.translate(-20,-18);
+        this.sprite.draw(ctx);
+        ctx.restore();
+    };
+};
+
+var FindSimon = function() {
+    mse.Game.call(this);
+    this.msg = {
+        "INIT": "Clique pour aider Simon à échapper à la Meute.",//Utilise les flèches de direction pour diriger Simon dans le parc.
+        "WIN": "Bravo!!! Simon est sauvé."
+    };
+    this.state = "INIT";
+    
+    mse.src.addSource('parc', './games/Parc.jpg', 'img', true);
+    mse.src.addSource('perso_parc', './games/personnages.png', 'img', true);
+    mse.src.addSource('notice_parc', './games/points-persos.png', 'img', true);
+    //var parc = new mse.Image(null, {pos:[0, 0]}, 'parc');
+    var mechants = new Array();
+    mechants[0] = new mse.Sprite(null, {}, 'perso_parc', 40,37, 0,37,280,37);
+    mechants[1] = new mse.Sprite(null, {}, 'perso_parc', 40,37, 0,74,280,37);
+    mechants[2] = new mse.Sprite(null, {}, 'perso_parc', 40,37, 0,111,280,37);
+    mechants[3] = new mse.Sprite(null, {}, 'perso_parc', 40,37, 0,148,280,37);
+    
+    // Possible movement area
+    var freerect = {
+        vertical:  [[190,250,60,650],
+                    [390,250,60,650],
+                    [580,250,60,320],
+                    [640,960,60,190],
+                    [830,570,60,390],
+                    [1030,320,60,380],
+                    [1350,320,60,770],
+                    [1660,190,60,960]],
+        horizontal:[[190,190,450,60],
+                    [1090,320,260,60],
+                    [640,510,390,60],
+                    [1410,570,250,60],
+                    [890,700,460,60],
+                    [190,900,640,60],
+                    [700,1090,960,60]]
+    };
+    
+    // Course of NPC
+    var courses = [
+        [crePoint2(415,925), crePoint2(415,225)],
+        [crePoint2(810,925), crePoint2(675,925), crePoint2(675,1115)],
+        [crePoint2(1695,335), crePoint2(1695,605), crePoint2(1695,840)],
+        [crePoint2(1060,335), crePoint2(1060,540), crePoint2(1060,735), crePoint2(1370,735)]
+    ];
+
+    // Direction of vision
+    var dirs = [
+        [[180,0],[0,180]],
+        [[90],[],[0]],
+        [[180],[180],[180]],
+        [[0],[180],[],[90,-90]]
+    ];
+    
+    // Init NPCs
+    this.npc = new Array();
+    for(var i = 0; i < 4; i++) {
+        this.npc[i] = new NPC(mechants[i], courses[i], dirs[i]);
+    }
+    // Init Simon
+    this.simon = new mse.Sprite(null, {}, 'perso_parc', 40,37, 0,0,280,37);
+    this.simonrun = new mse.FrameAnimation(this.simon, [0,1,2,3,4,5], 0, 7);
+    this.simonstand = new mse.FrameAnimation(this.simon, [6], 0, 1000);
+    // Spark frequence
+    this.spark = 0;
+    
+    this.init = function() {
+        this.npc[3].v = 3;
+        
+        this.simondir = 0;
+        this.simonrun.stop();
+        this.simonstand.start();
+        this.onmove = false;
+        // Init Parc draw parameters
+        this.sx = this.sy = this.sw = this.sh = this.dx = this.dy = this.dw = this.dh = 0;
+        
+        // Position of parc
+        this.sp = new mse.Point2(225,725);
+        this.pos = new mse.Point2(this.width/2-this.sp.x,this.height/2-this.sp.y);
+        this.disx = this.disy = 0;
+    	
+    	// Key event listener
+    	mse.root.evtDistributor.addListener('keydown', this.movecb, true, this);
+    	mse.root.evtDistributor.addListener('keyup', this.moveovercb, true, this);
+    	if(MseConfig.mobile){
+    	    mse.root.evtDistributor.addListener('gestureUpdate', this.touchMovecb, true, this);
+    	    mse.root.evtDistributor.addListener('gestureEnd', this.moveovercb, true, this);
+    	}
+    };
+    
+    this.draw = function(ctx) {
+        ctx.save();
+        ctx.translate(this.offx, this.offy);
+		// Clip masque for NPCs
+		ctx.beginPath();
+		ctx.moveTo(0,0);
+		ctx.lineTo(this.width-5,0);
+		ctx.lineTo(this.width-5,this.height-5);
+		ctx.lineTo(0,this.height-5);
+		ctx.closePath();
+		ctx.clip();
+		// Background
+		ctx.drawImage(mse.src.getSrc('parc'), this.sx, this.sy, this.sw, this.sh, this.dx, this.dy, this.dw, this.dh);
+		// Simon
+		ctx.save();
+		ctx.translate(this.width/2, this.height/2);
+		ctx.rotate(this.simondir*Math.PI/180);
+		ctx.translate(-20,-18);
+		this.simon.draw(ctx);
+		ctx.restore();
+		// NPCs
+		for(var i = 0; i < 4; i++) {
+		    this.npc[i].draw(ctx, this.pos.x, this.pos.y);
+		}
+		// Plan
+		ctx.globalAlpha = 0.7;
+		ctx.drawImage(mse.src.getSrc('parc'), 5,5,192,128);
+		// Simon on plan
+		ctx.globalAlpha = 1;
+		ctx.fillStyle = 'rgb(0,200,0)';
+		ctx.fillRect(4+this.sp.x/10, 4+this.sp.y/10, 2,2);
+		// Destination
+		ctx.fillStyle = 'rgba(250,230,200,0.8)';
+		if(this.spark == 10) {
+		    this.spark = 0;
+		    ctx.beginPath();
+		    ctx.arc(174,34, 3, 0,Math.PI*2, true);
+		    ctx.fill();
+		}
+		else this.spark++;
+		ctx.restore();
+	};
+	
+	this.logic = function(delta) {
+		// Parc visible part
+		if(this.pos.x > 0) {
+		    this.sx = 0;
+		    this.sw = this.width - this.pos.x;
+		    this.dx = this.pos.x;
+		}
+		else {
+		    this.sx = -this.pos.x;
+		    if(this.pos.x + 1920 < this.width) this.sw = 1920 + this.pos.x;
+		    else this.sw = this.width;
+		    this.dx = 0;
+		}
+		if(this.pos.y > 0) {
+		    this.sy = 0;
+		    this.sh = this.height - this.pos.y;
+		    this.dy = this.pos.y;
+		}
+		else {
+		    this.sy = -this.pos.y;
+		    if(this.pos.y + 1280 < this.height) this.sh = 1280 + this.pos.y;
+		    else this.sh = this.height;
+		    this.dy = 0;
+		}
+		this.dw = this.sw;
+		this.dh = this.sh;
+		
+		// Simon
+		this.pos.x += this.disx;
+		this.pos.y += this.disy;
+		// Ignore thé movement if collision
+		if(this.colliDetect()) {this.pos.x -= this.disx; this.pos.y -= this.disy;}
+		
+		this.sp.x = this.width/2 - this.pos.x;
+		this.sp.y = this.height/2 - this.pos.y;
+		
+		// Win check
+		if(Math.abs(this.sp.x - 1690) <= 60 && Math.abs(this.sp.y - 290) <= 10) {
+		    mse.root.evtDistributor.removeListener('keydown', this.movecb);
+		    mse.root.evtDistributor.removeListener('keyup', this.moveoverc);
+		    if(MseConfig.mobile){
+		        mse.root.evtDistributor.removeListener('gestureUpdate', this.touchMovecb);
+		        mse.root.evtDistributor.removeListener('gestureEnd', this.moveovercb);
+		    }
+		    this.state = "WIN";
+		    this.end();
+		}
+		
+		// NPCs
+		for(var i = 0; i < 4; i++) {
+		    var n = this.npc[i];
+		    n.logic(delta);
+		    
+		    // Detect if simon is found
+		    var dis = Math.round(distance2Pts(this.sp.x,this.sp.y,n.pos.x,n.pos.y));
+		    var angle = angleFor2Point(n.pos,this.sp);
+		    var adis = Math.abs(angle-n.direction);
+		    if(adis > 180) adis = 360-adis;
+		    if(dis <= 170 && adis <= n.visiona) {
+		    // Simon is found!!!
+		        // Remove Key event listener
+		        mse.root.evtDistributor.removeListener('keydown', this.movecb);
+		        mse.root.evtDistributor.removeListener('keyup', this.moveovercb);
+		        if(MseConfig.mobile){
+		            mse.root.evtDistributor.removeListener('gestureUpdate', this.touchMovecb);
+		            mse.root.evtDistributor.removeListener('gestureEnd', this.moveovercb);
+		        }
+		        this.lose();
+		    }
+		}
+	};
+	
+	this.colliDetect = function() {
+	    var x = this.width/2 - this.pos.x;
+	    var y = this.height/2 - this.pos.y;
+	    for(var i = 0; i < freerect.vertical.length; i++) {
+	        var xRelat = xRelatRect(x, freerect.vertical[i]);
+	        if(xRelat == -1) break;
+	        // In free rect, no collision
+	        else if(xRelat == 0 && yRelatRect(y, freerect.vertical[i]) == 0) return false;
+        }
+        for(var i = 0; i < freerect.horizontal.length; i++) {
+            var yRelat = yRelatRect(y, freerect.horizontal[i]);
+            // In none of the free rect, collision
+            if(yRelat == -1) return true;
+            // In free rect, no collision
+            else if(yRelat == 0 && xRelatRect(x, freerect.horizontal[i]) == 0) return false;
+        }
+        return true;
+	};
+	
+	this.move = function(e) {
+	    var valid = false;
+	    switch(e.keyCode) {
+	    case __KEY_LEFT:
+	        this.disx = 4; this.disy = 0;
+	        this.simondir = 180;
+	        valid = true;
+	    	break;
+	    case __KEY_RIGHT:
+	        this.disx = -4; this.disy = 0;
+	        this.simondir = 0;
+	        valid = true;
+	    	break;
+	    case __KEY_UP:
+	        this.disy = 4; this.disx = 0;
+	        this.simondir = -90;
+	        valid = true;
+	    	break;
+	    case __KEY_DOWN:
+	        this.disy = -4; this.disx = 0;
+	        this.simondir = 90;
+	        valid = true;
+	    	break;
+	    }
+	    if(valid && !this.onmove) {
+	        this.onmove = true;
+	        this.simonrun.start();
+	        this.simonstand.stop();
+	    }
+	};
+	this.touchMove = function(e) {
+	    var valid = true;
+	    var start = {x:e.listX[0],y:e.listY[0]};
+	    var end = {x:e.offsetX,y:e.offsetY};
+	    var a = angleFor2Point(start, end);
+	    if((a >= 0 && a <= 15) || (a <= 0 && a >= -15)){
+	        //Left
+	        this.disx = -4; this.disy = 0;
+	        this.simondir = 0;
+	    }
+	    else if(a >= 75 && a <= 105) {
+	        // Down
+	        this.disy = -4; this.disx = 0;
+	        this.simondir = 90;
+	    }
+	    else if(a >= 165 || a <= -165) {
+	        // Left
+	        this.disx = 4; this.disy = 0;
+	        this.simondir = 180;
+	    }
+	    else if(a <= -75 && a >= -105) {
+	        // Up
+	        this.disy = 4; this.disx = 0;
+	        this.simondir = -90;
+	    }
+	    else valid = false;
+	    if(valid && !this.onmove) {
+	        this.onmove = true;
+	        this.simonrun.start();
+	        this.simonstand.stop();
+	    }
+	};
+	this.moveover = function(e) {
+	    this.disx = 0; this.disy = 0;
+	    this.onmove = false;
+	    this.simonrun.stop();
+	    this.simonstand.start();
+	};
+	// Init key listeners
+	this.movecb = new mse.Callback(this.move, this);
+	this.moveovercb = new mse.Callback(this.moveover, this);
+	this.touchMovecb = new mse.Callback(this.touchMove, this);
+};
+extend(FindSimon, mse.Game);mse.coords = JSON.parse('{"cid0":800,"cid1":600,"cid2":0,"cid3":20,"cid4":305,"cid5":46.25,"cid6":342.5,"cid7":35,"cid8":197.5,"cid9":38.75,"cid10":425,"cid11":122.5,"cid12":30,"cid13":190,"cid14":40,"cid15":578.75,"cid16":533.75,"cid17":160,"cid18":27.5,"cid19":601.25,"cid20":543.75,"cid21":13.75,"cid22":400,"cid23":200,"cid24":41.25,"cid25":235,"cid26":108.75,"cid27":32.5,"cid28":177.5,"cid29":61.25,"cid30":320,"cid31":247.5,"cid32":340,"cid33":590,"cid34":230,"cid35":10,"cid36":22.5,"cid37":306,"cid38":417.384,"cid39":17,"cid40":397.8,"cid41":250,"cid42":100,"cid43":300,"cid44":409,"cid45":-200,"cid46":1090,"cid47":33,"cid48":109,"cid49":343,"cid50":41,"cid51":248,"cid52":178,"cid53":61,"cid54":344,"cid55":120,"cid56":255,"cid57":263,"cid58":296,"cid59":301,"cid60":298,"cid61":396,"cid62":201,"cid63":225,"cid64":19,"cid65":70,"cid66":783,"cid67":240,"cid68":771,"cid69":211,"cid70":163,"cid71":124,"cid72":180,"cid73":584,"cid74":144,"cid75":113,"cid76":210,"cid77":214,"cid78":379,"cid79":23,"cid80":116,"cid81":90,"cid82":266}');initMseConfig();mse.init();function createbook(){var root = new mse.Root('Voodoo_Ch1',mse.coor('cid0'),mse.coor('cid1'),'portrait');var temp = {};var animes={};var games={};var wikis={};mse.src.addSource('src0','./images/src0.png','img',true);mse.src.addSource('src1','./images/src1.jpeg','img',true);mse.src.addSource('src2','./images/src2.jpeg','img',true);mse.src.addSource('src3','./images/src3.jpeg','img',true);mse.src.addSource('src4','./images/src4.jpeg','img',true);mse.src.addSource('src5','./audios/src5.ogg','aud',false);mse.src.addSource('src6','./images/src6.png','img',true);mse.src.addSource('src7','./images/src7.png','img',true);mse.src.addSource('src8','./images/src8.png','img',true);mse.src.addSource('src9','./images/src9.jpeg','img',true);wikis.Cyclope=new mse.WikiLayer();wikis.Cyclope.addTextCard();wikis.Cyclope.textCard.addSection('Un Cyclope chez les X-Men', 'Cyclope est aussi un super-héros créé par J. Kirby et S. Lee en 1963. C’est un mutant qui génère des rayons extrêmement puissants avec ses yeux mais il évite au maximum d’utiliser la violence. Il devient un des leaders des X-Men.');wikis.Cyclope.textCard.addLink('Lien', 'http:\/\/fr.wikipedia.org\/wiki\/Cyclope_%28comics%29');wikis.Cyclope.addTextCard();wikis.Cyclope.textCard.addSection('Cyclope', 'Nom, masculin : Les cyclopes sont des créatures fantastiques de la mythologie grecque. Ce sont des géants qui ne possèdent qu’un seul œil au milieu du front. Ils étaient soit forgerons, bâtisseurs ou pasteurs.');wikis.Cyclope.textCard.addLink('Lien', 'http:\/\/fr.wikipedia.org\/wiki\/Cyclope');wikis.Cyclope.addImage('src8', 'Polyphème, fils de Poséïdon');wikis.Cyclope.addImage('src9', 'Cyclope, super-héros des X-Men');games.RatGame = new RatGame();mse.src.addSource('src10','./images/src10.jpeg','img',true);mse.src.addSource('src13','./images/src13.jpeg','img',true);mse.src.addSource('src16','./images/src16.png','img',true);mse.src.addSource('src17','./audios/src17','aud',false);mse.src.addSource('src18','./audios/src18','aud',false);mse.src.addSource('src19','./audios/src19','aud',false);mse.src.addSource('src20','./audios/src20','aud',false);mse.src.addSource('src21','./audios/src21','aud',false);games.FindSimon = new FindSimon();wikis.frondaison=new mse.WikiLayer();wikis.frondaison.addTextCard();wikis.frondaison.textCard.addSection('Frondaison', 'Nom, féminin :  - Les feuilles et les branches d’un arbre - Epoque où les feuilles commencent à pousser');wikis.frondaison.textCard.addSection('Synonymes', 'Feuillage, Ramure, Branchage');mse.src.addSource('src22','./images/src22.jpeg','img',true);wikis.hallali=new mse.WikiLayer();wikis.hallali.addImage('src22', 'L\'hallali du cerf, peint par Courbet en 1867');wikis.hallali.addTextCard();wikis.hallali.textCard.addSection('Nom masculin', ' - Sonnerie de chasse à courre qui annonce la prise imminente de l’animal, d’où l’expression : Sonner l’hallali : annoncer la défaite de quelqu’un. - Moment où l’animal est pris - Par extension : débâcle, défaite');wikis.hallali.addTextCard();wikis.hallali.textCard.addSection('L’hallali', 'Interjection : Cri du chasseur qui attrape du gibier lors d’une chasse à courre.');mse.src.addSource('src23','./images/src23.jpeg','img',true);mse.src.addSource('src25','./images/src25.jpeg','img',true);wikis.albinos=new mse.WikiLayer();wikis.albinos.addImage('src25', 'Salif Keïta');wikis.albinos.addImage('src23', 'Rat albinos');wikis.albinos.addTextCard();wikis.albinos.textCard.addSection('Les célèbres', 'Il existe des albinos célèbres parmi lesquels Salif Keïta, chanteur et musicien malien. Il a obtenu une Victoire de la musique en 2010 pour son album « La Différence »');wikis.albinos.textCard.addLink('Lien site officiel  Salif Keïta', 'http:\/\/salif-keita.artiste.universalmusic.fr\/');wikis.albinos.addTextCard();wikis.albinos.textCard.addSection('Les albinos', 'Les albinos ont une vision déficiente et sont sujets à des cancers de la peau s\'ils ne sont pas protégés du soleil. C’est une maladie héréditaire (qui se transmet de génération en génération). Il y a environ 1 cas pour 20.000 naissances dans le monde.');wikis.albinos.addTextCard();wikis.albinos.textCard.addSection('Albinos', 'Adjectif invariable :Qui est affecté d\'albinisme.');wikis.albinos.textCard.addSection('Albinisme', 'nom masculin : maladie génétique qui se caractérise par une absence du pigment destiné à colorer la peau, les poils, les cheveux ainsi que par des yeux rouges. Elle affecte les humains ou les animaux.');wikis.Noctambule=new mse.WikiLayer();wikis.Noctambule.addTextCard();wikis.Noctambule.textCard.addSection('Nyctalope', 'A ne pas confondre avec nyctalope : un adjectif qui désigne celui qui a la faculté de voir dans la pénombre, comme les chats');wikis.Noctambule.textCard.addSection('A moins d’inventer', ' - Nyctambule : qui recherche les fétards égarés la nuit - Noctalope : qui travaille la nuit sans avoir besoin de lumière');wikis.Noctambule.addTextCard();wikis.Noctambule.textCard.addSection('Noctambule', 'Nom masculin ou féminin :  - personne ou animal qui a l’habitude de se promener la nuit. - personne qui aime faire la fête la nuit. - Par extension : personne qui est en activité la nuit');mse.src.addSource('src26','./images/src26.jpeg','img',true);mse.src.addSource('src27','./images/src27.jpeg','img',true);mse.src.addSource('src28','./images/src28.jpeg','img',true);wikis.pCeinture=new mse.WikiLayer();wikis.pCeinture.addTextCard();wikis.pCeinture.textCard.addSection('La Petite Ceinture', 'La Petite Ceinture est une ancienne ligne de chemin de fer longue de 32 km qui faisait le tour de Paris.Elle fut terminée en 1869 et destinée au trafic de marchandises et de voyageurs. Concurrencée par le métro, elle est définitivement fermée au trafic des voyageurs en 1985. Le trafic de marchandise est totalement arrêté au début des années 1990.');wikis.pCeinture.textCard.addLink('Lien Wikipédia', 'http:\/\/fr.wikipedia.org\/wiki\/Ligne_de_Petite_Ceinture');wikis.pCeinture.addTextCard();wikis.pCeinture.textCard.addSection('Biodiversité', 'Elle est considérée comme une réserve de biodiversité. On peut y observer de nombreuses variétés d’arbres, de plantes et la plus grande colonie de chauve-souris de l’espèce pipistrelle d’Ile de France. La ville de Paris y aménage des parcours pédagogiques, proposant ainsi un nouveau type de promenade nature à Paris.');wikis.pCeinture.textCard.addLink('Lien Mairie de Paris', 'http:\/\/www.paris.fr\/loisirs\/se-promener-a-paris\/balades-au-vert\/decouvrir-les-richesses-de-la-petite-ceinture\/rub_9660_stand_53584_port_23803');wikis.pCeinture.addImage('src26', 'Vue des voies de la Petite Ceinture dans le 13e arrondissement');wikis.pCeinture.addImage('src27', 'La Petite Ceinture traverse le Parc Montsouris');wikis.pCeinture.addImage('src28', 'La gare de Charonne, aujourd\'hui café La Flèche d\'Or');var pages = {};var layers = {};var objs = {};pages.Couverture=new mse.BaseContainer(root,{size:[mse.coor('cid0'),mse.coor('cid1')]});layers.back=new mse.Layer(pages.Couverture,1,{"globalAlpha":1,"textBaseline":"top","size":[mse.coor('cid0'),mse.coor('cid1')]});objs.obj5=new mse.Image(layers.back,{"size":[mse.coor('cid0'),mse.coor('cid1')],"pos":[mse.coor('cid2'),mse.coor('cid2')],"fillStyle":"rgb(0, 0, 0)","globalAlpha":1,"font":"normal "+mse.coor('cid3')+"px Times","textAlign":"left"},'src3');layers.back.addObject(objs.obj5);pages.Couverture.addLayer('back',layers.back);layers.Couverturedefault=new mse.Layer(pages.Couverture,2,{"globalAlpha":1,"textBaseline":"top","size":[mse.coor('cid0'),mse.coor('cid1')]});objs.obj2=new mse.Text(layers.Couverturedefault,{"size":[mse.coor('cid4'),mse.coor('cid5')],"pos":[mse.coor('cid6'),mse.coor('cid5')],"fillStyle":"rgb(255, 255, 255)","globalAlpha":1,"font":"normal "+mse.coor('cid7')+"px Verdanda","textAlign":"left","textBaseline":"top"},'Voodoo Connection',true);layers.Couverturedefault.addObject(objs.obj2);objs.obj3=new mse.Text(layers.Couverturedefault,{"size":[mse.coor('cid8'),mse.coor('cid9')],"pos":[mse.coor('cid10'),mse.coor('cid11')],"fillStyle":"rgb(81, 61, 29)","globalAlpha":1,"font":"normal "+mse.coor('cid12')+"px Verdanda","textAlign":"left","textBaseline":"top"},'Chris Debien',true);layers.Couverturedefault.addObject(objs.obj3);pages.Couverture.addLayer('Couverturedefault',layers.Couverturedefault);pages.Aide=new mse.BaseContainer(null,{size:[mse.coor('cid0'),mse.coor('cid1')]});layers.Aidedefault=new mse.Layer(pages.Aide,1,{"globalAlpha":1,"textBaseline":"top","size":[mse.coor('cid0'),mse.coor('cid1')]});objs.obj6=new mse.Image(layers.Aidedefault,{"size":[mse.coor('cid0'),mse.coor('cid1')],"pos":[mse.coor('cid2'),mse.coor('cid2')],"fillStyle":"rgb(0, 0, 0)","globalAlpha":1,"font":"normal "+mse.coor('cid3')+"px Times"},'src4');layers.Aidedefault.addObject(objs.obj6);pages.Aide.addLayer('Aidedefault',layers.Aidedefault);layers.button=new mse.Layer(pages.Aide,2,{"globalAlpha":1,"textBaseline":"top","size":[mse.coor('cid0'),mse.coor('cid1')]});objs.obj566=new mse.Image(layers.button,{"size":[mse.coor('cid13'),mse.coor('cid14')],"pos":[mse.coor('cid15'),mse.coor('cid16')],"fillStyle":"rgb(0, 0, 0)","globalAlpha":1,"font":"normal "+mse.coor('cid3')+"px Times"},'src7');layers.button.addObject(objs.obj566);pages.Aide.addLayer('button',layers.button);layers.text=new mse.Layer(pages.Aide,3,{"globalAlpha":1,"textBaseline":"top","size":[mse.coor('cid0'),mse.coor('cid1')]});objs.obj9=new mse.Text(layers.text,{"size":[mse.coor('cid17'),mse.coor('cid18')],"pos":[mse.coor('cid19'),mse.coor('cid20')],"fillStyle":"rgb(255, 255, 255)","globalAlpha":1,"font":"normal "+mse.coor('cid21')+"px Verdana","textAlign":"left","textBaseline":"top"},'Commencer l\'histoire',true);layers.text.addObject(objs.obj9);pages.Aide.addLayer('text',layers.text);pages.Chapitre=new mse.BaseContainer(null,{size:[mse.coor('cid0'),mse.coor('cid1')]});layers.Chapitredefault=new mse.Layer(pages.Chapitre,1,{"globalAlpha":1,"textBaseline":"top","size":[mse.coor('cid0'),mse.coor('cid1')]});objs.obj11=new mse.Image(layers.Chapitredefault,{"size":[mse.coor('cid0'),mse.coor('cid1')],"pos":[mse.coor('cid2'),mse.coor('cid2')]},'src2');layers.Chapitredefault.addObject(objs.obj11);objs.obj12=new mse.Mask(layers.Chapitredefault,{"size":[mse.coor('cid22'),mse.coor('cid1')],"pos":[mse.coor('cid23'),mse.coor('cid2')],"fillStyle":"rgb(0, 0, 0)","globalAlpha":0.80,"font":"normal "+mse.coor('cid3')+"px Times"});layers.Chapitredefault.addObject(objs.obj12);pages.Chapitre.addLayer('Chapitredefault',layers.Chapitredefault);layers.Text=new mse.Layer(pages.Chapitre,2,{"globalAlpha":1,"textBaseline":"top","size":[mse.coor('cid0'),mse.coor('cid1')]});objs.obj13=new mse.Text(layers.Text,{"size":[mse.coor('cid6'),mse.coor('cid24')],"pos":[mse.coor('cid25'),mse.coor('cid26')],"fillStyle":"rgb(255, 255, 255)","globalAlpha":1,"font":"normal "+mse.coor('cid27')+"px Verdana","textAlign":"left","textBaseline":"top"},'CHASSE A L\'HOMME',true);layers.Text.addObject(objs.obj13);objs.obj14=new mse.Text(layers.Text,{"size":[mse.coor('cid28'),mse.coor('cid29')],"pos":[mse.coor('cid30'),mse.coor('cid31')],"fillStyle":"rgb(255, 255, 255)","globalAlpha":1,"font":"normal "+mse.coor('cid27')+"px Verdana","textAlign":"left","textBaseline":"top"},'Chapitre I',true);layers.Text.addObject(objs.obj14);pages.Chapitre.addLayer('Text',layers.Text);pages.Content=new mse.BaseContainer(null,{size:[mse.coor('cid0'),mse.coor('cid1')]});layers.Contentdefault=new mse.Layer(pages.Content,1,{"globalAlpha":1,"textBaseline":"top","size":[mse.coor('cid0'),mse.coor('cid1')]});objs.obj15=new mse.Image(layers.Contentdefault,{"size":[mse.coor('cid0'),mse.coor('cid1')],"pos":[mse.coor('cid2'),mse.coor('cid2')]},'src2');layers.Contentdefault.addObject(objs.obj15);pages.Content.addLayer('Contentdefault',layers.Contentdefault);layers.mask=new mse.Layer(pages.Content,2,{"globalAlpha":1,"textBaseline":"top","size":[mse.coor('cid0'),mse.coor('cid1')]});objs.obj16=new mse.Mask(layers.mask,{"size":[mse.coor('cid22'),mse.coor('cid1')],"pos":[mse.coor('cid23'),mse.coor('cid2')],"fillStyle":"rgb(0, 0, 0)","globalAlpha":0.80,"font":"normal "+mse.coor('cid3')+"px Times","textAlign":"left"});layers.mask.addObject(objs.obj16);pages.Content.addLayer('mask',layers.mask);layers.content=new mse.ArticleLayer(pages.Content,3,{"size":[mse.coor('cid32'),mse.coor('cid33')],"pos":[mse.coor('cid34'),mse.coor('cid35')],"fillStyle":"rgb(255, 255, 255)","globalAlpha":1,"font":"normal "+mse.coor('cid36')+"px Verdana","textAlign":"left","textBaseline":"top","lineHeight":mse.coor('cid12')},null);objs.obj17=new mse.UIObject(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]});layers.content.addObject(objs.obj17);objs.obj18=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Ils étaient là. ',true);layers.content.addObject(objs.obj18);objs.obj19=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'À moins de cent mètres ',true);layers.content.addObject(objs.obj19);objs.obj20=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'derrière Simon. Bien décidés ',true);layers.content.addObject(objs.obj20);objs.obj21=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')],"fillStyle":"rgb(255, 255, 255)","font":" "+mse.coor('cid36')+"px Verdana"},'à lui faire payer l’affront ',true);layers.content.addObject(objs.obj21);objs.obj22=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'qu’ils avaient subi.',true);layers.content.addObject(objs.obj22);objs.obj23=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')],"fillStyle":"rgb(255, 255, 255)","font":" "+mse.coor('cid36')+"px Verdana"},'La Meute. ',true);layers.content.addObject(objs.obj23);objs.obj24=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Quatre adolescents qui ',true);layers.content.addObject(objs.obj24);objs.obj25=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'faisaient régner leur loi au ',true);layers.content.addObject(objs.obj25);objs.obj26=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'sein du foyer.',true);layers.content.addObject(objs.obj26);objs.obj27=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Recroquevillé dans la ',true);layers.content.addObject(objs.obj27);objs.obj28=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'pénombre d’un porche, ',true);layers.content.addObject(objs.obj28);objs.obj29=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'L’adolescent contemplait le ',true);layers.content.addObject(objs.obj29);objs.obj30=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'ballet des lampes torches qui ',true);layers.content.addObject(objs.obj30);objs.obj31=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'déchiraient la nuit. Des ',true);layers.content.addObject(objs.obj31);objs.obj32=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'yeux, scrutant le moindre ',true);layers.content.addObject(objs.obj32);objs.obj33=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'recoin, repoussant les ',true);layers.content.addObject(objs.obj33);objs.obj34=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'ténèbres de leurs lueurs ',true);layers.content.addObject(objs.obj34);objs.obj35=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'cyclopes. ',true);objs.obj35.addLink(new mse.Link('cyclopes',18,'wiki',wikis.Cyclope));layers.content.addObject(objs.obj35);objs.obj36=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Bientôt, ils seraient sur lui. ',true);layers.content.addObject(objs.obj36);objs.obj37=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Simon frissonna en songeant ',true);layers.content.addObject(objs.obj37);objs.obj38=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'à ce qui allait lui arriver. Il ',true);layers.content.addObject(objs.obj38);objs.obj39=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'savait que Kevin, leur chef, ',true);layers.content.addObject(objs.obj39);objs.obj40=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'serait sans pitié…  ',true);layers.content.addObject(objs.obj40);objs.obj41=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Il fallait qu’il leur échappe.',true);layers.content.addObject(objs.obj41);objs.obj42=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Absolument. Et tant pis s’il ',true);layers.content.addObject(objs.obj42);objs.obj43=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'ne pouvait jamais retourner ',true);layers.content.addObject(objs.obj43);objs.obj44=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'au foyer.',true);layers.content.addObject(objs.obj44);objs.obj45=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Les pas se rapprochaient, de ',true);layers.content.addObject(objs.obj45);objs.obj46=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'plus en plus. Il pouvait ',true);layers.content.addObject(objs.obj46);objs.obj47=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'entendre leurs voix à ',true);layers.content.addObject(objs.obj47);objs.obj48=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'présent.',true);layers.content.addObject(objs.obj48);objs.obj49=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},' - Trouvez-moi ce sale petit ',true);layers.content.addObject(objs.obj49);objs.obj50=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'rat ! Il va comprendre qu’on ',true);layers.content.addObject(objs.obj50);objs.obj51=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'ne peut pas se moquer de ',true);layers.content.addObject(objs.obj51);objs.obj52=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'nous comme ça !',true);layers.content.addObject(objs.obj52);objs.obj53=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},' - Ouaip, on va lui faire sa ',true);layers.content.addObject(objs.obj53);objs.obj54=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'fête !',true);layers.content.addObject(objs.obj54);objs.obj55=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Ca, c’était « La Fouine ». ',true);layers.content.addObject(objs.obj55);objs.obj56=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Dix sept ans, un mètre ',true);layers.content.addObject(objs.obj56);objs.obj57=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'quatre-vingt, ',true);layers.content.addObject(objs.obj57);objs.obj58=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'soixante-quinze kilos de ',true);layers.content.addObject(objs.obj58);objs.obj59=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'violence pure. Une véritable ',true);layers.content.addObject(objs.obj59);objs.obj60=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'bombe ambulante qui ne ',true);layers.content.addObject(objs.obj60);objs.obj61=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'demandait qu’à exploser. ',true);layers.content.addObject(objs.obj61);objs.obj62=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Simon se pencha un instant ',true);layers.content.addObject(objs.obj62);objs.obj63=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'hors de son abri pour ',true);layers.content.addObject(objs.obj63);objs.obj64=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'évaluer ses chances de leur ',true);layers.content.addObject(objs.obj64);objs.obj65=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'échapper. ',true);layers.content.addObject(objs.obj65);objs.obj66=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Proche du zéro absolu s’il ne ',true);layers.content.addObject(objs.obj66);objs.obj67=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'bougeait pas de sa cachette. ',true);layers.content.addObject(objs.obj67);objs.obj68=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Un peu plus s’il tentait une ',true);layers.content.addObject(objs.obj68);objs.obj69=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'sortie. À condition de tomber ',true);layers.content.addObject(objs.obj69);objs.obj70=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'sur quelqu’un, un adulte qui ',true);layers.content.addObject(objs.obj70);objs.obj71=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'saurait éloigner ses ',true);layers.content.addObject(objs.obj71);objs.obj72=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'poursuivants. ',true);layers.content.addObject(objs.obj72);objs.obj73=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},' - Tu es prêt ? chuchota-t-il ',true);layers.content.addObject(objs.obj73);objs.obj74=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'à Dark.',true);layers.content.addObject(objs.obj74);objs.obj75=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Dark. Vador. Son rat albinos. ',true);objs.obj75.addLink(new mse.Link('albinos',58,'wiki',wikis.albinos));layers.content.addObject(objs.obj75);objs.obj76=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Son plus fidèle compagnon ',true);layers.content.addObject(objs.obj76);objs.obj77=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'depuis un an. ',true);layers.content.addObject(objs.obj77);objs.obj78=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Le seul en vérité. ',true);layers.content.addObject(objs.obj78);objs.obj79=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Simon repoussa l’élan de ',true);layers.content.addObject(objs.obj79);objs.obj80=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'mélancolie qui menaçait de ',true);layers.content.addObject(objs.obj80);objs.obj81=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'le submerger et enfouit Dark ',true);layers.content.addObject(objs.obj81);objs.obj82=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'au fond de son sac. Il passa ',true);layers.content.addObject(objs.obj82);objs.obj83=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'les lanières autour de ses ',true);layers.content.addObject(objs.obj83);objs.obj84=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'épaules et s’élança. ',true);layers.content.addObject(objs.obj84);objs.obj85=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Pas de réaction.',true);layers.content.addObject(objs.obj85);objs.obj86=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Il s’était mis à courir comme ',true);layers.content.addObject(objs.obj86);objs.obj87=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'si sa vie en dépendait. ',true);layers.content.addObject(objs.obj87);objs.obj88=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Si la « Meute » lui tombait ',true);layers.content.addObject(objs.obj88);objs.obj89=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'dessus, il était bon pour un ',true);layers.content.addObject(objs.obj89);objs.obj90=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'passage à tabac dans les ',true);layers.content.addObject(objs.obj90);objs.obj91=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'règles de l’art. Voilà ce qui ',true);layers.content.addObject(objs.obj91);objs.obj92=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'se passe lorsque l’on refuse ',true);layers.content.addObject(objs.obj92);objs.obj93=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'de soumettre aux plus forts.',true);layers.content.addObject(objs.obj93);objs.obj94=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Simon évitait de regarder ',true);layers.content.addObject(objs.obj94);objs.obj95=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'dans leur direction, les yeux ',true);layers.content.addObject(objs.obj95);objs.obj96=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'rivés sur les frondaisons du ',true);objs.obj96.addLink(new mse.Link('frondaisons',79,'wiki',wikis.frondaison));layers.content.addObject(objs.obj96);objs.obj97=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Parc Montsouris. Des arbres, ',true);layers.content.addObject(objs.obj97);objs.obj98=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'de la pénombre et des ',true);layers.content.addObject(objs.obj98);objs.obj99=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'milliards de recoins où il ',true);layers.content.addObject(objs.obj99);objs.obj100=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'pourrait se dissimuler en ',true);layers.content.addObject(objs.obj100);objs.obj101=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'attendant l’aube. ',true);layers.content.addObject(objs.obj101);objs.obj102=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'S’il atteignait le jardin, il ',true);layers.content.addObject(objs.obj102);objs.obj103=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'serait sauvé.',true);layers.content.addObject(objs.obj103);objs.obj104=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Mais, dans sa précipitation, il ',true);layers.content.addObject(objs.obj104);objs.obj105=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'butta contre le trottoir. Le ',true);layers.content.addObject(objs.obj105);objs.obj106=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'béton lui arracha une ',true);layers.content.addObject(objs.obj106);objs.obj107=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'plainte. Un cri minuscule.',true);layers.content.addObject(objs.obj107);objs.obj108=new mse.UIObject(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]});layers.content.addObject(objs.obj108);objs.obj109=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},' - Il est là !',true);layers.content.addObject(objs.obj109);objs.obj110=new mse.UIObject(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]});layers.content.addObject(objs.obj110);objs.obj111=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Pas assez minuscule, ',true);layers.content.addObject(objs.obj111);objs.obj112=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'visiblement.',true);layers.content.addObject(objs.obj112);objs.obj113=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Simon détala tandis que les ',true);layers.content.addObject(objs.obj113);objs.obj114=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'faisceaux accrochaient sa ',true);layers.content.addObject(objs.obj114);objs.obj115=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'silhouette. ',true);layers.content.addObject(objs.obj115);objs.obj569=new mse.Image(layers.content,{"size":[mse.coor('cid37'),mse.coor('cid38')],"pos":[mse.coor('cid39'),mse.coor('cid3')]},'src10');layers.content.addObject(objs.obj569);objs.obj116=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},' - Choppez-le ! Faut qu’il ',true);layers.content.addObject(objs.obj116);objs.obj117=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'comprenne !',true);layers.content.addObject(objs.obj117);objs.obj118=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Que je comprenne quoi ? ',true);layers.content.addObject(objs.obj118);objs.obj119=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Qu’il faut se laisser faire ? ',true);layers.content.addObject(objs.obj119);objs.obj120=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Pas question !',true);layers.content.addObject(objs.obj120);objs.obj121=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Il accéléra. ',true);objs.obj121.addLink(new mse.Link('accéléra',105,'audio',mse.src.getSrc('src17')));layers.content.addObject(objs.obj121);objs.obj122=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Il essayait d’oublier que ses ',true);layers.content.addObject(objs.obj122);objs.obj123=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'poumons le brûlaient, qu’il ',true);layers.content.addObject(objs.obj123);objs.obj124=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'était épuisé par cette ',true);layers.content.addObject(objs.obj124);objs.obj125=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'poursuite qui durait depuis ',true);layers.content.addObject(objs.obj125);objs.obj126=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'des heures, et surtout que la ',true);layers.content.addObject(objs.obj126);objs.obj127=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'peur menaçait de le ',true);layers.content.addObject(objs.obj127);objs.obj128=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'paralyser à tout instant. ',true);layers.content.addObject(objs.obj128);objs.obj129=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Il traversa le boulevard, ',true);layers.content.addObject(objs.obj129);objs.obj130=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'déclenchant le klaxon ',true);objs.obj130.addLink(new mse.Link('klaxon',114,'audio',mse.src.getSrc('src18')));layers.content.addObject(objs.obj130);objs.obj131=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'furieux d’un noctambule ',true);objs.obj131.addLink(new mse.Link('noctambule',115,'wiki',wikis.Noctambule));layers.content.addObject(objs.obj131);objs.obj132=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'égaré. Puis il s’engouffra à ',true);layers.content.addObject(objs.obj132);objs.obj133=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'l’abri des arbres. Son sac ',true);layers.content.addObject(objs.obj133);objs.obj134=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'ballotait sur ses épaules et il ',true);layers.content.addObject(objs.obj134);objs.obj135=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'pensa au pauvre Dark. ',true);layers.content.addObject(objs.obj135);objs.obj136=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Sans réfléchir, il pénétra ',true);layers.content.addObject(objs.obj136);objs.obj137=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'dans une petite allée. Il ',true);layers.content.addObject(objs.obj137);objs.obj138=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'dépassa les angles du ',true);layers.content.addObject(objs.obj138);objs.obj139=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'pavillon météo qui s’élevait ',true);layers.content.addObject(objs.obj139);objs.obj140=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'dans la pénombre, puis il ',true);layers.content.addObject(objs.obj140);objs.obj141=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'ralentit sa course. ',true);layers.content.addObject(objs.obj141);objs.obj142=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Pas un bruit.',true);layers.content.addObject(objs.obj142);objs.obj143=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Rien d’autre que le vent ',true);layers.content.addObject(objs.obj143);objs.obj144=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'dans les feuilles. ',true);layers.content.addObject(objs.obj144);objs.obj145=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Où étaient-ils passés ?',true);layers.content.addObject(objs.obj145);objs.obj146=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Simon s’arrêta, s’accroupit ',true);layers.content.addObject(objs.obj146);objs.obj147=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'derrière un banc scarifié de ',true);layers.content.addObject(objs.obj147);objs.obj148=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'graffitis. ',true);layers.content.addObject(objs.obj148);objs.obj149=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Là ! Sur sa gauche. ',true);layers.content.addObject(objs.obj149);objs.obj570=new mse.Image(layers.content,{"size":[mse.coor('cid37'),mse.coor('cid40')],"pos":[mse.coor('cid39'),mse.coor('cid3')]},'src13');layers.content.addObject(objs.obj570);objs.obj150=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Il avait reconnu la démarche ',true);layers.content.addObject(objs.obj150);objs.obj151=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'chaloupée de la Fouine, les ',true);layers.content.addObject(objs.obj151);objs.obj152=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'pas lourds de l’Ours – seize ',true);objs.obj152.addLink(new mse.Link('pas',137,'audio',mse.src.getSrc('src19')));layers.content.addObject(objs.obj152);objs.obj153=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'ans, un QI inversement ',true);layers.content.addObject(objs.obj153);objs.obj154=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'proportionnel à sa force - à ',true);layers.content.addObject(objs.obj154);objs.obj155=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'ses côtés. Les deux autres ',true);layers.content.addObject(objs.obj155);objs.obj156=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'suivaient la ligne de ',true);layers.content.addObject(objs.obj156);objs.obj157=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'tramway qui longeait le parc, ',true);layers.content.addObject(objs.obj157);objs.obj158=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'sur sa droite.',true);layers.content.addObject(objs.obj158);objs.obj159=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Le groupe s’était séparé en ',true);layers.content.addObject(objs.obj159);objs.obj160=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'deux et tentait de ',true);layers.content.addObject(objs.obj160);objs.obj161=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'l’encercler.',true);layers.content.addObject(objs.obj161);objs.obj162=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Simon réfléchit à toute ',true);layers.content.addObject(objs.obj162);objs.obj163=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'allure. ',true);layers.content.addObject(objs.obj163);objs.obj164=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Le RER ! ',true);objs.obj164.addLink(new mse.Link('RER',149,'audio',mse.src.getSrc('src20')));layers.content.addObject(objs.obj164);objs.obj165=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'La station ne devait être ',true);layers.content.addObject(objs.obj165);objs.obj166=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'qu’à quelques dizaines de ',true);layers.content.addObject(objs.obj166);objs.obj167=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'mètres devant lui et, même ',true);layers.content.addObject(objs.obj167);objs.obj168=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'en ces heures tardives, il y ',true);layers.content.addObject(objs.obj168);objs.obj169=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'aurait sans doute un peu de ',true);layers.content.addObject(objs.obj169);objs.obj170=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'monde. ',true);layers.content.addObject(objs.obj170);objs.obj171=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Il reprit sa progression, ',true);layers.content.addObject(objs.obj171);objs.obj172=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'lentement, veillant à rester ',true);layers.content.addObject(objs.obj172);objs.obj173=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'invisible. ',true);layers.content.addObject(objs.obj173);objs.obj174=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Plus que cinquante mètres.',true);layers.content.addObject(objs.obj174);objs.obj175=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Il entendait déjà le ',true);layers.content.addObject(objs.obj175);objs.obj176=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'crissement des rames sur les ',true);layers.content.addObject(objs.obj176);objs.obj177=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'rails.',true);layers.content.addObject(objs.obj177);objs.obj178=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')],"fillStyle":"rgb(255, 255, 255)","font":" "+mse.coor('cid36')+"px Verdana"},'Quarante.',true);layers.content.addObject(objs.obj178);objs.obj179=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},' - Là sur le pont ! Il essaye ',true);layers.content.addObject(objs.obj179);objs.obj180=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'de rejoindre la gare !',true);layers.content.addObject(objs.obj180);objs.obj181=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},' - Merde ! lâcha Simon en ',true);layers.content.addObject(objs.obj181);objs.obj182=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'reprenant sa course.',true);layers.content.addObject(objs.obj182);objs.obj183=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')],"fillStyle":"rgb(255, 255, 255)","font":" "+mse.coor('cid36')+"px Verdana"},'Trente.',true);layers.content.addObject(objs.obj183);objs.obj184=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Mais la meute, galvanisée ',true);layers.content.addObject(objs.obj184);objs.obj185=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'par la proximité de sa proie, ',true);layers.content.addObject(objs.obj185);objs.obj186=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'se rapprochait rapidement. ',true);layers.content.addObject(objs.obj186);objs.obj187=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Ils avaient de la lumière, ils ',true);layers.content.addObject(objs.obj187);objs.obj188=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'évitaient les obstacles. ',true);layers.content.addObject(objs.obj188);objs.obj189=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Surtout ils étaient plus âgés, ',true);layers.content.addObject(objs.obj189);objs.obj190=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'plus forts alors que lui était ',true);layers.content.addObject(objs.obj190);objs.obj191=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'éreinté, les jambes ',true);layers.content.addObject(objs.obj191);objs.obj192=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'écorchées par les ronces, au ',true);layers.content.addObject(objs.obj192);objs.obj193=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'bord de l’asphyxie.',true);layers.content.addObject(objs.obj193);objs.obj194=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Les deux groupes gagnaient ',true);layers.content.addObject(objs.obj194);objs.obj195=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'insensiblement du terrain. ',true);layers.content.addObject(objs.obj195);objs.obj196=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Bientôt ils se rejoindraient et ',true);layers.content.addObject(objs.obj196);objs.obj197=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'ce serait l’hallali.',true);objs.obj197.addLink(new mse.Link('l’hallali',182,'wiki',wikis.hallali));layers.content.addObject(objs.obj197);objs.obj198=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Simon obliqua brutalement ',true);layers.content.addObject(objs.obj198);objs.obj199=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'vers le nord pour essayer de ',true);layers.content.addObject(objs.obj199);objs.obj200=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'rejoindre un bouquet ',true);layers.content.addObject(objs.obj200);objs.obj201=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'d’arbres denses. Avec un ',true);layers.content.addObject(objs.obj201);objs.obj202=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'peu de chance, il pourrait les ',true);layers.content.addObject(objs.obj202);objs.obj203=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'semer. Au pire, il grimperait ',true);layers.content.addObject(objs.obj203);objs.obj204=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'sur l’un des troncs ',true);layers.content.addObject(objs.obj204);objs.obj205=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'centenaires. ',true);layers.content.addObject(objs.obj205);objs.obj206=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Il se précipita dans le ',true);layers.content.addObject(objs.obj206);objs.obj207=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'bosquet. Les branches ',true);layers.content.addObject(objs.obj207);objs.obj208=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'basses fouettèrent son ',true);layers.content.addObject(objs.obj208);objs.obj209=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'visage, lui arrachant des ',true);layers.content.addObject(objs.obj209);objs.obj210=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'larmes. ',true);layers.content.addObject(objs.obj210);objs.obj211=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Mais il était presqu’à l’abri : ',true);layers.content.addObject(objs.obj211);objs.obj212=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'l’obscurité était totale. ',true);layers.content.addObject(objs.obj212);objs.obj213=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Il ignorait vers quoi il ',true);layers.content.addObject(objs.obj213);objs.obj214=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'courrait mais il s’en fichait. ',true);layers.content.addObject(objs.obj214);objs.obj215=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Il accéléra encore et…',true);layers.content.addObject(objs.obj215);objs.obj216=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'S’effondra brutalement, le ',true);layers.content.addObject(objs.obj216);objs.obj217=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'souffle coupé, une violente ',true);layers.content.addObject(objs.obj217);objs.obj218=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'douleur barrant sa poitrine. ',true);layers.content.addObject(objs.obj218);objs.obj219=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Il venait de heurter quelque ',true);layers.content.addObject(objs.obj219);objs.obj220=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'chose de plein fouet. ',true);layers.content.addObject(objs.obj220);objs.obj221=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Abasourdi, Simon fouilla ',true);layers.content.addObject(objs.obj221);objs.obj222=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'l’obscurité. Il entendait ses ',true);layers.content.addObject(objs.obj222);objs.obj223=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'poursuivants battre les talus ',true);layers.content.addObject(objs.obj223);objs.obj224=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'et les fourrés. ',true);layers.content.addObject(objs.obj224);objs.obj225=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Il tâtonna un instant dans ',true);layers.content.addObject(objs.obj225);objs.obj226=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'son sac. ',true);layers.content.addObject(objs.obj226);objs.obj227=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Sa torche.',true);layers.content.addObject(objs.obj227);objs.obj228=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Un faible halo de lumière.',true);layers.content.addObject(objs.obj228);objs.obj229=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Un grillage. ',true);layers.content.addObject(objs.obj229);objs.obj230=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Piégé !',true);layers.content.addObject(objs.obj230);objs.obj231=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Il se redressa en grimaçant, ',true);layers.content.addObject(objs.obj231);objs.obj232=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'s’approcha.  ',true);layers.content.addObject(objs.obj232);objs.obj233=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Une dizaine de mètres en ',true);layers.content.addObject(objs.obj233);objs.obj234=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'contrebas, le faisceau de sa ',true);layers.content.addObject(objs.obj234);objs.obj235=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'lampe illumina les reliefs ',true);layers.content.addObject(objs.obj235);objs.obj236=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'mangés de rouille d’une ',true);layers.content.addObject(objs.obj236);objs.obj237=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'ligne de chemin de fer ',true);layers.content.addObject(objs.obj237);objs.obj238=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'abandonnée.',true);layers.content.addObject(objs.obj238);objs.obj239=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'La Petite Ceinture. ',true);objs.obj239.addLink(new mse.Link('La Petite Ceinture',224,'wiki',wikis.pCeinture));layers.content.addObject(objs.obj239);objs.obj240=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Un éclat de voix derrière lui ',true);layers.content.addObject(objs.obj240);objs.obj241=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'le fit sursauter.',true);layers.content.addObject(objs.obj241);objs.obj242=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},' - On le tient !',true);layers.content.addObject(objs.obj242);objs.obj243=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Simon fixa le puits de ',true);layers.content.addObject(objs.obj243);objs.obj244=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'ténèbres qui s’étendait ',true);layers.content.addObject(objs.obj244);objs.obj245=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'au-delà du grillage.',true);layers.content.addObject(objs.obj245);objs.obj246=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},' - Alors, t’es enfin prêt à ',true);layers.content.addObject(objs.obj246);objs.obj247=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'recevoir ta leçon ?',true);layers.content.addObject(objs.obj247);objs.obj248=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Kevin s’approcha dans la ',true);layers.content.addObject(objs.obj248);objs.obj249=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'clarté de la lune. Il tendit le ',true);layers.content.addObject(objs.obj249);objs.obj250=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'bras. Un bruit de ressort. ',true);layers.content.addObject(objs.obj250);objs.obj251=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Une lame apparut au bout ',true);layers.content.addObject(objs.obj251);objs.obj252=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'de sa main. ',true);layers.content.addObject(objs.obj252);objs.obj253=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'L’adolescent sentait le sang ',true);layers.content.addObject(objs.obj253);objs.obj254=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'battre contre ses tempes, ',true);layers.content.addObject(objs.obj254);objs.obj255=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'l’adrénaline inonder son ',true);layers.content.addObject(objs.obj255);objs.obj256=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'corps. Il voulait gagner du ',true);layers.content.addObject(objs.obj256);objs.obj257=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'temps pour récupérer. Pour ',true);layers.content.addObject(objs.obj257);objs.obj258=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'tenter quelque chose. ',true);layers.content.addObject(objs.obj258);objs.obj259=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Il se retourna face à ses ',true);layers.content.addObject(objs.obj259);objs.obj260=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'adversaires.',true);layers.content.addObject(objs.obj260);objs.obj261=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},' - Je n’ai fait que défendre ',true);layers.content.addObject(objs.obj261);objs.obj262=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Rachel. Vous n’aviez pas le ',true);layers.content.addObject(objs.obj262);objs.obj263=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'droit de vous en prendre à ',true);layers.content.addObject(objs.obj263);objs.obj264=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'elle. ',true);layers.content.addObject(objs.obj264);objs.obj265=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},' - T’avais qu’à pas te mêler ',true);layers.content.addObject(objs.obj265);objs.obj266=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'de nos affaires.',true);layers.content.addObject(objs.obj266);objs.obj267=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},' - Quatre contre un, vous ',true);layers.content.addObject(objs.obj267);objs.obj268=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'n’êtes que des lâches !',true);layers.content.addObject(objs.obj268);objs.obj269=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Simon avait lancé ça tout en ',true);layers.content.addObject(objs.obj269);objs.obj270=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'jetant un bref coup d’œil ',true);layers.content.addObject(objs.obj270);objs.obj271=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'autour de lui. Il avait aperçu ',true);layers.content.addObject(objs.obj271);objs.obj272=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'la grosse pierre au pied du ',true);layers.content.addObject(objs.obj272);objs.obj273=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'grillage. Un bon tremplin…',true);layers.content.addObject(objs.obj273);objs.obj274=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Kevin fulminait. ',true);layers.content.addObject(objs.obj274);objs.obj275=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},' - Amenez-le moi ! ',true);layers.content.addObject(objs.obj275);objs.obj276=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Les trois autres s’élancèrent. ',true);layers.content.addObject(objs.obj276);objs.obj277=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Mais, juste avant que leurs ',true);layers.content.addObject(objs.obj277);objs.obj278=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'mains ne se referment sur ',true);layers.content.addObject(objs.obj278);objs.obj279=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'lui, il s’était jeté sur le côté. ',true);layers.content.addObject(objs.obj279);objs.obj280=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'D’une roulade il avait atteint ',true);layers.content.addObject(objs.obj280);objs.obj281=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'la pierre. Il se redressa d’un ',true);layers.content.addObject(objs.obj281);objs.obj282=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'bond, prit appui sur le rocher ',true);layers.content.addObject(objs.obj282);objs.obj283=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'et entreprit l’escalade du ',true);layers.content.addObject(objs.obj283);objs.obj284=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'grillage.',true);layers.content.addObject(objs.obj284);objs.obj285=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},' - Il va s’échapper ! Faites ',true);layers.content.addObject(objs.obj285);objs.obj286=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'quelque chose !',true);layers.content.addObject(objs.obj286);objs.obj287=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},' - Mais… Il ne peut pas aller ',true);layers.content.addObject(objs.obj287);objs.obj288=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'loin, il n’y a rien après.',true);layers.content.addObject(objs.obj288);objs.obj572=new FindSimon();layers.content.addGame(objs.obj572);objs.obj289=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'C’était vrai.',true);layers.content.addObject(objs.obj289);objs.obj290=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Il n’y avait plus rien. Rien ',true);layers.content.addObject(objs.obj290);objs.obj291=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'d’autre qu’un énorme trou ',true);layers.content.addObject(objs.obj291);objs.obj292=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'de ténèbres. ',true);layers.content.addObject(objs.obj292);objs.obj293=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Mais il était trop tard pour ',true);layers.content.addObject(objs.obj293);objs.obj294=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'reculer. ',true);layers.content.addObject(objs.obj294);objs.obj295=new mse.Text(layers.content,{"size":[mse.coor('cid10'),mse.coor('cid12')]},'Simon s’élança dans le vide.',true);layers.content.addObject(objs.obj295);layers.content.setDefile(1300);temp.layerDefile=layers.content;pages.Content.addLayer('content',layers.content);animes.fouine=new mse.Animation(22,1,true);animes.fouine.block=true;temp.obj=new mse.Mask(null,{'pos':[mse.coor('cid2'),mse.coor('cid2')],'size':[mse.coor('cid0'),mse.coor('cid1')],'fillStyle':'rgb(255, 255, 255)'});animes.fouine.addObj('obj567',temp.obj);temp.obj=new mse.Image(null,{'pos':[mse.coor('cid41'),mse.coor('cid42')],'size':[mse.coor('cid43'),mse.coor('cid44')]},'src0');animes.fouine.addObj('src0',temp.obj);animes.fouine.addAnimation('obj567',{'frame':JSON.parse('[0,1,9,15,21,22]'),'opacity':JSON.parse('[1,0,1,1,0,0]')});animes.fouine.addAnimation('src0',{'frame':JSON.parse('[0,1,9,15,21,22]'),'opacity':JSON.parse('[1,0,1,1,0,0]'),'pos':[[mse.coor('cid41'),mse.coor('cid42')],[mse.coor('cid41'),mse.coor('cid42')],[mse.coor('cid41'),mse.coor('cid42')],[mse.coor('cid41'),mse.coor('cid42')],[mse.coor('cid2'),mse.coor('cid45')],[mse.coor('cid2'),mse.coor('cid45')]],'size':[[mse.coor('cid43'),mse.coor('cid44')],[mse.coor('cid43'),mse.coor('cid44')],[mse.coor('cid43'),mse.coor('cid44')],[mse.coor('cid43'),mse.coor('cid44')],[mse.coor('cid0'),mse.coor('cid46')],[mse.coor('cid0'),mse.coor('cid46')]]});animes.backshow=new mse.Animation(89,1,false);animes.backshow.block=true;animes.backshow.addObj('obj12',objs.obj12);animes.backshow.addAnimation('obj12',{'frame':JSON.parse('[0,75,88,89]'),'opacity':JSON.parse('[0,0,0.800000011921,0.800000011921]')});animes.titleshow=new mse.Animation(101,1,false);animes.titleshow.block=true;animes.titleshow.addObj('obj13',objs.obj13);animes.titleshow.addAnimation('obj13',{'frame':JSON.parse('[0,75,88,101]'),'opacity':JSON.parse('[0,0,1,1]')});animes.chashow=new mse.Animation(101,1,false);animes.chashow.block=true;animes.chashow.addObj('obj14',objs.obj14);animes.chashow.addAnimation('obj14',{'frame':JSON.parse('[0,75,88,101]'),'opacity':JSON.parse('[0,0,1,1]')});animes.simcour=new mse.Animation(58,1,true);animes.simcour.block=true;temp.obj=new mse.Sprite(null,{'pos':[mse.coor('cid23'),mse.coor('cid54')],'size':[mse.coor('cid55'),mse.coor('cid56')]},'src6',[[186,0,119,254]]);animes.simcour.addObj('src6',temp.obj);temp.obj.appendFrame([362,0,260,254]);temp.obj.appendFrame([0,0,299,254]);temp.obj.appendFrame([302,0,199,254]);animes.simcour.addAnimation('src6',{'frame':JSON.parse('[0,13,16,19,22,25,28,31,34,37,40,43,46,49,52,55,58]'),'opacity':JSON.parse('[0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0]'),'spriteSeq':JSON.parse('[0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,3]'),'size':[[mse.coor('cid55'),mse.coor('cid56')],[mse.coor('cid55'),mse.coor('cid56')],[mse.coor('cid55'),mse.coor('cid56')],[mse.coor('cid55'),mse.coor('cid56')],[mse.coor('cid57'),mse.coor('cid56')],[mse.coor('cid57'),mse.coor('cid56')],[mse.coor('cid57'),mse.coor('cid56')],[mse.coor('cid57'),mse.coor('cid56')],[mse.coor('cid59'),mse.coor('cid56')],[mse.coor('cid59'),mse.coor('cid56')],[mse.coor('cid59'),mse.coor('cid56')],[mse.coor('cid59'),mse.coor('cid56')],[mse.coor('cid62'),mse.coor('cid56')],[mse.coor('cid62'),mse.coor('cid56')],[mse.coor('cid62'),mse.coor('cid56')],[mse.coor('cid62'),mse.coor('cid56')],[mse.coor('cid62'),mse.coor('cid56')]],'pos':[[mse.coor('cid23'),mse.coor('cid54')],[mse.coor('cid23'),mse.coor('cid54')],[mse.coor('cid23'),mse.coor('cid54')],[mse.coor('cid23'),mse.coor('cid54')],[mse.coor('cid23'),mse.coor('cid54')],[mse.coor('cid23'),mse.coor('cid54')],[mse.coor('cid23'),mse.coor('cid54')],[mse.coor('cid23'),mse.coor('cid54')],[mse.coor('cid58'),mse.coor('cid54'),1],[mse.coor('cid58'),mse.coor('cid54'),1],[mse.coor('cid58'),mse.coor('cid54'),1],[mse.coor('cid60'),mse.coor('cid54')],[mse.coor('cid61'),mse.coor('cid54')],[mse.coor('cid61'),mse.coor('cid54')],[mse.coor('cid61'),mse.coor('cid54')],[mse.coor('cid61'),mse.coor('cid54')],[mse.coor('cid61'),mse.coor('cid54')]]});animes.piege=new mse.Animation(63,1,true);animes.piege.block=true;temp.obj=new mse.Image(null,{'pos':[mse.coor('cid2'),mse.coor('cid2')],'size':[mse.coor('cid0'),mse.coor('cid1')]},'src16');animes.piege.addObj('src16',temp.obj);temp.obj=new mse.Text(null,{'pos':[mse.coor('cid64'),mse.coor('cid65')],'size':[mse.coor('cid66'),mse.coor('cid67')],'fillStyle':'rgb(255, 255, 255)','textBaseline':'top','font':'normal '+mse.coor('cid63')+'px Verdana','textAlign':'left'},'Piégé !!!',true);animes.piege.addObj('obj571',temp.obj);animes.piege.addAnimation('src16',{'frame':JSON.parse('[0,6,22,25,44,50,63]'),'opacity':JSON.parse('[0,1,1,1,1,0,0]')});animes.piege.addAnimation('obj571',{'frame':JSON.parse('[0,6,22,25,44,50,63]'),'size':[[mse.coor('cid66'),mse.coor('cid67')],[mse.coor('cid68'),mse.coor('cid69')],[mse.coor('cid73'),mse.coor('cid74')],[mse.coor('cid78'),mse.coor('cid48')],[mse.coor('cid78'),mse.coor('cid48')],[mse.coor('cid78'),mse.coor('cid48')],[mse.coor('cid78'),mse.coor('cid48')]],'fontSize':[mse.coor('cid63'),mse.coor('cid63'),mse.coor('cid70'),mse.coor('cid75'),mse.coor('cid75'),mse.coor('cid75'),mse.coor('cid75')],'pos':[[mse.coor('cid64'),mse.coor('cid65')],[mse.coor('cid64'),mse.coor('cid65')],[mse.coor('cid71'),mse.coor('cid72')],[mse.coor('cid76'),mse.coor('cid77')],[mse.coor('cid76'),mse.coor('cid77')],[mse.coor('cid76'),mse.coor('cid77')],[mse.coor('cid76'),mse.coor('cid77')]],'opacity':JSON.parse('[0,0,0.800000011921,1,1,0,0]')});animes.textAnime=new mse.Animation(15,1,false);animes.textAnime.block=true;animes.textAnime.addObj('obj178',objs.obj178);animes.textAnime.addAnimation('obj178',{'frame':JSON.parse('[0,8,14,15]'),'fontSize':[mse.coor('cid79'),mse.coor('cid81'),mse.coor('cid79'),mse.coor('cid79')]});animes.trenteAnime=new mse.Animation(15,1,false);animes.trenteAnime.block=true;animes.trenteAnime.addObj('obj183',objs.obj183);animes.trenteAnime.addAnimation('obj183',{'frame':JSON.parse('[0,8,14,15]'),'fontSize':[mse.coor('cid79'),mse.coor('cid81'),mse.coor('cid79'),mse.coor('cid79')]});var action={};var reaction={};action.ShowFouine=new mse.Script([{src:objs.obj54,type:'show'}]);reaction.ShowFouine=function(){ animes.fouine.start(); };action.ShowFouine.register(reaction.ShowFouine);action.transAide=new mse.Script([{src:objs.obj5,type:'click'}]);reaction.transAide=function(){ root.transition(pages.Aide); };action.transAide.register(reaction.transAide);action.transCha=new mse.Script([{src:objs.obj566,type:'click'}]);reaction.transCha=function(){ root.transition(pages.Chapitre); };action.transCha.register(reaction.transCha);action.showRat=new mse.Script([{src:objs.obj84,type:'firstShow'}]);reaction.showRat=function(){ games.RatGame.start(); };action.showRat.register(reaction.showRat);action.backshowsc=new mse.Script([{src:pages.Chapitre,type:'show'}]);reaction.backshowsc=function(){ animes.backshow.start(); };action.backshowsc.register(reaction.backshowsc);action.titleshowsc=action.backshowsc;reaction.titleshowsc=function(){ animes.titleshow.start(); };action.titleshowsc.register(reaction.titleshowsc);action.chashowsc=action.backshowsc;reaction.chashowsc=function(){ animes.chashow.start(); };action.chashowsc.register(reaction.chashowsc);action.transCont=new mse.Script([{src:pages.Chapitre,type:'click'}]);reaction.transCont=function(){ root.transition(pages.Content); };action.addTransContSc=new mse.Script([{src:animes.backshow,type:'end'}]);reaction.addTransContSc=function(){ action.transCont.register(reaction.transCont); };action.addTransContSc.register(reaction.addTransContSc);action.simcourssc=new mse.Script([{src:objs.obj87,type:'show'}]);reaction.simcourssc=function(){ animes.simcour.start(); };action.simcourssc.register(reaction.simcourssc);action.changeback=new mse.Script([{src:objs.obj133,type:'firstShow'}]);reaction.changeback=function(){ temp.width=objs.obj15.getWidth();temp.height=objs.obj15.getHeight();temp.boundingbox=imgBoundingInBox('src1',temp.width,temp.height);temp.obj=new mse.Image(objs.obj15.parent,temp.boundingbox,'src1');mse.transition(objs.obj15,temp.obj,25); };action.changeback.register(reaction.changeback);action.startPiege=new mse.Script([{src:objs.obj230,type:'show'}]);reaction.startPiege=function(){ animes.piege.start(); };action.startPiege.register(reaction.startPiege);action.piegesonplay=new mse.Script([{src:objs.obj230,type:'firstShow'}]);reaction.piegesonplay=function(){ mse.src.getSrc('src21').play(); };action.piegesonplay.register(reaction.piegesonplay);action.startTextAnime=new mse.Script([{src:objs.obj178,type:'firstShow'}]);reaction.startTextAnime=function(){ animes.textAnime.start(); };action.startTextAnime.register(reaction.startTextAnime);action.startTrenteAnime=new mse.Script([{src:objs.obj183,type:'firstShow'}]);reaction.startTrenteAnime=function(){ animes.trenteAnime.start(); };action.startTrenteAnime.register(reaction.startTrenteAnime);mse.currTimeline.start();};mse.autoFitToWindow(createbook);

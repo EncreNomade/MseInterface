@@ -117,6 +117,9 @@ class MseProject {
     function realCoor($coor) {
         return $coor / $this->ratio;
     }
+    function sceneCoor($coor) {
+        return $coor * $this->ratio;
+    }
     
     function setStruct($struct){
         $this->struct = $struct;

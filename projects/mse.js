@@ -3128,50 +3128,56 @@ window.mse = mse;
 
 	var defaultEvents = ['click', 'doubleClick', 'longPress', 'move', 'swipe', 'gestureStart', 'gestureUpdate', 'gestureEnd', 'gestureSingle', 'keydown', 'keypress', 'keyup', 'scroll', 'swipeleft', 'swiperight'];
 	
-	mse.Script = function() {
-		this.script = null;
+	mse.Script = function(cds) {
+	    if(!cds) return;
+		this.scripts = [];
 		this.states = {};
 		this.expects = {};
 		this.success = {};
 		
-		this.invoke = function() {
-//			if(this.delay) setTimeout(this.delay, );
-			if(typeof(this.script) == 'function') this.script.call(this);
-			else if(this.script instanceof mse.Callback) this.script.invoke();
-		};
-		this.checkConditions = function() {
+		// Initialize script
+		for(var i in cds) {
+			var id = "c"+i;
+			this.states[id] = cds[i].initial ? cds[i].expect : "";
+			this.expects[id] = cds[i].expect ? cds[i].expect : "everytime";
+			this.success[id] = false;
+			var src = cds[i].src;
+			if($.inArray(cds[i].type, defaultEvents)!=-1 && !(cds[i].src instanceof mse.BaseContainer)) {
+			    src = src.getContainer();
+			    src.evtDeleg.addListener(cds[i].type, new mse.Callback(this.conditionChanged, this, [id]), false, cds[i].src);
+			}
+			else 
+			    src.evtDeleg.addListener(cds[i].type, new mse.Callback(this.conditionChanged, this, [id]), false);
+		}
+	};
+	mse.Script.prototype = {
+	    constructor: mse.Script,
+	    invoke: function() {
+	        for(var i in this.scripts) {
+//			    if(this.scripts[i].delay) setTimeout(this.scripts[i].delay, );
+				if(typeof(this.scripts[i].script) == 'function') this.scripts[i].script.call(this);
+				else this.scripts[i].script.invoke();
+	        }
+		},
+		checkConditions: function() {
 			for(var i in this.success)
 				if(!this.success[i]) return;
 				
 			this.invoke();
-		};
-		this.conditionChanged = function(id, state) {
+		},
+		conditionChanged: function(id, state) {
 			if(this.expects[id] == "everytime" || (this.expects[id]== "once" && this.states[id] != "triggered")) {
 				this.success[id] = true;
 				this.checkConditions();
 			}
 			this.states[id] = (typeof(state)=="string" ? state : "triggered");
-		};
-	};
-	mse.Script.register	= function(cds, script, delay) {
-		var sc = new mse.Script();
-		// Initialize script
-		for(var i in cds) {
-			var id = "c"+i;
-			sc.states[id] = cds[i].initial ? cds[i].expect : "";
-			sc.expects[id] = cds[i].expect ? cds[i].expect : "everytime";
-			sc.success[id] = false;
-			sc.delay = (delay ? delay : 0);
-			var src = cds[i].src;
-			if($.inArray(cds[i].type, defaultEvents)!=-1 && !(cds[i].src instanceof mse.BaseContainer)) {
-			    src = src.getContainer();
-			    src.evtDeleg.addListener(cds[i].type, new mse.Callback(sc.conditionChanged, sc, [id]), false, cds[i].src);
-			}
-			else 
-			    src.evtDeleg.addListener(cds[i].type, new mse.Callback(sc.conditionChanged, sc, [id]), false);
+		},
+		register: function(script, delay) {
+		    if((script.invoke instanceof mse.Callback) || typeof(script) == 'function') {
+		        this.scripts.push({'script':script, 'delay':delay?delay:0});
+		    }
 		}
-		sc.script = script;
-	}
+	};
 
 
 })(mse, $);

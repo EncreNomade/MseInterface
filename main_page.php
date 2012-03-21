@@ -216,6 +216,7 @@ function retrieveLocalInfo(pjsave) {
                         if($(this).hasClass('illu')) $(this).deletable(null, true);
                         $(this).selectable(selectP)
                                .staticButton('./images/UI/insertbelow.png', insertElemDialog)
+                               .staticButton('./images/UI/config.png', function(e){e.preventDefault();e.stopPropagation();showParameter($(this).parent().parent());})
                                .staticButton('./images/tools/anime.png', animeTool.animateObj)
                                .staticButton('./images/UI/addscript.jpg', addScriptForObj)
                                .css({'z-index':'0','background':'none'});

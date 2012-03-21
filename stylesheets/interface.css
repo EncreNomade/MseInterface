@@ -117,6 +117,7 @@ body{
 	white-space:nowrap;
 	overflow:visible;
 	line-height:inherit;
+	color: inherit;
 }
 .article .game {
     position:relative;
@@ -480,7 +481,7 @@ body{
     top:15px;
     width:28px;
     height:20px;
-    background:url("../images/UI/motion.jpg") center center no-repeat;
+    background:url("../images/UI/motion.png") center center no-repeat;
 }
 #timeline div.active {
     background:#FFBA84;
@@ -755,6 +756,40 @@ body{
 	padding:0px;
 	border:4px dotted #888;
 	overflow-y:auto;
+}
+.insert_cont {
+    position:absolute;
+    top:25px;
+    left:30px;
+    width:250px;
+    height:150px;
+    overflow:hidden;
+}
+.insert_text {
+    position: absolute;
+    left: 280px;
+    width: 240px;
+    height: 140px;
+    margin: 0px;
+    padding: 0px;
+}
+.insert_type_bn {
+    position: absolute;
+    top: 75px;
+    left: 300px;
+    width: 50px;
+    height: 50px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    -webkit-box-shadow: 2px 2px 5px #4d4d4d;
+    -moz-box-shadow: 2px 2px 5px #4d4d4d;
+    box-shadow: 2px 2px 5px #4d4d4d;
+}
+.insert_type_bn:active {
+    -webkit-box-shadow: 1px 1px 5px #4d4d4d;
+    -moz-box-shadow: 1px 1px 5px #4d4d4d;
+    box-shadow: 1px 1px 5px #4d4d4d;
 }
 
 .ctrl_pt {

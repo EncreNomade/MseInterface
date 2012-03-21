@@ -23,8 +23,8 @@ class ProjectGenerator {
         "height" => "/(^height|[\s;]height):\s*([\.\-\d]+)px/",
         "top" => "/(^top|[\s;]top):\s*([\.\-\d]+)px/",
         "left" => "/(^left|[\s;]left):\s*([\.\-\d]+)px/",
-        "color" => "/[\s;]color:\s*([\s\w\(\)\,\.]+);/",
-        "bgColor" => "/background\-color:\s*([\s\w\(\)\,\.]+);/",
+        "color" => "/[\s;]color:\s*([\srgba#cdef\d\(\)\,\.]+);/",
+        "bgColor" => "/background\-color:\s*([\srgba#cdef\d\(\)\,\.]+);/",
         "globalAlpha" => "/opacity:\s*([\d\.]{1,4})/",
         "fsize" => "/font\-size:\s*([\.\-\d]+)px/",
         "ffamily" => "/font\-family:\s*(\w+);/",
@@ -381,6 +381,7 @@ class ProjectGenerator {
         $this->jstr .= "var reaction={};";
         $scripts = $this->pj->getAllScripts();
         if( isset($scripts) ) {
+            $oldCds = array();
             // Register scripts
             foreach( $scripts as $name => $script ){
                 $src = "";
@@ -417,7 +418,7 @@ class ProjectGenerator {
                 case "playVoice": 
                     $codeReact = "mse.src.getSrc('$tar').play();";break;
                 case "addScript": 
-                    $codeReact = "mse.Script.register(action.$tar,reaction.$tar);";break;
+                    $codeReact = "action.$tar.register(reaction.$tar);";break;
                 case "script": 
 //!!! Danger of security of not???
                     $codeReact = $tar;break;
@@ -429,17 +430,29 @@ class ProjectGenerator {
                 case "loadGame": 
                     $codeReact = "games.$tar.start();";break;
                 }
-                $this->jstr .= "action.$name=[{src:$src,type:'$action'}];";
+                
+                $actionInit = "action.$name=new mse.Script([{src:$src,type:'$action'}]);";
+                $found = false;
+                foreach($oldCds as $n => $cds) {
+                    if($cds["src"] == $src && $cds["action"] == $action) {
+                        $actionInit = "action.$name=action.$n;";
+                        $found = true;
+                        break;
+                    }
+                }
+                
+                $this->jstr .= $actionInit;
                 $this->jstr .= "reaction.$name=function(){ $codeReact };";
-                if($immediate) $this->jstr .= "mse.Script.register(action.$name,reaction.$name);";
+                if($immediate) $this->jstr .= "action.$name.register(reaction.$name);";
+                if(!$found) $oldCds[$name] = array("src"=>$src, "action"=>$action);
             }
         }
         
         // Start the book
         $this->jstr .= "mse.currTimeline.start();};";
         // Lazy init the book
-        //$this->jstr .= "mse.autoFitToWindow(createbook);";
-        $this->jstr .= "createbook();";
+        $this->jstr .= "mse.autoFitToWindow(createbook);";
+        //$this->jstr .= "createbook();";
         
         // Join the coords array in the beginning
         $this->jstr = "mse.coords = JSON.parse('".json_encode($this->coords)."');".$this->jstr;
@@ -480,7 +493,7 @@ class ProjectGenerator {
         }
         // Param
         $style .= "opacity: 1; vertical-align: top;";
-        $params = $this->formatParams($style);
+        $params = $this->formatParams($style, "layer");
         if(!array_key_exists('size', $params[0])) {
             $params[1] = substr($params[1], 0, -1);
             $params[1] .= ',"size":['.$this->encodedCoord($this->pjWidth).','.$this->encodedCoord($this->pjHeight).']}';
@@ -498,13 +511,13 @@ class ProjectGenerator {
             $this->jstr .= "$layer=new mse.ArticleLayer($page,$depth,".$params[1].",null);";
             
             if(array_key_exists('size', $params[0])) $width = $params[0]['size'][0];
-            else $width = $this->pjWidth;
-            $lineHeight = $params[0]['lineHeight'];
+            else $width = $this->pj->sceneCoor($this->pjWidth);
+            $lineHeight = $this->pj->sceneCoor($params[0]['lineHeight']);
             // Objs
             $objs = $layernode->div;
             $index = 0;
             foreach( $objs as $objnode ) {
-                $this->addArticleObject($objnode, $layer, $this->encodedCoord($width), $this->encodedCoord($lineHeight), $index);
+                $this->addArticleObject($objnode, $layer, $width, $lineHeight, $index);
                 $index++;
             }
             if($layernode['defile'] == "true") {
@@ -536,7 +549,7 @@ class ProjectGenerator {
         // Init Obj
         $obj = "objs.".$id;
         // Init attributes
-        $params = $this->formatParams($objnode['style']);
+        $params = $this->formatParams($objnode['style'], $type);
         
         switch($type) {
         case "img":
@@ -566,7 +579,7 @@ class ProjectGenerator {
         $type = "unknown";
         if($class == 'illu') {
             $type = "img";
-            $params = $this->formatParams($objnode->img[0]['style']);
+            $params = $this->formatParams($objnode->img[0]['style'], $type);
             $this->jstr .= "$obj=new mse.Image($layer,".$params[1].",'".$objnode->img[0]['name']."');";
         }
         else if($class == 'game') {
@@ -577,26 +590,29 @@ class ProjectGenerator {
         else if(count($objnode->children()) == 0) {
             // Rectangle obj
             $type = "obj";
-            $params = $this->formatParams($objnode['style']);
+            $objnode['style'] .= "width: ".$width."px; height: ".$lineHeight."px;";
+            $params = $this->formatParams($objnode['style'], $type);
             $this->jstr .= "$obj=new mse.UIObject($layer,".$params[1].");";
         }
         else if(count($objnode->p) > 0) {
             // Text obj
             $type = "txt";
-            $params = "{size:[$width,$lineHeight]}";
+            // Init attributes
+            $objnode['style'] .= "width: ".$width."px; height: ".$lineHeight."px;";
+            $params = $this->formatParams($objnode['style'], $type);
             
             // Detect link
             $p = $objnode->p;
             if(count($p->span) > 0){
                 preg_match(self::$patterns['linkCutter'], $p[0]->asXML(), $content);
                 $content = $content[1].$content[2].$content[3];
-                $this->jstr .= "$obj=new mse.Text($layer,$params,'".addslashes($content)."',true);";
+                $this->jstr .= "$obj=new mse.Text($layer,".$params[1].",'".addslashes($content)."',true);";
                 foreach($p->span as $link)
                     $this->addLink($link, $obj, $index);
             }
             else {
                 $content = $p;
-                $this->jstr .= "$obj=new mse.Text($layer,$params,'$content',true);";
+                $this->jstr .= "$obj=new mse.Text($layer,".$params[1].",'$content',true);";
             }
         }
         
@@ -634,7 +650,7 @@ class ProjectGenerator {
         else return 0;
     }
     
-    private function formatParams($style){
+    private function formatParams($style, $type){
         if(is_null($style)) return;
         $pj = $this->pj;
         $param = array();
@@ -665,7 +681,7 @@ class ProjectGenerator {
             $param['fillStyle'] = $color[1];
             $paramStr .= '"fillStyle":"'.$param['fillStyle'].'",';
         }
-        else if( array_key_exists(1, $bgColor) ) {
+        else if( ($type == "mask" || $type == "obj") && array_key_exists(1, $bgColor) ) {
             $param['fillStyle'] = $bgColor[1];
             $paramStr .= '"fillStyle":"'.$param['fillStyle'].'",';
         }

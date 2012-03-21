@@ -1050,10 +1050,11 @@ Animation.prototype = {
                     container.prop('id', key);
                     container.css({
                         'font-weight': param.fontw,
-                        'font-size': param.fonts+'px',
+                        'font-size': config.sceneY(param.fonts)+'px',
                         'font-family': param.font,
                         'text-align': this.objs[key].align,
                         'color': param.color,
+                        'overflow': 'auto'
                     });
                     var elem = $('<p style="margin:0px;padding:0px;">'+this.objs[key].content+'</p>');
                 break;
@@ -1819,6 +1820,24 @@ var initAnimeTool = function() {
             // Append target object
             if(args.length > 0 && args[0] !== false) {
                 var tar = args[0].clone();
+                // Article text obj special initialisation
+                if(args[0].parents('.article').length != 0) {
+                    var font = {
+                        'font-family':args[0].css('font-family'),
+                        'font-size':args[0].css('font-size'),
+                        'color':args[0].css('color')
+                    };
+                    args[0].css(font);
+                    tar.css(font);
+                    tar.css({
+                        'position': 'relative',
+                        'top': args[0].offset().top-this.editor.offset().top+'px',
+                        'left': args[0].offset().left-this.editor.offset().left+'px',
+                        'width': args[0].width()+'px',
+                        'height': args[0].height()+'px'
+                        });
+                    tar.children('p').css({'margin':'0px','padding':'0px'});
+                }
                 tar.children('.del_container').remove();
                 tar.deletable().configurable();
                 this.editor.children('.frame').each(function(){

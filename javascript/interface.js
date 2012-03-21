@@ -427,9 +427,28 @@ function insertElemDialog(e) {
 	// show ressource panel
 	$('#bottom').css('z-index','110');
 	dialog.annuler.click(closeBottom);
+	// Insert Zone
+	var insert = $('<div class="insert_cont"></div>');
 	// Drop zone
-	var dzone = (new DropZone(dropToInsertZone, {'top':'25px','width':'250px','height':'150px'})).jqObj;
-	dialog.main.append(dzone);
+	var dzone = (new DropZone(dropToInsertZone, {'left':'0px','width':'240px','height':'140px','position':'absolute'})).jqObj;
+	var tzone = $('<textarea class="insert_text"/>');
+	insert.append(dzone).append(tzone);
+	var typebn = $('<img class="insert_type_bn" src="./images/UI/text.jpg">');
+	dialog.main.append(insert);
+	dialog.main.append(typebn);
+	typebn.click(function(){
+	    var left = dzone.position().left;
+	    if(left == 0) {
+	        this.src = "./images/UI/srcs.jpg";
+	        dzone.animate({'left':'-280px'}, 500, 'swing');
+	        tzone.animate({'left':'0px'}, 500, 'swing');
+	    }
+	    else if(left == -280) {
+	        this.src = "./images/UI/text.jpg";
+	        dzone.animate({'left':'0px'}, 500, 'swing');
+	        tzone.animate({'left':'280px'}, 500, 'swing');
+	    }
+	});
 	
 	dialog.confirm.click(function() {
 	    closeBottom();
@@ -745,6 +764,7 @@ function addArticle(name, params, content) {
 		$(this).css({'height':lh+'px'});
 		$(this).selectable(selectP)
 		       .staticButton('./images/UI/insertbelow.png', insertElemDialog)
+		       .staticButton('./images/UI/config.png', function(e){e.preventDefault();e.stopPropagation();showParameter($(this).parent().parent());})
 		       .staticButton('./images/UI/addscript.jpg', addScriptForObj);
 		$(this).children('.del_container').css({
 			'position': 'relative',

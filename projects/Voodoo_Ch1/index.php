@@ -9,7 +9,7 @@
 header("content-type:text/html; charset=utf8");
 session_start();
 
-$content = file_get_contents("./content_origin.js");
+$content = file_get_contents("./content.js");
 
 ?>
 
