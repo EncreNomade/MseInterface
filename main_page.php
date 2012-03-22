@@ -70,6 +70,7 @@ else header("Location: index.php", true);
 	<li id="recticon"><img src="./images/tools/rule.png"></img></li>
 	<li id="wikiicon"><img src="./images/tools/wiki.png"></img></li>
 	<li id="animeicon"><img src="./images/tools/anime.png"></img></li>
+	<li id="scripticon"><img src="./images/UI/addscript.jpg"</img></li>
 </ul>
 
 <div id="center_panel">
@@ -117,6 +118,11 @@ else header("Location: index.php", true);
 		<li><h5>Boucle:</h5><input id="animeRepeat" style="width: 28px;" type="number" value="1"></li>
 		<li><h5>Nom:</h5><input id="animeName" size="5" type="text"></li>
 		<li><input type="button" id="createAnime" value="Sauvegarder"></input></li>
+	</ul>
+	<ul id="scriptTool" class="central_tools">
+	    <li><h5>Extraire objet: </h5><img id="script_objchr" src="./images/UI/objchooser.jpg" style="width: 19px; height: 100%;"/></li>
+	    <li><h5>Nom:</h5><input id="script_name" size="5" type="text"></li>
+	    <li><input id="script_save" type="button" value="Sauvegarder" /></li>
 	</ul>
 	<canvas id="rulerX" class="ruler"></canvas>
 	<canvas id="rulerY" class="ruler"></canvas>

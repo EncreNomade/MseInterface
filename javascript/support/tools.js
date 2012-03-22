@@ -286,7 +286,7 @@ SourceManager.prototype = {
 	constructor: SourceManager,
 	sources: {},
 	expos: {},
-	acceptType: new Array('image', 'audio', 'game', 'anime', 'wiki'),
+	acceptType: new Array('image', 'audio', 'game', 'anime', 'wiki', 'script'),
 	extCheck: /data:\s*(\w+)\/(\w+);/,
 	pathCheck: /^(\.\/)?([\w\_\s]+\/)*([\w\_\s\.]+)/,
 	uploadResp: /^([\w\_\s]+)\&\&([\w\_\s\.\/]+)/,
@@ -313,7 +313,7 @@ SourceManager.prototype = {
 		    id = 'src'+this.currId;
 		    this.currId++;
 		}
-		else if(this.sources[id] != null && type != "wiki" && type != "anime") {
+		else if(this.sources[id] != null && type != "wiki" && type != "anime" && type != "script") {
 		    alert("Le nom de source exist déjà...");
 		    return;
 		}
@@ -427,6 +427,23 @@ SourceManager.prototype = {
 		    expo.circleMenu({'delete':['./images/UI/del.png',this.deleteSrc],'addscript':['./images/UI/addscript.jpg',addScriptDialog]});
 		    expo.click(function(){
 		        srcMgr.getSource($(this).data('srcId')).showAnimeOnEditor();
+		    });
+		    expo.children().css('font','bold 8px Times');
+		    break;
+		case 'script':
+		    if(this.sources[id]) {
+		        delete this.sources[id];
+		        src.data = data;
+		        this.sources[id] = src;
+		        return;
+		    }
+		    src.data = data;
+		    this.sources[id] = src;
+		    expo.append('<p>Script: '+id+'</p>');
+		    expo.circleMenu({'delete':['./images/UI/del.png',this.deleteSrc]});
+		    expo.click(function(){
+		        var name = $(this).data('srcId');
+		        scriptTool.editScript(name, srcMgr.getSource(name));
 		    });
 		    expo.children().css('font','bold 8px Times');
 		    break;
@@ -1993,6 +2010,49 @@ var initAnimeTool = function() {
     // Set transition type
     $('.motion').live('click', tool.transSetup);
     tool.addFrameBn.click(tool.addFrame);
+    return tool;
+}
+
+
+
+
+
+
+var initScriptTool = function() {
+    var tool = new CreatTool($('#scriptTool'), $('#scripticon'));
+    
+    $.extend(tool, {
+        textArea: $('<textarea class="script_editor">'),
+        scriptName: $('#script_name'),
+        init: function(args){
+            this.editor.append(this.textArea);
+        },
+        close: function() {
+            this.finishEdit(this.editor.children());
+            this.editor.unbind().hide().children().detach();
+            this.toolsPanel.hide();
+            this.menuMask.hide();
+        },
+        finishEdit: function(elems){
+            this.scriptName.val("");
+            this.textArea.val("");
+        },
+        saveScript: function() {
+            var script = this.textArea.val();
+            var name = this.scriptName.val();
+            if(name == "" || script == "") return;
+            srcMgr.addSource('script', script, name);
+        },
+        editScript: function(id, content) {
+            this.active();
+            this.textArea.val(content);
+            this.scriptName.val(id);
+        }
+    });
+    
+    $('#script_save').click(function(){
+        tool.saveScript();
+    });
     return tool;
 }
 

@@ -23,6 +23,7 @@ function init() {
 	initTextTool();
 	window.wikiTool = initWikiTool();
 	window.animeTool = initAnimeTool();
+	window.scriptTool = initScriptTool();
 	
 	// Mouse event handler for the resize behavior
 	$('body').supportResize(); 
