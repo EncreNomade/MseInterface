@@ -452,6 +452,7 @@ function insertElemDialog(e) {
 	
 	dialog.confirm.click(function() {
 	    closeBottom();
+	    var last = dialog.caller;
 		var prepared = dzone.children();
 		for(var i = prepared.length-1; i >= 0; i--) {
 			var id = $(prepared.get(i)).data('srcId');
@@ -459,8 +460,17 @@ function insertElemDialog(e) {
 			elem.attr('id', 'obj'+(curr.objId++));
 			elem.selectable(selectP)
 			    .staticButton('./images/UI/insertbelow.png', insertElemDialog)
-			    .staticButton('./images/UI/addscript.jpg', addScriptForObj);
-			elem.insertAfter(dialog.caller);
+			    .staticButton('./images/UI/addscript.jpg', addScriptForObj)
+			    .children('.del_container').hide();
+			elem.insertAfter(last);
+			last = elem;
+		}
+		var text = tzone.val();
+		if(text && text != "") {
+		    var font = dialog.caller.css('font-weight');
+		    font += " "+dialog.caller.css('font-size');
+		    font += " "+dialog.caller.css('font-family');
+		    last.after(generateLines(text, font, dialog.caller.width(), dialog.caller.height()));
 		}
 		dialog.close();
 	});
@@ -539,6 +549,10 @@ function addScriptDialog(src, srcType){
             tar = $('#script_tar').data('chooser').val();
             supp = $('#script_supp').attr('target');
             break;
+        case "cursor":
+            tar = $('#script_tar').val();
+            if(tar == "autre") supp = $('#script_supp').attr('target');
+            break;
         case "anime": case "image": case "game": case "audio":
             tar = $('#script_tar').attr('target');break;
         case "code": case "effetname": default:break;
@@ -579,6 +593,23 @@ function tarDynamic(e){
         cible.after(supp);
         // show ressource panel
         $('#bottom').css('z-index','110');
+        break;
+    case "cursor":
+        cible.append(scriptMgr.cursorSelectList('script_tar'));
+        $('#script_tar').change(function(){
+            if($(this).val() == "autre") {
+                // show ressource panel
+                $('#bottom').css('z-index','110');
+                var supp = $('<p><label>Cursor personalisé</label></p>');
+                var dz = (new DropZone(dropToTargetZone, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "script_supp")).jqObj;
+                dz.data('type', "image");
+                $('.popup_body p:eq(4)').after(supp.append(dz));
+            }
+            else {
+                closeBottom();
+                $('.popup_body p:eq(4)').nextAll().remove();
+            }
+        });
         break;
     case "anime":
     case "image":
@@ -714,6 +745,43 @@ function delCurrentPage() {
     $('#pageBar li:first-child').click();
 };
 
+function staticConfig(e){e.preventDefault();e.stopPropagation();showParameter($(this).parent().parent());}
+function generateLines(content, font, width, lineHeight){
+    var res = '';
+    // Content processing
+	TextUtil.config(font);
+	var maxM = Math.floor( width/TextUtil.measure('A') );	
+
+	var arr = content.split('\n');
+	var sep = 0;
+	for(var i = 0; i < arr.length; i++) {
+		if(arr[i].length == 0) { // Separator paragraph
+			res += '<div id="obj'+(curr.objId++)+'"/>';
+			sep++;continue;
+		}
+
+		for(var j = 0; j < arr[i].length;) {
+			// Find the index of next line
+			var next = TextUtil.checkNextline(arr[i].substr(j), maxM, width);
+			res += '<div id="obj'+(curr.objId++)+'"><p>'+arr[i].substr(j, next)+'</p></div>';
+			j += next;
+		}
+	}
+	res = $(res);
+	res.each(function() {
+		$(this).height(lineHeight);
+		$(this).selectable(selectP)
+		       .staticButton('./images/UI/insertbelow.png', insertElemDialog)
+		       .staticButton('./images/UI/config.png', staticConfig)
+		       .staticButton('./images/tools/anime.png', animeTool.animateObj)
+		       .staticButton('./images/UI/addscript.jpg', addScriptForObj);
+		$(this).children('.del_container').css({
+			'position': 'relative',
+			'top': ($(this).children('p').length == 0) ? '0%' : '-100%',
+			'display':'none'});
+	});
+	return res;
+}
 function addArticle(name, params, content) {
     if(!curr.page) return;
     if(!params) params = {};
@@ -740,41 +808,9 @@ function addArticle(name, params, content) {
 	if(params.color) article.css('color', params.color);
 	if(params.align) article.css('text-align', params.align);
 	
-	// Content processing
-	TextUtil.config(font);
-	var maxM = Math.floor( params.lw/TextUtil.measure('A') );	
-
-	var arr = content.split('\n');
-	var sep = 0;
-	for(var i = 0; i < arr.length; i++) {
-		if(arr[i].length == 0) { // Separator paragraph
-			article.append('<div id="obj'+(curr.objId++)+'"/>');
-			sep++;continue;
-		}
-
-		for(var j = 0; j < arr[i].length;) {
-			// Find the index of next line
-			var next = TextUtil.checkNextline(arr[i].substr(j), maxM, params.lw);
-			article.append('<div id="obj'+(curr.objId++)+'"><p>'+arr[i].substr(j, next)+'</p></div>');
-			j += next;
-		}
-	}
-	// Content <p> params and functions: InsertAfter
-	article.children('div').each(function() {
-		$(this).css({'height':lh+'px'});
-		$(this).selectable(selectP)
-		       .staticButton('./images/UI/insertbelow.png', insertElemDialog)
-		       .staticButton('./images/UI/config.png', function(e){e.preventDefault();e.stopPropagation();showParameter($(this).parent().parent());})
-		       .staticButton('./images/UI/addscript.jpg', addScriptForObj);
-		$(this).children('.del_container').css({
-			'position': 'relative',
-			'top': ($(this).children('p').length == 0) ? '0%' : '-100%',
-			'display':'none'});
-	});
-	
+	article.append(generateLines(content, font, params.lw, params.lh));
 	// Listener to manipulate
 	article.deletable().configurable();
-	
 	step.append(article);
 }
 

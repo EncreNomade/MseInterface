@@ -414,7 +414,10 @@ class ProjectGenerator {
                 case "playAnime": 
                     $codeReact = "animes.$tar.start();";break;
                 case "changeCursor": 
-                    $codeReact .= "mse.setCursor(mse.src.getSrc('$tar').src);";break;
+                    if($tar != "autre") $codeReact .= "mse.setCursor('$tar');";
+                    else if(!is_null($supp)) $codeReact .= "mse.setCursor(mse.src.getSrc('$supp').src);";
+                    else continue;
+                    break;
                 case "playVoice": 
                     $codeReact = "mse.src.getSrc('$tar').play();";break;
                 case "addScript": 

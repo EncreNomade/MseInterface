@@ -4339,7 +4339,7 @@ layers.content.setDefile(1300);temp.layerDefile=layers.content;pages.Content.add
 mse.Script.register(action.piegesonplay,reaction.piegesonplay);
 
 pages.Couverture.evtDeleg.addListener('show', new mse.Callback(mse.setCursor, window, 'pointer'));
-pages.Chapitre.evtDeleg.addListener('show', new mse.Callback(mse.setCursor, mse.root, 'default'));
+pages.Chapitre.evtDeleg.addListener('show', new mse.Callback(mse.setCursor, window, 'default'));
 pages.Content.evtDeleg.addListener('show', new mse.Callback(mse.setCursor, window, 'default'));
 
 // Effet

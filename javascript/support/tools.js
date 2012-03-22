@@ -1110,7 +1110,7 @@ var scriptMgr = function() {
             pageTrans: "page",
             objTrans: "obj",
             playAnime: "anime",
-            changeCursor: "image",
+            changeCursor: "cursor",
             playVoice: "audio",
             addScript: "script",
             script: "code",
@@ -1129,6 +1129,7 @@ var scriptMgr = function() {
             effet: "Démarrer un effet", playDefi: "Démarrer la lecture", pauseDefi: "Pauser la lecture",
             loadGame: "Démarrer un jeu"
         },
+        cursors: ['default','pointer','crosshair','text','wait','help','move','autre'],
         scripts: {},
         reactionTarget: function(type) {return this.reaction[type];},
         actionSelectList: function(id, type){
@@ -1149,6 +1150,12 @@ var scriptMgr = function() {
         scriptSelectList: function(id){
             var select = '<select id="'+id+'">';
             for(var i in this.scripts) select += "<option value='"+i+"'>"+i+"</option>";
+            select += '</select>';
+            return select;
+        },
+        cursorSelectList: function(id){
+            var select = '<select id="'+id+'">';
+            for(var i in this.cursors) select += "<option value='"+this.cursors[i]+"'>"+this.cursors[i]+"</option>";
             select += '</select>';
             return select;
         },
@@ -2173,7 +2180,7 @@ function hideParent(e) {e.preventDefault();e.stopPropagation();$(this).parent().
 function configParent(e) {e.preventDefault();e.stopPropagation();showParameter($(this).parent().parent(), e.data.list);}
 
 $.fn.deletable = function(f, static) {
-	var del = this.find('img[src="./images/UI/del.png"]');
+	var del = this.children('.del_container').children().filter('img[src="./images/UI/del.png"]');
 	if(del.length > 0) del.remove();
 	if(f === false) return this;
 	var func = f || delParent;
@@ -2182,7 +2189,7 @@ $.fn.deletable = function(f, static) {
 	return this;
 };
 $.fn.hideable = function(f) {
-	var close = this.find('img[src="./images/UI/sclose.png"]');
+	var close = this.children('.del_container').children().filter('img[src="./images/UI/sclose.png"]');
 	if(close.length > 0) close.remove();
 	if(f === false) return this;
 	var func = f || hideParent;
@@ -2191,7 +2198,7 @@ $.fn.hideable = function(f) {
 	return this;
 };
 $.fn.configurable = function(disables, f) {
-	var config = this.find('img[src="./images/UI/config.png"]');
+	var config = this.children('.del_container').children().filter('img[src="./images/UI/config.png"]');
 	if(config.length > 0) config.remove();
 	if(f === false) return this;
 	var func = f || configParent;
