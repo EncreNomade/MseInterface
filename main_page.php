@@ -120,9 +120,9 @@ else header("Location: index.php", true);
 		<li><input type="button" id="createAnime" value="Sauvegarder"></input></li>
 	</ul>
 	<ul id="scriptTool" class="central_tools">
-	    <li><h5>Extraire objet: </h5><img id="script_objchr" src="./images/UI/objchooser.jpg" style="width: 19px; height: 100%;"/></li>
-	    <li><h5>Nom:</h5><input id="script_name" size="5" type="text"></li>
-	    <li><input id="script_save" type="button" value="Sauvegarder" /></li>
+	    <li><h5>Extraire objet: </h5><img id="code_objchr" src="./images/UI/objchooser.jpg" style="width: 19px; height: 100%;"/></li>
+	    <li><h5>Nom:</h5><input id="code_name" size="5" type="text"></li>
+	    <li><input id="code_save" type="button" value="Sauvegarder" /></li>
 	</ul>
 	<canvas id="rulerX" class="ruler"></canvas>
 	<canvas id="rulerY" class="ruler"></canvas>

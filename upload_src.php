@@ -82,6 +82,12 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
                 echo "SUCCESS";
             }
         break;
+        case "script":
+            $script = stripslashes($encodedStr);
+            if(!is_null($wiki)) {
+                $pj->addSrc($name, $type, $script);
+                echo "SUCCESS";
+            }
         case "scripts":
             $scripts = json_decode(stripslashes($encodedStr));
             if(!is_null($scripts)) {

@@ -544,7 +544,8 @@ function addScriptDialog(src, srcType){
         var tarType = scriptMgr.reactionTarget(reaction);
         var tar = null, supp = null;
         switch(tarType) {
-        case "page": case "script": tar = $('#script_tar').val();break;
+        case "page": case "script": 
+            tar = $('#script_tar').val();break;
         case "obj": 
             if($('#script_supp').children().length==0) {alert('Information incomplete');return;}
             tar = $('#script_tar').data('chooser').val();
@@ -554,11 +555,12 @@ function addScriptDialog(src, srcType){
             tar = $('#script_tar').val();
             if(tar == "autre") supp = $('#script_supp').attr('target');
             break;
-        case "anime": case "image": case "game": case "audio":
-            tar = $('#script_tar').attr('target');break;
-        case "code": case "effetname": default:break;
+        case "anime": case "image": case "game": case "audio": case "code":
+            tar = $('#script_tar').attr('target');
+            break;
+        case "effetname": default:break;
         }
-        if(tarType != 'code' && tarType != 'effetname' && (!tar || tar == "")) {
+        if(tarType != 'effetname' && (!tar || tar == "")) {
             alert('Information incomplete');return;
         }
         scriptMgr.addScript(name, srcid, srcType, action, tar, reaction, ajoutAuto, supp);
@@ -616,6 +618,7 @@ function tarDynamic(e){
     case "image":
     case "game":
     case "audio":
+    case "code":
         // show ressource panel
         $('#bottom').css('z-index','110');
         var dz = (new DropZone(dropToTargetZone, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "script_tar")).jqObj;
@@ -625,7 +628,7 @@ function tarDynamic(e){
     case "script":
         cible.append(scriptMgr.scriptSelectList('script_tar'));
         break;
-    case "code": case "effetname": default:break;
+    case "effetname": default:break;
     }
 };
 // Drop event for all type of target

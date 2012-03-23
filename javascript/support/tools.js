@@ -286,7 +286,7 @@ SourceManager.prototype = {
 	constructor: SourceManager,
 	sources: {},
 	expos: {},
-	acceptType: new Array('image', 'audio', 'game', 'anime', 'wiki', 'script'),
+	acceptType: new Array('image', 'audio', 'game', 'anime', 'wiki', 'code'),
 	extCheck: /data:\s*(\w+)\/(\w+);/,
 	pathCheck: /^(\.\/)?([\w\_\s]+\/)*([\w\_\s\.]+)/,
 	uploadResp: /^([\w\_\s]+)\&\&([\w\_\s\.\/]+)/,
@@ -313,7 +313,7 @@ SourceManager.prototype = {
 		    id = 'src'+this.currId;
 		    this.currId++;
 		}
-		else if(this.sources[id] != null && type != "wiki" && type != "anime" && type != "script") {
+		else if(this.sources[id] != null && type != "wiki" && type != "anime" && type != "code") {
 		    alert("Le nom de source exist déjà...");
 		    return;
 		}
@@ -352,7 +352,8 @@ SourceManager.prototype = {
 		    // Add audio source
 		    src.data = data;
 		    this.sources[id] = src;
-		    expo.css('background', 'url("./images/UI/audio.png") center center no-repeat');
+		    expo.append('<img class="srcicon_back" src="./images/UI/audio.png">');
+		    expo.append('<p>Son: '+id+'</p>');
 		    expo.circleMenu({'rename':['./images/UI/rename.jpg',this.renameDialog],
 		                     'delete':['./images/UI/del.png',this.deleteSrc]});
 		    break;
@@ -364,7 +365,8 @@ SourceManager.prototype = {
 		    }
 		    else src.data = data;
 		    this.sources[id] = src;
-		    expo.css('background', 'url("./images/UI/HTML5game.png") center center no-repeat');
+		    expo.append('<img class="srcicon_back" src="./images/UI/HTML5game.png">');
+		    expo.append('<p>Jeu: '+id+'</p>');
 		    expo.circleMenu({'delete':['./images/UI/del.png',this.deleteSrc]});
 		    break;
 		/*case 'text': 
@@ -408,7 +410,6 @@ SourceManager.prototype = {
 		    src.data = data;
 		    this.sources[id] = src;
 		    expo.append('<p>WIKI: '+id+'</p>');
-		    expo.children().css('font','bold 8px Times');
 		    expo.click(function(){
 		        srcMgr.editWiki($(this).data('srcId'));
 		    });
@@ -428,9 +429,8 @@ SourceManager.prototype = {
 		    expo.click(function(){
 		        srcMgr.getSource($(this).data('srcId')).showAnimeOnEditor();
 		    });
-		    expo.children().css('font','bold 8px Times');
 		    break;
-		case 'script':
+		case 'code':
 		    if(this.sources[id]) {
 		        delete this.sources[id];
 		        src.data = data;
@@ -439,13 +439,13 @@ SourceManager.prototype = {
 		    }
 		    src.data = data;
 		    this.sources[id] = src;
-		    expo.append('<p>Script: '+id+'</p>');
+		    expo.append('<img class="srcicon_back" src="./images/UI/addscript.jpg">');
+		    expo.append('<p>Code: '+id+'</p>');
 		    expo.circleMenu({'delete':['./images/UI/del.png',this.deleteSrc]});
 		    expo.click(function(){
 		        var name = $(this).data('srcId');
 		        scriptTool.editScript(name, srcMgr.getSource(name));
 		    });
-		    expo.children().css('font','bold 8px Times');
 		    break;
 		}
 		
@@ -570,7 +570,7 @@ SourceManager.prototype = {
 	        case "image": case "audio": case "game":
 	            data = "pj="+pjName+"&type="+type+"&name="+key+"&data="+this.sources[key].data;
 	            break;
-	        case "wiki": case "anime":
+	        case "wiki": case "anime": case "code":
 	            ++this.uploaded;
 	            this.updateSrcs(pjName);
 	            continue;
@@ -2023,7 +2023,7 @@ var initScriptTool = function() {
     
     $.extend(tool, {
         textArea: $('<textarea class="script_editor">'),
-        scriptName: $('#script_name'),
+        scriptName: $('#code_name'),
         init: function(args){
             this.editor.append(this.textArea);
         },
@@ -2041,7 +2041,7 @@ var initScriptTool = function() {
             var script = this.textArea.val();
             var name = this.scriptName.val();
             if(name == "" || script == "") return;
-            srcMgr.addSource('script', script, name);
+            srcMgr.addSource('code', script, name);
         },
         editScript: function(id, content) {
             this.active();
@@ -2050,7 +2050,7 @@ var initScriptTool = function() {
         }
     });
     
-    $('#script_save').click(function(){
+    $('#code_save').click(function(){
         tool.saveScript();
     });
     return tool;

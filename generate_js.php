@@ -48,6 +48,8 @@ class ProjectGenerator {
         // System mse
         $content = file_get_contents("projects/mse.js");
         //file_put_contents($path, file_get_contents("projects/mse.js"));
+        // System mse effet
+        $content .= file_get_contents("projects/effet_mini.js");
         // External js (game)
         foreach($this->scriptExt as $extjs) {
             if(file_exists($extjs))
@@ -423,8 +425,8 @@ class ProjectGenerator {
                 case "addScript": 
                     $codeReact = "action.$tar.register(reaction.$tar);";break;
                 case "script": 
-//!!! Danger of security of not???
-                    $codeReact = $tar;break;
+//!!! Danger of security or not???
+                    $codeReact = $srcs[$tar]->data;break;
                 case "effet": break;
                 case "playDefi": 
                     $codeReact = "layers.$tar.play();";break;
@@ -444,9 +446,9 @@ class ProjectGenerator {
                     }
                 }
                 
-                $this->jstr .= $actionInit;
-                $this->jstr .= "reaction.$name=function(){ $codeReact };";
-                if($immediate) $this->jstr .= "action.$name.register(reaction.$name);";
+                $this->jstr .= "\n$actionInit";
+                $this->jstr .= "\nreaction.$name=function(){ $codeReact };";
+                if($immediate) $this->jstr .= "\naction.$name.register(reaction.$name);";
                 if(!$found) $oldCds[$name] = array("src"=>$src, "action"=>$action);
             }
         }
