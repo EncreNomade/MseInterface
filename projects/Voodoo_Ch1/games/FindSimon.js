@@ -245,7 +245,7 @@ var FindSimon = function() {
     	// Key event listener
     	mse.root.evtDistributor.addListener('keydown', this.movecb, true, this);
     	mse.root.evtDistributor.addListener('keyup', this.moveovercb, true, this);
-    	if(MseConfig.mobile){
+    	if(MseConfig.iOS){
     	    mse.root.evtDistributor.addListener('gestureUpdate', this.touchMovecb, true, this);
     	    mse.root.evtDistributor.addListener('gestureEnd', this.moveovercb, true, this);
     	}
@@ -334,7 +334,7 @@ var FindSimon = function() {
 		if(Math.abs(this.sp.x - 1690) <= 60 && Math.abs(this.sp.y - 290) <= 10) {
 		    mse.root.evtDistributor.removeListener('keydown', this.movecb);
 		    mse.root.evtDistributor.removeListener('keyup', this.moveoverc);
-		    if(MseConfig.mobile){
+		    if(MseConfig.iOS){
 		        mse.root.evtDistributor.removeListener('gestureUpdate', this.touchMovecb);
 		        mse.root.evtDistributor.removeListener('gestureEnd', this.moveovercb);
 		    }
@@ -357,7 +357,7 @@ var FindSimon = function() {
 		        // Remove Key event listener
 		        mse.root.evtDistributor.removeListener('keydown', this.movecb);
 		        mse.root.evtDistributor.removeListener('keyup', this.moveovercb);
-		        if(MseConfig.mobile){
+		        if(MseConfig.iOS){
 		            mse.root.evtDistributor.removeListener('gestureUpdate', this.touchMovecb);
 		            mse.root.evtDistributor.removeListener('gestureEnd', this.moveovercb);
 		        }

@@ -2037,6 +2037,14 @@ var initScriptTool = function() {
             this.scriptName.val("");
             this.textArea.val("");
         },
+        insertVar: function(id) {
+            var val = this.textArea.val();
+            var startPos = this.textArea.get(0).selectionStart;
+            var part1 = val.substring(0, startPos);
+            var part2 = val.substring(this.textArea.get(0).selectionEnd, val.length-1);
+            this.textArea.val(part1 + id + part2);
+            this.textArea.get(0).setSelectionRange(startPos, startPos+id.length);
+        },
         saveScript: function() {
             var script = this.textArea.val();
             var name = this.scriptName.val();
@@ -2053,6 +2061,11 @@ var initScriptTool = function() {
     $('#code_save').click(function(){
         tool.saveScript();
     });
+    
+    var objChooser = new ObjChooser("code_objchr");
+    objChooser.jqObj.css({'width':'19px', 'height':'100%'});
+    objChooser.callback = new Callback(tool.insertVar, tool);
+    $('#scriptTool').children('li:eq(0)').append(objChooser.jqObj);
     return tool;
 }
 
@@ -2175,13 +2188,22 @@ ObjChooser.prototype = {
         curr.chooser = this;
         $('body').append('<div id="objChooserMask"></div>');
         $('#center_panel, #right').css('z-index', 106);
+        this.editorZid = $('#editor').css('z-index');
+        this.pageBarZid = $('#pageBar').css('z-index');
+        $('#editor').css('z-index', '0');
+        $('#pageBar').css('z-index', '8');
     },
     choosed: function(obj){
         // Set referenced id for analyze in the server
         if(!obj.prop('id') || obj.prop('id') == "") 
             obj.prop('id', "referenced"+(ObjChooser.prototype.refObjId++));
-        this.jqObj.children('h5').text(obj.prop('id'));
+            
+        if(!this.callback) this.jqObj.children('h5').text(obj.prop('id'));
+        else this.callback.invoke(obj.prop('id'));
+        
         $('#center_panel, #right').css('z-index', 1);
+        $('#editor').css('z-index', this.editorZid);
+        $('#pageBar').css('z-index', this.pageBarZid);
         $('#objChooserMask').remove();
     }
 };

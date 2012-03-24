@@ -66,7 +66,7 @@ var methods = {
 			// Unbind listeners
 			$(this).unbind('.mseInteraction');
 			$.removeData( $(this).get(0), 'mselisteners' );
-			if(MseConfig.mobile) {
+			if(MseConfig.iOS) {
 				$(this).get(0).removeEventListener('touchstart', analyse, false);
 				$(this).get(0).removeEventListener('touchend', analyse, false);
 				$(this).get(0).removeEventListener('touchmove', analyse, false);
@@ -91,7 +91,7 @@ var methods = {
 		
 		// Events corresponds
 		var evts;
-		if(MseConfig.mobile) evts = eventsMobile;
+		if(MseConfig.iOS) evts = eventsMobile;
 		else evts = eventsWeb;
 		
 		if( evts[type] != null ) {
@@ -106,7 +106,7 @@ var methods = {
 			
 			// Bind event to delegate function 'analyse'
 			// No need for spercial bind
-			if( !MseConfig.mobile || (MseConfig.mobile && type !== 'move' && type !== 'swipe' && type !== 'gestureSingle') ) 
+			if( !MseConfig.iOS || (MseConfig.iOS && type !== 'move' && type !== 'swipe' && type !== 'gestureSingle') ) 
 				$(this).bind(evts[type]+'.mseInteraction', analyse);
 			else {
 			// Special bind for iOS touch event which is not supported by jQuery
@@ -124,7 +124,7 @@ var methods = {
 			_data = data;
 		// Events corresponds
 		var evts;
-		if(MseConfig.mobile) evts = eventsMobile;
+		if(MseConfig.iOS) evts = eventsMobile;
 		else evts = eventsWeb;
 		
 		var listeners = $.data( $(this).get(0), 'mselisteners' );
@@ -134,7 +134,7 @@ var methods = {
 		for(var type in evts)
 			listeners[type] = func;
 		// Bind all events
-		if(MseConfig.mobile) {
+		if(MseConfig.iOS) {
 			$(this).bind('click dblclick taphold swipeleft swiperight.mseInteraction', analyse);
 			$(this).get(0).addEventListener('touchstart', analyse, false);
 			$(this).get(0).addEventListener('touchmove', analyse, false);
@@ -197,7 +197,7 @@ function analyse(e) {
 			_listeners['click'].call( _src, event );
 		if( typeof(_listeners['doubleClick']) == 'function' ) {
 			// Detect the double click on mobile
-			if(MseConfig.mobile) {
+			if(MseConfig.iOS) {
 				// Already clicked
 				if( _clicked ) {
 					event.type = 'doubleClick';
@@ -317,7 +317,7 @@ function gestureStart(e) {
 	
 	if( typeof(_listeners['longPress']) == 'function' )
 		_pressTimer = setTimeout( pressTimeout, pressTime );
-	if( MseConfig.mobile && typeof(_listeners['click']) == 'function' ) {
+	if( MseConfig.iOS && typeof(_listeners['click']) == 'function' ) {
 		_clickDown = true;
 		setTimeout( clickTimeout, clickTime );
 	}
@@ -341,6 +341,9 @@ function gestureUpdate(e) {
 function gestureEnd(e) {
 	_currentEvt.offsetX = _currentEvt.listX[_currentEvt.listX.length-1];
 	_currentEvt.offsetY = _currentEvt.listY[_currentEvt.listY.length-1];
+	// Temporary tag correction modification, normally, it must be setted in mse.js( for supporting the correction with viewport in Gesture events )
+	if(_currentEvt.corrected) _currentEvt.corrected = false;
+	
 	// Click
 	if(_clickDown) {
 		_currentEvt.type = 'click';
@@ -353,7 +356,7 @@ function gestureEnd(e) {
 		
 	// Swipe left right
 	if( typeof(_listeners['swipe']) == 'function' ) {
-		if(!MseConfig.mobile) {
+		if(!MseConfig.iOS) {
 			// Init
 			var maxY = _currentEvt.listY[0];
 			var minY = _currentEvt.listY[0];
@@ -458,6 +461,8 @@ function _addPoint(e) {
 	}
 	_currentEvt.offsetX = _currentEvt.listX[_currentEvt.listX.length-1];
 	_currentEvt.offsetY = _currentEvt.listY[_currentEvt.listY.length-1];
+// Temporary tag correction modification, normally, it must be setted in mse.js( for supporting the correction with viewport in Gesture events )
+	if(_currentEvt.corrected) _currentEvt.corrected = false;
 }
 
 
@@ -547,7 +552,8 @@ __KEY_RIGHT	= 39;
 	MseConfigrationSingleton = function() {
 		// Class singleton for all general configration
 		this.os = BrowserDetect.OS;
-		this.mobile = (this.os == "Mobile/iOS/iPhone");
+		this.iPhone = (this.os == "Mobile/iOS/iPhone");
+		this.iOS = (this.os.indexOf("Mobile/iOS") != -1);
 		this.browser = BrowserDetect.browser; // Chrome/Safari/Firefox/Opera/Explorer
 		//this.version = BrowserDetect.version;
 		

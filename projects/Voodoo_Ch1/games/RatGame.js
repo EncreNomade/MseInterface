@@ -22,20 +22,18 @@ var RatGame = function() {
 	var hangAnim = new mse.FrameAnimation(ratHang, seq, 0, 2);
 	
 	this.dragStart = function(e) {
-		var x = e.offsetX - this.offx;
-		var y = e.offsetY - this.offy;
-		if(x>30 && x<110 && y>this.height-80 && y<this.height-30) {
+		if(ratSit.inObj(e.offsetX, e.offsetY)){
 			this.sit = false;
-			ratHang.offx = x-20; ratHang.offy = y-14;
+			ratHang.offx = e.offsetX-this.offx-20; 
+			ratHang.offy = e.offsetY-this.offy-14;
 			
 			sitAnim.stop();
 			hangAnim.start();
 		}
 	};
 	this.dragMove = function(e) {
-		var x = e.offsetX - this.offx-20;
-		var y = e.offsetY - this.offy-14;
-		ratHang.offx = x; ratHang.offy = y;
+		ratHang.offx = e.offsetX - this.offx - 20;
+		ratHang.offy = e.offsetY - this.offy - 14;
 	};
 	this.dragEnd = function(e) {
 		var x = e.offsetX - this.offx;
@@ -44,7 +42,7 @@ var RatGame = function() {
 		if(sac.inObj(e.offsetX, e.offsetY)) {
 			var drop = new mse.KeyFrameAnimation(ratHang, {
 					frame	: [0, 25, 35],
-					pos		: [[x, y], [sac.offx+70,sac.offy+125], [sac.offx+70,sac.offy+125]]
+					pos		: [[x-20, y-14], [sac.offx+70,sac.offy+125], [sac.offx+70,sac.offy+125]]
 				}, 1);
 			drop.evtDeleg.addListener('end', new mse.Callback(this.end, this));
 			drop.start();

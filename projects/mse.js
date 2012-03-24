@@ -385,6 +385,12 @@ mse.EventDelegateSystem = function() {
 		}
 	};
 	this.eventNotif = function(evtName, evt) {
+	    // Correction coordinates with root viewport
+	    if(mse.root.viewport && evt && !evt.corrected && !isNaN(evt.offsetX)) {
+	        evt.offsetX += mse.root.viewport.x;
+	        evt.offsetY += mse.root.viewport.y;
+	        evt.corrected = true;
+	    }
 	    var success = false;
 		switch(evtName) {
 		case 'move':
@@ -584,9 +590,9 @@ mse.UIObject.prototype = {
 	inObj: function(x,y) {
 		if(this.getAlpha() < 1) return false;
 		if(this.insideRec) {
-			var ox = this.getCanvasX()+this.insideRec[0], oy = this.getCanvasY()+this.insideRec[1], w = this.insideRec[2], h = this.insideRec[3];
+			var ox = this.getX()+this.insideRec[0], oy = this.getY()+this.insideRec[1], w = this.insideRec[2], h = this.insideRec[3];
 		}
-		else var ox = this.getCanvasX(), oy = this.getCanvasY(), w = this.getWidth(), h = this.getHeight();
+		else var ox = this.getX(), oy = this.getY(), w = this.getWidth(), h = this.getHeight();
 		
 		if(x>ox && x<ox+w && y>oy && y<oy+h) return true;
 		else return false;
@@ -752,11 +758,11 @@ mse.Root = function(id, width, height, orientation) {
 	};
 	
 	this.draw = function() {
-	    if(MseConfig.mobile)
+	    if(MseConfig.iOS)
 	        this.ctx.clearRect(0, 0, MseConfig.pageWidth, MseConfig.pageHeight);
 		else this.ctx.clearRect(0, 0, this.width, this.height);
 		
-        if(!(MseConfig.mobile && this.gamewindow.currGame && this.gamewindow.currGame.type == "INDEP")){
+        if(!(MseConfig.iPhone && this.gamewindow.currGame && this.gamewindow.currGame.type == "INDEP")){
 		    if(this.container) this.container.draw(this.ctx);
 		    if(this.dest) this.dest.draw(this.ctx);
 		}
@@ -801,7 +807,7 @@ mse.Root = function(id, width, height, orientation) {
 	this.interval = 40;
 	this.ctx = this.jqObj.get(0).getContext("2d");
 	
-	if(MseConfig.mobile) {
+	if(MseConfig.iOS) {
 	    this.setCenteredViewport();
 	    $(window).bind('orientationchange', 
 	    	function(e){
@@ -855,7 +861,7 @@ mse.BaseContainer = function(root, param, orientation) {
 	this.count = 0;
 	this.firstShow = false;
 	
-	if(MseConfig.mobile) {
+	if(MseConfig.iPhone) {
 		// Initialization for orientation
 		this.orientation = MseConfig.orientation;
 		this.normal = true;
@@ -871,7 +877,7 @@ extend(mse.BaseContainer, mse.UIObject);
 $.extend(mse.BaseContainer.prototype, {
     // Orientation management
     setOrientation: function(orien) {
-    	if(!MseConfig.mobile || (orien != 'landscape' && orien != 'portrait')) return;
+    	if(!MseConfig.iPhone || (orien != 'landscape' && orien != 'portrait')) return;
     	
     	this.orientation = orien;
     },
@@ -941,7 +947,7 @@ $.extend(mse.BaseContainer.prototype, {
     			this._layers[i].evtDeleg.eventNotif('show');
     	}
     	
-    	if(MseConfig.mobile) {
+    	if(MseConfig.iPhone) {
     		if(this.normal && MseConfig.orientation!=this.orientation)
     			this.orientChange(MseConfig.orientation);
     		else if(!this.normal && MseConfig.orientation==this.orientation)
@@ -1157,7 +1163,7 @@ mse.Text = function(parent, param, text, styled) {
 	
 	this.inObj = function(x, y) {
 		if(this.link) {
-			if(x >= this.getCanvasX()+this.linkOffs && x <= this.getCanvasX()+this.endOffs+20 && y >= this.getCanvasY() && y <= this.getCanvasY()+20) return true;
+			if(x >= this.getX()+this.linkOffs && x <= this.getX()+this.endOffs+20 && y >= this.getY() && y <= this.getY()+20) return true;
 			else return false;
 		}
 		else return this.constructor.prototype.inObj.call(this, x, y);
@@ -1222,79 +1228,67 @@ mse.ArticleLayer = function(container, z, param, article) {
 		this.endId = 0;
 		this.setSlider();
 		
-		this.ctrUI = new mse.UIObject(null, {pos:[this.getX()+50,mse.root.height-45], size:[this.width-100,50]});
-		this.ctrUI.accelere = new mse.Image(null, {size:[30,30]}, 'accelerBn');
-		this.ctrUI.ralenti = new mse.Image(null, {size:[30,30]}, 'ralentiBn');
-		this.ctrUI.up = new mse.Image(null, {size:[30,30]}, 'upBn');
-		this.ctrUI.down = new mse.Image(null, {size:[30,30]}, 'downBn');
-		this.ctrUI.play = new mse.Image(null, {size:[30,30]}, 'playBn');
-		this.ctrUI.pause = new mse.Image(null, {size:[30,30]}, 'pauseBn');
+		this.ctrUI = new mse.Layer(null, this.zid+1, {pos:[this.getX()+(this.width-250)/2,mse.root.height-50], size:[250,50]});
+		this.ctrUI.accelere = new mse.Image(this.ctrUI, {pos:[220,10],size:[30,30]}, 'accelerBn');
+		this.ctrUI.ralenti = new mse.Image(this.ctrUI, {pos:[0,10],size:[30,30]}, 'ralentiBn');
+		this.ctrUI.up = new mse.Image(this.ctrUI, {pos:[170,10],size:[30,30]}, 'upBn');
+		this.ctrUI.down = new mse.Image(this.ctrUI, {pos:[50,10],size:[30,30]}, 'downBn');
+		this.ctrUI.play = new mse.Image(this.ctrUI, {pos:[110,10],size:[30,30]}, 'playBn');
+		this.ctrUI.pause = new mse.Image(this.ctrUI, {pos:[110,10],size:[30,30]}, 'pauseBn');
 		this.ctrUI.tip = new mse.Text(null, {textBaseline:'middle',textAlign:'center',font:'italic 20px '+cfs.font,fillStyle:'#FFF'}, '', true);
 		this.ctrUI.layer = this;
 		this.ctrUI.draw = function(ctx) {
-			ctx.save();
-			ctx.translate(this.offx, this.offy);
-			this.accelere.draw(ctx, this.width-30, 0);
-			this.up.draw(ctx, this.width-70, 0);
-			if(this.layer.pause) this.play.draw(ctx, this.width/2-15, 0);
-			else this.pause.draw(ctx, this.width/2-15, 0);
-			this.ralenti.draw(ctx, 0, 0);
-			this.down.draw(ctx, 40, 0);
-			ctx.restore();
+		    this.accelere.draw(ctx);
+		    this.ralenti.draw(ctx);
+		    this.up.draw(ctx);
+		    this.down.draw(ctx);
+		    if(this.layer.pause) this.play.draw(ctx);
+		    else this.pause.draw(ctx);
 			this.tip.draw(ctx);
 		};
 		
-		this.ctrEffect = function(e) {
-		    var vx = 0, vy = 0;
-		    if(mse.root.viewport) {vx = mse.root.viewport.x;vy = mse.root.viewport.y;}
-			var ex = vx+e.offsetX - this.ctrUI.offx;
-			var ey = vy+e.offsetY - this.ctrUI.offy;
-			if(ey < 0 || ey > 50) return;
-			if(ex >= 0 && ex <= 30) {
+		this.ctrUI.ctrEffect = function(e) {
+			if(this.ralenti.inObj(e.offsetX, e.offsetY)) {
 				// Left button clicked, Reduce the speed
-				this.interval += 200;
-				this.interval = (this.interval > 2000) ? 2000 : this.interval;
-				this.ctrUI.tip.text = 'moins rapide';
+				this.layer.interval += 200;
+				this.layer.interval = (this.layer.interval > 2000) ? 2000 : this.layer.interval;
+				this.tip.text = 'moins rapide';
 			}
-			else if(ex >= this.width-130 && ex <= this.width-100) {
+			else if(this.accelere.inObj(e.offsetX, e.offsetY)) {
 				// Right button clicked, augmente the speed
-				this.interval -= 200;
-				this.interval = (this.interval < 300) ? 300 : this.interval;
-				this.ctrUI.tip.text = 'plus rapide';
+				this.layer.interval -= 200;
+				this.layer.interval = (this.layer.interval < 300) ? 300 : this.layer.interval;
+				this.tip.text = 'plus rapide';
 			}
-			else if(ex >= this.ctrUI.width/2-15 && ex <= this.ctrUI.width/2+15) {
-			    this.pause = !this.pause;
-			    if(this.pause) this.ctrUI.tip.text = 'pause';
-			    else this.ctrUI.tip.text = 'reprendre'; 
+			else if(this.play.inObj(e.offsetX, e.offsetY)) {
+			    this.layer.pause = !this.layer.pause;
+			    if(this.layer.pause) this.tip.text = 'pause';
+			    else this.tip.text = 'reprendre'; 
 			}
 			else return;
-			this.ctrUI.tip.globalAlpha = 1;
-			mse.slideout(this.ctrUI.tip, 10, [[e.offsetX+vx, e.offsetY+vy], [e.offsetX+vx, e.offsetY+vy-50]]);
+			this.tip.globalAlpha = 1;
+			mse.slideout(this.tip, 10, [[e.offsetX, e.offsetY], [e.offsetX, e.offsetY-50]]);
 		};
 		
-		this.upDownStart = function(e) {
-		    var vx = 0, vy = 0;
-		    if(mse.root.viewport) {vx = mse.root.viewport.x;vy = mse.root.viewport.y;}
-		    var ex = vx+e.offsetX - this.ctrUI.offx;
-		    var ey = vy+e.offsetY - this.ctrUI.offy;
-		    if(ex >= 40 && ex <= 70) {
+		this.ctrUI.upDownStart = function(e) {
+		    if(this.down.inObj(e.offsetX, e.offsetY)) {
 		        // Down button clicked, scroll up the layer
-		        this.scrollEvt.rolled = -10;
+		        this.layer.scrollEvt.rolled = -10;
 		    }
-		    else if(ex >= this.width-170 && ex <= this.width-140) {
+		    else if(this.up.inObj(e.offsetX, e.offsetY)) {
 		        // Up button clicked, scroll down the layer
-		        this.scrollEvt.rolled = 10;
+		        this.layer.scrollEvt.rolled = 10;
 		    }
 		};
-		this.upDownEnd = function(e) {
-		    this.scrollEvt.rolled = 0;
+		this.ctrUI.upDownEnd = function(e) {
+		    this.layer.scrollEvt.rolled = 0;
 		};
 		
-		var cb = new mse.Callback(this.ctrEffect, this);
+		var cb = new mse.Callback(this.ctrUI.ctrEffect, this.ctrUI);
 		this.getContainer().evtDeleg.addListener('click', cb, true, this.ctrUI);
 		// Listener to scroll the layer with up down buttons
-		this.getContainer().evtDeleg.addListener('gestureStart', new mse.Callback(this.upDownStart, this), true, this.ctrUI);
-		this.getContainer().evtDeleg.addListener('gestureEnd', new mse.Callback(this.upDownEnd, this));
+		this.getContainer().evtDeleg.addListener('gestureStart', new mse.Callback(this.ctrUI.upDownStart, this.ctrUI), true, this.ctrUI);
+		this.getContainer().evtDeleg.addListener('gestureEnd', new mse.Callback(this.ctrUI.upDownEnd, this.ctrUI));
 		
 		// Key event for control of speed
 		this.speedCtr = function(e) {
@@ -1819,7 +1813,7 @@ mse.GameShower = function() {
 	    if(this.state == "LOSE") this.losetext.logic();
 	    if(this.state != "START" && this.state != "LOAD") return false;
 	    // Mobile orientation fault
-	    else if(MseConfig.mobile && MseConfig.orientation != "landscape") return true;
+	    else if(MseConfig.iPhone && MseConfig.orientation != "landscape") return true;
 	    else this.currGame.logic(delta);
 	    return true;
 	};
@@ -1829,14 +1823,14 @@ mse.GameShower = function() {
 	    this.configCtx(ctx);
 	    
 	    // Border
-	    if(!MseConfig.mobile){
+	    if(!MseConfig.iPhone){
 	        ctx.strokeStyle = 'rgb(188,188,188)';
 	        ctx.lineWidth = 5;
 	        ctx.strokeRect(this.offx-2.5, this.offy-2.5, this.width, this.height);
 	        ctx.lineWidth = 1;
 	    }
 	    
-	    if(this.currGame.type == "INDEP" && MseConfig.mobile && MseConfig.orientation != "landscape") {
+	    if(this.currGame.type == "INDEP" && MseConfig.iPhone && MseConfig.orientation != "landscape") {
 	        // Draw orientation change notification page
 	        ctx.drawImage(mse.src.getSrc('imgNotif'), (ctx.canvas.width-50)/2, (ctx.canvas.height-80)/2, 50, 80);
 	        return;
@@ -1846,10 +1840,10 @@ mse.GameShower = function() {
 	            this.firstShow = true;
 	            if(this.currGame.type == "INDEP") {
 	                this.evtDeleg.eventNotif("firstShow");
-	            }
-	            if(MseConfig.mobile){
-	                this.currGame.setPos(0,0);
-	                this.currGame.setSize(MseConfig.pageWidth, MseConfig.pageHeight);
+	                if(MseConfig.iPhone){
+	                    this.currGame.setPos(0,0);
+	                    this.currGame.setSize(MseConfig.pageWidth, MseConfig.pageHeight);
+	                }
 	            }
 	        }
     	    this.currGame.draw(ctx);
@@ -1987,7 +1981,7 @@ mse.Slider = function(target, param, orientation, offset, parent) {
 	this.cbScroll = new mse.Callback(this.scroll, this);
 	this.cbGest = new mse.Callback(this.gestUpdate, this);
 	this.getContainer().evtDeleg.addListener('gestureUpdate', this.cbGest, false, this.tar);
-	if(!MseConfig.mobile)
+	if(!MseConfig.iOS)
 		this.getContainer().evtDeleg.addListener('mousewheel', this.cbScroll, false, this.tar);
 };
 extend(mse.Slider, mse.UIObject);
@@ -2123,184 +2117,6 @@ $.extend(mse.Button.prototype, {
     		ctx.fillText(this.txt, ox+this.width/2, oy+this.height/2);
     }
 });
-
-
-// Menu item
-mse.MenuItem = function(parent, param, txt, image, linkType, link) {
-	// Super constructor
-	mse.UIObject.call(this, parent, param);
-	
-	this.txt = txt;
-	this.img = image;
-	this.zid = 11;
-	// Guarentee the link works
-	this.linkType = ((linkType!=null && link!=null) ? linkType : 'None');
-	this.link = link;
-	
-	this.linkClicked = function(e) {
-		// A new container link, transition from current container to the link
-		switch(this.linkType) {
-		case 'None' : break;
-		case 'SubMenu' :
-			this.parent.subShow = this.link;
-			var items = this.parent.subMenu[this.link];
-			for(var i in items)
-				mse.fadein(items[i], 8);
-			break;
-		case 'Card' :
-			this.link.evtDeleg.addListener('click', new mse.Callback(mse.root.revealCard, mse.root, mse.root.container), true);
-			mse.root.poseCard(this.link);
-			break;
-		case 'Page' : default :
-			mse.changePage(this.link);
-			break;
-		}
-	};
-	
-	var cbLink = new mse.Callback(this.linkClicked, this);
-	switch(this.linkType) {
-	case 'None' : break;
-	case 'SubMenu' :
-		if(MseConfig.mobile) mse.root.evtDistributor.addListener('click', cbLink, true);
-		else mse.root.evtDistributor.addListener('enter', cbLink, true);
-		break;
-	case 'Page': case 'Card': default : 
-		 mse.root.evtDistributor.addListener('click', cbLink, true);
-		break;
-	}
-	
-	this.draw = function(ctx) {
-		this.configCtxFlex(ctx);
-		if(this.img) {
-			var img = mse.src.getSrc(this.img);
-			ctx.drawImage(img, this.getX(), this.getY(), this.width, this.height);
-		}
-		else ctx.fillRect(this.getX(), this.getY(), this.width, this.height);
-		
-		if(this.txt) ctx.fillText(this.txt, this.getX()+this.width/2, this.getY()+this.height/2);
-	};
-};
-mse.MenuItem.prototype = new mse.UIObject();
-mse.MenuItem.prototype.constructor = mse.MenuItem;
-
-
-// Menu
-var SLIDETIME = 500;
-mse.Menu = function(parent, param, iwidth, iheight) {
-	// Super constructor
-	mse.Layer.call(this, parent, 10, param);
-	
-	this.iwidth = iwidth;
-	this.iheight = iheight;
-	this.ioffx = (this.width - iwidth)/2;
-	this.espace = iheight/2 > 20 ? iheight/2 : 20;
-	this.fillStyle = 'rgb(145,152,159)';
-	this.maskAlpha = 0.45;
-	this.shadow = {shadowOffsetX:0, shadowOffsetY:0, shadowBlur:5, shadowColor:'rgb(67, 67, 67)'};
-	this.subMenu = new Array();
-	this.subShow = -1;
-	this.offx -= this.width;
-	this.state = 'PRESENT';
-	this.zonex = this.width;
-	
-	this.inObj = function(x, y) {
-		if(this.insideRec)
-			var ox = this.getCanvasX()-this.zonex+this.insideRec[0], oy = this.getCanvasY()+this.insideRec[1], w = this.insideRec[2], h = this.insideRec[3];
-		else var ox = this.getCanvasX()-this.zonex, oy = this.getCanvasY(), w = 2*this.getWidth(), h = 2*this.getHeight();
-		
-		if(x>ox && x<ox+w && y>oy && y<oy+h) return true;
-		else return false;
-	};
-	this.getX = function() {
-		var x = (this.parent ? this.parent.getX() : 0);
-		return x+this.offx+this.zonex;
-	};
-	
-	this.slideInOut = function(evt) {
-		switch(this.state) {
-		case 'HIDE': 
-			if(this.name) mse.root.container.desactiveOthers(this.name);
-			this.state = 'IN';break;
-		case 'PRESENT': 
-			if(this.name) mse.root.container.reactiveOthers();
-			this.state = 'OUT';break;
-		}
-	};
-	this.hide = function(){
-		this.state = 'HIDE';
-		this.zonex = 0;
-		this.globalAlpha = 0;
-	};
-	
-	this.addItem = function(txt, image, type, link) {
-		var l = this.objList.length;
-		if(type == "SubMenu") link = l;
-		if(l == 0) y = this.espace;
-		else var y = this.objList[l-1].offy + this.iheight + this.espace;
-		var item=new mse.MenuItem(this,{pos:[this.ioffx,y],size:[this.iwidth,this.iheight]},txt,image,type,link);
-		this.addObject(item);
-		return item;
-	};
-	this.addSubItem = function(subTo, txt, image, type, link) {
-		if(!this.objList[subTo]) return;
-		var y = this.objList[subTo].offy;
-		var item=new mse.MenuItem(this,{pos:[this.width+6,y],size:[180,this.iheight],globalAlpha:0,font:'Bold 16px '+cfs.font,textAlign:'center',fillStyle:'#FFF',textBaseline:'middle'},txt,image,type,link);
-		if(!this.subMenu[subTo]) this.subMenu[subTo] = new Array();
-		this.subMenu[subTo].push(item);
-		return item;
-	};
-	this.delItem = function(i) {
-		this.objList.splice(i, 1);
-	};
-	this.delSubItem = function(i, subTo) {
-		if(this.subMenu[subTo]) this.subMenu[subTo].splice(i, 1);
-	};
-	
-	this.logic = function(delta) {
-		switch(this.state) {
-		case 'HIDE': case 'PRESENT': break;
-		case 'OUT':
-			if(this.zonex > 0) {
-				this.globalAlpha -= delta/SLIDETIME;
-				if(this.globalAlpha < 0) this.globalAlpha = 0;
-				this.zonex -= delta/SLIDETIME * this.width;
-			}
-			else {this.state = 'HIDE';this.globalAlpha = 0;}
-			break;
-		case 'IN':
-			if(this.zonex < this.width) {
-				this.globalAlpha += delta/SLIDETIME;
-				if(this.globalAlpha > 1) this.globalAlpha = 1;
-				this.zonex += delta/SLIDETIME * this.width;
-			}
-			else {this.state = 'PRESENT';this.globalAlpha = 1;}
-			break;
-		}
-	};
-	this.draw = function(ctx) {
-		if(this.state != 'HIDE'){
-			// Background mask
-			var a = this.maskAlpha*this.getAlpha();
-			ctx.fillStyle = 'rgba(0,0,0,'+a+')';
-			ctx.fillRect(this.getX(), this.getY(), 256, this.height);
-			
-			// Menu items
-			this.configCtxFlex(ctx);
-			ctx.fillRect(this.getX(), this.getY(), this.width, this.height);
-			for(var i in this.objList) this.objList[i].draw(ctx);
-			
-			// Submenu items
-			if(this.subShow >= 0) {
-				for(var i in this.subMenu[this.subShow])
-					this.subMenu[this.subShow][i].draw(ctx);
-			}
-		}
-	};
-	
-	this.getContainer().evtDeleg.addListener('click', new mse.Callback(this.slideInOut, this), true);
-};
-mse.Menu.prototype = new mse.Layer();
-mse.Menu.prototype.constructor = mse.Menu;
 
 
 
