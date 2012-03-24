@@ -758,9 +758,7 @@ mse.Root = function(id, width, height, orientation) {
 	};
 	
 	this.draw = function() {
-	    if(MseConfig.iOS)
-	        this.ctx.clearRect(0, 0, MseConfig.pageWidth, MseConfig.pageHeight);
-		else this.ctx.clearRect(0, 0, this.width, this.height);
+	    this.ctx.clearRect(0, 0, this.width, this.height);
 		
         if(!(MseConfig.iPhone && this.gamewindow.currGame && this.gamewindow.currGame.type == "INDEP")){
 		    if(this.container) this.container.draw(this.ctx);
@@ -769,7 +767,7 @@ mse.Root = function(id, width, height, orientation) {
 		if(this.gamewindow.currGame) this.gamewindow.draw(this.ctx);
 		
 		for(var i in this.animes) this.animes[i].draw(this.ctx);
-				
+		
 		this.evtDistributor.rootEvt.eventNotif("drawover",this.ctx);
 	};
 	
@@ -837,10 +835,6 @@ mse.Root = function(id, width, height, orientation) {
 	// Game element
 	this.gamewindow = new mse.GameShower();
 	
-	// Stack of containers
-	//this.stack = new Array();
-	//this.setScale(1.5);
-	
 	// Launch Timeline
 	mse.currTimeline = new mse.Timeline(this, this.interval);
 };
@@ -886,11 +880,6 @@ $.extend(mse.BaseContainer.prototype, {
     	// Normal state
     	if(orien == this.orientation) this.normal = true;
     	else this.normal = false;
-    		
-    	mse.root.jqObj.attr({'width':MseConfig.pageWidth, 
-    						'height':MseConfig.pageHeight});
-    	mse.root.width = MseConfig.pageWidth;
-    	mse.root.height = MseConfig.pageHeight;
     },
     // Layer managerment
     addLayer: function(name, layer){
@@ -976,7 +965,7 @@ $.extend(mse.BaseContainer.prototype, {
     	}
     	else{
     		// Draw orientation change notification page
-    		ctx.drawImage(mse.src.getSrc('imgNotif'), (ctx.canvas.width-50)/2, (ctx.canvas.height-80)/2, 50, 80);
+    		ctx.drawImage(mse.src.getSrc('imgNotif'), (mse.root.width-50)/2, (mse.root.height-80)/2, 50, 80);
     	}
     },
     toString: function() {
@@ -1739,7 +1728,9 @@ $.extend(mse.Game.prototype, {
     },
     lose: function() {
         mse.root.gamewindow.lose();
-    }
+    },
+    init: function(){},
+    mobileLazyInit: function() {}
 });
 
 
@@ -1775,7 +1766,7 @@ mse.GameShower = function() {
 	    this.losetext.setPos(this.width/2, this.height/2);
 	    this.passBn.setPos(this.currGame.width-115, this.currGame.height-50);
 	    // Init game
-	    if(this.currGame.init) this.currGame.init();
+	    this.currGame.init();
 	    this.state = "START";
 	};
 	this.loadandstart = function(game) {
@@ -1818,9 +1809,9 @@ mse.GameShower = function() {
 	    return true;
 	};
 	this.draw = function(ctx) {
-	    if(this.globalAlpha == 0) return;
+	    if(this.globalAlpha < 0.1) return;
 	    
-	    this.configCtx(ctx);
+	    this.configCtxFlex(ctx);
 	    
 	    // Border
 	    if(!MseConfig.iPhone){
@@ -1832,8 +1823,7 @@ mse.GameShower = function() {
 	    
 	    if(this.currGame.type == "INDEP" && MseConfig.iPhone && MseConfig.orientation != "landscape") {
 	        // Draw orientation change notification page
-	        ctx.drawImage(mse.src.getSrc('imgNotif'), (ctx.canvas.width-50)/2, (ctx.canvas.height-80)/2, 50, 80);
-	        return;
+	        ctx.drawImage(mse.src.getSrc('imgNotif'), (mse.root.width-50)/2, (mse.root.height-80)/2, 50, 80);
 	    }
 	    else if(this.state == "START") {
 	        if(!this.firstShow){
@@ -1841,8 +1831,9 @@ mse.GameShower = function() {
 	            if(this.currGame.type == "INDEP") {
 	                this.evtDeleg.eventNotif("firstShow");
 	                if(MseConfig.iPhone){
-	                    this.currGame.setPos(0,0);
-	                    this.currGame.setSize(MseConfig.pageWidth, MseConfig.pageHeight);
+	                    this.currGame.setPos(mse.root.viewport.x,mse.root.viewport.y);
+	                    this.currGame.setSize(480, 270);
+	                    this.currGame.mobileLazyInit();
 	                }
 	            }
 	        }
@@ -1851,7 +1842,7 @@ mse.GameShower = function() {
     	else if(this.state == "LOSE") {
     	    //this.loseimg.draw(ctx);
     	    ctx.fillStyle = "#000";
-    	    ctx.fillRect(this.getX(),this.getY(),this.width-5,this.height-5);
+    	    ctx.fillRect(this.offx,this.offy,this.width-5,this.height-5);
     	    this.losetext.draw(ctx);
     	    this.passBn.draw(ctx);
     	}

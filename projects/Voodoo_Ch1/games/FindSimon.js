@@ -166,7 +166,7 @@ var FindSimon = function() {
     mse.Game.call(this);
     this.msg = {
         "INIT": "Clique pour aider Simon à échapper à la Meute.",//Utilise les flèches de direction pour diriger Simon dans le parc.
-        "WIN": "Bravo!!! Simon est sauvé."
+        "WIN": "Bravo!!! Tu as gagné."
     };
     this.state = "INIT";
     
@@ -249,6 +249,12 @@ var FindSimon = function() {
     	    mse.root.evtDistributor.addListener('gestureUpdate', this.touchMovecb, true, this);
     	    mse.root.evtDistributor.addListener('gestureEnd', this.moveovercb, true, this);
     	}
+    };
+    this.mobileLazyInit = function() {
+        // Position of parc
+        this.sp = new mse.Point2(225,725);
+        this.pos = new mse.Point2(this.width/2-this.sp.x,this.height/2-this.sp.y);
+        this.disx = this.disy = 0;
     };
     
     this.draw = function(ctx) {
