@@ -246,6 +246,7 @@ var FindSimon = function() {
     	mse.root.evtDistributor.addListener('keydown', this.movecb, true, this);
     	mse.root.evtDistributor.addListener('keyup', this.moveovercb, true, this);
     	if(MseConfig.iOS){
+    	    mse.root.evtDistributor.addListener('gestureStart', this.touchStartcb, true, this);
     	    mse.root.evtDistributor.addListener('gestureUpdate', this.touchMovecb, true, this);
     	    mse.root.evtDistributor.addListener('gestureEnd', this.moveovercb, true, this);
     	}
@@ -341,6 +342,7 @@ var FindSimon = function() {
 		    mse.root.evtDistributor.removeListener('keydown', this.movecb);
 		    mse.root.evtDistributor.removeListener('keyup', this.moveoverc);
 		    if(MseConfig.iOS){
+		        mse.root.evtDistributor.removeListener('gestureStart', this.touchStartcb);
 		        mse.root.evtDistributor.removeListener('gestureUpdate', this.touchMovecb);
 		        mse.root.evtDistributor.removeListener('gestureEnd', this.moveovercb);
 		    }
@@ -364,6 +366,7 @@ var FindSimon = function() {
 		        mse.root.evtDistributor.removeListener('keydown', this.movecb);
 		        mse.root.evtDistributor.removeListener('keyup', this.moveovercb);
 		        if(MseConfig.iOS){
+		            mse.root.evtDistributor.removeListener('gestureStart', this.touchStartcb);
 		            mse.root.evtDistributor.removeListener('gestureUpdate', this.touchMovecb);
 		            mse.root.evtDistributor.removeListener('gestureEnd', this.moveovercb);
 		        }
@@ -421,11 +424,16 @@ var FindSimon = function() {
 	        this.simonstand.stop();
 	    }
 	};
+	this.touchStart = function(e) {
+	    this.startPt = {x:e.offsetX,y:e.offsetY};
+	    this.disx = 0; this.disy = 0;
+	    this.onmove = false;
+	};
 	this.touchMove = function(e) {
 	    var valid = true;
-	    var start = {x:e.listX[0],y:e.listY[0]};
 	    var end = {x:e.offsetX,y:e.offsetY};
-	    var a = angleFor2Point(start, end);
+	    
+	    var a = angleFor2Point(this.startPt, end);
 	    if((a >= 0 && a <= 15) || (a <= 0 && a >= -15)){
 	        //Left
 	        this.disx = -4; this.disy = 0;
@@ -462,6 +470,7 @@ var FindSimon = function() {
 	// Init key listeners
 	this.movecb = new mse.Callback(this.move, this);
 	this.moveovercb = new mse.Callback(this.moveover, this);
+	this.touchStartcb = new mse.Callback(this.touchStart, this);
 	this.touchMovecb = new mse.Callback(this.touchMove, this);
 };
 extend(FindSimon, mse.Game);

@@ -182,6 +182,9 @@ class MseProject {
     function getRelatJSPath(){
         return './projects/'.$this->name.'/content.js';
     }
+    function getPackedJSPath(){
+        return './projects/'.$this->name.'/content.min.js';
+    }
     
     function getJSONProject(){
         $pjsave = array();

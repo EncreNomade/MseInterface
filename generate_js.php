@@ -5,6 +5,8 @@
  * Site: pandamicro.co.cc
  * Janvier 2012
  */
+ 
+include 'js_packer/class.JavaScriptPacker.php';
 
 class ProjectGenerator {
     private $pj;
@@ -47,29 +49,40 @@ class ProjectGenerator {
         $js = $this->generateJS();
         // System mse
         $content = file_get_contents("projects/mse.js");
-        //file_put_contents($path, file_get_contents("projects/mse.js"));
         // System mse effet
         $content .= file_get_contents("projects/effet_mini.js");
         // External js (game)
         foreach($this->scriptExt as $extjs) {
             if(file_exists($extjs))
                 $content .= file_get_contents($extjs);
-                //file_put_contents($path, file_get_contents($extjs), FILE_APPEND);
         }
         // Project content
         $content .= $js;
-        //file_put_contents($path, $js, FILE_APPEND);
-        
+        file_put_contents($path, $content);
+
+        $minpath = $this->pj->getPackedJSPath();
+        /*
         // Communicate with Google Closure Compiler
         $ch = curl_init('http://closure-compiler.appspot.com/compile');
          
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, 'output_info=compiled_code&output_format=text&compilation_level=SIMPLE_OPTIMIZATIONS&js_code=' . urlencode($content));
-        //$output = curl_exec($ch);
+        $packed = curl_exec($ch);
         curl_close($ch);
+        */
+        /*
+        // Communicate with JavascriptPacker
+        $t1 = microtime(true);
         
-        file_put_contents($path, $content);
+        $packer = new JavaScriptPacker($content, 'Normal', true, false);
+        $packed = $packer->pack();
+        
+        $t2 = microtime(true);
+        $time = sprintf('%.4f', ($t2 - $t1) );
+        $packed = '// Script packed in '.$minpath.', in '.$time.' s.'."\n".$packed;
+        
+        file_put_contents($minpath, $packed);*/
     }
     
     function encodedCoord($number){

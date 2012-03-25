@@ -186,7 +186,7 @@ function analyse(e) {
 	_src = (!_src) ? $(this) : _src;
 	if(!_listeners) return;
 	
-	var evt = e || window.event;
+	var evt = (e.originalEvent ? e.originalEvent : e) || window.event;
 	evt.preventDefault();
 	var event = new MseGestEvt(evt);
 	
@@ -468,7 +468,6 @@ function _addPoint(e) {
 
 
 function MseGestEvt( e, forAnalyse ) {
-    if(e.originalEvent) e = e.originalEvent;
 	this.target = e.target;
 	
 	// Event for analyser to analyse the gestures
@@ -575,9 +574,10 @@ __KEY_RIGHT	= 39;
 
 		this.update();
 		
-		$(window).bind('orientationchange', 
+		if(this.iOS) $(window).bind('orientationchange', 
 						function(e){
 							MseConfig.update();
+							if(mse.root) mse.root.setCenteredViewport();
 							setTimeout(function(){
 								window.scrollTo(0, 1);
 							}, 0);

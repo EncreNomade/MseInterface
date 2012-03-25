@@ -180,19 +180,19 @@ mse.init = function(configs) {
 	$.extend(cfs, configs);
 
     mse.src.init();
-	mse.src.addSource('imgNotif', '../images/turn_comp.png', 'img');
-	mse.src.addSource('fbBar', '../images/barre/fb.png', 'img');
-	mse.src.addSource('wikiBar', '../images/barre/wiki.png', 'img');
-	mse.src.addSource('wikiBn', '../images/button/wiki.png', 'img');
-	mse.src.addSource('bookBn', '../images/button/book.png', 'img');
-	mse.src.addSource('illuBn', '../images/button/illu.png', 'img');
-	mse.src.addSource('audBn', '../images/button/audIcon.png', 'img');
-	mse.src.addSource('accelerBn', '../images/button/accelere.png', 'img', true);
-	mse.src.addSource('upBn', '../images/button/monter.png', 'img', true);
-	mse.src.addSource('ralentiBn', '../images/button/ralenti.png', 'img', true);
-	mse.src.addSource('downBn', '../images/button/descend.png', 'img', true);
-	mse.src.addSource('playBn', '../images/button/play.png', 'img', true);
-	mse.src.addSource('pauseBn', '../images/button/pause.png', 'img', true);
+	mse.src.addSource('imgNotif', '../UI/turn_comp.png', 'img');
+	mse.src.addSource('fbBar', '../UI/barre/fb.png', 'img');
+	mse.src.addSource('wikiBar', '../UI/barre/wiki.png', 'img');
+	mse.src.addSource('wikiBn', '../UI/button/wiki.png', 'img');
+	mse.src.addSource('bookBn', '../UI/button/book.png', 'img');
+	mse.src.addSource('illuBn', '../UI/button/illu.png', 'img');
+	mse.src.addSource('audBn', '../UI/button/audIcon.png', 'img');
+	mse.src.addSource('accelerBn', '../UI/button/accelere.png', 'img', true);
+	mse.src.addSource('upBn', '../UI/button/monter.png', 'img', true);
+	mse.src.addSource('ralentiBn', '../UI/button/ralenti.png', 'img', true);
+	mse.src.addSource('downBn', '../UI/button/descend.png', 'img', true);
+	mse.src.addSource('playBn', '../UI/button/play.png', 'img', true);
+	mse.src.addSource('pauseBn', '../UI/button/pause.png', 'img', true);
 };
 
 
@@ -760,7 +760,7 @@ mse.Root = function(id, width, height, orientation) {
 	this.draw = function() {
 	    this.ctx.clearRect(0, 0, this.width, this.height);
 		
-        if(!(MseConfig.iPhone && this.gamewindow.currGame && this.gamewindow.currGame.type == "INDEP")){
+        if(!this.gamewindow.isFullScreen()){
 		    if(this.container) this.container.draw(this.ctx);
 		    if(this.dest) this.dest.draw(this.ctx);
 		}
@@ -805,13 +805,7 @@ mse.Root = function(id, width, height, orientation) {
 	this.interval = 40;
 	this.ctx = this.jqObj.get(0).getContext("2d");
 	
-	if(MseConfig.iOS) {
-	    this.setCenteredViewport();
-	    $(window).bind('orientationchange', 
-	    	function(e){
-	    		mse.root.setCenteredViewport();
-	    	});
-	}
+	if(MseConfig.iOS) this.setCenteredViewport();
 	
 	this.evtDistributor = new mse.EventDistributor(this, this.jqObj);
 	
@@ -1742,13 +1736,18 @@ mse.GameShower = function() {
 	this.currGame = null;
 	this.globalAlpha = 0;
 	this.state = "DESACTIVE";
-	mse.src.addSource('gameover', '../images/gameover.jpg', 'img', true);
+	mse.src.addSource('gameover', '../UI/gameover.jpg', 'img', true);
 	this.loseimg = new mse.Image(this, {pos:[0,0]}, 'gameover');
 	this.losetext = new mse.Text(this, {font:'Bold 36px '+mse.configs.font,fillStyle:'#FFF',textBaseline:'middle',textAlign:'center'},'GAME OVER...',true);
 	this.losetext.evtDeleg.addListener('show', new mse.Callback(this.losetext.startEffect, this.losetext, {"typewriter":{speed:2}}));
 	this.passBn = new mse.Button(this, {size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je ne joue plus', 'aideBar');
 	this.firstShow = false;
 	
+	this.isFullScreen = function() {
+	     if(MseConfig.iPhone && this.state == "START" && this.currGame && this.currGame.type == "INDEP")
+	         return true;
+	     else return false;
+	};
 	this.load = function(game) {
 	    if(!game || !(game instanceof mse.Game)) return;
 	    this.currGame = game;
