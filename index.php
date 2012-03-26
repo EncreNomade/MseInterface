@@ -72,7 +72,7 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
   </script>
 
 <script src="./javascript/support/jquery-latest.js"></script>
-<script src="./javascript/support/tools.js"></script>
+<script src="./javascript/tools.js"></script>
 <script src="./javascript/interface.js"></script>
 
 <link rel="stylesheet" type="text/css" href="./stylesheets/menu.css" />
