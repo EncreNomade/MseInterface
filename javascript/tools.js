@@ -538,6 +538,9 @@ SourceManager.prototype = {
         this.sources[newName] = this.sources[id];
         this.expos[newName].data('srcId', newName);
         this.delSource(id);
+		  var chaine = srcMgr.expos[newName].children("p").html().split(/: /);
+		  chaine = chaine[0]+ ": "+ this.expos[newName].data("srcId");
+		  this.expos[newName].children('p').replaceWith("<p>"+chaine+"</p>");
     },
 	renameDialog: function(src) {
 	    var id = src.data('srcId');
@@ -2545,7 +2548,12 @@ $.fn.circleMenu = function(buttonmap) {
         var count = 0;
         for(var i in buttonmap){
             var icon = $("<img src='"+buttonmap[i][0]+"'></img>");
-            if(buttonmap[i][1]) icon.click(function(){buttonmap[i][1].call(window, tar);});
+            if(buttonmap[i][1]){
+					icon.data("func", buttonmap[i][1]);
+					icon.click(function(){
+						$(this).data("func").call(window, tar);
+					});
+				}
             icon.css({'left':rx,'top':ry,'opacity':0});
             $('#circleMenu').append(icon);
             // Animation

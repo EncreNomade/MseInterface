@@ -70,7 +70,7 @@ else header("Location: index.php", true);
 	<li id="recticon"><img src="./images/tools/rule.png"></img></li>
 	<li id="wikiicon"><img src="./images/tools/wiki.png"></img></li>
 	<li id="animeicon"><img src="./images/tools/anime.png"></img></li>
-	<li id="scripticon"><img src="./images/UI/addscript.jpg"</img></li>
+	<li id="scripticon"><img src="./images/UI/addscript.jpg"></img></li>
 </ul>
 
 <div id="center_panel">
