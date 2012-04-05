@@ -269,8 +269,10 @@ var FindSimon = function() {
 		ctx.lineTo(0,this.height-5);
 		ctx.closePath();
 		ctx.clip();
+		var parc = mse.src.getSrc('parc');
+		var scale = parc.width/1920;
 		// Background
-		ctx.drawImage(mse.src.getSrc('parc'), this.sx, this.sy, this.sw, this.sh, this.dx, this.dy, this.dw, this.dh);
+		ctx.drawImage(parc, this.sx*scale, this.sy*scale, this.sw*scale, this.sh*scale, this.dx, this.dy, this.dw, this.dh);
 		// Simon
 		ctx.save();
 		ctx.translate(this.width/2, this.height/2);
@@ -331,7 +333,7 @@ var FindSimon = function() {
 		// Simon
 		this.pos.x += this.disx;
 		this.pos.y += this.disy;
-		// Ignore thé movement if collision
+		// Ignore the movement if collision
 		if(this.colliDetect()) {this.pos.x -= this.disx; this.pos.y -= this.disy;}
 		
 		this.sp.x = this.width/2 - this.pos.x;
@@ -349,7 +351,6 @@ var FindSimon = function() {
 		    this.state = "WIN";
 		    this.end();
 		}
-		
 		// NPCs
 		for(var i = 0; i < 4; i++) {
 		    var n = this.npc[i];
