@@ -1633,7 +1633,7 @@ var initWikiTool = function() {
             var img = $('<img name="'+id+'" src="'+data+'" style="top:20px;">');
             img.bind('dragover', DropZone.prototype.dragOverElemZone)
                 .bind('dragleave', DropZone.prototype.dragLeaveElemZone)
-                .bind('drop', dropImgToWikiCard);
+                .bind('drop', this.dropImgToWikiCard);
             img.mouseup(DropZone.prototype.dragLeaveElemZone);
             // Append to elem zone
             $(this).replaceWith(img);
