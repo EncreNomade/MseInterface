@@ -683,6 +683,8 @@ function addImageElem(id, data, page, step) {
 	container.append(img);
 	container.deletable();
 	
+	
+	
 	// Resize
 	var ratiox = cw/w;
 	var ratioy = ch/h;
@@ -691,9 +693,12 @@ function addImageElem(id, data, page, step) {
 	container.css({'position':'absolute', 'top':'0px', 'left':'0px'});
 	container.css({'width':w+'px', 'height':h+'px', 'border-style':'solid', 'border-color':'#4d4d4d', 'border-width':'0px'});
 	
+	defineZ(step, container);
+	
 	// Listener to manipulate
 	// Choose Resize Move
 	container.resizable().moveable().configurable({text:true,stroke:true}).hoverButton('./images/UI/addscript.jpg', addScriptForObj);
+	container.canGoDown();
 
 	step.append(container);
 }
@@ -840,6 +845,14 @@ function modifyZ() {
 	});
 }
 
+function defineZ(step, obj) {
+	var maxZ = 0;
+	for(var i=0; i<step.children().length; i++) {
+		if (parseInt($(step.children()[i]).css('z-index')) > maxZ) 
+			maxZ =  parseInt($(step.children()[i]).css('z-index'));
+	}
+	obj.css('z-index', maxZ+1);
+}
 
 
 

@@ -1301,12 +1301,17 @@ var initTextTool = function() {
             		'font-size':area.css('font-size'), 'font-family':area.css('font-family'), 'font-weight':area.css('font-weight'),
             		'line-height':fontsize*1.1+'px', 'text-align':area.css('text-align'), 'color':area.css('color')
             	});
+					
+					defineZ(curr.step, res);
+					
             	var fontsize = area.css('font-size');
             	for(var i = 0; i < arr.length; i++) {
             		res.append('<p style="margin:0px;padding:0px;">'+arr[i]+'</p>');
             	}
+					
             	// Append all in current step
             	res.selectable(null).moveable().resizable().deletable().configurable().hoverButton('./images/UI/addscript.jpg', addScriptForObj).appendTo(tar);
+					res.canGoDown();
             });
         },
         createTextArea: function(e) {
@@ -1382,8 +1387,9 @@ var initShapeTool = function() {
             	$(this).attr('id', 'obj'+(curr.objId++));
             	$(this).hoverButton('./images/UI/addscript.jpg', addScriptForObj);
             });
+				defineZ(tar, elems);
             elems.appendTo(tar);
-            
+
             $('body').unbind('mouseup', cbfinish);
             $('body').unbind('mousemove', cbdraw);
         },
@@ -1415,7 +1421,7 @@ var initShapeTool = function() {
             	});
             	this.editor.append(this.editing);
             	// Manip
-            	this.editing.resizable().moveable().deletable().configurable();
+            	this.editing.resizable().moveable().deletable().configurable().canGoDown();
             	break;
             case 2: // Elipse
             	break;
@@ -2263,6 +2269,25 @@ var staticIcon = function(elem, func, img, data) {
 function delParent(e) {e.preventDefault();e.stopPropagation();$(this).parent().parent().remove();}
 function hideParent(e) {e.preventDefault();e.stopPropagation();$(this).parent().parent().hide();}
 function configParent(e) {e.preventDefault();e.stopPropagation();showParameter($(this).parent().parent(), e.data.list);}
+function goDown(e) {
+	var siblings = $(this).parent().parent().siblings(); // Other objects in the scene
+	var currObj = $(this).parent().parent();
+	var zDiff;
+	var objInf = false;
+	for (var i = 0; i<siblings.length; i++) {
+		// If the diff is reduced and the siblings is under the current object
+		if ((Math.abs(parseInt($(siblings[i]).css('z-index')) - parseInt(currObj.css('z-index'))) < zDiff || isNaN(zDiff))
+				&& parseInt($(siblings[i]).css('z-index')) < parseInt(currObj.css('z-index'))) {
+			zDiff = Math.abs(parseInt($(siblings[i]).css('z-index')) - parseInt(currObj.css('z-index')));
+			objInf = $(siblings[i]);
+		}
+	}
+	if (objInf) {
+		var temp = objInf.css('z-index');
+		objInf.css('z-index', currObj.css('z-index'));
+		currObj.css('z-index', temp);
+	}
+}
 
 $.fn.deletable = function(f, static) {
 	var del = this.children('.del_container').children().filter('img[src="./images/UI/del.png"]');
@@ -2309,7 +2334,15 @@ $.fn.staticButton = function(icon, f) {
 	staticIcon(this, f, icon);
 	return this;
 }
-
+$.fn.canGoDown = function(f, static) {
+	var down = this.children('.del_container').children().filter('img[src="./images/UI/down.png"]');
+	if(down.length > 0) down.remove();
+	if(f === false) return this;
+	var func = f || goDown;
+	if(static == true) staticIcon(this, func, './images/UI/down.png');
+	else hoverIcon(this, func, './images/UI/down.png');
+	return this;
+};
 
 // Move events
 function startMove(e) {
@@ -2388,7 +2421,7 @@ function chooseElemWithCtrlPts(e) {
 	var elem = $(this);
 	if(curr.choosed && curr.choosed != elem) {
 		if(tag.noborder)
-			curr.choosed.css({'z-index':'0','border-top-width':'0px','border-bottom-width':'0px','border-left-width':'0px','border-right-width':'0px'});
+			curr.choosed.css({'border-top-width':'0px','border-bottom-width':'0px','border-left-width':'0px','border-right-width':'0px'});
 		tag.noborder = false;
 		// Remove Control points
 		curr.choosed.children('.ctrl_pt').remove();
@@ -2397,7 +2430,7 @@ function chooseElemWithCtrlPts(e) {
 	
 	tag.noborder = (elem.css('border-top-width') == '0px');
 	if(tag.noborder)
-		elem.css({'z-index':'1','border-top-width':'1px','border-bottom-width':'1px','border-left-width':'1px','border-right-width':'1px'});
+		elem.css({'border-top-width':'1px','border-bottom-width':'1px','border-left-width':'1px','border-right-width':'1px'});
 	// Add Control points
 	var pts = [];
 	var r = 3, width = elem.width(), height = elem.height();
