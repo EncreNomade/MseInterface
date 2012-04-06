@@ -222,7 +222,7 @@ class MseProject {
             }
         }
         else {
-            echo "alert('Fail to add the project record to database');";
+            echo "Fail to add the project record to database";
             return FALSE;
         }
         return $this->lastModif;
