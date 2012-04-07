@@ -1701,12 +1701,64 @@ var initAnimeTool = function() {
     	// Choose Resize Move
     	container.resizable().moveable().configurable();
     	// Recut the image
-    	container.hoverButton('./images/UI/recut.png', tool.recutAnimeObj);
+    	container.hoverButton('./images/UI/recut.png', tool.recutAnimeObj)
+    	         .hoverButton('./images/UI/spritecut.png', spriteCut);
     
     	$('#editor').children().each(function(){
     	    if($(this).css('z-index') == '2')
     	        $(this).append(container);
     	});
+    }
+    
+    function showSpriteFr(img, fr) {
+        var frw = img.data('frw');
+        var frh = img.data('frh');
+        var col = img.data('col');
+        var row = img.data('row');
+        var offy = frh * fr%col;
+        var offx = frw * Math.floor(fr/col);
+        img.parent().css('overflow', 'hidden');
+        
+        img.css({'position':'relative', 'left':-100*offx/frw+'%', 'top':-100*offy/frh+'%', 'width':100*col+'%', 'height':100*row+'%'});
+    }
+    function spriteCut(e) {
+        // Image obj target
+        var tar = $(this).parent().siblings('img');
+        // Already initialized
+        if(tar.data('frw')) {
+        }
+        // Not until setted
+        else {
+            dialog.showPopup('Configuration de sprite', 300, 180, 'Confirmer');
+            dialog.main.append('<p><label>Rang: </label><input id="sprite_row" type="number" size="10" min="2"></p>');
+            dialog.main.append('<p><label>Colonne: </label><input id="sprite_col" type="number" size="10" min="2"></p>');
+            
+            dialog.confirm.click(function(){
+                var row = parseInt($('#sprite_row').val());
+                var col = parseInt($('#sprite_col').val());
+                var w = tar.prop('naturalWidth');
+                var h = tar.prop('naturalHeight');
+                var invalid = false;
+                // Row invalid
+                if(isNaN(row) || h/row < 8 || row < 2) {
+                    $('#sprite_row').addClass('alert_msg');
+                    invalid = true;
+                }
+                else $('#sprite_row').removeClass('alert_msg');
+                // Col invalid
+                if(isNaN(col) || w/col < 8 || col < 2) {
+                    $('#sprite_col').addClass('alert_msg');
+                    invalid = true;
+                }
+                else $('#sprite_col').removeClass('alert_msg');
+                if(invalid) return;
+                
+                tar.data('frw', w/col).data('frh', h/row).data('col', col).data('row', row);
+                tar.parent().hoverButton('./images/UI/recut.png', false);
+                showSpriteFr(tar, 0);
+                dialog.close();
+            });
+        }
     }
     
     function redrawAnimeObj(canvas) {
@@ -2317,20 +2369,20 @@ $.fn.configurable = function(disables, f) {
 	return this;
 };
 $.fn.hoverButton = function(icon, f) {
+    if(f === false) {
+    	this.find('img[src="'+icon+'"]').remove();
+    	return this;
+    }
 	if(!$.isFunction(f)) return this;
-	if(f === false) {
-		this.find('img[src="'+icon+'"]').remove();
-		return this;
-	}
 	hoverIcon(this, f, icon);
 	return this;
 }
 $.fn.staticButton = function(icon, f) {
+    if(f === false) {
+    	this.find('img[src="'+icon+'"]').remove();
+    	return this;
+    }
 	if(!$.isFunction(f)) return this;
-	if(f === false) {
-		this.find('img[src="'+icon+'"]').remove();
-		return this;
-	}
 	staticIcon(this, f, icon);
 	return this;
 }
