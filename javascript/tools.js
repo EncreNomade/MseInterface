@@ -1711,21 +1711,74 @@ var initAnimeTool = function() {
     }
     
     function showSpriteFr(img, fr) {
+        var container = img.parent();
         var frw = img.data('frw');
         var frh = img.data('frh');
         var col = img.data('col');
         var row = img.data('row');
-        var offy = frh * fr%col;
-        var offx = frw * Math.floor(fr/col);
-        img.parent().css('overflow', 'hidden');
+        var offx = frw * (fr%col);
+        var offy = frh * Math.floor(fr/col);
+        if(col > row) {
+            container.css({'overflow': 'hidden','width': container.width()/(col/row)});
+        }
+        else if(col < row) {
+            container.css({'overflow': 'hidden','height': container.height()/(row/col)});
+        }
+        else container.css('overflow', 'hidden');
         
-        img.css({'position':'relative', 'left':-100*offx/frw+'%', 'top':-100*offy/frh+'%', 'width':100*col+'%', 'height':100*row+'%'});
+        img.css({'position':'relative', 'left':-100*offx/frw+'%', 'top':-100*offy/frh+'%', 'width':100*col+'%', 'height':100*row+'%'}).data('fr', fr);
+    }
+    function chooseFrame(e){
+        var tar = $(this).children('img');
+        var frw = tar.data('frw');
+        var frh = tar.data('frh');
+        var rx = $(this).width() / tar.prop('naturalWidth');
+        var ry = $(this).height() / tar.prop('naturalHeight');
+        frw = frw * rx; frh = frh * ry;
+        var ox = Math.floor(e.offsetX / frw)*frw;
+        var oy = Math.floor(e.offsetY / frh)*frh;
+        var maskctx = $(this).children('canvas').get(0).getContext('2d');
+        maskctx.clearRect(0,0,maskctx.canvas.width,maskctx.canvas.height);
+        maskctx.fillStyle = "#FFBA84";
+        maskctx.globalAlpha = 0.6;
+        maskctx.fillRect(ox, oy, frw, frh);
     }
     function spriteCut(e) {
+        e.stopPropagation();
         // Image obj target
-        var tar = $(this).parent().siblings('img');
+        var container = $(this).parent().parent();
+        var tar = container.children('img');
         // Already initialized
         if(tar.data('frw')) {
+            // Resize 
+            var row = tar.data('row');
+            var col = tar.data('col');
+            if(col > row) {
+                container.width(container.width()*col/row);
+            }
+            else if(row > col) {
+                container.height(container.height()*row/col);
+            }
+            // Canvas mask for choosing frames
+            var mask = $('<canvas class="frame_mask"></canvas>');
+            mask.prop({'width':container.width(),'height':container.height()});
+            
+            container.click(function(e){
+                var frw = tar.data('frw');
+                var frh = tar.data('frh');
+                var rx = $(this).width() / tar.prop('naturalWidth');
+                var ry = $(this).height() / tar.prop('naturalHeight');
+                frw = frw * rx; frh = frh * ry;
+                var frcol = Math.floor(e.offsetX / frw);
+                var frrow = Math.floor(e.offsetY / frh);
+                var img = $(this).children('img');
+                showSpriteFr(img, frrow * img.data('col') + frcol);
+                $(this).enableBtns().unbind('mousemove', chooseFrame).unbind('click');
+                $(this).children('canvas').remove();
+            });
+            container.disableBtns().append(mask);
+            tar.css({'left':'0px', 'top':'0px', 'width':'100%', 'height':'100%'});
+            container.mousemove(chooseFrame);
         }
         // Not until setted
         else {
@@ -1740,13 +1793,13 @@ var initAnimeTool = function() {
                 var h = tar.prop('naturalHeight');
                 var invalid = false;
                 // Row invalid
-                if(isNaN(row) || h/row < 8 || row < 2) {
+                if(isNaN(row) || h/row < 8 || row < 1) {
                     $('#sprite_row').addClass('alert_msg');
                     invalid = true;
                 }
                 else $('#sprite_row').removeClass('alert_msg');
                 // Col invalid
-                if(isNaN(col) || w/col < 8 || col < 2) {
+                if(isNaN(col) || w/col < 8 || col < 1) {
                     $('#sprite_col').addClass('alert_msg');
                     invalid = true;
                 }
@@ -1754,7 +1807,7 @@ var initAnimeTool = function() {
                 if(invalid) return;
                 
                 tar.data('frw', w/col).data('frh', h/row).data('col', col).data('row', row);
-                tar.parent().hoverButton('./images/UI/recut.png', false);
+                container.hoverButton('./images/UI/recut.png', false);
                 showSpriteFr(tar, 0);
                 dialog.close();
             });
@@ -2341,6 +2394,19 @@ function goDown(e) {
 	}
 }
 
+$.fn.disableBtns = function() {
+    var del = this.children('.del_container');
+    if(del.length > 0) {
+        this.data('del', del);
+        del.detach();
+    }
+    return this;
+}
+$.fn.enableBtns = function(){
+    if(this.children('.del_container').length > 0) return;
+    if(this.data('del')) this.data('del').appendTo(this);
+    return this;
+}
 $.fn.deletable = function(f, static) {
 	var del = this.children('.del_container').children().filter('img[src="./images/UI/del.png"]');
 	if(del.length > 0) del.remove();
