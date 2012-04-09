@@ -16,7 +16,12 @@ var mse = function() {};
 
 mse.configs = {
 	font 	: 'Verdana',
-	srcPath	: ''
+	srcPath	: '',
+	getSrcPath : function(path) {
+	    // Path complete
+	    if(path[0] == '.') return path;
+	    else return mse.configs.srcPath + path;
+	}
 };
 // Shortcut
 var cfs = mse.configs;
@@ -60,7 +65,7 @@ mse.src = function() {
 	    	switch(type) {
 	    	case 'img' : case 'image':
 	    		this.list[name] = new Image();
-	    		this.list[name].src = cfs.srcPath + file;
+	    		this.list[name].src = cfs.getSrcPath(file);
 	    		this.list[name].lid = 0; // Loading current index
 	    		break;
 	    	case 'aud' : case 'audio':
@@ -68,12 +73,12 @@ mse.src = function() {
 	    		if(file.search(this.audExtCheck) == -1) {
 	    		    switch(MseConfig.browser) {
 	    		    case 'Chrome': case 'Firefox': case 'Opera':
-	    			    this.list[name].src = cfs.srcPath+file+'.ogg';break;
+	    			    this.list[name].src = cfs.getSrcPath(file)+'.ogg';break;
 	    		    case 'Safari': case 'Explorer':
-	    			    this.list[name].src = cfs.srcPath+file+'.mp3';break;
+	    			    this.list[name].src = cfs.getSrcPath(file)+'.mp3';break;
 	    		    }
 	    		}
-	    		else this.list[name].src = cfs.srcPath+file;
+	    		else this.list[name].src = cfs.getSrcPath(file);
 	    		this.list[name].load();
 	    		break;
 	    	default: return;
@@ -180,19 +185,20 @@ mse.init = function(configs) {
 	$.extend(cfs, configs);
 
     mse.src.init();
-	mse.src.addSource('imgNotif', '../UI/turn_comp.png', 'img');
-	mse.src.addSource('fbBar', '../UI/barre/fb.png', 'img');
-	mse.src.addSource('wikiBar', '../UI/barre/wiki.png', 'img');
-	mse.src.addSource('wikiBn', '../UI/button/wiki.png', 'img');
-	mse.src.addSource('bookBn', '../UI/button/book.png', 'img');
-	mse.src.addSource('illuBn', '../UI/button/illu.png', 'img');
-	mse.src.addSource('audBn', '../UI/button/audIcon.png', 'img');
-	mse.src.addSource('accelerBn', '../UI/button/accelere.png', 'img', true);
-	mse.src.addSource('upBn', '../UI/button/monter.png', 'img', true);
-	mse.src.addSource('ralentiBn', '../UI/button/ralenti.png', 'img', true);
-	mse.src.addSource('downBn', '../UI/button/descend.png', 'img', true);
-	mse.src.addSource('playBn', '../UI/button/play.png', 'img', true);
-	mse.src.addSource('pauseBn', '../UI/button/pause.png', 'img', true);
+	mse.src.addSource('imgNotif', './UI/turn_comp.png', 'img');
+	mse.src.addSource('fbBar', './UI/barre/fb.png', 'img');
+	mse.src.addSource('wikiBar', './UI/barre/wiki.png', 'img');
+	mse.src.addSource('aideBar', './UI/barre/aide.png', 'img');
+	mse.src.addSource('wikiBn', './UI/button/wiki.png', 'img');
+	mse.src.addSource('bookBn', './UI/button/book.png', 'img');
+	mse.src.addSource('illuBn', './UI/button/illu.png', 'img');
+	mse.src.addSource('audBn', './UI/button/audIcon.png', 'img');
+	mse.src.addSource('accelerBn', './UI/button/accelere.png', 'img', true);
+	mse.src.addSource('upBn', './UI/button/monter.png', 'img', true);
+	mse.src.addSource('ralentiBn', './UI/button/ralenti.png', 'img', true);
+	mse.src.addSource('downBn', './UI/button/descend.png', 'img', true);
+	mse.src.addSource('playBn', './UI/button/play.png', 'img', true);
+	mse.src.addSource('pauseBn', './UI/button/pause.png', 'img', true);
 };
 
 
@@ -1736,7 +1742,7 @@ mse.GameShower = function() {
 	this.currGame = null;
 	this.globalAlpha = 0;
 	this.state = "DESACTIVE";
-	mse.src.addSource('gameover', '../UI/gameover.jpg', 'img', true);
+	mse.src.addSource('gameover', './UI/gameover.jpg', 'img', true);
 	this.loseimg = new mse.Image(this, {pos:[0,0]}, 'gameover');
 	this.losetext = new mse.Text(this, {font:'Bold 36px '+mse.configs.font,fillStyle:'#FFF',textBaseline:'middle',textAlign:'center'},'GAME OVER...',true);
 	this.losetext.evtDeleg.addListener('show', new mse.Callback(this.losetext.startEffect, this.losetext, {"typewriter":{speed:2}}));

@@ -107,6 +107,7 @@ class ProjectGenerator {
         $this->jstr .= "initMseConfig();";
         $this->jstr .= "mse.init();";
         $this->jstr .= "function createbook(){";
+        $this->jstr .= "mse.configs.srcPath='./".$this->pj->getName()."/';";
         // Initiale root
         $this->jstr .= "var root = new mse.Root('".$this->pj->getName()."',".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight).",'".$this->pj->getOrientation()."');";
         $this->autoid = 0;
@@ -128,13 +129,13 @@ class ProjectGenerator {
                     $t = "img";
                     $preload = "true";
                     // Change path with relative in folder of project
-                    $src = preg_replace("/\S+(\/images\/)/", '.$1', $src, 1);
+                    $src = preg_replace("/[\.\/\S]+(images\/)/", '$1', $src, 1);
                 }
                 else {
                     $t = "aud";
                     $preload = "false";
                     // Change path with relative in folder of project
-                    $src = preg_replace("/\S+(\/audios\/)/", '.$1', $src, 1);
+                    $src = preg_replace("/[\.\/\S]+(audios\/)/", '$1', $src, 1);
                 }
                 $this->jstr .= "mse.src.addSource('$name','$src','$t',$preload);";
                 break;

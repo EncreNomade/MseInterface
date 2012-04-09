@@ -12,7 +12,7 @@ include 'dbconn.php';
 
 session_start();
 if( !isset($_SESSION['uid']) )
-    header("Location: index.php");
+    header("Location: index.php", true);
 else if( $_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists("pjName", $_GET) ) {
     // Pj existance in session check
     $pjName = $_GET["pjName"];
@@ -192,7 +192,7 @@ else header("Location: index.php", true);
     }
 	
 	$('#showProjet').click(function(){
-	    window.open('./projects/'+pjName+'/index.php', '_newtab');
+	    window.open('./projects/index.php?pj='+pjName, '_newtab');
 	});
 	$('#newProjet').click(function(){
 	    window.open('./index.php', '_newtab');
