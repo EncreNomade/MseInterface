@@ -505,6 +505,15 @@ body{
     padding:0px;
     float:left;
 }
+.frame_mask {
+    position: absolute;
+    border: none;
+    margin: 0px;
+    padding: 0px;
+    left: 0px;
+    top: 0px;
+    z-index: 2;
+}
 
 #right {
 	position:fixed;

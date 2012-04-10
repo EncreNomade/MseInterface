@@ -170,9 +170,9 @@ var FindSimon = function() {
     };
     this.state = "INIT";
     
-    mse.src.addSource('parc', './games/Parc.jpg', 'img', true);
-    mse.src.addSource('perso_parc', './games/personnages.png', 'img', true);
-    mse.src.addSource('notice_parc', './games/points-persos.png', 'img', true);
+    mse.src.addSource('parc', 'games/Parc.jpg', 'img', true);
+    mse.src.addSource('perso_parc', 'games/personnages.png', 'img', true);
+    mse.src.addSource('notice_parc', 'games/points-persos.png', 'img', true);
     //var parc = new mse.Image(null, {pos:[0, 0]}, 'parc');
     var mechants = new Array();
     mechants[0] = new mse.Sprite(null, {}, 'perso_parc', 40,37, 0,37,280,37);

@@ -107,6 +107,7 @@ class ProjectGenerator {
         $this->jstr .= "initMseConfig();";
         $this->jstr .= "mse.init();";
         $this->jstr .= "function createbook(){";
+        $this->jstr .= "mse.configs.srcPath='./".$this->pj->getName()."/';";
         // Initiale root
         $this->jstr .= "var root = new mse.Root('".$this->pj->getName()."',".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight).",'".$this->pj->getOrientation()."');";
         $this->autoid = 0;
@@ -128,13 +129,13 @@ class ProjectGenerator {
                     $t = "img";
                     $preload = "true";
                     // Change path with relative in folder of project
-                    $src = preg_replace("/\S+(\/images\/)/", '.$1', $src, 1);
+                    $src = preg_replace("/[\.\/\S]+(images\/)/", '$1', $src, 1);
                 }
                 else {
                     $t = "aud";
                     $preload = "false";
                     // Change path with relative in folder of project
-                    $src = preg_replace("/\S+(\/audios\/)/", '.$1', $src, 1);
+                    $src = preg_replace("/[\.\/\S]+(audios\/)/", '$1', $src, 1);
                 }
                 $this->jstr .= "mse.src.addSource('$name','$src','$t',$preload);";
                 break;
@@ -218,10 +219,13 @@ class ProjectGenerator {
                     $opacity = $params->opacity;
                     $t = $animeObjs[$key]->type;
                     
-                    if($t == "spriteRecut" || $t == "sprite"){
+                    if($t == "spriteRecut"){
                         $w = $params->w; $h = $params->h;
                         $sx = $params->sx; $sy = $params->sy;
                         $sw = $params->sw; $sh = $params->sh;
+                    }
+                    else if($t == "sprite") {
+                        $spriteFr = $params->fr;
                     }
                     else if($t == "text") {
                         $fonts = $params->fonts;
@@ -234,7 +238,6 @@ class ProjectGenerator {
                     $dyvar = $this->encodedCoord($dy);
                     $dwvar = $this->encodedCoord($dw);
                     $dhvar = $this->encodedCoord($dh);
-                    //echo "Coord: $dx, $dy, $dw, $dh";
                     
                     // First initialization of objet, add to objlist array
                     if(!array_key_exists($key, $objlist)){
@@ -242,6 +245,13 @@ class ProjectGenerator {
                             switch($t) {
                             case "image":
                                 $this->jstr .= "temp.obj=new mse.Image(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar]},'$key');";
+                                break;
+                            case "sprite":
+                                $frw = $animeObjs[$key]->frw;
+                                $frh = $animeObjs[$key]->frh;
+                                $originWidth = $animeObjs[$key]->col * $frw;
+                                $originHeight = $animeObjs[$key]->row * $frh;
+                                $this->jstr .= "temp.obj=new mse.Sprite(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar]},'$key',$frw,$frh, 0,0,$originWidth,$originHeight);";
                                 break;
                             case "spriteRecut":
                                 $this->jstr .= "temp.obj=new mse.Sprite(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar]},'$key',[[$sx,$sy,$sw,$sh]]);";
@@ -262,6 +272,12 @@ class ProjectGenerator {
                             $this->jstr .= "animes.$name.addObj('$key',objs.$key);";
                         }
                         $objlist[$key] = array("params"=>array(),"animes"=>array());
+                        if($t == "sprite") {
+                            // spriteSeq
+                            $objlist[$key]["animes"]['spriteSeq'] = array();
+                            // Fill the table of animation of spriteSeq frame by frame
+                            array_push($objlist[$key]["animes"]['spriteSeq'], $spriteFr);
+                        }
                     }
                     else {
                         // Previous parameters
@@ -271,7 +287,7 @@ class ProjectGenerator {
                         // Analyse of animations
                         $animes = $objlist[$key]["animes"];
                         
-                        if($t == 'spriteRecut' || $t == 'sprite') {
+                        if($t == 'spriteRecut') {
                             $prevsx = $objlist[$key]["params"]['sx']; $prevsy = $objlist[$key]["params"]['sy'];
                             $prevsw = $objlist[$key]["params"]['sw']; $prevsh = $objlist[$key]["params"]['sh'];
                             
@@ -284,6 +300,9 @@ class ProjectGenerator {
                                     array_push($animes['spriteSeq'], $spriteFrCount);
                                 $spriteFrCount++;
                             }
+                        }
+                        else if($t == 'sprite') {
+                            array_push($animes['spriteSeq'], $spriteFr);
                         }
                         // Font
                         if($t == 'text') {

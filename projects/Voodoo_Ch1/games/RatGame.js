@@ -9,11 +9,11 @@ var RatGame = function() {
 	this.offx = mse.coor(oxid); this.offy = mse.coor(oyid);
 	this.width = mse.coor(wid); this.height = mse.coor(hid);
 	
-	mse.src.addSource('ratImg', './games/rat.png', 'img');
+	mse.src.addSource('ratImg', 'games/rat.png', 'img');
 	var ratSit = new mse.Sprite(this,{pos:[30,this.height-80]}, 'ratImg', 80,50, 0,0,400,100);
 	var ratHead = new mse.Sprite(this,{pos:[20,this.height-96]}, 'ratImg', 39,34, 400,0,39,34);
 	var ratHang = new mse.Sprite(this, {pos:[45,this.height-80]}, 'ratImg', 40,113, 0,101,400,113);
-	mse.src.addSource('sacImg', './games/sac.png', 'img');
+	mse.src.addSource('sacImg', 'games/sac.png', 'img');
 	var sac = new mse.Image(this, {pos:[this.width-160,20], insideRec:[60,40,60,60]}, 'sacImg');
 	var pochet = new mse.Sprite(this, {pos:[this.width-100,175]}, 'sacImg', 60,40, 60,155,60,40);
 	
