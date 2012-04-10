@@ -538,9 +538,12 @@ SourceManager.prototype = {
         this.sources[newName] = this.sources[id];
         this.expos[newName].data('srcId', newName);
         this.delSource(id);
-		  var chaine = srcMgr.expos[newName].children("p").html().split(/: /);
-		  chaine = chaine[0]+ ": "+ this.expos[newName].data("srcId");
-		  this.expos[newName].children('p').replaceWith("<p>"+chaine+"</p>");
+		  if(this.sources[newName].type == 'image') this.expos[newName].children('img').attr('name',newName);
+		  else {
+			  var chaine = srcMgr.expos[newName].children("p").html().split(/: /);
+			  chaine = chaine[0]+ ": "+ this.expos[newName].data("srcId");
+			  this.expos[newName].children('p').replaceWith("<p>"+chaine+"</p>");
+		  }
     },
 	renameDialog: function(src) {
 	    var id = src.data('srcId');
