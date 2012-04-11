@@ -236,7 +236,7 @@ function retrieveLocalInfo(pjsave) {
                 }
                 // Other obj
                 else {
-                    obj.selectable(null).deletable().configurable().resizable().moveable()
+                    obj.selectable(null).deletable().configurable().resizable().moveable().canGoDown()
                        .hoverButton('./images/tools/anime.png', animeTool.animateObj)
                        .hoverButton('./images/UI/addscript.jpg', addScriptForObj);
                     id = parseInt(obj.prop('id').substring(3));
