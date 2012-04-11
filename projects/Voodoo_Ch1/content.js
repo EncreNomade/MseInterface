@@ -16,6 +16,7 @@ var mse = function() {};
 
 mse.configs = {
 	font 	: 'Verdana',
+	defaultFont : '18px Arial',
 	srcPath	: '',
 	getSrcPath : function(path) {
 	    // Path complete
@@ -600,7 +601,7 @@ mse.UIObject.prototype = {
 		}
 		else var ox = this.getX(), oy = this.getY(), w = this.getWidth(), h = this.getHeight();
 		
-		if(x>ox && x<ox+w && y>oy && y<oy+h) return true;
+		if(x>ox-0.1*w && x<ox+1.1*w && y>oy-0.1*h && y<oy+1.1*h) return true;
 		else return false;
 	},
 	
@@ -1107,101 +1108,118 @@ mse.Text = function(parent, param, text, styled) {
 	this.linkInit = false;
 	this.zid = 12;
 	
+	/*
+	this.wrapped = false;
+	// Check if text real width is longer than object width, if true, wrap the text
+	var ctx = mse.root.ctx;
+	ctx.save();
+	if(this.styled) ctx.font = this.font;
+	else if(this.parent && this.parent.font) ctx.font = this.parent.font;
+	else ctx.font = mse.configs.defaultFont;
+	// Define lineHeight
+	if(param.lineHeight) this.lineHeight = param.lineHeight;
+	else this.lineHeight = checkFontSize(ctx.font)*1.2;
+	// Wrap text
+	if(ctx.measureText(this.text).width > this.width) {
+	    this.lines = wrapText(this.text, ctx, this.width);
+	    // Redefine height of text object
+	    this.height = this.lineHeight * this.lines.length;
+	    this.wrapped = true;
+	}
+	ctx.restore();*/
+	
 	//Integraion d'effets
 	this.currentEffect = null;
 	this.firstShow = false;
-	
-	this.addLink = function(linkObj){
-	    switch(linkObj.type) {
-	    case 'audio':
-	    	this.evtDeleg.addListener('firstShow', new mse.Callback(linkObj.link.play, linkObj.link));
-	    	this.getContainer().evtDeleg.addListener(
-	    			'click', 
-	    			new mse.Callback(linkObj.link.play, linkObj.link), 
-	    			true, 
-	    			this);
-	    	break;
-	    case 'wiki':
-	        //linkObj.link.getLayer('content').setQuitTarget(this.getContainer());
-	    	this.getContainer().evtDeleg.addListener(
-	    			'click', 
-	    			new mse.Callback(linkObj.link.init, linkObj.link, this.getContainer()), 
-	    			true, 
-	    			this);
-	    	break;
-	    case 'fb':
-	        this.getContainer().evtDeleg.addListener(
-	        		'click', 
-	        		new mse.Callback(window.open, window, linkObj.link, '_newtab'), 
-	        		true, 
-	        		this);
-	        break;
-	    }
-	    linkObj.offset = this.text.indexOf(linkObj.src);;
-	    linkObj.owner = this;
-	    this.link = linkObj;
-	};
-		
-	this.startEffect = function (dictEffectAndConfig) {
-		this.styled = true;
-		if(mse.initTextEffect) this.currentEffect = mse.initTextEffect(dictEffectAndConfig,this);
-	};
-	this.endEffect = function (){
-		this.currentEffect = null;
-	};
-	
-	this.inObj = function(x, y) {
-		if(this.link) {
-			if(x >= this.getX()+this.linkOffs && x <= this.getX()+this.endOffs+20 && y >= this.getY() && y <= this.getY()+20) return true;
-			else return false;
-		}
-		else return this.constructor.prototype.inObj.call(this, x, y);
-	};
-
-    this.logic = function(delta){
-    	if(this.currentEffect != null)this.currentEffect.logic(delta);
-    };
-	this.draw = function(ctx, x, y) {
-	    if(!this.firstShow) {
-	    	this.firstShow = true;
-	    	this.evtDeleg.eventNotif('firstShow');
-	    }
-	    
-		if(x!=null && y!=null) this.setPos(x, y);
-		var loc = [ this.getX(), this.getY() ];
-		
-		if(this.styled) {ctx.save();this.configCtxFlex(ctx);}
-		
-		if(this.currentEffect != null) this.currentEffect.draw(ctx);
-		else {
-		    // Link inside
-		    if(this.link && this.link.offset>=0) {
-		    	if(!this.linkInit) {
-		    		this.begin = this.text.substring(0,this.link.offset);
-		    		this.linkOffs = ctx.measureText(this.begin).width;
-		    		this.endOffs = this.linkOffs + ctx.measureText(this.link.src).width;
-		    		this.end = this.text.substr(this.link.offset+this.link.src.length);
-		    		if(this.link.type == 'audio')
-		    			this.evtDeleg.removeListener('show', this.link.link.play);
-		    		this.linkInit = true;
-		    	}
-		    	ctx.fillText(this.begin, loc[0], loc[1]);
-		    	ctx.save();
-		    	ctx.fillStyle = linkColor[this.link.type];
-		    	ctx.fillText(this.link.src, loc[0]+this.linkOffs, loc[1]);
-		    	ctx.restore();
-		    	ctx.fillText(this.end, loc[0]+this.endOffs, loc[1]);
-		    }
-		    else ctx.fillText(this.text, loc[0], loc[1]);
-		}
-		
-		if(this.styled) ctx.restore();
-	};
 };
 extend(mse.Text, mse.UIObject);
-mse.Text.prototype.toString = function() {
-	return "[object mse.Text]";
-};
+$.extend(mse.Text.prototype, {
+    toString: function() {
+	    return "[object mse.Text]";
+    },
+    addLink: function(linkObj){
+        switch(linkObj.type) {
+        case 'audio':
+        	this.evtDeleg.addListener('firstShow', new mse.Callback(linkObj.link.play, linkObj.link));
+        	this.getContainer().evtDeleg.addListener(
+        			'click', 
+        			new mse.Callback(linkObj.link.play, linkObj.link), 
+        			true, 
+        			this);
+        	break;
+        case 'wiki':
+        	this.getContainer().evtDeleg.addListener(
+        			'click', 
+        			new mse.Callback(linkObj.link.init, linkObj.link, this.getContainer()), 
+        			true, 
+        			this);
+        	break;
+        case 'fb':
+            this.getContainer().evtDeleg.addListener(
+            		'click', 
+            		new mse.Callback(window.open, window, linkObj.link), 
+            		true, 
+            		this);
+            break;
+        }
+        linkObj.offset = this.text.indexOf(linkObj.src);
+        linkObj.owner = this;
+        this.link = linkObj;
+    },
+    startEffect: function (dictEffectAndConfig) {
+    	this.styled = true;
+    	if(mse.initTextEffect) this.currentEffect = mse.initTextEffect(dictEffectAndConfig,this);
+    },
+    endEffect: function (){
+    	this.currentEffect = null;
+    },
+    inObj: function(x, y) {
+    	if(this.link) {
+    		if(x >= this.getX()+this.linkOffs-20 && x <= this.getX()+this.endOffs+20 && y >= this.getY()-12 && y <= this.getY()+this.height+12) return true;
+    		else return false;
+    	}
+    	else return this.constructor.prototype.inObj.call(this, x, y);
+    },
+    logic: function(delta){
+    	if(this.currentEffect != null)this.currentEffect.logic(delta);
+    },
+    draw: function(ctx, x, y) {
+        if(!this.firstShow) {
+        	this.firstShow = true;
+        	this.evtDeleg.eventNotif('firstShow');
+        }
+        
+    	if(x!=null && y!=null) this.setPos(x, y);
+    	var loc = [ this.getX(), this.getY() ];
+    	
+    	if(this.styled) {ctx.save();this.configCtxFlex(ctx);}
+    	
+    	if(this.currentEffect != null) this.currentEffect.draw(ctx);
+    	else {
+    	    ctx.fillText(this.text, loc[0], loc[1]);
+    	    // Link inside
+    	    if(this.link && this.link.offset>=0) {
+    	    	if(!this.linkInit) {
+    	    		this.begin = this.text.substring(0,this.link.offset);
+    	    		this.linkOffs = ctx.measureText(this.begin).width;
+    	    		this.endOffs = this.linkOffs + ctx.measureText(this.link.src).width;
+    	    		this.end = this.text.substr(this.link.offset+this.link.src.length);
+    	    		if(this.link.type == 'audio')
+    	    			this.evtDeleg.removeListener('show', this.link.link.play);
+    	    		this.linkInit = true;
+    	    	}
+    	    	//ctx.fillText(this.begin, loc[0], loc[1]);
+    	    	ctx.save();
+    	    	ctx.fillStyle = linkColor[this.link.type];
+    	    	ctx.fillText(this.link.src, loc[0]+this.linkOffs, loc[1]);
+    	    	ctx.restore();
+    	    	//ctx.fillText(this.end, loc[0]+this.endOffs, loc[1]);
+    	    }
+    	}
+    	
+    	if(this.styled) ctx.restore();
+    }
+});
 
 
 
@@ -1540,7 +1558,7 @@ mse.ArticleLayer = function(container, z, param, article) {
 			for(var j = 0; j < arr[i].length;) {
 				// Find the index of next line
 				var next = checkNextLine(ctx, arr[i].substr(j), maxM, this.width);
-				this.addObject( new mse.Text( this, {size:[this.width, this.lineHeight]}, arr[i].substr(j, next) ) );
+				this.addObject( new mse.Text( this, {size:[this.width, this.lineHeight], 'lineHeight':this.lineHeight}, arr[i].substr(j, next) ) );
 				j += next;
 			}
 			// Separator phrase
@@ -2090,7 +2108,7 @@ mse.Button = function(parent, param, txt, image, link, type) {
 extend(mse.Button, mse.UIObject);
 $.extend(mse.Button.prototype, {
     urlClicked: function() {
-        window.open(this.link, '_newtab');
+        window.open(this.link);
     },
     setLink: function(link, type) {
         if(link) this.link = link;

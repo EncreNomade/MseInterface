@@ -1236,7 +1236,7 @@ var EditableTool = function(jqToolsPanel, activeButton){
     if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools')) return;
     if(!activeButton || !activeButton.click) return;
     this.toolsPanel = jqToolsPanel;
-    this.toolsPanel.css('z-index', 7);
+    this.toolsPanel.css('z-index', 8);
     this.toolsPanel.data('editTool', this);
     this.activeBn = activeButton;
     this.activeBn.data('editTool', this);
