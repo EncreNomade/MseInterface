@@ -1103,12 +1103,11 @@ $.extend(mse.Layer.prototype, {
 mse.Text = function(parent, param, text, styled) {
 	// Super constructor
 	mse.UIObject.call(this, parent, param);
-	this.text = text;
 	this.styled = styled ? true : false;
-	this.linkInit = false;
+	this.links = [];
 	this.zid = 12;
-	/*
-	this.wrapped = false;
+	
+	this.text = text;
 	// Check if text real width is longer than object width, if true, wrap the text
 	var ctx = mse.root.ctx;
 	ctx.save();
@@ -1123,47 +1122,77 @@ mse.Text = function(parent, param, text, styled) {
 	    this.lines = wrapText(this.text, ctx, this.width);
 	    // Redefine height of text object
 	    this.height = this.lineHeight * this.lines.length;
-	    this.wrapped = true;
 	}
-	ctx.restore();*/
+	else this.lines = [this.text];
+	ctx.restore();
 	
 	//Integraion d'effets
 	this.currentEffect = null;
 	this.firstShow = false;
+	
+	this.visible = false;
 };
 extend(mse.Text, mse.UIObject);
 $.extend(mse.Text.prototype, {
     toString: function() {
 	    return "[object mse.Text]";
     },
-    addLink: function(linkObj){
-        switch(linkObj.type) {
-        case 'audio':
-        	this.evtDeleg.addListener('firstShow', new mse.Callback(linkObj.link.play, linkObj.link));
-        	this.getContainer().evtDeleg.addListener(
-        			'click', 
-        			new mse.Callback(linkObj.link.play, linkObj.link), 
-        			true, 
-        			this);
-        	break;
-        case 'wiki':
-        	this.getContainer().evtDeleg.addListener(
-        			'click', 
-        			new mse.Callback(linkObj.link.init, linkObj.link, this.getContainer()), 
-        			true, 
-        			this);
-        	break;
-        case 'fb':
-            this.getContainer().evtDeleg.addListener(
-            		'click', 
-            		new mse.Callback(window.open, window, linkObj.link), 
-            		true, 
-            		this);
-            break;
+    setText: function(text) {
+        this.text = text;
+        this.links.splice(0, this.links.length);
+        // Check if text real width is longer than object width, if true, wrap the text
+        var ctx = mse.root.ctx;
+        ctx.save();
+        if(this.styled) ctx.font = this.font;
+        else if(this.parent && this.parent.font) ctx.font = this.parent.font;
+        else ctx.font = mse.configs.defaultFont;
+        // Wrap text
+        if(ctx.measureText(this.text).width > this.width) {
+            this.lines = wrapText(this.text, ctx, this.width);
+            // Redefine height of text object
+            this.height = this.lineHeight * this.lines.length;
         }
-        linkObj.offset = this.text.indexOf(linkObj.src);
+        else this.lines = [this.text];
+        ctx.restore();
+    },
+    addLink: function(linkObj){
+        var linkInit = false;
+        var ctx = mse.root.ctx;
+        var prevfont = ctx.font;
+        ctx.font = mse.configs.defaultFont; 
+        if(this.styled) {
+            if(this.font) ctx.font = this.font;
+            else if(this.parent && this.parent.font) ctx.font = this.parent.font;
+        }   
+        // Init link relative position
+        for(var i in this.lines) {
+            var index = this.lines[i].indexOf(linkObj.src);
+            // Link found
+            if(index >= 0) {
+                var begin = this.lines[i].substring(0, index);
+                linkObj.offx = ctx.measureText(begin).width;
+                linkObj.offy = i * this.lineHeight;
+                linkObj.width = ctx.measureText(linkObj.src).width;
+                linkInit = true;
+            }
+        }
+        ctx.font = prevfont;
+        if(!linkInit) return;
+        
+        if(this.links.length == 0) {
+            this.getContainer().evtDeleg.addListener(
+            	'click', 
+            	new mse.Callback(this.clicked, this), 
+            	false, 
+        		this);
+        }
+        
+        // Audio auto play
+        if(linkObj.type == 'audio')
+        	this.evtDeleg.addListener('firstShow', new mse.Callback(linkObj.link.play, linkObj.link));
+        
         linkObj.owner = this;
-        this.link = linkObj;
+        this.links.push(linkObj); 
     },
     startEffect: function (dictEffectAndConfig) {
     	this.styled = true;
@@ -1173,18 +1202,33 @@ $.extend(mse.Text.prototype, {
     	this.currentEffect = null;
     },
     inObj: function(x, y) {
-    	if(this.link) {
-    		if(x >= this.getX()+this.linkOffs-20 && x <= this.getX()+this.endOffs+20 && y >= this.getY()-12 && y <= this.getY()+this.height+12) return true;
-    		else return false;
+        if(!this.visible) return false;
+        var ox = this.getX(), oy = this.getY(), w = this.getWidth(), h = this.getHeight();
+        if(x>ox-0.1*w && x<ox+1.1*w && y>oy-0.1*h && y<oy+1.1*h) return true;
+        else return false;
+    },
+    clicked: function(e) {
+        var x = e.offsetX - this.getX();
+        var y = e.offsetY - this.getY();
+    	for(var i in this.links) {
+    	    var link = this.links[i];
+    		if(x >= link.offx-15 && x <= link.offx+link.width+15 && y >= link.offy-12 && y <= link.offy+this.lineHeight+12) {
+    		    switch(link.type) {
+    		    case 'audio': link.link.play();break;
+    		    case 'wiki': link.link.init(this.getContainer());break;
+    		    case 'fb': window.open(linkObj.link);break;
+    		    }
+    		    break;
+    		}
     	}
-    	else return this.constructor.prototype.inObj.call(this, x, y);
     },
     logic: function(delta){
-    	if(this.currentEffect != null)this.currentEffect.logic(delta);
+    	if(this.currentEffect != null) this.currentEffect.logic(delta);
     },
     draw: function(ctx, x, y) {
         if(!this.firstShow) {
         	this.firstShow = true;
+        	this.visible = true;
         	this.evtDeleg.eventNotif('firstShow');
         }
         
@@ -1193,23 +1237,20 @@ $.extend(mse.Text.prototype, {
     	
     	if(this.styled) {ctx.save();this.configCtxFlex(ctx);}
     	
+    	// Centralize the text
+    	if(this.textAlign == "center" && this.width > 0)
+    	    loc[0] += this.width/2;
+    	    
     	if(this.currentEffect != null) this.currentEffect.draw(ctx);
     	else {
-    	    ctx.fillText(this.text, loc[0], loc[1]);
+    	    for(var i in this.lines) {
+    	        ctx.fillText(this.lines[i], loc[0], loc[1]+this.lineHeight*i);
+    	    }
     	    // Link inside
-    	    if(this.link && this.link.offset>=0) {
-    	    	if(!this.linkInit) {
-    	    		this.begin = this.text.substring(0,this.link.offset);
-    	    		this.linkOffs = ctx.measureText(this.begin).width;
-    	    		this.endOffs = this.linkOffs + ctx.measureText(this.link.src).width;
-    	    		this.end = this.text.substr(this.link.offset+this.link.src.length);
-    	    		if(this.link.type == 'audio')
-    	    			this.evtDeleg.removeListener('show', this.link.link.play);
-    	    		this.linkInit = true;
-    	    	}
+    	    for(var i in this.links) {
     	    	ctx.save();
-    	    	ctx.fillStyle = linkColor[this.link.type];
-    	    	ctx.fillText(this.link.src, loc[0]+this.linkOffs, loc[1]);
+    	    	ctx.fillStyle = linkColor[this.links[i].type];
+    	    	ctx.fillText(this.links[i].src, loc[0]+this.links[i].offx, loc[1]+this.links[i].offy);
     	    	ctx.restore();
     	    }
     	}
@@ -1256,18 +1297,18 @@ mse.ArticleLayer = function(container, z, param, article) {
 				// Left button clicked, Reduce the speed
 				this.layer.interval += 200;
 				this.layer.interval = (this.layer.interval > 2000) ? 2000 : this.layer.interval;
-				this.tip.text = 'moins rapide';
+				this.tip.setText('moins rapide');
 			}
 			else if(this.accelere.inObj(e.offsetX, e.offsetY)) {
 				// Right button clicked, augmente the speed
 				this.layer.interval -= 200;
 				this.layer.interval = (this.layer.interval < 300) ? 300 : this.layer.interval;
-				this.tip.text = 'plus rapide';
+				this.tip.setText('plus rapide');
 			}
 			else if(this.play.inObj(e.offsetX, e.offsetY)) {
 			    this.layer.pause = !this.layer.pause;
-			    if(this.layer.pause) this.tip.text = 'pause';
-			    else this.tip.text = 'reprendre'; 
+			    if(this.layer.pause) this.tip.setText('pause');
+			    else this.tip.setText('reprendre'); 
 			}
 			else return;
 			this.tip.globalAlpha = 1;
@@ -1443,27 +1484,23 @@ mse.ArticleLayer = function(container, z, param, article) {
 		// Link show or disapear event notification
 		if(start > this.startId) {
 			for(var i = this.startId; i < start; i++)
-				if(this.objList[i].link)
-					this.objList[i].evtDeleg.eventNotif('disapear');
-				else this.objList[i].evtDeleg.eventNotif('disapear');
+				this.objList[i].evtDeleg.eventNotif('disapear');
+				if(this.objList[i].visible === true) this.objList[i].visible = false;
 		}
 		else if(start < this.startId) {
 			for(var i = start; i < this.startId; i++)
-				if(this.objList[i].link)
-					this.objList[i].evtDeleg.eventNotif('show');
-				else this.objList[i].evtDeleg.eventNotif('show');
+				this.objList[i].evtDeleg.eventNotif('show');
+				if(this.objList[i].visible === false) this.objList[i].visible = true;
 		}
 		if(end > this.endId) {
 			for(var i = this.endId+1; i <= end; i++)
-				if(this.objList[i].link)
-					this.objList[i].evtDeleg.eventNotif('show');
-				else this.objList[i].evtDeleg.eventNotif('show');
+				this.objList[i].evtDeleg.eventNotif('show');
+				if(this.objList[i].visible === false) this.objList[i].visible = true;
 		}
 		else if(end < this.endId) {
 			for(var i = end+1; i <= this.endId; i++)
-				if(this.objList[i].link)
-					this.objList[i].evtDeleg.eventNotif('disapear');
-				else this.objList[i].evtDeleg.eventNotif('disapear');
+				this.objList[i].evtDeleg.eventNotif('disapear');
+				if(this.objList[i].visible === true) this.objList[i].visible = false;
 		}
 		
 		this.startId = start;

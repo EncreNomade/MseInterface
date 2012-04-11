@@ -147,6 +147,7 @@ function checkNextLine(ctx, text, maxM, width){
 	}
 };
 function wrapText(text, ctx, width, font) {
+    if(width <= 0) return [text];
     var lines = new Array();
     if(font) {
         var temp = ctx.font;
