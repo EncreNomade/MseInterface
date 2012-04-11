@@ -1579,7 +1579,7 @@ var initWikiTool = function() {
                 card.append('<input id="save_wiki" type="button" value="Sauvegarder" style="top:'+(7/9*h)+'px;height:30px;">');
                 $('#wiki_addDesc').click(function(){tool.addWikiCard('description');});
                 $('#wiki_addImg').click(function(){tool.addWikiCard('image');});
-                $('#save_wiki').click(this.saveWiki);
+                $('#save_wiki').click({'editor':this.editor},this.saveWiki);
             break;
             case 'image':
                 card.insertBefore('.wiki_card:last').deletable();
@@ -1633,20 +1633,36 @@ var initWikiTool = function() {
             button.prevAll().css({'font-family':font, 'font-size':fsize, 'color':fcolor});
             return true;
         },
-        saveWiki: function() {
+        saveWiki: function(e) {
             var name = $('#wiki_name').val();
+				var editor = e.data.editor;
             if(!name) {
                 alert('Échec à sauvegarder, indiquez le nom de wiki s\'il vous plaît');
                 return false;
             }
             // Trigger blur event to make legend valid
-            this.editor.find('input').blur();
+            editor.find('input').blur();
             // Copy all in current step to src
-            var cards = this.editor.children('div:last-child').prevAll();
+            var cards = editor.children('div:last-child').prevAll();
             if(cards.length == 0) return false;
             // Other parameters
-            var wiki = new Wiki(name, cards.clone(), this.font.val(), this.fsize.val(), this.color.val());
-            srcMgr.addSource('wiki', wiki, name);
+            var wiki = new Wiki(name, cards.clone(), $('#wiki_font').val(), $('#wiki_size').val(), $('#wiki_color').val());
+				var nomExiste = false;
+			   for (elem in srcMgr.sources) {
+				  if (srcMgr.sources[elem].type == 'wiki' && elem == name) nomExiste = true;
+			   }
+			   if (nomExiste) {
+				  dialog.showPopup('Ce nom existe déja', 300, 150, 'Confirmer');
+		  		  dialog.main.append('<p><label>Nouveau nom : </label><input id="rename" type="text" value="'+name+'"></p>');
+				  dialog.main.append('<p><label>Ecraser : </label><input id="eraseName" type="checkbox"></p>');
+				  dialog.confirm.click(function(){
+					 if($('#rename').val() != name || $('#eraseName').get(0).checked) {
+					   srcMgr.addSource('wiki', wiki, $('#rename').val());
+					   dialog.close();
+					 }
+				  });				 
+			   }
+			   else srcMgr.addSource('wiki', wiki, name);
             return true;
         },
         dropImgToWikiCard: function(e) {
@@ -1697,7 +1713,23 @@ var initAnimeTool = function() {
         var statiq = tool.editor.data('static') == 'false' ? false : true;
         var anime = new Animation(name, repeat, block, statiq);
         anime.createAnimation(tool.timeline.children('div'));
-        srcMgr.addSource('anime', anime, name);
+		  var nomExiste = false;
+		  for (elem in srcMgr.sources) {
+		    if (srcMgr.sources[elem].type == 'anime' && elem == name) nomExiste = true;
+		  }
+		  if (nomExiste) {
+			 dialog.showPopup('Ce nom existe déja', 300, 150, 'Confirmer');
+			 dialog.main.append('<p><label>Nouveau nom : </label><input id="rename" type="text" value="'+name+'"></p>');
+			 dialog.main.append('<p><label>Ecraser : </label><input id="eraseName" type="checkbox"></p>');
+			 dialog.confirm.click(function(){
+			   if($('#rename').val() != name || $('#eraseName').get(0).checked) {
+				  srcMgr.addSource('anime', anime, $('#rename').val());
+				  dialog.close();
+				}
+			 });
+			 
+		  }
+        else srcMgr.addSource('anime', anime, name);
     });
     
     var addAnimeObj = function(e, id, data) {
