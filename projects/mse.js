@@ -1414,9 +1414,16 @@ mse.ArticleLayer = function(container, z, param, article) {
 		return this.constructor.prototype.addObject.call(this, obj);
 	};
 	this.addGame = function(game) {
-	    var expose = new mse.GameExpose(this, {size:[this.width*0.8, this.width*0.65]}, game);
-	    expose.setX(this.width*0.1);
-	    this.addObject(expose);
+	    if(!game.directShow) {
+	        var expose = new mse.GameExpose(this, {size:[this.width*0.8, this.width*0.65]}, game);
+	        expose.setX(this.width*0.1);
+	        this.addObject(expose);
+	    }
+	    else {
+	        game.parent = this;
+	        game.evtDeleg.addListener('firstShow', new mse.Callback(game.start, game));
+	        this.addObject(game);
+	    }
 	};
 	this.insertObject = function(obj, index) {
 		var res = this.constructor.prototype.insertObject.call(this, obj, index);
@@ -1434,9 +1441,16 @@ mse.ArticleLayer = function(container, z, param, article) {
 		return res;
 	};
 	this.insertGame = function(game, index) {
-	    var expose = new mse.GameExpose(this, {size:[this.width*0.8, this.width*0.65]}, game);
-	    expose.setX(this.width*0.1);
-	    this.insertObject(expose, index);
+	    if(!game.directShow) {
+	        var expose = new mse.GameExpose(this, {size:[this.width*0.8, this.width*0.65]}, game);
+	        expose.setX(this.width*0.1);
+	        this.insertObject(expose, index);
+	    }
+	    else {
+	        game.parent = this;
+	        game.evtDeleg.addListener('firstShow', new mse.Callback(game.start, game));
+	        this.insertObject(game, index);
+	    }
 	};
 	this.delObject = function(obj) {
 		var res = this.constructor.prototype.delObject.call(this, obj);
@@ -1749,6 +1763,7 @@ mse.Game = function() {
     this.width = 0.6*mse.root.width;
     this.height = 0.6*mse.root.height;
     this.type = "DEP";
+    this.directShow = false;
 };
 extend(mse.Game, mse.UIObject);
 $.extend(mse.Game.prototype, {
@@ -1763,6 +1778,9 @@ $.extend(mse.Game.prototype, {
         this.expo = expo;
         this.type = "INDEP";
     },
+    setDirectShow: function(direct) {
+        this.directShow = direct;
+    },
     addTo: function(layer) {
         this.parent = layer;
         this.setPos(0,0);
@@ -1771,15 +1789,17 @@ $.extend(mse.Game.prototype, {
     },
     start: function() {
     	mse.root.container.evtDeleg.setDominate(this);
-        mse.root.gamewindow.loadandstart(this);
+        if(!this.directShow) mse.root.gamewindow.loadandstart(this);
+        else this.init();
     },
     draw: function(ctx) {},
     end: function() {
-        mse.root.gamewindow.end();
+        if(!this.directShow) mse.root.gamewindow.end();
+        else mse.root.container.evtDeleg.setDominate(null);
         if(this.expo) this.expo.endGame();
     },
     lose: function() {
-        mse.root.gamewindow.lose();
+        if(!this.directShow) mse.root.gamewindow.lose();
     },
     init: function(){},
     mobileLazyInit: function() {}

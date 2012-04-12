@@ -288,7 +288,7 @@ SourceManager.prototype = {
 	expos: {},
 	acceptType: new Array('image', 'audio', 'game', 'anime', 'wiki', 'code'),
 	extCheck: /data:\s*(\w+)\/(\w+);/,
-	pathCheck: /^(\.\/)?([\w\_\s]+\/)*([\w\_\s\.]+)/,
+	pathCheck: /^(\.\/)?([\w\_\s]+\/)*([\w\_\s\.]+)$/,
 	uploadResp: /^([\w\_\s]+)\&\&([\w\_\s\.\/]+)/,
 	
 	sourceType: function(id) {
@@ -2479,12 +2479,12 @@ $.fn.enableBtns = function(){
     if(this.data('del')) this.data('del').appendTo(this);
     return this;
 }
-$.fn.deletable = function(f, static) {
+$.fn.deletable = function(f, statiq) {
 	var del = this.children('.del_container').children().filter('img[src="./images/UI/del.png"]');
 	if(del.length > 0) del.remove();
 	if(f === false) return this;
 	var func = f || delParent;
-	if(static == true) staticIcon(this, func, './images/UI/del.png');
+	if(statiq == true) staticIcon(this, func, './images/UI/del.png');
 	else hoverIcon(this, func, './images/UI/del.png');
 	return this;
 };

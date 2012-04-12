@@ -219,8 +219,9 @@ function retrieveLocalInfo(pjsave) {
                 if(obj.hasClass('article')) {
                     obj.deletable().configurable();
                     obj.children('div').each(function(){
-                        if($(this).hasClass('illu')) $(this).deletable(null, true);
-                        $(this).selectable(selectP)
+                        if($(this).hasClass('illu')) $(this)
+                        $(this).deletable(null, true)
+                               .selectable(selectP)
                                .staticButton('./images/UI/insertbelow.png', insertElemDialog)
                                .staticButton('./images/UI/config.png', staticConfig)
                                .staticButton('./images/tools/anime.png', animeTool.animateObj)

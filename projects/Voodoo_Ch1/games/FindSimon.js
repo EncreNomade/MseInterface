@@ -234,6 +234,9 @@ var FindSimon = function() {
         this.simonrun.stop();
         this.simonstand.start();
         this.onmove = false;
+        this.lazylose = false;
+        this.circleR = 0;
+        this.detectR = 50;
         // Init Parc draw parameters
         this.sx = this.sy = this.sw = this.sh = this.dx = this.dy = this.dw = this.dh = 0;
         
@@ -277,6 +280,17 @@ var FindSimon = function() {
 		ctx.save();
 		ctx.translate(this.width/2, this.height/2);
 		ctx.rotate(this.simondir*Math.PI/180);
+		if(this.onmove) {
+		    // Draw circle of detection around simon
+		    ctx.globalAlpha = (this.detectR - this.circleR) / 50;
+		    ctx.fillStyle = "rgba(255,255,255,0.6)";
+		    ctx.strokeStyle = "#fff";
+		    ctx.beginPath();
+		    ctx.arc(0, 0, this.circleR, 0, Math.PI*2, true); 
+		    ctx.closePath();
+		    ctx.fill();
+		    ctx.stroke();
+		}
 		ctx.translate(-20,-18);
 		this.simon.draw(ctx);
 		ctx.restore();
@@ -304,6 +318,11 @@ var FindSimon = function() {
 	};
 	
 	this.logic = function(delta) {
+	    if(this.lazylose) {
+	        this.losecount--;
+	        if(this.losecount == 0) this.lose();
+	        return;
+	    }
 		// Parc visible part
 		if(this.pos.x > 0) {
 		    this.sx = 0;
@@ -335,6 +354,10 @@ var FindSimon = function() {
 		this.pos.y += this.disy;
 		// Ignore the movement if collision
 		if(this.colliDetect()) {this.pos.x -= this.disx; this.pos.y -= this.disy;}
+		if(this.onmove) {
+		    if(this.circleR < this.detectR) this.circleR += 2;
+		    else this.circleR = 0;
+		}
 		
 		this.sp.x = this.width/2 - this.pos.x;
 		this.sp.y = this.height/2 - this.pos.y;
@@ -361,8 +384,11 @@ var FindSimon = function() {
 		    var angle = angleFor2Point(n.pos,this.sp);
 		    var adis = Math.abs(angle-n.direction);
 		    if(adis > 180) adis = 360-adis;
-		    if(dis <= 170 && adis <= n.visiona) {
+		    if(dis < 50 || (dis <= 170 && adis <= n.visiona)) {
 		    // Simon is found!!!
+		        if(dis < 50) {
+		            n.direction = angle;
+		        }
 		        // Remove Key event listener
 		        mse.root.evtDistributor.removeListener('keydown', this.movecb);
 		        mse.root.evtDistributor.removeListener('keyup', this.moveovercb);
@@ -371,7 +397,9 @@ var FindSimon = function() {
 		            mse.root.evtDistributor.removeListener('gestureUpdate', this.touchMovecb);
 		            mse.root.evtDistributor.removeListener('gestureEnd', this.moveovercb);
 		        }
-		        this.lose();
+		        this.lazylose = true;
+		        this.moveover();
+		        this.losecount = 40;
 		    }
 		}
 	};
@@ -421,6 +449,7 @@ var FindSimon = function() {
 	    }
 	    if(valid && !this.onmove) {
 	        this.onmove = true;
+	        this.circleR = 0;
 	        this.simonrun.start();
 	        this.simonstand.stop();
 	    }
