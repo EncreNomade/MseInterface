@@ -386,9 +386,7 @@ var FindSimon = function() {
 		    if(adis > 180) adis = 360-adis;
 		    if(dis < 50 || (dis <= 170 && adis <= n.visiona)) {
 		    // Simon is found!!!
-		        if(dis < 50) {
-		            n.direction = angle;
-		        }
+		        n.direction = angle;
 		        // Remove Key event listener
 		        mse.root.evtDistributor.removeListener('keydown', this.movecb);
 		        mse.root.evtDistributor.removeListener('keyup', this.moveovercb);

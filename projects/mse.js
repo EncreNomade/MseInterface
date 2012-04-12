@@ -1126,6 +1126,10 @@ mse.Text = function(parent, param, text, styled) {
 	else this.lines = [this.text];
 	ctx.restore();
 	
+	// Centralize the text
+	if(this.textAlign == "center" && this.width > 0)
+	    this.offx += this.width/2;
+	
 	//Integraion d'effets
 	this.currentEffect = null;
 	this.firstShow = false;
@@ -1212,7 +1216,7 @@ $.extend(mse.Text.prototype, {
         var y = e.offsetY - this.getY();
     	for(var i in this.links) {
     	    var link = this.links[i];
-    		if(x >= link.offx-15 && x <= link.offx+link.width+15 && y >= link.offy-12 && y <= link.offy+this.lineHeight+12) {
+    		if(x >= link.offx-15 && x <= link.offx+link.width+15 && y >= link.offy && y <= link.offy+this.lineHeight+24) {
     		    switch(link.type) {
     		    case 'audio': link.link.play();break;
     		    case 'wiki': link.link.init(this.getContainer());break;
@@ -1236,10 +1240,6 @@ $.extend(mse.Text.prototype, {
     	var loc = [ this.getX(), this.getY() ];
     	
     	if(this.styled) {ctx.save();this.configCtxFlex(ctx);}
-    	
-    	// Centralize the text
-    	if(this.textAlign == "center" && this.width > 0)
-    	    loc[0] += this.width/2;
     	    
     	if(this.currentEffect != null) this.currentEffect.draw(ctx);
     	else {
@@ -1497,24 +1497,28 @@ mse.ArticleLayer = function(container, z, param, article) {
 		
 		// Link show or disapear event notification
 		if(start > this.startId) {
-			for(var i = this.startId; i < start; i++)
+			for(var i = this.startId; i < start; i++) {
 				this.objList[i].evtDeleg.eventNotif('disapear');
 				if(this.objList[i].visible === true) this.objList[i].visible = false;
+			}
 		}
 		else if(start < this.startId) {
-			for(var i = start; i < this.startId; i++)
+			for(var i = start; i < this.startId; i++) {
 				this.objList[i].evtDeleg.eventNotif('show');
 				if(this.objList[i].visible === false) this.objList[i].visible = true;
+			}
 		}
 		if(end > this.endId) {
-			for(var i = this.endId+1; i <= end; i++)
+			for(var i = this.endId+1; i <= end; i++) {
 				this.objList[i].evtDeleg.eventNotif('show');
 				if(this.objList[i].visible === false) this.objList[i].visible = true;
+			}
 		}
 		else if(end < this.endId) {
-			for(var i = end+1; i <= this.endId; i++)
+			for(var i = end+1; i <= this.endId; i++) {
 				this.objList[i].evtDeleg.eventNotif('disapear');
 				if(this.objList[i].visible === true) this.objList[i].visible = false;
+			}
 		}
 		
 		this.startId = start;
@@ -1816,9 +1820,10 @@ mse.GameShower = function() {
 	this.state = "DESACTIVE";
 	mse.src.addSource('gameover', './UI/gameover.jpg', 'img', true);
 	this.loseimg = new mse.Image(this, {pos:[0,0]}, 'gameover');
-	this.losetext = new mse.Text(this, {font:'Bold 36px '+mse.configs.font,fillStyle:'#FFF',textBaseline:'middle',textAlign:'center'},'GAME OVER...',true);
+	this.losetext = new mse.Text(this, {font:'Bold 36px '+mse.configs.font,fillStyle:'#FFF',textBaseline:'middle',textAlign:'center'},'Perdu ...',true);
 	this.losetext.evtDeleg.addListener('show', new mse.Callback(this.losetext.startEffect, this.losetext, {"typewriter":{speed:2}}));
-	this.passBn = new mse.Button(this, {size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je ne joue plus', 'aideBar');
+	this.passBn = new mse.Button(this, {size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je ne joue plus', 'wikiBar');
+	this.restartBn = new mse.Button(this, {size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je rejoue', 'aideBar');
 	this.firstShow = false;
 	
 	this.isFullScreen = function() {
@@ -1841,7 +1846,8 @@ mse.GameShower = function() {
 	    this.setSize(this.currGame.width, this.currGame.height);
 	    this.loseimg.setSize(this.width-5, this.height-5);
 	    this.losetext.setPos(this.width/2, this.height/2);
-	    this.passBn.setPos(this.currGame.width-115, this.currGame.height-50);
+	    this.restartBn.setPos(this.currGame.width-115, this.currGame.height-50);
+	    this.passBn.setPos(10, this.currGame.height-50);
 	    // Init game
 	    this.currGame.init();
 	    this.state = "START";
@@ -1855,7 +1861,7 @@ mse.GameShower = function() {
 	    if(this.passBn.inObj(e.offsetX, e.offsetY)) {
 	        this.currGame.end();
 	    }
-	    else {
+	    else if(this.restartBn.inObj(e.offsetX, e.offsetY)) {
 	        this.state = "START";
 	        this.currGame.init();
 	    }
@@ -1922,6 +1928,7 @@ mse.GameShower = function() {
     	    ctx.fillRect(this.offx,this.offy,this.width-5,this.height-5);
     	    this.losetext.draw(ctx);
     	    this.passBn.draw(ctx);
+    	    this.restartBn.draw(ctx);
     	}
 	};
 };
@@ -1942,7 +1949,7 @@ mse.GameExpose = function(parent, param, game) {
     if(!this.font) this.font = "12px Verdana";
     this.lineHeight = Math.round( 1.2*checkFontSize(this.font) );
     this.evtDeleg.addListener('firstShow', new mse.Callback(parent.interrupt, parent));
-    this.passBn = new mse.Button(this, {pos:[this.width-115,this.height-60],size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je ne joue pas', 'aideBar');
+    this.passBn = new mse.Button(this, {pos:[10,this.height-60],size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je ne joue pas', 'wikiBar');
     
     this.launchGame = function(e) {
         this.getContainer().evtDeleg.removeListener('click', this.launchcb);
@@ -2208,10 +2215,18 @@ $.extend(mse.Card.prototype, {
     sortLayer: mse.BaseContainer.prototype.sortLayer,
     
     draw: function(ctx){
-        if(!this.ui) {
-            ctx.fillStyle = "rgb(252,250,242)";
-            ctx.fillRoundRect(this.getX(), this.getY(), this.width, this.height, 20);
-        }
+        if(!this.ui)
+            this.drawDefaultUI(ctx, this.getX(), this.getY());
+    },
+    drawDefaultUI: function(ctx, x, y) {
+        ctx.fillStyle = "rgb(252,250,242)";
+        ctx.shadowColor ="black";
+        ctx.shadowBlur = 10;
+        //ctx.strokeStyle = "#4d4d4d";
+        //ctx.lineWidth = 1;
+        ctx.fillRoundRect(x, y, this.width, this.height, 20);
+        //ctx.strokeRoundRect(x, y, this.width, this.height, 16);
+        ctx.shadowBlur = 0;
     },
     ptRotate: function(x, y) {
         var ox = this.getX()+this.width/2, oy = this.getY()+this.height/2;
@@ -2269,12 +2284,11 @@ $.extend(mse.ImageCard.prototype, {
         	this._layers[i].draw(ctx);
         }
         // Default UI
-        if(!this.ui) {
-            ctx.fillStyle = "rgb(252,250,242)";
-            ctx.fillRoundRect(0, 0, this.width, this.height, 20);
-        }
+        if(!this.ui) this.drawDefaultUI(ctx, 0, 0);
         if(!this.img) return;
         
+        ctx.shadowColor ="black";
+        ctx.shadowBlur = 7;
         ctx.drawImage(mse.src.getSrc(this.img), this.ix, this.iy, this.iw, this.ih);
         ctx.font = "italic 12px Verdana";
         ctx.textBaseline = "top";
@@ -2371,10 +2385,7 @@ $.extend(mse.TextCard.prototype, {
         ctx.translate(-this.width/2, -this.height/2);
         
         // Default UI
-        if(!this.ui) {
-            ctx.fillStyle = "rgb(252,250,242)";
-            ctx.fillRoundRect(0, 0, this.width, this.height, 20);
-        }
+        if(!this.ui) this.drawDefaultUI(ctx, 0, 0);
         for(var i in this._layers) {
         	this._layers[i].draw(ctx);
         }

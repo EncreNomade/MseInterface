@@ -462,6 +462,8 @@ function insertElemDialog(e) {
 			elem.deletable(null, true)
 			    .selectable(selectP)
 			    .staticButton('./images/UI/insertbelow.png', insertElemDialog)
+			    .staticButton('./images/UI/config.png', staticConfig)
+			    .staticButton('./images/tools/anime.png', animeTool.animateObj)
 			    .staticButton('./images/UI/addscript.jpg', addScriptForObj)
 			    .children('.del_container').hide();
 			elem.insertAfter(last);
