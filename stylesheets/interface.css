@@ -770,10 +770,15 @@ body{
 }
 .popup_buttons {
 	position:absolute;
-	top:100%;
-	left:100%;
+	right:50px;
+	bottom:40px;
 	padding:0px;
+	margin:0px;
 	float:right;
+}
+.popup_buttons input{
+    position: relative;
+    margin: 0px 0px 0px 15px;
 }
 .drop_zone {
 	position:relative;

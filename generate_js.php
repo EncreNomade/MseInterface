@@ -346,8 +346,11 @@ class ProjectGenerator {
                         foreach( $objlist[$key]["animes"] as $p=>$seq ) {
                             switch($p) {
                             case 'spriteSeq':
-                                for($i = count($seq); $i <= $nbFr; ++$i)
-                                    array_push($seq, $spriteFrCount);
+                                if($t == 'spriteRecut')
+                                    for($i = count($seq); $i <= $nbFr; ++$i)
+                                        array_push($seq, $spriteFrCount);
+                                else if($t == 'sprite')
+                                    array_push($seq, $spriteFr);
                             break;
                             case 'pos':
                                 $pos = array($this->encodedCoord($dx),$this->encodedCoord($dy));

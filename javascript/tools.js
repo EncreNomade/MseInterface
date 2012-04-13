@@ -288,7 +288,7 @@ SourceManager.prototype = {
 	expos: {},
 	acceptType: new Array('image', 'audio', 'game', 'anime', 'wiki', 'code'),
 	extCheck: /data:\s*(\w+)\/(\w+);/,
-	pathCheck: /^(\.\/)?([\w\_\s]+\/)*([\w\_\s\.]+)/,
+	pathCheck: /^(\.\/)?([\w\_\s]+\/)*([\w\_\s\.]+)$/,
 	uploadResp: /^([\w\_\s]+)\&\&([\w\_\s\.\/]+)/,
 	
 	sourceType: function(id) {
@@ -1290,7 +1290,7 @@ var EditableTool = function(jqToolsPanel, activeButton){
     if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools')) return;
     if(!activeButton || !activeButton.click) return;
     this.toolsPanel = jqToolsPanel;
-    this.toolsPanel.css('z-index', 7);
+    this.toolsPanel.css('z-index', 8);
     this.toolsPanel.data('editTool', this);
     this.activeBn = activeButton;
     this.activeBn.data('editTool', this);
@@ -2328,7 +2328,7 @@ Popup.prototype = {
 	main: $('<div class="popup_body"></div>'),
 	buttons: $('<div class="popup_buttons"></div>'),
 	annuler: $('<div class="popup_close"></div>'),
-	confirm: $('<input type="button" style="position:absolute;top:-50px;left:-120px"></input>'),
+	confirm: $('<input type="button"></input>'),
 	back: $('<div class="popup_back"></div>'),
 	caller: null,
 	
@@ -2345,6 +2345,9 @@ Popup.prototype = {
 		$('#popup_dialog').hide();
 		this.caller = null;
 	},
+	addButton: function(btn) {
+	    this.buttons.prepend(btn);
+	},
 	
 	init: function() {
 		this.dialog.append(this.titre);
@@ -2353,7 +2356,6 @@ Popup.prototype = {
 		this.annuler.append('<img src="./images/UI/close.png"></img>');
 		this.titre.append(this.annuler);
 		this.titre.append('<span>');
-		this.buttons.append(this.confirm);
 		$('body').append(this.back).append(this.dialog);
 		this.back.hide();
 		this.dialog.hide();
@@ -2364,7 +2366,7 @@ Popup.prototype = {
 	showPopup: function(msg, width, height, msgConfirm, caller) {
 		if(!msg || !width || !height) return;
 		this.main.html("");
-		this.confirm.unbind('click');
+		this.buttons.children().remove();
 		this.caller = null;
 		var x = ($(window).width() - width)/2;
 		var y = ($(window).height() - height)/2;
@@ -2372,10 +2374,9 @@ Popup.prototype = {
 		
 		this.titre.children('span').html(msg);
 		if(msgConfirm) {
+		    this.addButton(this.confirm);
 			this.confirm.val(msgConfirm);
-			this.confirm.show();
 		}
-		else this.confirm.hide();
 		if(caller) this.caller = caller;
 		
 		this.back.show();
@@ -2533,12 +2534,12 @@ $.fn.enableBtns = function(){
     if(this.data('del')) this.data('del').appendTo(this);
     return this;
 }
-$.fn.deletable = function(f, static) {
+$.fn.deletable = function(f, statiq) {
 	var del = this.children('.del_container').children().filter('img[src="./images/UI/del.png"]');
 	if(del.length > 0) del.remove();
 	if(f === false) return this;
 	var func = f || delParent;
-	if(static == true) staticIcon(this, func, './images/UI/del.png');
+	if(statiq == true) staticIcon(this, func, './images/UI/del.png');
 	else hoverIcon(this, func, './images/UI/del.png');
 	return this;
 };

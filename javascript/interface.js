@@ -459,8 +459,11 @@ function insertElemDialog(e) {
 			var id = $(prepared.get(i)).data('srcId');
 			var elem = srcMgr.generateChildDomElem(id, dialog.caller.parent());
 			elem.attr('id', 'obj'+(curr.objId++));
-			elem.selectable(selectP)
+			elem.deletable(null, true)
+			    .selectable(selectP)
 			    .staticButton('./images/UI/insertbelow.png', insertElemDialog)
+			    .staticButton('./images/UI/config.png', staticConfig)
+			    .staticButton('./images/tools/anime.png', animeTool.animateObj)
 			    .staticButton('./images/UI/addscript.jpg', addScriptForObj)
 			    .children('.del_container').hide();
 			elem.insertAfter(last);
@@ -814,7 +817,8 @@ function generateLines(content, font, width, lineHeight){
 	res = $(res);
 	res.each(function() {
 		$(this).height(lineHeight);
-		$(this).selectable(selectP)
+		$(this).deletable(null, true)
+		       .selectable(selectP)
 		       .staticButton('./images/UI/insertbelow.png', insertElemDialog)
 		       .staticButton('./images/UI/config.png', staticConfig)
 		       .staticButton('./images/tools/anime.png', animeTool.animateObj)

@@ -126,10 +126,10 @@ $.extend(mse.ETFade.prototype, {
 		if(this.count <= this.config.duration){
 			this.subject.globalAlpha = this.config.start + (this.count/this.config.duration)*(this.config.end-this.config.start);
 			this.count++;
-			if(this.multi)return true;
+			if(this.multi) return true;
 		}
 		else{
-			if(this.multi)return false;
+			if(this.multi) return false;
 			this.subject.endEffect();
 		}
 	},
@@ -168,12 +168,12 @@ $.extend(mse.ETTypewriter.prototype, {
 				this.controlSpeed = 0;
 			}
 			else this.controlSpeed++;
-			if(this.multi)return true;
+			if(this.multi) return true;
 		}
 		else{
 			//this.subject.fillStyle = "#78A8FF";
 			//this.subject.strokeStyle = "blue";
-			if(this.multi)return false;
+			if(this.multi) return false;
 			this.subject.endEffect();
 		}		
 	},

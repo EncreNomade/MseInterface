@@ -192,10 +192,10 @@ else header("Location: index.php", true);
     }
 	
 	$('#showProjet').click(function(){
-	    window.open('./projects/index.php?pj='+pjName, '_newtab');
+	    window.open('./projects/index.php?pj='+pjName);
 	});
 	$('#newProjet').click(function(){
-	    window.open('./index.php', '_newtab');
+	    window.open('./index.php');
 	});
 	
 	var config = Config.getInstance();
@@ -219,8 +219,9 @@ function retrieveLocalInfo(pjsave) {
                 if(obj.hasClass('article')) {
                     obj.deletable().configurable();
                     obj.children('div').each(function(){
-                        if($(this).hasClass('illu')) $(this).deletable(null, true);
-                        $(this).selectable(selectP)
+                        if($(this).hasClass('illu')) $(this)
+                        $(this).deletable(null, true)
+                               .selectable(selectP)
                                .staticButton('./images/UI/insertbelow.png', insertElemDialog)
                                .staticButton('./images/UI/config.png', staticConfig)
                                .staticButton('./images/tools/anime.png', animeTool.animateObj)
@@ -264,7 +265,7 @@ function retrieveLocalInfo(pjsave) {
     if(isNaN(pjsave.lastModif)) curr.lastModif = lastModServer;
     else curr.lastModif = pjsave.lastModif;
     // Scripts
-    if(!(pjsave.scripts instanceof Array) && Object.keys(pjsave.scripts).length != 0)
+    if(pjsave.scripts && !(pjsave.scripts instanceof Array) && Object.keys(pjsave.scripts).length != 0)
         scriptMgr.scripts = pjsave.scripts;
 }
 	
