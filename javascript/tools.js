@@ -529,22 +529,22 @@ SourceManager.prototype = {
 	    srcMgr.delSource(id);
 	    src.remove();
 	},
-    rename: function(id, newName) {
-        if(!this.sources[id] || this.sources[newName]) {
-            alert("Echec à changer de nom pour la source");
-            return;
-        }
-        this.expos[newName] = this.expos[id];
-        this.sources[newName] = this.sources[id];
-        this.expos[newName].data('srcId', newName);
-        this.delSource(id);
-		  if(this.sources[newName].type == 'image') this.expos[newName].children('img').attr('name',newName);
-		  else {
-			  var chaine = srcMgr.expos[newName].children("p").html().split(/: /);
-			  chaine = chaine[0]+ ": "+ this.expos[newName].data("srcId");
-			  this.expos[newName].children('p').replaceWith("<p>"+chaine+"</p>");
-		  }
-    },
+        rename: function(id, newName) {
+            if(!this.sources[id] || this.sources[newName]) {
+                alert("Echec à changer de nom pour la source");
+                return;
+            }
+            this.expos[newName] = this.expos[id];
+            this.sources[newName] = this.sources[id];
+            this.expos[newName].data('srcId', newName);
+            this.delSource(id);
+            if(this.sources[newName].type == 'image') this.expos[newName].children('img').attr('name',newName);
+            else {
+                    var chaine = srcMgr.expos[newName].children("p").html().split(/: /);
+                    chaine = chaine[0]+ ": "+ this.expos[newName].data("srcId");
+                    this.expos[newName].children('p').replaceWith("<p>"+chaine+"</p>");
+            }
+        },
 	renameDialog: function(src) {
 	    var id = src.data('srcId');
 	    dialog.showPopup('Renomer source', 300, 150, 'Confirmer');
@@ -1205,10 +1205,64 @@ var scriptMgr = function() {
             return select;
         },
         addScript: function(name, src, srcType, action, target, reaction, immediate, supp){
+            // If a name we are overhiding an existing script wich is relatad to another src
+            // we have to update the scripts number of this old src.
+            if(this.scripts[name] && this.scripts[name].src != src) var oldSrc = this.scripts[name].src;
             this.scripts[name] = new Script(src, srcType, action, target, reaction, immediate, supp);
+            this.countScripts(src);
+            if(oldSrc) this.countScripts(oldSrc);
         },
         saveLocal: function(){
             return this.scripts;
+        },
+        countScripts: function(objId) {
+            var nbScripts = 0;
+            var listScript = [];
+            for(var elem in this.scripts) {
+                if(this.scripts[elem].src == objId){ // increment for each related scripts
+                    nbScripts++;
+                    listScript.push(elem);
+                }
+            }
+            
+            if ($('#'+objId+' .scriptCounter').length > 0) {
+                $('#'+objId+' .scriptCounter').remove();
+            }
+            if (listScript.length != 0) {
+                var scriptIcon = (function() {
+                    var currIcon = $('#'+objId+' .del_container img');
+                    for(var i=0; i<currIcon.length; i++){
+                        if($(currIcon[i]).attr('src') == './images/UI/addscript.jpg') {
+                            return $(currIcon[i]);
+                        }
+                    }
+                })();
+                //var scriptIconPos = scriptIcon.css('top');
+                $('#'+objId+' .del_container').append('<div class="scriptCounter">'+ nbScripts +'</div>');
+                $('#'+objId+' .del_container .scriptCounter').hide();
+                 $('#'+objId+' .del_container .scriptCounter').click(addScriptForObj);
+                $('#'+objId+' .del_container .scriptCounter').css('top', parseInt(scriptIcon.css('top'))+4);
+                $('#'+objId).hover(
+                    function(){$('#'+objId+' .del_container .scriptCounter').show();},
+                    function(){$('#'+objId+' .del_container .scriptCounter').hide();}
+                );
+                
+                /*$('#'+objId+' .scriptCounter').click(function(){
+                    var objId = $(this).parent().attr('id');
+                    dialog.showPopup('Liste de script pour '+objId, 400, 390, 'Confirmer');
+                    var scriptList = scriptMgr.countScripts(objId);
+                    dialog.main.append('<table>')
+                    dialog.main.append('<tr><th>Nom</th></tr>')
+                    for (var i=0; i<scriptList.length; i++) {
+                        dialog.main.append('<tr><td>'+scriptList[i] +'</td>');
+                        dialog.main.append('<td id="modif_script_'+objId+'">modifier</td>');
+                        dialog.main.append('<td id="modif_script_'+objId+'">supprimer</td></tr>');
+                    }
+                    
+                    dialog.main.append('</table>')
+                });*/
+            }
+            if(listScript.length > 0) return listScript;
         },
         upload: function(url, pjName){
             var data = "pj="+pjName+"&type=scripts&data="+JSON.stringify(this.scripts);
@@ -1336,7 +1390,7 @@ var initTextTool = function() {
 					
             	// Append all in current step
             	res.selectable(null).moveable().resizable().deletable().configurable().hoverButton('./images/UI/addscript.jpg', addScriptForObj).appendTo(tar);
-					res.canGoDown();
+                res.canGoDown();
             });
         },
         createTextArea: function(e) {
@@ -1647,22 +1701,22 @@ var initWikiTool = function() {
             if(cards.length == 0) return false;
             // Other parameters
             var wiki = new Wiki(name, cards.clone(), $('#wiki_font').val(), $('#wiki_size').val(), $('#wiki_color').val());
-				var nomExiste = false;
-			   for (elem in srcMgr.sources) {
-				  if (srcMgr.sources[elem].type == 'wiki' && elem == name) nomExiste = true;
-			   }
-			   if (nomExiste) {
-				  dialog.showPopup('Ce nom existe déja', 300, 150, 'Confirmer');
-		  		  dialog.main.append('<p><label>Nouveau nom : </label><input id="rename" type="text" value="'+name+'"></p>');
-				  dialog.main.append('<p><label>Ecraser : </label><input id="eraseName" type="checkbox"></p>');
-				  dialog.confirm.click(function(){
-					 if($('#rename').val() != name || $('#eraseName').get(0).checked) {
-					   srcMgr.addSource('wiki', wiki, $('#rename').val());
-					   dialog.close();
-					 }
-				  });				 
-			   }
-			   else srcMgr.addSource('wiki', wiki, name);
+            var nomExiste = false;
+            for (elem in srcMgr.sources) {
+                    if (srcMgr.sources[elem].type == 'wiki' && elem == name) nomExiste = true;
+            }
+            if (nomExiste) {
+                dialog.showPopup('Ce nom existe déja', 300, 150, 'Confirmer');
+                dialog.main.append('<p><label>Nouveau nom : </label><input id="rename" type="text" value="'+name+'"></p>');
+                dialog.main.append('<p><label>Ecraser : </label><input id="eraseName" type="checkbox"></p>');
+                dialog.confirm.click(function(){
+                    if($('#rename').val() != name || $('#eraseName').get(0).checked) {
+                    srcMgr.addSource('wiki', wiki, $('#rename').val());
+                    dialog.close();
+                    }
+                });				 
+            }
+            else srcMgr.addSource('wiki', wiki, name);
             return true;
         },
         dropImgToWikiCard: function(e) {

@@ -495,7 +495,9 @@ function addScriptForObj(e){
     e.preventDefault();
     e.stopPropagation();
     var obj = $(this).parent().parent();
-    addScriptDialog(obj, "obj");
+    var relatedScripts = scriptMgr.countScripts(obj.attr('id'));
+    if (relatedScripts) modifyScriptDialog(relatedScripts);
+    else addScriptDialog(obj, "obj");
 };
 function addScriptDialog(src, srcType){
     var name = "";
@@ -522,8 +524,18 @@ function addScriptDialog(src, srcType){
         srcid = src.prop('id');
     }
     if(!srcType || !srcid || srcid == "") return;
+    //var scriptsList = scriptMgr.countScripts($(src).attr('id'));
     
     dialog.showPopup('Ajouter un script pour '+name, 400, 390, 'Confirmer', src);
+    /*
+    if (scriptsList) {
+        dialog.main.append('<p>Scripts éxistants : <ul>');
+        for(var i=0; i<scriptsList.length; i++) {
+            dialog.main.append('<li>'+scriptsList[i]+'</li>');
+        }
+        dialog.main.append('</p></ul>');
+    }
+    //*/
     dialog.main.append('<p><label>Ajout automatique:</label><input id="ajout_auto" type="checkbox" style="margin-top:12px;" checked></p>');
     dialog.main.append('<p><label>Name:</label><input id="script_name" type="text" size="20"></p>');
     dialog.main.append('<p><label>Action:</label>'+scriptMgr.actionSelectList('script_action', srcType)+'</p>');
@@ -563,11 +575,34 @@ function addScriptDialog(src, srcType){
         if(tarType != 'effetname' && (!tar || tar == "")) {
             alert('Information incomplete');return;
         }
-        scriptMgr.addScript(name, srcid, srcType, action, tar, reaction, ajoutAuto, supp);
-        closeBottom();
-        dialog.close();
+        if(scriptMgr.scripts[name]) {
+            if($('#wrongName').length == 0) {
+                dialog.main.append('<p id="wrongName" style="color: red;">Mauvais Nom</p>');
+                dialog.main.append('<p><label>Ecraser : </label><input id="eraseScript" type="checkbox"></p>');
+            }
+        }
+       if(!scriptMgr.scripts[name] || $('#eraseScript').get(0).checked) {
+            scriptMgr.addScript(name, srcid, srcType, action, tar, reaction, ajoutAuto, supp);
+            closeBottom();
+            dialog.close();
+        }
     });
 };
+// Modify a script related to an obj
+function modifyScriptDialog(scriptsList) {
+    dialog.showPopup('Modifier les scripts',400, 390,'confirmer');
+    dialog.main.append('<p><label>Script:</label><select>');
+    for(var i = 0; i<scriptsList.length; i++) {
+        dialog.main.append('<option value="'+scriptsList[i]+'">'+scriptsList[i]+'</option>');
+    }
+    dialog.main.append('</select></p>');
+    
+    /*dialog.main.append('<p><label>Action:</label>'+scriptMgr.actionSelectList('script_action', 'obj')+'</p>');
+    dialog.main.append('<p><label>Réaction:</label>'+scriptMgr.reactionList('script_reaction')+'</p>');
+    dialog.main.append('<p><label>Cible de réaction:</label></p>');
+    $('#script_reaction').change(tarDynamic).blur(tarDynamic).change();*/
+}
+
 var closeBottom = function() {
 	$('#bottom').css('z-index','6');
 };
