@@ -591,11 +591,11 @@ function addScriptDialog(src, srcType){
 // Modify a script related to an obj
 function modifyScriptDialog(scriptsList) {
     dialog.showPopup('Modifier les scripts',400, 390,'confirmer');
-    dialog.main.append('<p><label>Script:</label><select>');
-    for(var i = 0; i<scriptsList.length; i++) {
-        dialog.main.append('<option value="'+scriptsList[i]+'">'+scriptsList[i]+'</option>');
-    }
+    dialog.main.append('<p><label>Script:</label><select id="chooseScript">');
+    for(var i = 0; i<scriptsList.length; i++)
+        $('<option value="'+i+'">'+scriptsList[i]+'</option>').appendTo($('#chooseScript'));
     dialog.main.append('</select></p>');
+    
     
     /*dialog.main.append('<p><label>Action:</label>'+scriptMgr.actionSelectList('script_action', 'obj')+'</p>');
     dialog.main.append('<p><label>Réaction:</label>'+scriptMgr.reactionList('script_reaction')+'</p>');
