@@ -530,15 +530,6 @@ function addScriptDialog(src, srcType){
     //var scriptsList = scriptMgr.countScripts($(src).attr('id'));
     
     dialog.showPopup('Ajouter un script pour '+name, 400, 390, 'Confirmer', src);
-    /*
-    if (scriptsList) {
-        dialog.main.append('<p>Scripts éxistants : <ul>');
-        for(var i=0; i<scriptsList.length; i++) {
-            dialog.main.append('<li>'+scriptsList[i]+'</li>');
-        }
-        dialog.main.append('</p></ul>');
-    }
-    //*/
     dialog.main.append('<p><label>Ajout automatique:</label><input id="ajout_auto" type="checkbox" style="margin-top:12px;" checked></p>');
     dialog.main.append('<p><label>Name:</label><input id="script_name" type="text" size="20"></p>');
     dialog.main.append('<p><label>Action:</label>'+scriptMgr.actionSelectList('script_action', srcType)+'</p>');
@@ -546,73 +537,83 @@ function addScriptDialog(src, srcType){
     dialog.main.append('<p><label>Cible de réaction:</label></p>');
     $('#script_reaction').change(tarDynamic).blur(tarDynamic).change();
     dialog.annuler.click(closeBottom);
-    dialog.confirm.click(function(){
-        var ajoutAuto = $('#ajout_auto').get(0).checked;
-        var name = $('#script_name').val();
-        var action = $('#script_action').val();
-        var reaction = $('#script_reaction').val();
-        if(name == "" || action == "" || reaction == ""){
-            alert('Information incomplete');
-            return;
-        }
-        
-        var tarType = scriptMgr.reactionTarget(reaction);
-        var tar = null, supp = null;
-        switch(tarType) {
-        case "page": case "script": 
-            tar = $('#script_tar').val();break;
-        case "obj": 
-            if($('#script_supp').children().length==0) {alert('Information incomplete');return;}
-            tar = $('#script_tar').data('chooser').val();
-            supp = $('#script_supp').attr('target');
-            break;
-        case "cursor":
-            tar = $('#script_tar').val();
-            if(tar == "autre") supp = $('#script_supp').attr('target');
-            break;
-        case "anime": case "image": case "game": case "audio": case "code":
-            tar = $('#script_tar').attr('target');
-            break;
-        case "effetname": default:break;
-        }
-        if(tarType != 'effetname' && (!tar || tar == "")) {
-            alert('Information incomplete');return;
-        }
-        if(scriptMgr.scripts[name]) {
-            if($('#wrongName').length == 0) {
-                dialog.main.append('<p id="wrongName" style="color: red;">Mauvais Nom</p>');
-                dialog.main.append('<p><label>Ecraser : </label><input id="eraseScript" type="checkbox"></p>');
-            }
-        }
-       if(!scriptMgr.scripts[name] || $('#eraseScript').get(0).checked) {
-            scriptMgr.addScript(name, srcid, srcType, action, tar, reaction, ajoutAuto, supp);
-            closeBottom();
-            dialog.close();
-        }
-    });
+    dialog.confirm.click({sourceId: srcid, sourceType: srcType},validScript);
 };
 // Modify a script related to an obj
 function modifyScriptDialog(scriptsList) {
     dialog.showPopup('Modifier les scripts',400, 390,'Modifier');
-    dialog.main.append('<p><label>Script:</label><select id="chooseScript">');
+    dialog.main.append('<p><label>Ajout automatique:</label><input id="ajout_auto" type="checkbox" style="margin-top:12px;" checked></p>');
+    var select = '<p><label>Script:</label><select id="script_name">';
     for(var i = 0; i<scriptsList.length; i++)
-        $('<option value="'+scriptsList[i]+'">'+scriptsList[i]+'</option>').appendTo($('#chooseScript'));
-    dialog.main.append('</select></p>');
+        select += '<option value="'+scriptsList[i]+'">'+scriptsList[i]+'</option>';
+    select += '</select></p>';
+    dialog.main.append(select);
     
-    var choosedScript = $('#chooseScript').val();
+    var choosedScript = $('#script_name').val();
     var relatedAction = scriptMgr.scripts[choosedScript].action;
     var relatedReaction = scriptMgr.scripts[choosedScript].reaction;
     dialog.main.append('<p><label>Action:</label>'+scriptMgr.actionSelectList('script_action', 'obj', relatedAction)+'</p>');
     dialog.main.append('<p><label>Réaction:</label>'+scriptMgr.reactionList('script_reaction', relatedReaction)+'</p>');
     dialog.main.append('<p><label>Cible de réaction:</label></p>');
     $('#script_reaction').change(tarDynamic).blur(tarDynamic).change();
+    
+    var srcid = scriptMgr.scripts[$('#script_name').val()].src;
+    var srcType = scriptMgr.scripts[$('#script_name').val()].srcType;
+    dialog.confirm.click({sourceId: srcid, sourceType: srcType},validScript)
 }
 
+function validScript(e){
+    var srcid = e.data.sourceId;
+    var srcType = e.data.sourceType;
+    var ajoutAuto = $('#ajout_auto').get(0).checked;
+    var name = $('#script_name').val();
+    var action = $('#script_action').val();
+    var reaction = $('#script_reaction').val();
+    if(name == "" || action == "" || reaction == ""){
+        alert('Information incomplete');
+        return;
+    }
+
+    var tarType = scriptMgr.reactionTarget(reaction);
+    var tar = null, supp = null;
+    switch(tarType) {
+    case "page": case "script": 
+        tar = $('#script_tar').val();break;
+    case "obj": 
+        if($('#script_supp').children().length==0) {alert('Information incomplete');return;}
+        tar = $('#script_tar').data('chooser').val();
+        supp = $('#script_supp').attr('target');
+        break;
+    case "cursor":
+        tar = $('#script_tar').val();
+        if(tar == "autre") supp = $('#script_supp').attr('target');
+        break;
+    case "anime": case "image": case "game": case "audio": case "code":
+        tar = $('#script_tar').attr('target');
+        break;
+    case "effetname": default:break;
+    }
+    if(tarType != 'effetname' && (!tar || tar == "")) {
+        alert('Information incomplete');return;
+    }
+    if(scriptMgr.scripts[name]) {
+        if($('#wrongName').length == 0) {
+            dialog.main.append('<p id="wrongName" style="color: red;">Mauvais Nom</p>');
+            dialog.main.append('<p><label>Ecraser : </label><input id="eraseScript" type="checkbox"></p>');
+        }
+    }
+    if(!scriptMgr.scripts[name] || $('#eraseScript').get(0).checked) {
+        scriptMgr.addScript(name, srcid, srcType, action, tar, reaction, ajoutAuto, supp);
+        closeBottom();
+        dialog.close();
+    }
+}
+    
 var closeBottom = function() {
 	$('#bottom').css('z-index','6');
 };
 function tarDynamic(e){
-    var choosedScript = $('#chooseScript').val();
+    var choosedScript = $('#script_name').val();
     closeBottom();
     var react = $(this).val();
     var cible = $('.popup_body p:eq(4)');

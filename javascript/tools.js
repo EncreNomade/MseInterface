@@ -1241,38 +1241,17 @@ var scriptMgr = function() {
                 $('#'+objId+' .scriptCounter').remove();
             }
             if (listScript.length != 0) {
-                var scriptIcon = (function() {
-                    var currIcon = $('#'+objId+' .del_container img');
-                    for(var i=0; i<currIcon.length; i++){
-                        if($(currIcon[i]).attr('src') == './images/UI/addscript.jpg') {
-                            return $(currIcon[i]);
-                        }
-                    }
-                })();
+                var scriptIcon = $('#'+objId+' .del_container img[src="./images/UI/addscript.jpg"]');
                 //var scriptIconPos = scriptIcon.css('top');
                 $('#'+objId+' .del_container').append('<div class="scriptCounter">'+ nbScripts +'</div>');
-                $('#'+objId+' .del_container .scriptCounter').hide();
-                 $('#'+objId+' .del_container .scriptCounter').click(addScriptForObj);
-                $('#'+objId+' .del_container .scriptCounter').css('top', parseInt(scriptIcon.css('top'))+4);
+                var displayingHoverIc = $($('#'+objId+' .del_container').children()[0]).css('display');
+                if (displayingHoverIc == 'none') $('#'+objId+' .del_container .scriptCounter').hide();
+                $('#'+objId+' .del_container .scriptCounter').click(addScriptForObj);
+                $('#'+objId+' .del_container .scriptCounter').css('top', parseInt(scriptIcon.css('top'))+4); //positionning the notification icons
                 $('#'+objId).hover(
                     function(){$('#'+objId+' .del_container .scriptCounter').show();},
                     function(){$('#'+objId+' .del_container .scriptCounter').hide();}
                 );
-                
-                /*$('#'+objId+' .scriptCounter').click(function(){
-                    var objId = $(this).parent().attr('id');
-                    dialog.showPopup('Liste de script pour '+objId, 400, 390, 'Confirmer');
-                    var scriptList = scriptMgr.countScripts(objId);
-                    dialog.main.append('<table>')
-                    dialog.main.append('<tr><th>Nom</th></tr>')
-                    for (var i=0; i<scriptList.length; i++) {
-                        dialog.main.append('<tr><td>'+scriptList[i] +'</td>');
-                        dialog.main.append('<td id="modif_script_'+objId+'">modifier</td>');
-                        dialog.main.append('<td id="modif_script_'+objId+'">supprimer</td></tr>');
-                    }
-                    
-                    dialog.main.append('</table>')
-                });*/
             }
             if(listScript.length > 0) return listScript;
         },
