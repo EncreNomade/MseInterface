@@ -1155,10 +1155,10 @@ var scriptMgr = function() {
             pageTrans: "page",
             objTrans: "obj",
             playAnime: "anime",
-            changeCursor: "cursor",
+            changeCursor: "cursor",//
             playVoice: "audio",
-            addScript: "script",
-            script: "code",
+            addScript: "script",//
+            script: "code",//
             effet: "effetname",
             playDefi: "",
             pauseDefi: "",
@@ -1177,24 +1177,36 @@ var scriptMgr = function() {
         cursors: ['default','pointer','crosshair','text','wait','help','move','autre'],
         scripts: {},
         reactionTarget: function(type) {return this.reaction[type];},
-        actionSelectList: function(id, type){
+        actionSelectList: function(id, type, choosedElem){
             var actfortype = this.action[type];
             if(!actfortype) return "";
             var select = '<select id="'+id+'">';
-            for(var i in actfortype)
-                select += "<option value='"+actfortype[i]+"'>"+this.optionText[actfortype[i]]+"</option>";
+            for(var i in actfortype) {
+                select += "<option value='"+actfortype[i]+"' ";
+                if(choosedElem == actfortype[i]) select += 'selected';
+                select += ">"+this.optionText[actfortype[i]]+"</option>";
+            }
             select += '</select>';
             return select;
         },
-        reactionList: function(id){
+        reactionList: function(id, choosedElem){
             var select = '<select id="'+id+'">';
-            for(var i in this.reaction) select += "<option value='"+i+"'>"+this.optionText[i]+"</option>";
+            for(var i in this.reaction) {
+                select += "<option value='"+i+"'";
+                if(choosedElem == i) select += ' selected ';
+                select += ">"+this.optionText[i]+"</option>";
+            }
             select += '</select>';
             return select;
         },
-        scriptSelectList: function(id){
+        scriptSelectList: function(id, choosedElem){
+            if (choosedElem) var choosedScript = scriptMgr.scripts[choosedElem].target;
             var select = '<select id="'+id+'">';
-            for(var i in this.scripts) select += "<option value='"+i+"'>"+i+"</option>";
+            for(var i in this.scripts) {
+                select += "<option value='"+i+"'";
+                if (choosedScript == i) select += " selected ";
+                select += ">"+i+"</option>";
+            }
             select += '</select>';
             return select;
         },
@@ -2758,7 +2770,10 @@ $.fn.resizable = function(supp) {
 	this.unbind('click', chooseElemWithCtrlPts);
 	this.unbind('click', chooseElem);
 	this.unbind('click', chooseElemWithBorder);
-	if(supp !== false) this.click(chooseElemWithCtrlPts);
+	if(supp !== false) {
+            this.click(chooseElemWithCtrlPts);
+            this.click(objChoosed);
+        }
 	return this;
 }
 $.fn.selectable = function(f) {

@@ -593,23 +593,26 @@ function addScriptDialog(src, srcType){
 };
 // Modify a script related to an obj
 function modifyScriptDialog(scriptsList) {
-    dialog.showPopup('Modifier les scripts',400, 390,'confirmer');
+    dialog.showPopup('Modifier les scripts',400, 390,'Modifier');
     dialog.main.append('<p><label>Script:</label><select id="chooseScript">');
     for(var i = 0; i<scriptsList.length; i++)
-        $('<option value="'+i+'">'+scriptsList[i]+'</option>').appendTo($('#chooseScript'));
+        $('<option value="'+scriptsList[i]+'">'+scriptsList[i]+'</option>').appendTo($('#chooseScript'));
     dialog.main.append('</select></p>');
     
-    
-    /*dialog.main.append('<p><label>Action:</label>'+scriptMgr.actionSelectList('script_action', 'obj')+'</p>');
-    dialog.main.append('<p><label>Réaction:</label>'+scriptMgr.reactionList('script_reaction')+'</p>');
+    var choosedScript = $('#chooseScript').val();
+    var relatedAction = scriptMgr.scripts[choosedScript].action;
+    var relatedReaction = scriptMgr.scripts[choosedScript].reaction;
+    dialog.main.append('<p><label>Action:</label>'+scriptMgr.actionSelectList('script_action', 'obj', relatedAction)+'</p>');
+    dialog.main.append('<p><label>Réaction:</label>'+scriptMgr.reactionList('script_reaction', relatedReaction)+'</p>');
     dialog.main.append('<p><label>Cible de réaction:</label></p>');
-    $('#script_reaction').change(tarDynamic).blur(tarDynamic).change();*/
+    $('#script_reaction').change(tarDynamic).blur(tarDynamic).change();
 }
 
 var closeBottom = function() {
 	$('#bottom').css('z-index','6');
 };
 function tarDynamic(e){
+    var choosedScript = $('#chooseScript').val();
     closeBottom();
     var react = $(this).val();
     var cible = $('.popup_body p:eq(4)');
@@ -620,13 +623,21 @@ function tarDynamic(e){
     case "page":
         var select = '<select id="script_tar">';
         $('.scene').each(function(){
-            select += '<option value="'+$(this).prop('id')+'">'+$(this).prop('id')+'</option>';});
+            select += '<option value="'+$(this).prop('id')+'"';
+            if(choosedScript && scriptMgr.scripts[choosedScript].target == $(this).prop('id'))
+                select += ' selected '; // prise en compte de la selection précédente
+            select += '>'+$(this).prop('id')+'</option>';
+        });
         select += '</select>';
         cible.append(select);
         break;
     case "obj":
         var objChooser = new ObjChooser("script_tar");
         objChooser.appendTo(cible);
+        if (choosedScript) {
+            var choosedTarget = scriptMgr.scripts[choosedScript].target;
+            $('#script_tar').children('h5').text(choosedTarget);
+        }
         var dz = (new DropZone(dropToTargetZone, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "script_supp")).jqObj;
         dz.data('type', 'image');
         var supp = $('<p><label>Image après la transition:</label></p>');
@@ -664,7 +675,7 @@ function tarDynamic(e){
         cible.append(dz);
         break;
     case "script":
-        cible.append(scriptMgr.scriptSelectList('script_tar'));
+        cible.append(scriptMgr.scriptSelectList('script_tar', choosedScript));
         break;
     case "effetname": default:break;
     }
