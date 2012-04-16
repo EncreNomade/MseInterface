@@ -540,25 +540,43 @@ function addScriptDialog(src, srcType){
     dialog.confirm.click({sourceId: srcid, sourceType: srcType},validScript);
 };
 // Modify a script related to an obj
-function modifyScriptDialog(scriptsList) {
+function modifyScriptDialog(scriptsList, defaultScript) {
+    if (typeof(defaultScript) === 'undefined') defaultScript = scriptsList[0];
     dialog.showPopup('Modifier les scripts',400, 390,'Modifier');
     dialog.main.append('<p><label>Ajout automatique:</label><input id="ajout_auto" type="checkbox" style="margin-top:12px;" checked></p>');
     var select = '<p><label>Script:</label><select id="script_name">';
-    for(var i = 0; i<scriptsList.length; i++)
-        select += '<option value="'+scriptsList[i]+'">'+scriptsList[i]+'</option>';
+    for(var i in scriptsList) {
+         select += '<option value="'+scriptsList[i]+'"';
+         if (scriptsList[i] == defaultScript) select += ' selected ';
+         select += '>'+scriptsList[i]+'</option>';
+    }
+       
     select += '</select></p>';
     dialog.main.append(select);
+    $('#script_name').change({script: scriptsList},function(e){
+        modifyScriptDialog(e.data.script, $(this).val());
+    });
     
     var choosedScript = $('#script_name').val();
     var relatedAction = scriptMgr.scripts[choosedScript].action;
     var relatedReaction = scriptMgr.scripts[choosedScript].reaction;
+    var srcid = scriptMgr.scripts[$('#script_name').val()].src;
+    var srcType = scriptMgr.scripts[$('#script_name').val()].srcType;
     dialog.main.append('<p><label>Action:</label>'+scriptMgr.actionSelectList('script_action', 'obj', relatedAction)+'</p>');
     dialog.main.append('<p><label>Réaction:</label>'+scriptMgr.reactionList('script_reaction', relatedReaction)+'</p>');
     dialog.main.append('<p><label>Cible de réaction:</label></p>');
     $('#script_reaction').change(tarDynamic).blur(tarDynamic).change();
     
-    var srcid = scriptMgr.scripts[$('#script_name').val()].src;
-    var srcType = scriptMgr.scripts[$('#script_name').val()].srcType;
+    dialog.addButton($('<input type="button" value="Nouveau script"></input>'));
+    var addScriptButton = dialog.buttons.children('[value="Nouveau script"]');
+    addScriptButton.click(function(){
+        dialog.close(); 
+        var srcid = scriptMgr.scripts[$('#script_name').val()].src;
+        var srcType = scriptMgr.scripts[$('#script_name').val()].srcType;
+        addScriptDialog($('#'+srcid), srcType);
+    });
+    
+    
     dialog.confirm.click({sourceId: srcid, sourceType: srcType},validScript)
 }
 
@@ -596,24 +614,18 @@ function validScript(e){
     if(tarType != 'effetname' && (!tar || tar == "")) {
         alert('Information incomplete');return;
     }
-    if(scriptMgr.scripts[name]) {
-        if($('#wrongName').length == 0) {
-            dialog.main.append('<p id="wrongName" style="color: red;">Mauvais Nom</p>');
-            dialog.main.append('<p><label>Ecraser : </label><input id="eraseScript" type="checkbox"></p>');
-        }
-    }
-    if(!scriptMgr.scripts[name] || $('#eraseScript').get(0).checked) {
-        scriptMgr.addScript(name, srcid, srcType, action, tar, reaction, ajoutAuto, supp);
-        closeBottom();
-        dialog.close();
-    }
+    
+    if (scriptMgr.scripts[name] && !confirm('Vous allez remplacer le script "'+name+'".')) return;
+    scriptMgr.addScript(name, srcid, srcType, action, tar, reaction, ajoutAuto, supp);
+    closeBottom();
+    dialog.close();
 }
     
 var closeBottom = function() {
 	$('#bottom').css('z-index','6');
 };
-function tarDynamic(e){
-    var choosedScript = $('#script_name').val();
+function tarDynamic(e) {
+    if ($('#script_name').is('select')) var choosedScript = $('#script_name').val();
     closeBottom();
     var react = $(this).val();
     var cible = $('.popup_body p:eq(4)');
@@ -625,7 +637,7 @@ function tarDynamic(e){
         var select = '<select id="script_tar">';
         $('.scene').each(function(){
             select += '<option value="'+$(this).prop('id')+'"';
-            if(choosedScript && scriptMgr.scripts[choosedScript].target == $(this).prop('id'))
+            if(typeof(choosedScript) !== 'undefined' && scriptMgr.scripts[choosedScript].target == $(this).prop('id'))
                 select += ' selected '; // prise en compte de la selection précédente
             select += '>'+$(this).prop('id')+'</option>';
         });
@@ -635,7 +647,7 @@ function tarDynamic(e){
     case "obj":
         var objChooser = new ObjChooser("script_tar");
         objChooser.appendTo(cible);
-        if (choosedScript) {
+        if (typeof(choosedScript) !== 'undefined') {
             var choosedTarget = scriptMgr.scripts[choosedScript].target;
             $('#script_tar').children('h5').text(choosedTarget);
         }
@@ -644,6 +656,9 @@ function tarDynamic(e){
         var supp = $('<p><label>Image après la transition:</label></p>');
         supp.append(dz);
         cible.after(supp);
+        if (typeof(choosedScript) !== 'undefined')
+            dz.html(srcMgr.getExpo(scriptMgr.scripts[choosedScript].supp));
+        
         // show ressource panel
         $('#bottom').css('z-index','110');
         break;
