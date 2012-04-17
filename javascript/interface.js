@@ -543,7 +543,8 @@ function addScriptDialog(src, srcType){
             break;
         case "page" : scriptsList = scriptMgr.countScripts(src.text(), srcType);
             break;
-        
+        case "anime": scriptsList = scriptMgr.countScripts(src.data('srcId'), srcType);
+            break;
     }
     if (scriptsList){
         var modifyScriptsButton = dialog.addButton($('<input type="button" value="Modifier les scripts existants"></input>'));
@@ -581,7 +582,7 @@ function modifyScriptDialog(scriptsList, defaultScript) {
     var relatedReaction = scriptMgr.scripts[choosedScript].reaction;
     var srcid = scriptMgr.scripts[$('#script_name').val()].src;
     var srcType = scriptMgr.scripts[$('#script_name').val()].srcType;
-    dialog.main.append('<p><label>Action:</label>'+scriptMgr.actionSelectList('script_action', 'obj', relatedAction)+'</p>');
+    dialog.main.append('<p><label>Action:</label>'+scriptMgr.actionSelectList('script_action', srcType, relatedAction)+'</p>');
     dialog.main.append('<p><label>Réaction:</label>'+scriptMgr.reactionList('script_reaction', relatedReaction)+'</p>');
     dialog.main.append('<p><label>Cible de réaction:</label></p>');
     $('#script_reaction').change(tarDynamic).blur(tarDynamic).change();
@@ -671,7 +672,7 @@ function tarDynamic(e) {
         var supp = $('<p><label>Image après la transition:</label></p>');
         supp.append(dz);
         cible.after(supp);
-        if (typeof(choosedScript) !== 'undefined') {
+        if (typeof(choosedScript) !== 'undefined' && scriptMgr.scripts[choosedScript].reaction == "objTrans") {
             var choosedTarget = scriptMgr.scripts[choosedScript].target;
             $('#script_tar').children('h5').text(choosedTarget);
             dz.html(srcMgr.getExpo(scriptMgr.scripts[choosedScript].supp));
