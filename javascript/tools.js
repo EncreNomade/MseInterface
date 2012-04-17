@@ -1210,9 +1210,13 @@ var scriptMgr = function() {
             select += '</select>';
             return select;
         },
-        cursorSelectList: function(id){
+        cursorSelectList: function(id, choosedCursor){
             var select = '<select id="'+id+'">';
-            for(var i in this.cursors) select += "<option value='"+this.cursors[i]+"'>"+this.cursors[i]+"</option>";
+            for(var i in this.cursors){
+                select += "<option value='"+this.cursors[i]+"'";
+                if (choosedCursor == this.cursors[i]) select += ' selected ';
+                select += ">"+this.cursors[i]+"</option>";
+            } 
             select += '</select>';
             return select;
         },
@@ -2338,6 +2342,7 @@ Popup.prototype = {
 	},
 	addButton: function(btn) {
 	    this.buttons.prepend(btn);
+		 return $(btn);
 	},
 	
 	init: function() {

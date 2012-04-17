@@ -498,9 +498,10 @@ function addScriptForObj(e){
     e.preventDefault();
     e.stopPropagation();
     var obj = $(this).parent().parent();
-    var relatedScripts = scriptMgr.countScripts(obj.attr('id'));
-    if (relatedScripts) modifyScriptDialog(relatedScripts);
-    else addScriptDialog(obj, "obj");
+    //var relatedScripts = scriptMgr.countScripts(obj.attr('id'));
+    //if (relatedScripts) modifyScriptDialog(relatedScripts);
+    //else 
+    addScriptDialog(obj, "obj");
 };
 function addScriptDialog(src, srcType){
     var name = "";
@@ -527,7 +528,7 @@ function addScriptDialog(src, srcType){
         srcid = src.prop('id');
     }
     if(!srcType || !srcid || srcid == "") return;
-    //var scriptsList = scriptMgr.countScripts($(src).attr('id'));
+    
     
     dialog.showPopup('Ajouter un script pour '+name, 400, 390, 'Confirmer', src);
     dialog.main.append('<p><label>Ajout automatique:</label><input id="ajout_auto" type="checkbox" style="margin-top:12px;" checked></p>');
@@ -538,14 +539,20 @@ function addScriptDialog(src, srcType){
     $('#script_reaction').change(tarDynamic).blur(tarDynamic).change();
     dialog.annuler.click(closeBottom);
     dialog.confirm.click({sourceId: srcid, sourceType: srcType},validScript);
+    
+    var scriptsList = scriptMgr.countScripts($(src).attr('id'));
+    if (scriptsList){
+        var modifyScriptsButton = dialog.addButton($('<input type="button" value="Modifier les scripts existants"></input>'));
+        modifyScriptsButton.click(function(){ modifyScriptDialog(scriptsList); });
+    }
 };
 // Modify a script related to an obj
 function modifyScriptDialog(scriptsList, defaultScript) {
     if (typeof(defaultScript) === 'undefined') defaultScript = scriptsList[0];
-    dialog.showPopup('Modifier les scripts',400, 390,'Modifier');
-    dialog.main.append('<p><label>Ajout automatique:</label><input id="ajout_auto" type="checkbox" style="margin-top:12px;" checked></p>');
-    var select = '<p><label>Script:</label><select id="script_name">';
-    for(var i in scriptsList) {
+    dialog.showPopup('Modifier les scripts',400, 410,'Modifier');
+    
+    var select = '<p><label>Choix du script:</label><select id="script_name">';
+    for(var i = 0; i<scriptsList.length; i++) {
          select += '<option value="'+scriptsList[i]+'"';
          if (scriptsList[i] == defaultScript) select += ' selected ';
          select += '>'+scriptsList[i]+'</option>';
@@ -553,11 +560,19 @@ function modifyScriptDialog(scriptsList, defaultScript) {
        
     select += '</select></p>';
     dialog.main.append(select);
+    $('#script_name').parent().css('color', 'red');
+    $('#script_name').parent().css('font-weight', 'bold');
     $('#script_name').change({script: scriptsList},function(e){
         modifyScriptDialog(e.data.script, $(this).val());
     });
     
     var choosedScript = $('#script_name').val();
+    var checkbox = '<p><label>Ajout automatique:</label><input id="ajout_auto" type="checkbox" style="margin-top:12px;"';
+    if(scriptMgr.scripts[choosedScript].immediate) checkbox += ' checked ';
+    checkbox += '</p>';
+    dialog.main.append(checkbox);
+    
+    
     var relatedAction = scriptMgr.scripts[choosedScript].action;
     var relatedReaction = scriptMgr.scripts[choosedScript].reaction;
     var srcid = scriptMgr.scripts[$('#script_name').val()].src;
@@ -647,23 +662,24 @@ function tarDynamic(e) {
     case "obj":
         var objChooser = new ObjChooser("script_tar");
         objChooser.appendTo(cible);
-        if (typeof(choosedScript) !== 'undefined') {
-            var choosedTarget = scriptMgr.scripts[choosedScript].target;
-            $('#script_tar').children('h5').text(choosedTarget);
-        }
         var dz = (new DropZone(dropToTargetZone, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "script_supp")).jqObj;
         dz.data('type', 'image');
         var supp = $('<p><label>Image après la transition:</label></p>');
         supp.append(dz);
         cible.after(supp);
-        if (typeof(choosedScript) !== 'undefined')
+        if (typeof(choosedScript) !== 'undefined') {
+            var choosedTarget = scriptMgr.scripts[choosedScript].target;
+            $('#script_tar').children('h5').text(choosedTarget);
             dz.html(srcMgr.getExpo(scriptMgr.scripts[choosedScript].supp));
+        }
         
         // show ressource panel
         $('#bottom').css('z-index','110');
         break;
     case "cursor":
-        cible.append(scriptMgr.cursorSelectList('script_tar'));
+        var choosedCursor = false;
+        if (typeof(choosedScript) !== 'undefined') choosedCursor = scriptMgr.scripts[choosedScript].target;
+        cible.append(scriptMgr.cursorSelectList('script_tar', choosedCursor));
         $('#script_tar').change(function(){
             if($(this).val() == "autre") {
                 // show ressource panel
@@ -672,12 +688,14 @@ function tarDynamic(e) {
                 var dz = (new DropZone(dropToTargetZone, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "script_supp")).jqObj;
                 dz.data('type', "image");
                 $('.popup_body p:eq(4)').after(supp.append(dz));
+                if (typeof(choosedScript) !== 'undefined') dz.html(srcMgr.getExpo(scriptMgr.scripts[choosedScript].supp));
             }
             else {
                 closeBottom();
                 $('.popup_body p:eq(4)').nextAll().remove();
             }
         });
+        if (choosedCursor == 'autre') $('#script_tar').change() //trigger for display the choosed cursor if it's "autre"
         break;
     case "anime":
     case "image":
@@ -689,6 +707,8 @@ function tarDynamic(e) {
         var dz = (new DropZone(dropToTargetZone, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "script_tar")).jqObj;
         dz.data('type', type);
         cible.append(dz);
+        if (typeof(choosedScript) !== 'undefined')
+            dz.html(srcMgr.getExpo(scriptMgr.scripts[choosedScript].target));
         break;
     case "script":
         cible.append(scriptMgr.scriptSelectList('script_tar', choosedScript));
