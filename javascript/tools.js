@@ -1287,6 +1287,29 @@ var scriptMgr = function() {
                         });
                     }
                     break;
+                case "anime":
+                    if (listScript.length > 0) {
+                        var expo = srcMgr.expos[objId];
+                        expo.dblclick({scriptCount: nbScripts},function(e){
+                            if ($('#circleMenu .scriptCounter').length > 0) $('#circleMenu .scriptCounter').remove();
+                            var nbScripts = e.data.scriptCount;
+                            var scriptIcon = $('#circleMenu img[src="./images/UI/addscript.jpg"]');
+                            var countIcon = $('<div class="scriptCounter">'+nbScripts+'</div>');
+                            $('#circleMenu').append(countIcon);
+                            countIcon.hide();
+
+                            setTimeout(majCssCountIcon,600);
+                            function majCssCountIcon(){
+                                countIcon.css('top', scriptIcon.css('top'));
+                                countIcon.css('top', '+=15');
+                                countIcon.css('left', scriptIcon.css('left'));
+                                countIcon.css('left', '+=15');
+                                countIcon.fadeIn();
+                            }
+                            countIcon.click({src: pageLabel},function(e){addScriptDialog(e.data.src);});
+                        });
+                    }
+                    break;
             }
             if(listScript.length > 0) return listScript;
         },

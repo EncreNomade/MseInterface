@@ -593,7 +593,16 @@ function modifyScriptDialog(scriptsList, defaultScript) {
         dialog.close(); 
         var srcid = scriptMgr.scripts[$('#script_name').val()].src;
         var srcType = scriptMgr.scripts[$('#script_name').val()].srcType;
-        addScriptDialog($('#'+srcid), srcType);
+        var src;
+        switch(srcType) {
+        case "obj": src = $('#' + scriptMgr.scripts[$('#script_name').val()].src);
+            break;
+        case "page" : src =  $('#pageBar .active');
+            break;
+        case "anime": src = srcMgr.expos[(scriptMgr.scripts[$('#script_name').val()].src)];
+            break;
+    }
+        addScriptDialog(src, srcType);
     });
     
     
