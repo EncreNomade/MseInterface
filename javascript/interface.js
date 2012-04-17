@@ -498,9 +498,6 @@ function addScriptForObj(e){
     e.preventDefault();
     e.stopPropagation();
     var obj = $(this).parent().parent();
-    //var relatedScripts = scriptMgr.countScripts(obj.attr('id'));
-    //if (relatedScripts) modifyScriptDialog(relatedScripts);
-    //else 
     addScriptDialog(obj, "obj");
 };
 function addScriptDialog(src, srcType){
@@ -540,7 +537,14 @@ function addScriptDialog(src, srcType){
     dialog.annuler.click(closeBottom);
     dialog.confirm.click({sourceId: srcid, sourceType: srcType},validScript);
     
-    var scriptsList = scriptMgr.countScripts($(src).attr('id'));
+    var scriptsList;
+    switch(srcType) {
+        case "obj": scriptsList = scriptMgr.countScripts(src.attr('id'), srcType);
+            break;
+        case "page" : scriptsList = scriptMgr.countScripts(src.text(), srcType);
+            break;
+        
+    }
     if (scriptsList){
         var modifyScriptsButton = dialog.addButton($('<input type="button" value="Modifier les scripts existants"></input>'));
         modifyScriptsButton.click(function(){ modifyScriptDialog(scriptsList); });

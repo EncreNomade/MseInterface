@@ -1223,39 +1223,70 @@ var scriptMgr = function() {
         addScript: function(name, src, srcType, action, target, reaction, immediate, supp){
             // If a name we are overhiding an existing script wich is relatad to another src
             // we have to update the scripts number of this old src.
-            if(this.scripts[name] && this.scripts[name].src != src) var oldSrc = this.scripts[name].src;
+            if(this.scripts[name] && this.scripts[name].src != src) {
+                var oldSrc = this.scripts[name].src;
+                var oldSrcType = this.scripts[name].srcType;
+            }
             this.scripts[name] = new Script(src, srcType, action, target, reaction, immediate, supp);
-            this.countScripts(src);
-            if(oldSrc) this.countScripts(oldSrc);
+            this.countScripts(src, srcType);
+            if(oldSrc) this.countScripts(oldSrc, oldSrcType);
         },
         saveLocal: function(){
             return this.scripts;
         },
-        countScripts: function(objId) {
+        countScripts: function(objId, srcType) {
             var nbScripts = 0;
             var listScript = [];
             for(var elem in this.scripts) {
-                if(this.scripts[elem].src == objId){ // increment for each related scripts
+                if(this.scripts[elem].src == objId && this.scripts[elem].srcType){ // increment for each related scripts
                     nbScripts++;
                     listScript.push(elem);
                 }
             }
             
-            if ($('#'+objId+' .scriptCounter').length > 0) {
-                $('#'+objId+' .scriptCounter').remove();
-            }
-            if (listScript.length != 0) {
-                var scriptIcon = $('#'+objId+' .del_container img[src="./images/UI/addscript.jpg"]');
-                //var scriptIconPos = scriptIcon.css('top');
-                $('#'+objId+' .del_container').append('<div class="scriptCounter">'+ nbScripts +'</div>');
-                var displayingHoverIc = $($('#'+objId+' .del_container').children()[0]).css('display');
-                if (displayingHoverIc == 'none') $('#'+objId+' .del_container .scriptCounter').hide();
-                $('#'+objId+' .del_container .scriptCounter').click(addScriptForObj);
-                $('#'+objId+' .del_container .scriptCounter').css('top', parseInt(scriptIcon.css('top'))+4); //positionning the notification icons
-                $('#'+objId).hover(
-                    function(){$('#'+objId+' .del_container .scriptCounter').show();},
-                    function(){$('#'+objId+' .del_container .scriptCounter').hide();}
-                );
+            switch(srcType) {
+                case "obj":
+                    if ($('#'+objId+' .scriptCounter').length > 0) { // remove the existing icon
+                        $('#'+objId+' .scriptCounter').remove();
+                    }
+                    if (listScript.length > 0) {
+                        var scriptIcon = $('#'+objId+' .del_container img[src="./images/UI/addscript.jpg"]');
+                        $('#'+objId+' .del_container').append('<div class="scriptCounter">'+ nbScripts +'</div>');
+                        var displayingHoverIc = $($('#'+objId+' .del_container').children()[0]).css('display');
+                        if (displayingHoverIc == 'none') $('#'+objId+' .del_container .scriptCounter').hide();
+                        $('#'+objId+' .del_container .scriptCounter').click(addScriptForObj);
+                        $('#'+objId+' .del_container .scriptCounter').css('top', parseInt(scriptIcon.css('top'))+4); //positionning the notification icons
+                        $('#'+objId+' .del_container .scriptCounter').css('right', '-3px');
+                        $('#'+objId).hover(
+                            function(){$('#'+objId+' .del_container .scriptCounter').show();},
+                            function(){$('#'+objId+' .del_container .scriptCounter').hide();}
+                        );
+                    }
+                    break;
+                case "page":
+                    if (listScript.length > 0) {
+                        // We need to change the determination of the count icon !
+                        var pageLabel = $('#pageBar .active');
+                        pageLabel.dblclick({scriptCount: nbScripts},function(e){
+                            if ($('#circleMenu .scriptCounter').length > 0) $('#circleMenu .scriptCounter').remove();
+                            var nbScripts = e.data.scriptCount;
+                            var scriptIcon = $('#circleMenu img[src="./images/UI/addscript.jpg"]');
+                            var countIcon = $('<div class="scriptCounter">'+nbScripts+'</div>');
+                            $('#circleMenu').append(countIcon);
+                            countIcon.hide();
+
+                            setTimeout(majCssCountIcon,600);
+                            function majCssCountIcon(){
+                                countIcon.css('top', scriptIcon.css('top'));
+                                countIcon.css('top', '+=15');
+                                countIcon.css('left', scriptIcon.css('left'));
+                                countIcon.css('left', '+=15');
+                                countIcon.fadeIn();
+                            }
+                            countIcon.click({src: pageLabel},function(e){addScriptDialog(e.data.src);});
+                        });
+                    }
+                    break;
             }
             if(listScript.length > 0) return listScript;
         },
@@ -2826,11 +2857,11 @@ $.fn.circleMenu = function(buttonmap) {
         for(var i in buttonmap){
             var icon = $("<img src='"+buttonmap[i][0]+"'></img>");
             if(buttonmap[i][1]){
-					icon.data("func", buttonmap[i][1]);
-					icon.click(function(){
-						$(this).data("func").call(window, tar);
-					});
-				}
+                icon.data("func", buttonmap[i][1]);
+                icon.click(function(){
+                        $(this).data("func").call(window, tar);
+                });
+            }
             icon.css({'left':rx,'top':ry,'opacity':0});
             $('#circleMenu').append(icon);
             // Animation
