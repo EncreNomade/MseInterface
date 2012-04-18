@@ -1,8 +1,7 @@
-/*!
- * Mse Tiles2D Game Engine v0.1
+/*
+ * Mse 2D Game Engine
  * Encre Nomade
  *
- * Author: BOULANGER Julie, GEORGE Kevin, NGUYEN Minh-Hai
  * Copyright 2011, MseEdition
  *
  * Date: 25/11/2011
@@ -14,54 +13,224 @@
 var mdj = function() {};
  
 mdj.setGame = function(game) {
- 	mdj.currGame = game;
- };
+    mdj.currGame = game;
+};
  
- /*********************** PARTIE SCENE *********************/
- mdj.Scene = function(map) {
- 	this.setMap(map);
- 	this.target = null;
- };
- mdj.Scene.prototype = {
- 	constructor: mdj.Scene,
-  	setMap: function(map){
-  		this.map = map;
-  	},
+
+mdj.Scene = function() {
+    this.layers = [];
+    this.ox = 0;
+    this.oy = 0;
+};
+mdj.Scene.prototype = {
+    constructor: mdj.Scene,
+    // Layer managerment
+    addLayer: function(layer){
+    	if(layer instanceof mdj.Layer) {
+    		this.layers.push(layer);
+    		this.sortLayer();
+    	}
+    },
+    delLayer: function(name) {
+    	if(name == null) return;
+    	for(var i in this._layers) {
+    		if(this.layers[i].name == name) this.layers.splice(i,1);
+    	}
+    },
+    getLayer: function(name) {
+    	if(name == null) return;
+    	for(var i in this.layers) {
+    		if(this.layers[i].name == name) return this.layers[i];
+    	}
+    },
+    sortLayer: function() {
+    	this.layers.sort(function(a, b) {
+    		if(a.zid < b.zid)
+    			return -1;
+    		else if(a.zid > b.zid)
+    			return 1;
+    		else return 0;
+    	});
+    },
+    
   	setCamera: function(width,height,target){
   		this.target = target;
   		var camera = new mdj.Camera(width,height,target,target.width/2,target.height/2);
   		camera.scene = this;
   	},
-	draw: function(ctx,x,y){
-		this.map.draw(ctx,x,y);
+	draw: function(ctx){
+	    ctx.save();
+	    ctx.translate(this.ox, this.oy);
+		for(var i in this.layers) {
+		    this.layers[i].draw(ctx);
+		}
+		ctx.restore();
 	},
 	setPosition : function(offx, offy){
-		this.map.posX = offx;
-		this.map.posY = offy;
+		this.ox = offx;
+		this.oy = offy;
 	},
-	move : function(dx,dy){
-		this.map.posX += dx;
-		this.map.posY += dy;
+	move : function(dx, dy){
+		this.ox += dx;
+		this.oy += dy;
 	},
 	setCollision: function(target){
-	var collision = new mdj.Collision(this.map,target);
+	    
 	}
- };
- 
- 
-  /********* PARTIE VIEW ********/
-mdj.View= function (img, frames) {
-	this.model = null;
 };
 
+mdj.TileMapScene = function(mapurl, lazyInit){
+    mdj.Scene.call(this);
+    this.tilesets = [];
+    
+    if(typeof lazyInit == "function") this.lazyInit = lazyInit;
+    var scene = this;
+    $.ajax({
+        url: mapurl,
+        dataType: 'xml',
+        success: function(map){
+            scene.initWithTMX(map);
+        }
+    });
+};
+extend(mdj.TileMapScene, mdj.Scene);
+$.extend(mdj.TileMapScene.prototype, {
+    initWithTMX : function(xml) {
+    	var map = $(xml).find("map");
+    	var col = parseInt(map.attr("width"));
+    	var row = parseInt(map.attr("height"));
+    	var tilew = parseInt(map.attr("tilewidth"));
+    	var tileh = parseInt(map.attr("tileheight"));
+    	if(isNaN(row) || isNaN(col) || isNaN(tilew) || isNaN(tileh)) return;
+    	// Tile set
+    	var tileset = map.children("tileset").attr("name");
+    	// Layers
+    	var layers = map.children("layer");
+    	for(var i = 0; i < layers.length; i++) {
+    	    var layernode = $(layers.get(i));
+            var name = layernode.attr("name");
+            var datanode = layernode.children("data");
+            if(datanode.length == 0) continue;
+            var data = datanode.text();
+            var encoding = datanode.attr("encoding");
+            var comp = datanode.attr("compression");
+            
+            if(!data) continue;
+            // Decoding data
+            switch(encoding) {
+            case "base64":
+                var map = Base64.decodeBase64AsArray(data, 4);break;
+            default: continue;
+            }
+            // Decompress data
+            switch(comp) {
+            case "zlib":
+                continue;
+            case "gzip":
+                continue;
+            case "": 
+                break;
+            }
+            // Init Layer
+            var layer = new mdj.TileLayer(name, this, i, col, row, tilew, tileh, map, tileset);
+            this.addLayer(layer);
+        }
+        // Lazy Init
+        this.lazyInit();
+    },
+    lazyInit: function(){
+    }
+});
+
+
+
+
+
+
+/***************************Layer***************************/
+
+mdj.Layer = function(name, parent, zid, ox, oy){
+    this.name = name;
+	this.parent = parent;
+	this.zid = isNaN(zid) ? 0 : zid;
+	this.ox = isNaN(ox) ? 0 : ox;
+	this.oy = isNaN(oy) ? 0 : oy;
+};
+mdj.Layer.prototype = {
+    setOrigin: function(ox, oy) {
+        this.ox = isNaN(ox) ? 0 : ox;
+        this.oy = isNaN(oy) ? 0 : oy;
+    },
+    getScene: function() {
+        return this.parent;
+    },
+	draw: function(context) {}
+};
+
+
+mdj.TileLayer = function(name, parent, zid, col, row, tilew, tileh, map, tileset){
+	mdj.Layer.call(this, name, parent, zid);
+	if(!map || !tileset) return;
+	this.col = isNaN(col) ? 0 : col;
+	this.row = isNaN(row) ? 0 : row;
+	this.tilew = isNaN(tilew) ? 0 : tilew;
+	this.tileh = isNaN(tileh) ? 0 : tileh;
+	
+	this.map = map;
+	this.tileset = tileset;
+};
+extend(mdj.TileLayer, mdj.Layer);
+$.extend(mdj.TileLayer.prototype, {
+	drawTile: function(ctx, gid, offx, offy) {
+		var col = gid % this.col;
+		var row = Math.floor(gid / col);
+		var src = mse.src.getSrc(this.tileset);
+		if(src)
+			ctx.drawImage(src, col*this.tilew, row*this.tileh, this.tilew, this.tileh, offx, offy, this.tilew, this.tileh);
+	},
+	draw: function(ctx) {
+	    for(var i = 0; i < this.map.length; ++i){
+	        var gid = this.map[i];
+	        this.drawTile(ctx, gid, this.ox+(i%this.col)*this.tilew, this.oy+Math.floor(i/this.col)*this.tileh);
+	    }
+	}
+});
+
+
+mdj.ObjLayer = function(name, parent, zid, ox, oy){
+    mdj.Layer.call(this, name, parent, zid, ox, oy);
+	this.objs = [];
+};
+extend(mdj.ObjLayer, mdj.Layer);
+$.extend(mdj.ObjLayer.prototype, {
+	addObj: function(obj){
+		if(obj instanceof mdj.View) { 
+		    this.objs.push(obj);
+		    obj.parent = this;
+		}
+	},
+	draw: function(ctx){
+		for(var i = 0; i < this.objs.length; ++i) {
+			this.objs[i].draw(ctx);
+		}
+	}
+});
+
+
+
+
+
+
+
+mdj.View = function (model) {
+	this.setModel(model);
+};
 mdj.View.prototype= {
 	constructor: mdj.View,
-	configModel : function(model){
+	setModel: function(model){
 		this.model = model;
 	}
 };
-
-
 
 
 //Les animations de sprite
@@ -193,7 +362,7 @@ $.extend ( mdj.ImgStatic.prototype, {
  
  
  
- /********************************************* PARTIE MODEL ***********************************************/
+/********************************************* PARTIE MODEL ***********************************************/
 
 mdj.Model = function(posX,posY,width,height, view){
 	this.height = height;
@@ -255,7 +424,7 @@ $.extend(mdj.Hero.prototype, {
 	init : function(posX,posY) {
 		this.posX = posX;
 		this.posY = posY;
-		}
+	}
 });
 
 
@@ -391,10 +560,10 @@ mdj.Npc = function(posX, posY, width, height,course, vitesse, rotat, view){
 	this.posX=posX;
 	this.posY=posY;
 	this.course = course; 
-	if (this.course.length && this.course.length >0){
-	this.v=vitesse;
-	this.current=0;
-	this.next=1; 
+	if (this.course.length && this.course.length >0) {
+	    this.v=vitesse;
+	    this.current=0;
+	    this.next=1;
 	}
 };
 extend(mdj.Npc, mdj.InteractionObj);
@@ -402,12 +571,12 @@ $.extend(mdj.Npc.prototype, {
 	
 	move: function(dir){
 		switch(dir){
-	        	case "right" : this.state=1;this.view.playAnim("rightNpc"); break;
-	        	case "left" : this.state=2;this.view.playAnim("leftNpc"); break;
-	        	case "up" : this.state=4;this.view.playAnim("upNpc"); break;
-	        	case "down" : this.state=3;this.view.playAnim("downNpc"); break;
-	        	case "run" : this.state=5;this.view.playAnim("run"); break;
-	        	case "stop" : this.state=5;this.view.playAnim("stop"); break;
+	        case "right" : this.state=1;this.view.playAnim("rightNpc"); break;
+	        case "left" : this.state=2;this.view.playAnim("leftNpc"); break;
+	        case "up" : this.state=4;this.view.playAnim("upNpc"); break;
+	        case "down" : this.state=3;this.view.playAnim("downNpc"); break;
+	        case "run" : this.state=5;this.view.playAnim("run"); break;
+	        case "stop" : this.state=5;this.view.playAnim("stop"); break;
 	    }
 	},
 	play : function(){
@@ -468,431 +637,6 @@ $.extend(mdj.Item.prototype, {
 });
 
 
- 
-mdj.ObjLayer = function(offx,offy,depth){
-	this.objList = new Array();
-	this.parent=null;
-	
-	if(depth) this.depth = depth;
-	else this.depth = null;
-	
-	if(offx) this.offx=offx
-	else this.offx = 0;
-	if(offy) this.offy = offy
-	else this.offy = 0;
-};
-mdj.ObjLayer.prototype = {
-	addObj: function(obj){
-		if(!obj instanceof mdj.Model) return; 
-		
-		this.objList.push(obj);
-		obj.parent=this;
-		
-	},
-	draw: function(ctx){
-		for(var i = 0; i < this.objList.length; i++) {
-			this.objList[i].view.draw(ctx);
-		}
-	},
-	getOffset: function(){
-		if(this.parent) {
-			var offs = this.parent.getOffset();
-		}
-		else{
-			var offs = [0,0];
-		}
-		offs[0] += this.offx;
-		offs[1] += this.offy;
-		return offs;
-	}
-	
-};
-
-
-
-
-
-
-/* **************************Layer***************************/
-mdj.Layer = function(parent, dictioLayer, nbre_col, tileheight, width_img, tilewidth, image, posX, posY, depth){
-		this.parent = parent;
-		this.dictioLayer = dictioLayer;
-		this.nbre_col = nbre_col;
-		this.tileheight = tileheight;
-		this.width_img = width_img;
-		this.tilewidth = tilewidth;
-		this.image = image;
-		this.posX = posX;
-		this.posY = posY;
-		this.depth = depth;
-	};
-	
-
-mdj.Layer.prototype = {
-	
-	drawTile : function(numTile, context, posOffx, posOffy) {
-
-		var column = numTile % (this.width_img / this.tilewidth);
-		if(column == 0)
-			column = this.width_img / this.tilewidth;
-
-		var row = Math.ceil(numTile / (this.width_img / this.tilewidth));
-
-		var posxTile = (column - 1) * this.tilewidth;
-		var posyTile = (row - 1) * this.tileheight;
-		var dx = posOffx + this.posX;
-		var dy = posOffy + this.posY;
-		var src = mse.src.getSrc(this.image);
-		if(src && posxTile > -1 && posyTile > -1)
-			context.drawImage(src, posxTile, posyTile, this.tilewidth, this.tileheight, dx, dy, this.tilewidth, this.tileheight);
-	},
-	
-	draw : function(context) {
-		
-			//if (this.verif==true){
-			var y = 0;
-			var v = 0;
-			var k = -1;
-
-			for(var n = 0, p = this.dictioLayer.array.length; n < p; n++) {
-				if(n > this.nbre_col - 1 && n % this.nbre_col == 0) {
-					y++;
-					v = y * this.tileheight;
-					k = -1;
-				}
-
-				if(k < this.nbre_col) {
-					k++;
-				}
-				this.drawTile(this.dictioLayer.array[n], context, k * this.tilewidth, v);
-			}
-		//	}
-			/*if(this.verif==false){
-				console.log("toto");
-				var src2 = mse.src.getSrc(this.image);
-				context.drawImage(src2,this.posX,this.posY,this.tilewidth,this.tileheight); 
-			}*/
-	}
-};
-
-
-	
-/*****************************MAP******************************/
-
-mdj.Map = function(posX, posY, url_tmx){
-	
-	this.posX = posX;
-	this.posY = posY;
-	this.url_tmx = url_tmx;
-	this.layers = [];
-	
-		$.ajax({
-			type : "GET",
-			url : url_tmx,
-			dataType : "xml",
-			context: this,
-			complete: function(xhr, code) {
-				this.parseXml(xhr.responseText);
-			}
-		});
-};
-
-extend(mdj.Map, mdj.Layer);
-$.extend(mdj.Map.prototype, {
-	getOffset : function(){
-		var offs;
-		return offs[this.posX,this.posY];
-	},
-	parseXml : function(xml) {
-		
-		var xmlDoc = $.parseXML(xml);
-		var xml = $(xmlDoc);
-		var map = xml.find("map");
-		var tileset = xml.find("tileset");
-		var image = xml.find("image");
-		var layer = xml.find("layer");
-		var data = xml.find("data");
-		var orientation = map.attr("orientation");
-		var nbre_col = map.attr("width");
-		var nbre_ligne = map.attr("height");
-		var tilewidth = map.attr("tilewidth");
-		var tileheight = map.attr("tileheight");
-		var firstgid = tileset.attr("firstgid");
-		var name_tileset = tileset.attr("name");
-		var tilewidth_tileset = tileset.attr("tilewidth");
-		var tileheight_tileset = tileset.attr("tileheight");
-		
-		var source_img = image.attr("source");
-		var width_img = image.attr("width");
-		var height_img = image.attr("height");
-		
-		mse.src.addSource("img_tileset", source_img, "img",true);
-		var image = "img_tileset";
-		
-		var depth = 0;
-		
-		var nbre_couche = 0;
-		
-		layer.each(function(){
-		nbre_couche= nbre_couche +1;
-		});	
-	 	var saveheight;
-	 	var savewidth;
-	 	for(g=1; g<nbre_couche + 1;g++)
-	 		{
-	 			dictioLayer = {};
-	 			if (g==1){
-	 			dictioLayer.name = layer.attr("name");
-				dictioLayer.encoding = data.attr("encoding");
-				dictioLayer.compression = data.attr("compression");
-				dictioLayer.width = layer.attr("width");
-				dictioLayer.height = layer.attr("height");
-				saveheight=layer.attr("height");
-				savewidth=layer.attr("width");}
-				dictioLayer.tmxmap = data.text();
-	 			dictioLayer.array = Utils.decodeBase64AsArray(dictioLayer.tmxmap,4);
-	 			var sep = saveheight*savewidth;
-	 			
-	 			if(g==1){dictioLayer.array.splice(sep,sep*nbre_couche);}
-	 			
-	 			else if(g==nbre_couche){dictioLayer.array.splice(0,sep*(nbre_couche-1));}
-	 			
-	 			else {
-	 				dictioLayer.array.splice(0,sep*(g-1));
-	 				dictioLayer.array.splice(sep,sep*(nbre_couche-g+1));
-	 			}
-	 			depth++;
-	 			dictioLayer.depth = depth;
-	 			
-				var layer = new mdj.Layer(this, dictioLayer, nbre_col, tileheight, width_img, tilewidth, image, this.posX, this.posY, depth);
-				this.addLayer(layer);
-	 		}
-	},
-	
-
-	addLayer : function(layer,depth) {
-		if( layer instanceof mdj.Layer || layer instanceof mdj.ObjLayer) {
-			console.log(this.layers.length);
-			this.putDepth(layer, depth);
-			layer.parent=this;
-			this.layers.push(layer);
-
-			for(var i = 0; i < this.layers.length - 1; i++) {
-
-				if(layer.depth == this.layers[i].depth) {
-					for(var j = i; j < this.layers.length - 1; j++) {
-						this.layers[j].depth = this.layers[j].depth + 1;
-					}
-				}
-
-			}
-			this.sortElement();
-		}
-	}, sortElement : function() {
-		this.layers.sort(function(a, b) {
-
-			if(a.depth < b.depth)
-				return -1;
-			else if(a.depth > b.depth)
-				return 1;
-			else
-				return 0;
-
-			//return a.dictioLayer.depth - b.dictioLayer.depth;
-		});
-	}, putDepth : function(layer,depth) {
-
-		if(!isNaN(depth))
-			layer.depth = depth;
-		else if(layer.depth == undefined) {
-			layer.depth = (this.layers.length==0)?0:(this.layers[(this.layers.length) - 1].depth + 1);
-		}
-
-		/*	for(vari=0;i<this.layers.length;i++){
-		 var checknb = isNaN(this.layers[i].dictioLayer.depth);
-		 if(checknb==true){
-		 this.layers[i].dictioLayer.depth =this.layers[i-1].dictioLayer.depth;
-		 }
-		 }*/
-	}, draw : function(context,x,y) {
-		context.save();
-		context.beginPath();
-		context.rect(0, 0, 475, 356);
-		context.clip();
-		context.translate(this.posX, this.posY);
-		for(var e = 0; e < this.layers.length; e++) {
-			this.layers[e].draw(context);
-		}
-		context.restore();
-	}
-
-	
-	/*this.getPosX = function(){
-		return this.posX;	
-	};
-	
-	this.getPosY = function(){
-		return this.posY;	
-	};
-	
-	
-	this.setPosX = function(posX){
-		this.posX = posX;
-	};
-
-	this.setPosX = function(posX) {
-		this.posX = posX;
-	};
-
-	this.addLayer = function(){
-		
-	};
-	
-	this.delLayer = function(){
-		
-	};*/
-});
-
-var Base64 = {
-
-		_keyStr : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
-
-		decode : function(input) {
-			var output = "";
-			var chr1, chr2, chr3;
-			var enc1, enc2, enc3, enc4;
-			var i = 0;
-			input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
-
-			while(i < input.length) {
-				enc1 = this._keyStr.indexOf(input.charAt(i++));
-				enc2 = this._keyStr.indexOf(input.charAt(i++));
-				enc3 = this._keyStr.indexOf(input.charAt(i++));
-				enc4 = this._keyStr.indexOf(input.charAt(i++));
-				chr1 = (enc1 << 2) | (enc2 >> 4);
-				chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
-				chr3 = ((enc3 & 3) << 6) | enc4;
-				output = output + String.fromCharCode(chr1);
-
-				if(enc3 != 64) {
-					output = output + String.fromCharCode(chr2);
-				}
-				if(enc4 != 64) {
-					output = output + String.fromCharCode(chr3);
-				}
-
-			}
-			output = Base64._utf8_decode(output);
-
-			return output;
-
-		},
-
-		_utf8_decode : function(utftext) {
-			var string = "";
-			var i = 0;
-			var c = c1 = c2 = 0;
-
-			while(i < utftext.length) {
-				c = utftext.charCodeAt(i);
-
-				if(c < 128) {
-					string += String.fromCharCode(c);
-					i++;
-				} else if((c > 191) && (c < 224)) {
-					c2 = utftext.charCodeAt(i + 1);
-					string += String.fromCharCode(((c & 31) << 6) | (c2 & 63));
-					i += 2;
-				} else {
-					c2 = utftext.charCodeAt(i + 1);
-					c3 = utftext.charCodeAt(i + 2);
-					string += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
-					i += 3;
-				}
-
-			}
-
-			return string;
-		}
-	}
-
-
-	var Utils =  {
-
-		decodeBase64 : function(input) {
-			return Base64.decode(input);
-		},
-
-		decodeBase64AsArray : function(input, bytes) {
-			bytes = bytes || 1;
-
-			var dec = Base64.decode(input), ar = [], i, j, len;
-
-			for (i = 0, len = dec.length / bytes; i < len; i++) {
-				ar[i] = 0;
-				for (j = bytes - 1; j >= 0; --j) {
-					ar[i] += dec.charCodeAt((i * bytes) + j) << (j << 3);
-				}
-			}
-			return ar;
-		}
-	};
-
-/***************************ObjectLAyer***********************/
-
-mdj.ObjectLayer = function(){
-	
-	this.method = function(){
-		
-	}
-	
-};
-extend(mdj.ObjectLayer, mdj.Layer);
-$.extend(mdj.ObjectLayer.prototype, {
-
-});
-
-/***************************PersoLayer***********************/
-
-mdj.PersoLayer = function(){
-	
-	this.methode = function(){
-		
-	};	
-};
-
-extend(mdj.PersoLayer, mdj.Layer);
-$.extend(mdj.PersoLayer.prototype, {
-
-});
-
-/***************************TileLAyer***********************/
-
-mdj.TileLayer = function(){
-		
-	this.methode = function(){
-		
-	};
-};
-
-extend(mdj.TileLayer, mdj.Layer);
-$.extend(mdj.TileLayer.prototype, {
-
-});
-
-/***************************UlLAyer***********************/
-
-mdj.UlLayer = function(){
-	
-	this.methode = function(){
-		
-	};
-};
-
-extend(mdj.UlLayer, mdj.Layer);
-$.extend(mdj.UlLayer.prototype, {
-
-});
 
 
 /*************************** Collision ***********************/

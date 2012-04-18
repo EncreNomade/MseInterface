@@ -80,7 +80,7 @@ mse.src = function() {
 	    		    }
 	    		}
 	    		else this.list[name].src = cfs.getSrcPath(file);
-	    		this.list[name].load();
+	    		//this.list[name].load();
 	    		break;
 	    	default: return;
 	    	}
@@ -620,7 +620,10 @@ mse.UIObject.prototype = {
 	setAlpha: function(a) {this.globalAlpha = a;},
 	// Alpha composition
 	getAlpha: function() {
-		if(this.parent) return (this.parent.getAlpha() * this.globalAlpha);
+		if(this.parent) {
+		    var pa = this.parent.getAlpha();
+		    return ((isNaN(pa)?1:pa) * this.globalAlpha);
+		}
 		else return this.globalAlpha;
 	},
 	// Scale composition
@@ -831,8 +834,8 @@ mse.Root = function(id, width, height, orientation) {
 	           'top':height*0.1+'px'
 	           });
 	$('body').prepend(video);
-	this.video = video.flareVideo($('body'));
-	this.video.hide();
+	//this.video = video.flareVideo($('body'));
+	this.video = video.hide();
 	// Game element
 	this.gamewindow = new mse.GameShower();
 	
@@ -1302,7 +1305,7 @@ mse.ArticleLayer = function(container, z, param, article) {
 			else if(this.accelere.inObj(e.offsetX, e.offsetY)) {
 				// Right button clicked, augmente the speed
 				this.layer.interval -= 200;
-				this.layer.interval = (this.layer.interval < 300) ? 300 : this.layer.interval;
+				this.layer.interval = (this.layer.interval < 600) ? 600 : this.layer.interval;
 				this.tip.setText('plus rapide');
 			}
 			else if(this.play.inObj(e.offsetX, e.offsetY)) {
@@ -1344,7 +1347,7 @@ mse.ArticleLayer = function(container, z, param, article) {
 				break;
 			case __KEY_RIGHT:
 				this.interval -= 100;
-				this.interval = (this.interval < 300) ? 300 : this.interval;
+				this.interval = (this.interval < 600) ? 600 : this.interval;
 				break;
 			}
 		};
@@ -1543,15 +1546,18 @@ mse.ArticleLayer = function(container, z, param, article) {
 	
 		if(!this.pause) {
 			this.currTime += delta;
-			var dt = (this.currIndex!=0 && this.objList[this.currIndex-1] instanceof mse.Image) ? 3000 : this.interval;
+			var dt = (this.currIndex!=0 && this.objList[this.currIndex-1] instanceof mse.Image) ? 4000 : this.interval;
 			if(this.currTime >= dt) {
 				this.currTime = 0;
 				// Move layer to right place
 				if(this.currIndex < this.objList.length) {
 					var focusy = this.objList[this.currIndex].offy + this.objList[this.currIndex].height/2;
+					var nbfr = this.objList[this.currIndex].height/4;
+					if(nbfr < 15) nbfr = 15;
+					else if(nbfr > 70) nbfr = 70;
 					if(focusy > mse.root.height/2) {
 						var move = new mse.KeyFrameAnimation(this, {
-								frame	: [0, 15],
+								frame	: [0, nbfr],
 								pos		: [[this.offx,this.offy], [this.offx, this.height/2-focusy]]
 							}, 1);
 						move.start();
@@ -1738,34 +1744,41 @@ $.extend(mse.Sprite.prototype, {
     appendFrame: function(frame){
         if(this.frames) this.frames.push(frame);
     },
+    drawFrame: function(frame, ctx, ox, oy){
+        this.configCtxFlex(ctx);
+        if(isNaN(ox)) var ox = this.getX();
+        if(isNaN(oy)) var oy = this.getY();
+        var img = mse.src.getSrc(this.img);
+        if(!this.frames) {
+        	var x = this.sx + (frame % this.col) * this.fw;
+        	var y = this.sy + (Math.floor(frame / this.col)) * this.fh;
+        	ctx.drawImage(img, x, y, this.fw,this.fh, ox,oy, this.getWidth(), this.getHeight());
+        }
+        else {
+        	var x = this.frames[frame][0]; var y = this.frames[frame][1];
+        	var fw = this.frames[frame][2]; var fh = this.frames[frame][3];
+        	ctx.drawImage(img, x, y, fw,fh, ox,oy, this.getWidth(), this.getHeight());
+        }
+    },
     draw: function(ctx, ox, oy) {
-    	this.configCtxFlex(ctx);
-    	if(isNaN(ox)) var ox = this.getX();
-    	if(isNaN(oy)) var oy = this.getY();
-    	var img = mse.src.getSrc(this.img);
-    	if(!this.frames) {
-    		var x = this.sx + (this.curr % this.col) * this.fw;
-    		var y = this.sy + (Math.floor(this.curr / this.col)) * this.fh;
-    		ctx.drawImage(img, x, y, this.fw,this.fh, ox,oy, this.getWidth(), this.getHeight());
-    	}
-    	else {
-    		var x = this.frames[this.curr][0]; var y = this.frames[this.curr][1];
-    		var fw = this.frames[this.curr][2]; var fh = this.frames[this.curr][3];
-    		ctx.drawImage(img, x, y, fw,fh, ox,oy, this.getWidth(), this.getHeight());
-    	}
+    	this.drawFrame(this.curr, ctx, ox, oy);
     }
 });
 
 
 
 // Game object
-mse.Game = function() {
-    mse.UIObject.call(this, null, {});
-    
+mse.Game = function(params) {
     this.offx = 0.2*mse.root.width;
     this.offy = 0.2*mse.root.height;
     this.width = 0.6*mse.root.width;
     this.height = 0.6*mse.root.height;
+    
+    mse.UIObject.call(this, null, params);
+    
+    if(params) {
+        this.fillback = params.fillback ? true : false;
+    }
     this.type = "DEP";
     this.directShow = false;
 };
@@ -1857,13 +1870,14 @@ mse.GameShower = function() {
 	    this.start();
 	};
 	this.restart = function(e){
-	    mse.root.evtDistributor.removeListener('click', cbrestart);
 	    if(this.passBn.inObj(e.offsetX, e.offsetY)) {
 	        this.currGame.end();
+	        mse.root.evtDistributor.removeListener('click', cbrestart);
 	    }
 	    else if(this.restartBn.inObj(e.offsetX, e.offsetY)) {
 	        this.state = "START";
 	        this.currGame.init();
+	        mse.root.evtDistributor.removeListener('click', cbrestart);
 	    }
 	};
 	var cbrestart = new mse.Callback(this.restart, this);
@@ -1898,10 +1912,19 @@ mse.GameShower = function() {
 	    
 	    // Border
 	    if(!MseConfig.iPhone){
-	        ctx.strokeStyle = 'rgb(188,188,188)';
-	        ctx.lineWidth = 5;
-	        ctx.strokeRect(this.offx-2.5, this.offy-2.5, this.width, this.height);
-	        ctx.lineWidth = 1;
+	        if(this.currGame.fillback) {
+	            ctx.fillStyle = "#000";
+	            ctx.shadowColor ="black";
+	            ctx.shadowBlur = 20;
+	            ctx.fillRect(this.offx, this.offy, this.width, this.height);
+	            ctx.shadowBlur = 0;
+	        }
+	        else {
+	            ctx.strokeStyle = "rgb(188,188,188)";
+	            ctx.lineWidth = 5;
+	            ctx.strokeRect(this.offx-2.5, this.offy-2.5, this.width, this.height);
+	            ctx.lineWidth = 1;
+	        }
 	    }
 	    
 	    if(this.currGame.type == "INDEP" && MseConfig.iPhone && MseConfig.orientation != "landscape") {
@@ -1925,7 +1948,7 @@ mse.GameShower = function() {
     	else if(this.state == "LOSE") {
     	    //this.loseimg.draw(ctx);
     	    ctx.fillStyle = "#000";
-    	    ctx.fillRect(this.offx,this.offy,this.width-5,this.height-5);
+    	    ctx.fillRect(this.offx+5, this.offy+5, this.width-10, this.height-10);
     	    this.losetext.draw(ctx);
     	    this.passBn.draw(ctx);
     	    this.restartBn.draw(ctx);
@@ -2883,8 +2906,8 @@ mse.KeyFrameAnimation.prototype = {
     				case 'frame': case 'spriteSeq': continue; // Ignore timestamps and sprite sequences
     				case 'pos':
     				    var trans = curr[2] ? (this.calTrans[curr[2]] ? curr[2] : 2) : 2;
-    					var x = this.calTrans[trans](ratio, curr[0], next[0]);
-    					var y = this.calTrans[trans](ratio, curr[1], next[1]);
+    					var x = Math.floor(this.calTrans[trans](ratio, curr[0], next[0])*2)/2;
+    					var y = Math.floor(this.calTrans[trans](ratio, curr[1], next[1])*2)/2;
     					this.element.setPos(x, y);break;
     				case 'size':
     				    var trans = curr[2] ? (this.calTrans[curr[2]] ? curr[2] : 2) : 2;

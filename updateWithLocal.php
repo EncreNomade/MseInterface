@@ -20,7 +20,12 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
     // If project doesn't exist in session, abondon
     if( array_key_exists($pjname, $_SESSION) && array_key_exists('localStorage', $_POST) ) {
         ConnectDB();
-        $localStr = stripslashes($_POST['localStorage']);
+        if(get_magic_quotes_gpc()) {
+            $localStr = stripslashes($_POST['localStorage']);
+        }
+        else {
+            $localStr = $_POST['localStorage'];
+        }
         $local = json_decode($localStr, true);
         if(!is_null($local)) {
             $pj = $_SESSION[$pjname];

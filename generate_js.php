@@ -513,7 +513,7 @@ class ProjectGenerator {
             $layer = preg_replace("/<\/img>/", "", $layer);
             $layer = preg_replace("/(<img[^>]*)(>)/", "$1/>", $layer);
             $layer = preg_replace("/[^\$]nbsp;/", ' ', $layer);
-            $layernode = simplexml_load_string($layer, "SimpleXMLElement", LIBXML_PARSEHUGE);
+            $layernode = simplexml_load_string($layer, "SimpleXMLElement");
             $this->addLayer($layernode, $page);
         }
     }

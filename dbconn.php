@@ -1,12 +1,13 @@
 <?php
 
 function ConnectDB(){
-	$link=mysql_connect("localhost","root","root");
+    require('server_config.php');
+	$link = mysql_connect($dbConfig['server'],$dbConfig['login'],$dbConfig['mdp']);
 	if(!$link){
 		die("Impossible de se connecter à MySQL:".mysql_error());
 		return(FALSE);
 	}
-	$ok = mysql_select_db("projects");
+	$ok = mysql_select_db($dbConfig['db']);
 	if(!$ok){
 		die("Impossible de sélectionner la base de données:".mysql_error());
 		return(FALSE);
@@ -16,7 +17,7 @@ function ConnectDB(){
 
 function userLogin($uid, $mdp){
     //$mdp = md5($mdp);
-    $identite = mysql_query("SELECT * FROM User WHERE id='$uid' AND mdp='$mdp' LIMIT 1;");
+    $identite = mysql_query("SELECT * FROM EditorUsers WHERE id='$uid' AND mdp='$mdp' LIMIT 1;");
     if($identite) {
         $_SESSION['uid'] = $uid;
         return true;

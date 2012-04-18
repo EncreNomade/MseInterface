@@ -81,7 +81,7 @@ class MseProject {
         
         if(checkPjExist($this->name)) {echo "Fail to create project. Project already exist";return FALSE;}
         
-        if(!isset($_SESSION['uid'])) {echo "Fail to create project. User not login";return FALSE;}
+        if(!isset($_SESSION['uid'])) {echo "Fail to create project. EditorUsers not login";return FALSE;}
         else $owner = $_SESSION['uid'];
         $id = $owner."_".$this->name;
         

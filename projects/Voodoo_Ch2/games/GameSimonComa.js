@@ -8,12 +8,13 @@ var GameSimonComa = function() {
     this.width = mse.coor(mse.joinCoor(400)); this.height = mse.coor(mse.joinCoor(560));
     this.darkox = mse.coor(mse.joinCoor(167)); this.darkoy = mse.coor(mse.joinCoor(320));
     this.darkw = mse.coor(mse.joinCoor(50)); this.darkh = mse.coor(mse.joinCoor(43));
-    this.darkoffx = mse.coor(mse.joinCoor(178));
+    this.darkoffx = mse.coor(mse.joinCoor(174));
     this.maskx = mse.coor(mse.joinCoor(226)); this.masky = mse.coor(mse.joinCoor(343));
     
-    this.zone = [mse.coor(mse.joinCoor(225)), mse.coor(mse.joinCoor(330)), 
-                 mse.coor(mse.joinCoor(54)), mse.coor(mse.joinCoor(70))];
+    this.zone = [mse.coor(mse.joinCoor(226)), mse.coor(mse.joinCoor(340)), 
+                 mse.coor(mse.joinCoor(51)), mse.coor(mse.joinCoor(50))];
     this.touching = false;
+    this.moveon = false;
     this.startAngle = -30;
     this.ratio = 0;
     
@@ -21,6 +22,15 @@ var GameSimonComa = function() {
     this.dark = new mse.Image(null, {pos:[0,0],size:[this.darkw,this.darkh]}, "darkhead");
     this.mask = new mse.Image(this, {pos:[this.maskx,this.masky],size:[mse.coor(mse.joinCoor(51)),mse.coor(mse.joinCoor(44))],globalAlpha:0}, "sangmask");
     
+    this.move = function(e) {
+        var x = e.offsetX - this.getX();
+        var y = e.offsetY - this.getY();
+        if(x >= this.zone[0] && x <= this.zone[0]+this.zone[2] && 
+           y >= this.zone[1] && y <= this.zone[1]+this.zone[3]) {
+            this.moveon = true;
+        }
+        else this.moveon = false;
+    };
     this.touchStart = function(e) {
         var x = e.offsetX - this.getX();
         var y = e.offsetY - this.getY();
@@ -31,7 +41,8 @@ var GameSimonComa = function() {
     };
     this.touchMove = function(e) {
         var y = e.offsetY - this.getY() - this.zone[1];
-        if( y >= 0 && y <= this.zone[3] ) {
+        var x = e.offsetX - this.getX() - this.zone[0];
+        if( this.touching && x >= 0 && x <= this.zone[2] && y >= 0 && y <= this.zone[3] ) {
             this.ratio = y / this.zone[3];
             if(this.mask.globalAlpha < 1) this.mask.globalAlpha += 0.0025;
         }
@@ -44,6 +55,7 @@ var GameSimonComa = function() {
     var cbStart = new mse.Callback(this.touchStart, this);
     var cbMove = new mse.Callback(this.touchMove, this);
     var cbEnd = new mse.Callback(this.touchEnd, this);
+    var cbMoveon = new mse.Callback(this.move, this);
     
     this.init = function() {
         this.parent.interrupt();
@@ -51,11 +63,13 @@ var GameSimonComa = function() {
     	mse.root.evtDistributor.addListener('gestureStart', cbStart, true, this);
     	mse.root.evtDistributor.addListener('gestureUpdate', cbMove, true, this);
     	mse.root.evtDistributor.addListener('gestureEnd', cbEnd, true, this);
+    	mse.root.evtDistributor.addListener('move', cbMoveon, true, this);
     };
     this.end = function() {
         mse.root.evtDistributor.removeListener('gestureStart', cbStart);
         mse.root.evtDistributor.removeListener('gestureUpdate', cbMove);
         mse.root.evtDistributor.removeListener('gestureEnd', cbEnd);
+        mse.root.evtDistributor.removeListener('move', cbMoveon);
         mse.root.container.evtDeleg.setDominate(null);
         
         this.parent.play();
@@ -73,8 +87,11 @@ var GameSimonComa = function() {
     	this.mask.draw(ctx);
     	// Dark head
     	ctx.globalAlpha = 1;
-    	if(!this.touching) {
+    	if(!this.touching && !this.moveon) {
     	    ctx.translate(this.getX()+this.darkox, this.getY()+this.darkoy);
+    	}
+    	else if(this.moveon && !this.touching) {
+    	    ctx.translate(this.getX()+this.darkoffx, this.getY()+this.darkoy);
     	}
     	else {
     	    ctx.translate(this.getX()+this.darkoffx+this.darkw/2, this.getY()+this.darkoy+this.darkh/2);

@@ -24,11 +24,16 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
      && array_key_exists('srcCurrId', $_POST) ) {
         ConnectDB();
         // Read the input from stdin
-        $structStr = stripslashes($_POST['struct']);
+        if(get_magic_quotes_gpc()) {
+            $structStr = stripslashes($_POST['struct']);
+        }
+        else {
+            $structStr = $_POST['struct'];
+        }
         $struct = get_object_vars(json_decode($structStr));
         $objId = intval($_POST['objCurrId']);
         $srcId = intval($_POST['srcCurrId']);
-        if(!is_null($struct)) {
+        if(!is_null($struct) && $struct != false) {
             $pj = $_SESSION[$pjname];
             $pj->setStruct($struct);
             $pj->setCurrObjId($objId);

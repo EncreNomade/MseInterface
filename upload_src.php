@@ -69,27 +69,47 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
             }
         break;
         case "anime":
-            $anime = json_decode(stripslashes($encodedStr));
+            if(get_magic_quotes_gpc()) {
+                $anime = json_decode(stripslashes($encodedStr));
+            }
+            else {
+                $anime = json_decode($encodedStr);
+            }
             if(!is_null($anime)) {
                 $pj->addSrc($name, $type, $anime);
                 echo "SUCCESS";
             }
         break;
         case "wiki":
-            $wiki = json_decode(stripslashes($encodedStr));
+            if(get_magic_quotes_gpc()) {
+                $wiki = json_decode(stripslashes($encodedStr));
+            }
+            else {
+                $wiki = json_decode($encodedStr);
+            }
             if(!is_null($wiki)) {
                 $pj->addSrc($name, $type, $wiki);
                 echo "SUCCESS";
             }
         break;
         case "script":
-            $script = stripslashes($encodedStr);
+            if(get_magic_quotes_gpc()) {
+                $script = stripslashes($encodedStr);
+            }
+            else {
+                $script = $encodedStr;
+            }
             if(!is_null($wiki)) {
                 $pj->addSrc($name, $type, $script);
                 echo "SUCCESS";
             }
         case "scripts":
-            $scripts = json_decode(stripslashes($encodedStr));
+            if(get_magic_quotes_gpc()) {
+                $scripts = json_decode(stripslashes($encodedStr));
+            }
+            else {
+                $scripts = json_decode($encodedStr);
+            }
             if(!is_null($scripts)) {
                 foreach( $scripts as $key=>$script )
                     $pj->addScript($key, $script);

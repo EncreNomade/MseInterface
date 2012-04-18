@@ -283,7 +283,7 @@ function retrieveLocalInfo(pjsave) {
 	}
 	
 	// Update local with server storage
-	if(norecord || (lastModLocal < lastModServer && lastModLocal != -1)) {
+	if(norecord || (lastModLocal < lastModServer)) {
 	    $.get("updateFromServer.php", {'pj':pjName}, function(msg){
 	        //alert(msg);
 	        var pjsave = JSON.parse(msg);
@@ -294,7 +294,7 @@ function retrieveLocalInfo(pjsave) {
 	    });
 	}
 	// Update server with local storage
-	else if(lastModLocal > lastModServer || lastModLocal == -1) {
+	else if(lastModLocal > lastModServer) {
 	    $.post("updateWithLocal.php", {"pj":pjName, "localStorage":pjsavestr}, function(msg){
                 var modif = parseInt(msg);
                 if(!isNaN(modif)) pjsave.lastModif = modif;
