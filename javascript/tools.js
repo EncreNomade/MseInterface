@@ -1243,68 +1243,37 @@ var scriptMgr = function() {
                     listScript.push(elem);
                 }
             }
-            
-            switch(srcType) {
-                case "obj":
-                    if ($('#'+objId+' .scriptCounter').length > 0) { // remove the existing icon
+            // display a little icon with the number of related script
+            if (srcType == "obj") {
+                if ($('#'+objId+' .scriptCounter').length > 0)  // remove the existing icon
                         $('#'+objId+' .scriptCounter').remove();
-                    }
-                    if (listScript.length > 0) {
-                        var scriptIcon = $('#'+objId+' .del_container img[src="./images/UI/addscript.jpg"]');
-                        $('#'+objId+' .del_container').append('<div class="scriptCounter">'+ nbScripts +'</div>');
-                        var displayingHoverIc = $($('#'+objId+' .del_container').children()[0]).css('display');
-                        if (displayingHoverIc == 'none') $('#'+objId+' .del_container .scriptCounter').hide();
-                        $('#'+objId+' .del_container .scriptCounter').click(addScriptForObj);
-                        $('#'+objId+' .del_container .scriptCounter').css('top', parseInt(scriptIcon.css('top'))+4); //positionning the notification icons
-                        $('#'+objId+' .del_container .scriptCounter').css('right', '-3px');
-                        $('#'+objId).hover(
-                            function(){$('#'+objId+' .del_container .scriptCounter').show();},
-                            function(){$('#'+objId+' .del_container .scriptCounter').hide();}
-                        );
-                    }
-                    break;
-                case "page":
-                    if (listScript.length > 0) {
-                        // We need to change the determination of the count icon !
-                        var pageLabel = $('#pageBar .active');
-                        pageLabel.dblclick({scriptCount: nbScripts},function(e){
-                            if ($('#circleMenu .scriptCounter').length > 0) $('#circleMenu .scriptCounter').remove();
-                            var nbScripts = e.data.scriptCount;
-                            var scriptIcon = $('#circleMenu img[src="./images/UI/addscript.jpg"]');
-                            var countIcon = $('<div class="scriptCounter">'+nbScripts+'</div>');
-                            $('#circleMenu').append(countIcon);
-                            countIcon.hide();
-
-                            setTimeout(majCssCountIcon,600);
-                            function majCssCountIcon(){
-                                countIcon.css('top', scriptIcon.css('top'));
-                                countIcon.css('top', '+=15');
-                                countIcon.css('left', scriptIcon.css('left'));
-                                countIcon.css('left', '+=15');
-                                countIcon.fadeIn();
-                            }
-                            countIcon.click({src: pageLabel},function(e){addScriptDialog(e.data.src);});
-                        });
-                    }
-                    break;
-                case "anime":
-                    if (listScript.length > 0) {
-                        var expo = srcMgr.expos[objId];
-                        expo.dblclick({scriptCount: nbScripts},function(e){
-                            if ($('#circleMenu .scriptCounter').length > 0) $('#circleMenu .scriptCounter').remove();
-                            var nbScripts = e.data.scriptCount;
-                            var scriptIcon = $('#circleMenu img[src="./images/UI/addscript.jpg"]');
-                            var countIcon = $('<div class="scriptCounter">'+nbScripts+'</div>');
-                            
-
-                            /*setTimeout(majCssCountIcon,600);
-                            function majCssCountIcon(){
-                                countIcon.css('top', scriptIcon.css('top'));
-                                countIcon.css('top', '+=15');
-                                countIcon.css('left', scriptIcon.css('left'));
-                                countIcon.css('left', '+=15');
-                                countIcon.fadeIn();
-                            }*/
+                
+                if (listScript.length > 0) {
+                    $('#'+objId).data('scriptsList', listScript);
+                    var scriptIcon = $('#'+objId+' .del_container img[src="./images/UI/addscript.jpg"]');
+                    $('#'+objId+' .del_container').append('<div class="scriptCounter">'+ nbScripts +'</div>');
+                    var displayingHoverIc = $($('#'+objId+' .del_container').children()[0]).css('display');
+                    if (displayingHoverIc == 'none') $('#'+objId+' .del_container .scriptCounter').hide();
+                    $('#'+objId+' .del_container .scriptCounter').click(addScriptForObj);
+                    $('#'+objId+' .del_container .scriptCounter').css('top', parseInt(scriptIcon.css('top'))+4); //positionning the notification icons
+                    $('#'+objId+' .del_container .scriptCounter').css('right', '-3px');
+                    $('#'+objId).hover(
+                        function(){$('#'+objId+' .del_container .scriptCounter').show();},
+                        function(){$('#'+objId+' .del_container .scriptCounter').hide();}
+                    );                    
+                }
+            }
+            else {
+                var source = false;
+                if (srcType == "page") source = $('#pageBar .active');
+                else if (srcType == "anime") source = srcMgr.expos[objId];
+                if ($('#circleMenu .scriptCounter').length > 0) $('#circleMenu .scriptCounter').remove();
+                source.data('scriptsList', listScript);
+                if (listScript.length > 0 && source) {                    
+                    source.dblclick(function(e){
+                        var nbScripts = $(this).data('scriptsList').length;
+                        var countIcon = $('<div class="scriptCounter">'+nbScripts+'</div>');
+                        if (nbScripts > 0){
                             var count = 0;
                             $('#circleMenu').children().each(function(i){
                                 if ($(this).attr('src')=="./images/UI/addscript.jpg") count = i;
@@ -1313,15 +1282,15 @@ var scriptMgr = function() {
                             var rx = x, ry = (y<115) ? y : y-25, r = 90;
                             var alpha = (y<115) ? (Math.PI/180)*90/5 : -(Math.PI/180)*90/5;
                             $('body').append("<div id='circleMenu'></div>");
-                            
+
                             countIcon.css({'left':rx,'top':ry,'opacity':0});
                             $('#circleMenu').append(countIcon);
                             var iconx = r*Math.cos(alpha*count) + 15, icony = r*Math.sin(alpha*count) + 15;
                             countIcon.animate({'left':"+="+iconx+"px",'top':"+="+icony+"px",'opacity':1}, 'normal', 'swing');
                             countIcon.click({src: $(this)},function(e){addScriptDialog(e.data.src);});
-                        });
-                    }
-                    break;
+                        }
+                    });
+                }
             }
             if(listScript.length > 0) return listScript;
         },

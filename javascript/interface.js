@@ -537,18 +537,10 @@ function addScriptDialog(src, srcType){
     dialog.annuler.click(closeBottom);
     dialog.confirm.click({sourceId: srcid, sourceType: srcType},validScript);
     
-    var scriptsList;
-    switch(srcType) {
-        case "obj": scriptsList = scriptMgr.countScripts(src.attr('id'), srcType);
-            break;
-        case "page" : scriptsList = scriptMgr.countScripts(src.text(), srcType);
-            break;
-        case "anime": scriptsList = scriptMgr.countScripts(src.data('srcId'), srcType);
-            break;
-    }
-    if (scriptsList){
+    
+    if (src.data('scriptsList')){
         var modifyScriptsButton = dialog.addButton($('<input type="button" value="Modifier les scripts existants"></input>'));
-        modifyScriptsButton.click(function(){ modifyScriptDialog(scriptsList); });
+        modifyScriptsButton.click(function(){ modifyScriptDialog(src.data('scriptsList')); });
     }
 };
 // Modify a script related to an obj
@@ -599,7 +591,7 @@ function modifyScriptDialog(scriptsList, defaultScript) {
             break;
         case "page" : src =  $('#pageBar .active');
             break;
-        case "anime": src = srcMgr.expos[(scriptMgr.scripts[$('#script_name').val()].src)];
+        case "anime": src = srcMgr.expos[scriptMgr.scripts[$('#script_name').val()].src];
             break;
     }
         addScriptDialog(src, srcType);
