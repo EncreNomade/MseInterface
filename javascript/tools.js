@@ -1216,12 +1216,12 @@ var scriptMgr = function() {
                 select += "<option value='"+this.cursors[i]+"'";
                 if (choosedCursor == this.cursors[i]) select += ' selected ';
                 select += ">"+this.cursors[i]+"</option>";
-            } 
+            }
             select += '</select>';
             return select;
         },
         addScript: function(name, src, srcType, action, target, reaction, immediate, supp){
-            // If a name we are overhiding an existing script wich is relatad to another src
+            // If we are overhiding an existing script wich is relatad to another src
             // we have to update the scripts number of this old src.
             if(this.scripts[name] && this.scripts[name].src != src) {
                 var oldSrc = this.scripts[name].src;
@@ -1231,27 +1231,29 @@ var scriptMgr = function() {
             this.countScripts(src, srcType);
             if(oldSrc) this.countScripts(oldSrc, oldSrcType);
         },
+        delScript: function(name) {
+            var relatedObj = this.scripts[name].src;
+            var relatedType = this.scripts[name].srcType;
+            delete this.scripts[name];
+            this.countScripts(relatedObj, relatedType);            
+        },
         saveLocal: function(){
             return this.scripts;
         },
         countScripts: function(objId, srcType) {
-            var nbScripts = 0;
             var listScript = [];
             for(var elem in this.scripts) {
-                if(this.scripts[elem].src == objId && this.scripts[elem].srcType){ // increment for each related scripts
-                    nbScripts++;
+                if(this.scripts[elem].src == objId && this.scripts[elem].srcType) // each related scripts
                     listScript.push(elem);
-                }
             }
             // display a little icon with the number of related script
             if (srcType == "obj") {
                 if ($('#'+objId+' .scriptCounter').length > 0)  // remove the existing icon
                         $('#'+objId+' .scriptCounter').remove();
-                
-                if (listScript.length > 0) {
-                    $('#'+objId).data('scriptsList', listScript);
+                $('#'+objId).data('scriptsList', listScript);
+                if (listScript.length > 0) {                    
                     var scriptIcon = $('#'+objId+' .del_container img[src="./images/UI/addscript.jpg"]');
-                    $('#'+objId+' .del_container').append('<div class="scriptCounter">'+ nbScripts +'</div>');
+                    $('#'+objId+' .del_container').append('<div class="scriptCounter">'+ listScript.length +'</div>');
                     var displayingHoverIc = $($('#'+objId+' .del_container').children()[0]).css('display');
                     if (displayingHoverIc == 'none') $('#'+objId+' .del_container .scriptCounter').hide();
                     $('#'+objId+' .del_container .scriptCounter').click(addScriptForObj);
@@ -1277,11 +1279,10 @@ var scriptMgr = function() {
                             var count = 0;
                             $('#circleMenu').children().each(function(i){
                                 if ($(this).attr('src')=="./images/UI/addscript.jpg") count = i;
-                            })  
+                            });
                             var x = e.clientX, y = e.clientY;
                             var rx = x, ry = (y<115) ? y : y-25, r = 90;
                             var alpha = (y<115) ? (Math.PI/180)*90/5 : -(Math.PI/180)*90/5;
-                            $('body').append("<div id='circleMenu'></div>");
 
                             countIcon.css({'left':rx,'top':ry,'opacity':0});
                             $('#circleMenu').append(countIcon);
@@ -1302,7 +1303,7 @@ var scriptMgr = function() {
                 'url': url,
                 processData: false,
                 'data': data,
-                success: function(msg){
+                success: function(msg) {
                     if(msg && msg != "") alert("script upload errors: "+msg);
                 }
             });
@@ -2875,7 +2876,7 @@ $.fn.circleMenu = function(buttonmap) {
         }
         
         $('body').click(function(){
-            $('#circleMenu').fadeOut("normal", function(){$('#circleMenu').remove();});
+            if ($('#circleMenu').css('display') != 'none') $('#circleMenu').fadeOut("normal", function(){$('#circleMenu').remove();});
         });
     });
 }

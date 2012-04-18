@@ -202,12 +202,16 @@ else header("Location: index.php", true);
 	init();
 	
 function retrieveLocalInfo(pjsave) {
+    // Scripts
+    if(pjsave.scripts && !(pjsave.scripts instanceof Array) && Object.keys(pjsave.scripts).length != 0)
+        scriptMgr.scripts = pjsave.scripts;
     // Pages/Layers/Objects
     var obj = null;
     var maxid = 0, id = 0;
     var pageseri = pjsave.pageSeri;
     for(var pname in pageseri) {
         var page = addPage(pname);
+        scriptMgr.countScripts($(page).attr('id'),"page");
         var steps = 0;
         for(var sname in pageseri[pname]) {
             steps++;
@@ -227,6 +231,7 @@ function retrieveLocalInfo(pjsave) {
                                .staticButton('./images/tools/anime.png', animeTool.animateObj)
                                .staticButton('./images/UI/addscript.jpg', addScriptForObj)
                                .css({'z-index':'0','background':'none'});
+                        scriptMgr.countScripts($(this).attr('id'),'obj');
                         $(this).children('.del_container').css({
                         	'position': 'relative',
                         	'top': ($(this).children('p').length == 0) ? '0%' : '-100%',
@@ -237,9 +242,11 @@ function retrieveLocalInfo(pjsave) {
                 }
                 // Other obj
                 else {
-                    obj.selectable(null).deletable().configurable().resizable().moveable().canGoDown()
+                    obj.selectable(null).deletable().configurable().resizable().moveable()
                        .hoverButton('./images/tools/anime.png', animeTool.animateObj)
-                       .hoverButton('./images/UI/addscript.jpg', addScriptForObj);
+                       .hoverButton('./images/UI/addscript.jpg', addScriptForObj)
+                       .canGoDown();
+                    scriptMgr.countScripts(obj.attr('id'),'obj');
                     id = parseInt(obj.prop('id').substring(3));
                     if(id > maxid) maxid = id;
                 }
@@ -264,9 +271,6 @@ function retrieveLocalInfo(pjsave) {
     else if(!isNaN(maxid)) curr.objId = maxid+1;
     if(isNaN(pjsave.lastModif)) curr.lastModif = lastModServer;
     else curr.lastModif = pjsave.lastModif;
-    // Scripts
-    if(pjsave.scripts && !(pjsave.scripts instanceof Array) && Object.keys(pjsave.scripts).length != 0)
-        scriptMgr.scripts = pjsave.scripts;
 }
 	
 	// Compare server and local last modification info for Synchronization
