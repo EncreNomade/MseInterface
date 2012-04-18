@@ -47,6 +47,7 @@ addEventListener("load", function(){
 <script src="./support/flarevideo/flarevideo.js" type="text/javascript"></script> 
 <script src="./support/Interaction.js"></script>
 <script src="./support/Tools.js"></script>
+<script src="./mdj.js"></script>
 
 </head>
 
@@ -56,6 +57,8 @@ addEventListener("load", function(){
 <?php 
 if(isset($content)) print($content);
 ?>
+
+//var scene = new mdj.TileMapScene("map1.tmx");
 </script>
 
 </body>
