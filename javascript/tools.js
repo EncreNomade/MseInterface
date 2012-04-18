@@ -1295,18 +1295,30 @@ var scriptMgr = function() {
                             var nbScripts = e.data.scriptCount;
                             var scriptIcon = $('#circleMenu img[src="./images/UI/addscript.jpg"]');
                             var countIcon = $('<div class="scriptCounter">'+nbScripts+'</div>');
-                            $('#circleMenu').append(countIcon);
-                            countIcon.hide();
+                            
 
-                            setTimeout(majCssCountIcon,600);
+                            /*setTimeout(majCssCountIcon,600);
                             function majCssCountIcon(){
                                 countIcon.css('top', scriptIcon.css('top'));
                                 countIcon.css('top', '+=15');
                                 countIcon.css('left', scriptIcon.css('left'));
                                 countIcon.css('left', '+=15');
                                 countIcon.fadeIn();
-                            }
-                            countIcon.click({src: pageLabel},function(e){addScriptDialog(e.data.src);});
+                            }*/
+                            var count = 0;
+                            $('#circleMenu').children().each(function(i){
+                                if ($(this).attr('src')=="./images/UI/addscript.jpg") count = i;
+                            })  
+                            var x = e.clientX, y = e.clientY;
+                            var rx = x, ry = (y<115) ? y : y-25, r = 90;
+                            var alpha = (y<115) ? (Math.PI/180)*90/5 : -(Math.PI/180)*90/5;
+                            $('body').append("<div id='circleMenu'></div>");
+                            
+                            countIcon.css({'left':rx,'top':ry,'opacity':0});
+                            $('#circleMenu').append(countIcon);
+                            var iconx = r*Math.cos(alpha*count) + 15, icony = r*Math.sin(alpha*count) + 15;
+                            countIcon.animate({'left':"+="+iconx+"px",'top':"+="+icony+"px",'opacity':1}, 'normal', 'swing');
+                            countIcon.click({src: $(this)},function(e){addScriptDialog(e.data.src);});
                         });
                     }
                     break;
@@ -2629,12 +2641,12 @@ $.fn.staticButton = function(icon, f) {
 	staticIcon(this, f, icon);
 	return this;
 }
-$.fn.canGoDown = function(f, static) {
+$.fn.canGoDown = function(f, statiq) {
 	var down = this.children('.del_container').children().filter('img[src="./images/UI/down.png"]');
 	if(down.length > 0) down.remove();
 	if(f === false) return this;
 	var func = f || goDown;
-	if(static == true) staticIcon(this, func, './images/UI/down.png');
+	if(statiq == true) staticIcon(this, func, './images/UI/down.png');
 	else hoverIcon(this, func, './images/UI/down.png');
 	return this;
 };
@@ -2877,7 +2889,7 @@ $.fn.circleMenu = function(buttonmap) {
         $('body').append("<div id='circleMenu'></div>");
         var buttonmap = $(this).data('circleMenu');
         var count = 0;
-        for(var i in buttonmap){
+        for(var i in buttonmap) {
             var icon = $("<img src='"+buttonmap[i][0]+"'></img>");
             if(buttonmap[i][1]){
                 icon.data("func", buttonmap[i][1]);
