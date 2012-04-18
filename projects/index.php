@@ -57,8 +57,6 @@ addEventListener("load", function(){
 <?php 
 if(isset($content)) print($content);
 ?>
-
-//var scene = new mdj.TileMapScene("map1.tmx");
 </script>
 
 </body>

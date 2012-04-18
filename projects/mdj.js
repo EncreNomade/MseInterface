@@ -53,11 +53,6 @@ mdj.Scene.prototype = {
     	});
     },
     
-  	setCamera: function(width,height,target){
-  		this.target = target;
-  		var camera = new mdj.Camera(width,height,target,target.width/2,target.height/2);
-  		camera.scene = this;
-  	},
 	draw: function(ctx){
 	    ctx.save();
 	    ctx.translate(this.ox, this.oy);
@@ -66,11 +61,17 @@ mdj.Scene.prototype = {
 		}
 		ctx.restore();
 	},
-	setPosition : function(offx, offy){
+	setPosition: function(offx, offy){
 		this.ox = offx;
 		this.oy = offy;
 	},
-	move : function(dx, dy){
+	getX: function() {
+	    return this.ox;
+	},
+	getY: function() {
+	    return this.oy;
+	},
+	move: function(dx, dy){
 		this.ox += dx;
 		this.oy += dy;
 	},
@@ -147,7 +148,7 @@ $.extend(mdj.TileMapScene.prototype, {
 
 
 
-/***************************Layer***************************/
+/********************************************* PARTIE LAYER ***********************************************/
 
 mdj.Layer = function(name, parent, zid, ox, oy){
     this.name = name;
@@ -160,6 +161,14 @@ mdj.Layer.prototype = {
     setOrigin: function(ox, oy) {
         this.ox = isNaN(ox) ? 0 : ox;
         this.oy = isNaN(oy) ? 0 : oy;
+    },
+    getX: function() {
+        if(this.parent) return this.parent.getX() + this.ox;
+        else return this.ox;
+    },
+    getY: function() {
+        if(this.parent) return this.parent.getY() + this.oy;
+        else return this.oy;
     },
     getScene: function() {
         return this.parent;
@@ -219,6 +228,7 @@ $.extend(mdj.ObjLayer.prototype, {
 
 
 
+/********************************************* PARTIE VIEW ***********************************************/
 
 
 
@@ -227,419 +237,378 @@ mdj.View = function (model) {
 };
 mdj.View.prototype= {
 	constructor: mdj.View,
+	getScene: function() {
+	    if(this.parent)
+	        return this.parent.getScene();
+	    else return null;
+	},
 	setModel: function(model){
 		this.model = model;
 	}
 };
 
 
-//Les animations de sprite
-mdj.AnimationSprite= function (sprite, anime, speed) {
-	this.currentid=0;
-	this.sprite= sprite;
-	this.anime= anime;
-	this.speed = isNaN(speed) ? 2 : speed;
-};
-mdj.AnimationSprite.prototype= {
-	constructor: mdj.AnimationSprite,
-	start: function() {
-		this.currentid= 0;
-		this.speedGestion= 0;
-		
-	},
-	stop: function() {
-		this.currentid= 0;
-	},
-	logic: function () {
-		
-	if(this.speedGestion != this.speed) 
-		this.speedGestion++;
-	else {
-		if( this.currentid < this.anime.length-1) this.currentid++;
-		else this.currentid=0;
-		this.speedGestion =  0;
-	}
-	this.sprite.currentframe = this.anime[this.currentid]; //currentid = l'endroit où l'on est dans le frame
-	}
-};
-
-
-
-//les sprites
-mdj.Sprite= function (img, frames) {
-	mdj.View.call(this, img, frames);
-	this.model = null;
+mdj.Image = function (model, img) {
+	mdj.View.call(this, model);
 	this.img = img;
-	this.currentframe = 0;
-	this.animations = {}; 
-	
-	this.fw = frames[0]; // frame width
-	this.fh = frames[1]; // frame height
-	this.sx = frames[2]; // position de la frame selon x
-	this.sy = frames[3]; // position de la frame selon y
-	this.sw = frames[4]; // taille de toute les frames d'un même objet
-	this.sh = frames[5]; // taille de toute les frames d'un même objet
-	// pour trouver où se situe le sprite dans le currentframe
-	this.cols = Math.floor(this.sw/this.fw); 
-	this.rows = Math.floor(this.sh/this.fh);
-	//nombre de frames
-	this.number= this.cols * this.rows;
-	this.currAnime = null;
 };
+extend(mdj.Image, mdj.View);
+$.extend(mdj.Image.prototype, {
+	draw: function (ctx){
+		var img = mse.src.getSrc(this.img);
+		if(img){
+		    ctx.save();
+		    var box = this.model.getBoundingBox();
+		    ctx.translate(box.x + box.w/2, box.y + box.h/2);
+		    ctx.rotate(this.model.rotation);
+		    ctx.drawImage(img, -box.w/2, -box.h/2, box.w, box.h);
+		    ctx.restore();
+		}
+	}
+});
 
+
+mdj.Sprite = function(model, src, config) {
+	mdj.View.call(this, model);
+	this.model = null;
+	this.src = src;
+	this.currfr = 0;
+	this.animations = {};
+	this.currAnime = null;
+	
+	this.fw = config.w;
+	this.fh = config.h;
+	this.sx = config.sx;
+	this.sy = config.sy;
+	this.sw = config.sw;
+	this.sh = config.sh;
+	
+	this.col = Math.floor(this.sw/this.fw); 
+	this.row = Math.floor(this.sh/this.fh);
+};
 extend( mdj.Sprite, mdj.View);
 $.extend( mdj.Sprite.prototype, {
+    setFrame: function(fr) {
+        this.currfr = fr;
+    },
 	draw: function(ctx){
-		var img = mse.src.getSrc(this.img);
-		var x = this.sx + (this.currentframe % this.cols) * this.fw;
-		var y = this.sy + (Math.floor(this.currentframe / this.cols)) * this.fh;
+		var img = mse.src.getSrc(this.src);
+		var sx = this.sx + (this.currfr % this.col) * this.fw;
+		var sy = this.sy + Math.floor(this.currfr / this.col) * this.fh;
 		
-		if(this.model!=null){
-		ctx.save();
-		ctx.translate(this.model.posX, this.model.posY);
-		ctx.rotate(this.model.rotation);
-		ctx.drawImage(img,x,y, this.fw, this.fh, -this.model.width/2, -this.model.height/2, this.model.width, this.model.height)
-		ctx.restore();
-		}else return;
+		if(this.model){
+		    ctx.save();
+		    var box = this.model.getBoundingBox();
+		    ctx.translate(box.x + box.w/2, box.y + box.h/2);
+		    ctx.rotate(this.model.rotation);
+		    ctx.drawImage(img, sx, sy, this.fw, this.fh, -box.w/2, -box.h/2, box.w, box.h);
+		    ctx.restore();
+		}
 	},
 	logic: function () {
-		if (this.currAnime instanceof mdj.AnimationSprite) {
+		if (this.currAnime) {
 			this.currAnime.logic();
-		}else return;
-		
+		}
 	},
-	addAnim: function (name, anime) {
-		this.animations[name]=anime;
+	addAnime: function (name, anime) {
+	    if (anime instanceof mdj.AnimationSprite)
+		    this.animations[name] = anime;
 	},
-	playAnim: function(name) {
-		this.currAnime = this.animations[name];
-		this.animations[name].start();
+	playAnime: function(name) {
+	    if(this.animations[name]) {
+		    this.currAnime = this.animations[name];
+		    this.currAnime.start();
+		}
 	},
-	stopAnim: function(name) {
-		this.currAnime.stop();
-		this.currAnime = null;
+	stopAnime: function(name) {
+	    if(this.currAnime) {
+		    this.currAnime.stop();
+		    this.currAnime = null;
+		}
 	},
-	deleteAnim: function(name) {
+	deleteAnime: function(name) {
 		delete this.animations[name];
 	}
 });
 
 
-
-//les images statiques
-mdj.ImgStatic= function (img, rotat) {
-	mdj.View.call(this, img);
-	this.model=null;
-	this.img =img;
-	this.rotation=rotat;
+//Les animations de sprite
+mdj.AnimationSprite = function (sprite, seq, rep, delay) {
+	if(!seq instanceof Array || !sprite instanceof mdj.Sprite) return null;
+	
+	this.sprite = sprite;
+	this.seq = seq;
+	this.rep = isNaN(rep) ? 1 : rep;
+	this.delay = isNaN(delay) ? 0 : delay;
+	this.active = false;
 };
-extend(mdj.ImgStatic, mdj.View);
-$.extend ( mdj.ImgStatic.prototype, {
-	addMoveWithTarget : function(target){
-		this.moveCb = new mse.Callback(this.move, this);
-		target.evtDelegate.addListener('deplace',this.moveCb);
+mdj.AnimationSprite.prototype = {
+	constructor: mdj.AnimationSprite,
+	start: function() {
+		this.currFr = 0;
+		this.currRep = 1;
+		this.delayCount = this.delay;
+		this.active = true;
 	},
-	move : function(e){
-		this.model.posX+=e.dx;
-		this.model.posY+=e.dy;
-		switch(e.dir){
-			case "right": this.rotation = 0;break;
-			case "left": this.rotation = Math.PI;break;
-			case "up": this.rotation = Math.PI*3/2;break;
-			case "down": this.rotation = Math.PI/2;break;
+	stop: function() {
+		this.currFr = 0;
+		this.currRep = 0;
+		this.active = false;
+	},
+	logic: function(delta) {
+		if (!this.active) return false;
+		
+		if (this.currFr < this.seq.length-1) {
+			if (this.delay != 0) {
+				if (this.delayCount == 0) {
+					this.currFr++;
+					this.delayCount = this.delay;
+				}
+				this.delayCount--;
+			}
+			else this.currFr++;
 		}
-	},
-	draw: function (ctx){
-			var img = mse.src.getSrc(this.img);
-			ctx.save();
-			ctx.translate(this.model.posX+this.model.width/2, this.model.posY+this.model.height/2);
-			ctx.rotate(this.rotation);
-			ctx.drawImage(img,-this.model.width/2, -this.model.height/2,this.model.width,this.model.height);
-			ctx.restore();
+		else {
+			if (this.currRep < this.rep || this.rep == 0) {
+				this.currRep++;
+				this.currFr = 0;
+			}
+			else {
+				this.active = false;
+				return true;
+			}
+		}
+		this.sprite.setFrame(this.seq[this.currFr]);
+		return false;
 	}
-});
+};
+
 
  
  
  
 /********************************************* PARTIE MODEL ***********************************************/
 
-mdj.Model = function(posX,posY,width,height, view){
-	this.height = height;
-	this.width = width;
-	this.posX = posX;
-	this.posY = posY;
-	this.evtDelegate = new mse.EventDelegateSystem();
-	this.parent=null;
+mdj.Model = function(ox, oy, rotation) {
+	this.ox = isNaN(ox) ? 0 : ox;
+	this.oy = isNaN(oy) ? 0 : oy;
+	this.proxy = new mse.EventDelegateSystem();
+	this.parent = null;
 	this.configView(view);
 };
-mdj.Model.prototype ={ 
-	configView : function(view){
-		if (view instanceof mdj.View){
-		this.view=view;
-		this.view.configModel(this);
-		}
-	},
-	move : function(disx,disy,dir) {
-		this.posX += disx;
-		this.posY += disy;
-		var e={
+mdj.Model.prototype ={
+	move: function(disx, disy) {
+		this.ox += disx;
+		this.oy += disy;
+		var e = {
 			dx : disx,
 			dy : disy,
-			dir : dir
+			x  : this.ox,
+			y  : this.oy
 		};
-		this.evtDelegate.eventNotif('deplace', e);
+		this.proxy.eventNotif('movement', e);
 	},
-	draw: function(ctx){
-		if(this.view) this.view.draw(ctx);
+	getBoundingBox: function() {
+	    return {
+	        x: this.ox,
+	        y: this.oy,
+	        w: this.getWidth(),
+	        h: this.getHeight()
+	    };
 	},
-	getOffset: function(){
-		if(this.parent) {
-			var offs = this.parent.getOffset();
-		}
-		else{
-			var offs = [0,0];
-		}
-		offs[0] += this.posX;
-		offs[1] += this.posY;
-		return offs;
+	getX: function() {
+	    if(this.parent) return this.parent.getX() + this.ox;
+	    else return this.ox;
+	},
+	getY: function() {
+	    if(this.parent) return this.parent.getY() + this.oy;
+	    else return this.oy;
+	},
+	getWidth: function() {
+	    return 0;
+	},
+	getHeight: function() {
+	    return 0;
 	}
-	
 };
- 
- 
- 
-// Hero
-mdj.Hero = function(posX, posY, width, height, view){
-	mdj.Model.call(this, posX, posY, width, height, view);
-	this.posX=posX;
-	this.posY=posY;
-	this.input = new mdj.Input(this, mse.root.evtDistributor);
 
+mdj.BoxModel = function(ox, oy, width, height, rotation) {
+    mdj.Model.call(this, ox, oy, rotation);
+    this.width = isNaN(width) ? 0 : this.width;
+    this.height = isNaN(height) ? 0 : this.height;
 };
-extend(mdj.Hero, mdj.Model);
-
-$.extend(mdj.Hero.prototype, {
-
-	init : function(posX,posY) {
-		this.posX = posX;
-		this.posY = posY;
-	}
+extend(mdj.BoxModel, mdj.Model);
+$.extend(mdj.BoxModel.prototype, {
+    getWidth: function() {
+        return this.width;
+    },
+    getHeight: function() {
+        return this.height;
+    }
 });
 
 
+
+
+/********************************************* INPUT CONTROL ***********************************************/
 
 // gestion input clavier
-mdj.Input = function(target, evtdistr){
-		this.target = target;
-		this.evtdistr = evtdistr;
-		
-		this.movecb = new mse.Callback(this.move, this);
-		this.moveovercb = new mse.Callback(this.moveover, this);
-		
-		this.evtdistr.addListener('keydown', this.movecb, true, mdj.currGame);
-		this.evtdistr.addListener('keyup', this.moveovercb, true, mdj.currGame);
-	};
-
-mdj.Input.prototype = {
-	move : function(e) {
+mdj.DirectionalInput = function(game, target, proxy){
+    if(!(target instanceof mdj.Model)) return;
+	this.target = target;
+	this.proxy = proxy;
+	this.game = game;
+	this.onmove = false;
+	
+	// Add default step move function in target model
+	if(!this.target.stepMove)
+	    this.target.stepMove = this.stepMovefn;
+	
+	this.movecb = new mse.Callback(this.move, this);
+	this.moveEndcb = new mse.Callback(this.moveEnd, this);
+	this.touchStartcb = new mse.Callback(this.touchStart, this);
+	this.touchMovecb = new mse.Callback(this.touchMove, this);
+	
+	this.proxy.addListener('keydown', this.movecb, true, game);
+	this.proxy.addListener('keyup', this.moveEndcb, true, game);
+	if(MseConfig.iOS){
+	    this.proxy.addListener('gestureStart', this.touchStartcb, true, game);
+	    this.proxy.addListener('gestureUpdate', this.touchMovecb, true, game);
+	    this.proxy.addListener('gestureEnd', this.moveEndcb, true, game);
+	    
+	    // Add vitural pad
+	    if(game.currScene.uiLayer) game.currScene.uiLayer.addObj(this.vituralPad());
+	}
+};
+mdj.DirectionalInput.prototype = {
+    stepMovefn: function(dir) {
+        switch(dir) {
+        case "LEFT":
+            var disx = -4, disy = 0;break;
+        case "RIGHT":
+            var disx = 4, disy = 0;break;
+        case "UP":
+            var disx = 0, disy = -4;break;
+        case "DOWN":
+            var disx = 0, disy = 4;break;
+        default : return;
+        }
+        this.move(disx, disy);
+    },
+    touchStart: function(e) {
+        this.startPt = {x:e.offsetX,y:e.offsetY};
+        this.onmove = false;
+    },
+    touchMove: function(e) {
+        var valid = true;
+        var end = {x:e.offsetX,y:e.offsetY};
+        
+        var a = angleFor2Point(this.startPt, end);
+        if((a >= 0 && a <= 15) || (a <= 0 && a >= -15)){
+            //Left
+            var disx = -4, disy = 0;
+            var dir = "LEFT";
+        }
+        else if(a >= 75 && a <= 105) {
+            // Down
+            var disy = -4, disx = 0;
+            var dir = "DOWN";
+        }
+        else if(a >= 165 || a <= -165) {
+            // Right
+            var disx = 4, disy = 0;
+            var dir = "RIGHT";
+        }
+        else if(a <= -75 && a >= -105) {
+            // Up
+            var disy = 4, disx = 0;
+            var dir = "UP";
+        }
+        else return;
+        if(!this.onmove) {
+            this.onmove = true;
+            if(typeof this.target.startMove == "function") this.target.startMove(dir);
+        }
+    },
+	move: function(e) {
 	    switch(e.keyCode) {
 	    case __KEY_LEFT:
-	        this.disx = -4; this.disy = 0;
-	        dir = "left";
-	        valid = true;
-	    	break;
+	        var dir = "LEFT";break;
 	    case __KEY_RIGHT:
-	        this.disx = 4; this.disy = 0;
-	        dir = "right";
-	        valid = true;
+	        var dir = "RIGHT";
 	    	break;
 	    case __KEY_UP:
-	        this.disy = -4; this.disx = 0;
-	        dir = "up";
-	        valid = true;
-	    	break;
+	        var dir = "UP";break;
 	    case __KEY_DOWN:
-	        this.disy = 4; this.disx = 0;
-	        dir = "down";
-	        valid = true;
-	    	break;
-	    default : dir = null; return;break;
+	        var dir = "DOWN";break;
+	    default : return;
 	    }
-	    this.target.move(this.disx,this.disy,dir);
+	    this.target.stepMove(dir);
 	    
-	    if(valid && !this.onmove) {
+	    if(!this.onmove) {
 	        this.onmove = true;
-	        switch(dir){
-	        	case "right" : this.target.view.playAnim("right"); break;
-	        	case "left" : this.target.view.playAnim("left"); break;
-	        	case "up" : this.target.view.playAnim("up"); break;
-	        	case "down" : this.target.view.playAnim("down"); break;
-	        }
+	        if(typeof this.target.startMove == "function") this.target.startMove(dir);
 	    }
 	},
-	moveover : function(e) {
-	    this.disx = 0; this.disy = 0;
+	moveEnd: function(e) {
 	    this.onmove = false;
-	    if(dir){
-	    switch(dir){
-	    	case "right" : this.target.view.playAnim("stopRight"); break;
-	        case "left" : this.target.view.playAnim("stopLeft"); break;
-	        case "up" : this.target.view.playAnim("stopUp"); break;
-	        case "down" : this.target.view.playAnim("stopDown"); break;
-	    }
-	    this.target.move(this.disx,this.disy);
-	    }
+	    if(typeof this.target.endMove == "function") superthis.target.endMove(dir);
+	    this.startPt = null;
+	},
+	vituralPad: function() {
 	}
 };
 
 
-// Camera
-mdj.Camera = function(width, height, target, offx, offy){
-	this.offx=offx;
-	this.offy=offy;
-	this.scene = null;
-	this.height = height;
-	this.width = width;
+
+
+/********************************************* CAMERA ***********************************************/
+
+mdj.Camera = function(width, height, scene, target, tarOffx, tarOffy){
+	this.height = isNaN(height) ? 0 : height;
+	this.width = isNaN(width) ? 0 : width;
 	this.moveCb = new mse.Callback(this.move, this);
-	this.setTarget(target,offx,offy);
+	this.setTarget(scene, target, tarOffx, tarOffy);
 };
 mdj.Camera.prototype = {
-	move : function(e){
-		if(this.scene)
-		{
-			this.scene.move(-e.dx, -e.dy);
-		}
+	move: function(e){
+		this.ox += e.dx;
+		this.oy += e.dy;
 	},
-	setTarget : function(target, offx, offy){
-		if(!target instanceof mdj.Model) return;
+	setTarget: function(scene, target, tarOffx, tarOffy){
+		if(!target instanceof mdj.Model || !(scene instanceof mdj.Scene)) return;
 		this.target = target;
-		this.offx = isNaN(offx)?0:offx;
-		this.offy = isNaN(offy)?0:offy;
-		target.evtDelegate.addListener('deplace',this.moveCb);
-	}
-};
-
-
-
-// Interaction avec les objets
-mdj.InteractionObj = function(posX, posY, width, height,view){
-	mdj.Model.call(this, posX, posY, width, height, view);
-
-};
-extend(mdj.InteractionObj, mdj.Model);
-$.extend(mdj.InteractionObj.prototype, {
-	interagir : function(target) {
-		this.posCenter=[target.posX+(target.width/2),target.posY+(target.height/2)];
-		if((this.posCenter[0] >= this.posX) && (this.posCenter[0] <= (this.posX+this.width)) && (this.posCenter[1] >= this.posY) && (this.posCenter[1] <=(this.posY+this.height))){
-			mse.root.evtDistributor.removeListener('keydown', this.movecb);
-		    mse.root.evtDistributor.removeListener('keyup', this.moveovercb);
-		    alert('Tu as perdu ! Retente ta chance en cliquant sur OK');
-		  	mdj.currGame.init();
-		}; 
-	}
-});
-
-mdj.angleFor2Point = function (p1, p2) {
-	var angle = 0;
-	var dx = p2[0] - p1[0];
-	var dy = p2[1] - p1[1];
-	angle = Math.atan2(dy, dx);
-	return angle;
-};
-
-mdj.distance2Pts = function (p1,p2) {
-    return Math.sqrt(Math.pow(p2[0]-p1[0], 2)+Math.pow(p2[1]-p1[1], 2));
-};
-
-
-// Les npc
-mdj.Npc = function(posX, posY, width, height,course, vitesse, rotat, view){
-	mdj.InteractionObj.call(this, posX, posY, width,height, view);
-	this.rotat = rotat;
-	this.posX=posX;
-	this.posY=posY;
-	this.course = course; 
-	if (this.course.length && this.course.length >0) {
-	    this.v=vitesse;
-	    this.current=0;
-	    this.next=1;
-	}
-};
-extend(mdj.Npc, mdj.InteractionObj);
-$.extend(mdj.Npc.prototype, {
-	
-	move: function(dir){
-		switch(dir){
-	        case "right" : this.state=1;this.view.playAnim("rightNpc"); break;
-	        case "left" : this.state=2;this.view.playAnim("leftNpc"); break;
-	        case "up" : this.state=4;this.view.playAnim("upNpc"); break;
-	        case "down" : this.state=3;this.view.playAnim("downNpc"); break;
-	        case "run" : this.state=5;this.view.playAnim("run"); break;
-	        case "stop" : this.state=5;this.view.playAnim("stop"); break;
-	    }
+		this.scene = scene;
+		this.tarOffx = isNaN(tarOffx) ? 0 : tarOffx;
+		this.tarOffy = isNaN(tarOffy) ? 0 : tarOffy;
+		target.proxy.addListener('movement',this.moveCb);
+		this.ox = target.getX() - (this.width/2 - this.tarOffx);
+		this.oy = target.getY() - (this.height/2 - this.tarOffy);
 	},
-	play : function(){
-		this.startP = this.course[this.current];
-		this.endP = this.course[this.next];
-	    this.angle = mdj.angleFor2Point(this.startP, this.endP);
-	    this.distance = mdj.distance2Pts(this.startP, this.endP);
-	    
-	    var px = this.course[this.next][0] - this.posX;
-	    var py = this.course[this.next][1] - this.posY;
-	    
-	    var dx = Math.cos(this.angle)*this.v;
-	    var dy = Math.sin(this.angle)*this.v;
-	    
-	    if(this.rotat){
-	    	this.rotation = this.angle;
-	    	if(this.state!=5)this.move("run");
-	    	this.posY += dy;
-            this.posX += dx;
-	    }else{
-			 if(px ==0) {
-                 //Movement vertical
-                if(py < -this.v) {if(this.state!=4){this.move("up")};this.posY -= this.v;return;}
-                else if(py > this.v) {if(this.state!=3){this.move("down")};this.posY += this.v;return;}
-            }
-            else {
-                // Movement horizontal
-                if(px < -this.v) {if(this.state!=2){this.move("left")};this.posX -= this.v;return;}
-                else if(px > this.v) {if(this.state!=1){this.move("right")};this.posX += this.v;return;}
-            };
-            
-		}
-        // Movement over
-	    this.posX = this.course[this.next][0];
-	    this.posY = this.course[this.next][1];
-	    if(this.current < this.next) {
-		    this.current = this.next;
-		    this.next = (this.next == this.course.length-1) ? this.next-1 : this.next+1;
-	    }
-	    else {
-		    this.current = this.next;
-		    this.next = (this.next == 0) ? 1 : this.next-1;
+	drawScene: function(ctx) {
+	    if(this.target && this.scene) {
+	        ctx.save();
+	        ctx.translate(-this.ox, -this.oy);
+	        // Clip masque for NPCs
+	        ctx.beginPath();
+	        ctx.moveTo(this.ox, this.oy);
+	        ctx.lineTo(this.width, 0);
+	        ctx.lineTo(this.width, this.height);
+	        ctx.lineTo(0,this.height);
+	        ctx.closePath();
+	        ctx.clip();
+	        // Draw scene
+	        this.scene.draw();
+	        ctx.restore();
 	    }
 	}
-});
-
-
-// Les items
-mdj.Item = function(posX, posY, width, height, view){
-	mdj.InteractionObj.call(this, posX, posY, width, height, view);
 };
-extend(mdj.Item, mdj.InteractionObj);
-$.extend(mdj.Item.prototype, {
-	init : function (posX,posY) {
-		this.posX=posX;
-		this.posY=posY;
-	}
-});
 
 
 
 
-/*************************** Collision ***********************/
+/********************************************* COLLISION ***********************************************/
+
 mdj.Collision = function(map, target){
 	this.detectCb = new mse.Callback(this.detect, this);
 	this.setDetect(target);
@@ -650,7 +619,7 @@ mdj.Collision.prototype = {
 		e.dy;
 	},
 	setDetect : function(target){
-		target.evtDelegate.addListener('deplace',this.detectCb);
+		target.proxy.addListener('movement',this.detectCb);
 	}
 };
 

@@ -6,8 +6,21 @@ function mseAngleForLine(x1, y1, x2, y2) {
 	return Math.round(180 * angle/(Math.PI));
 };
 
+function angleFor2Point(p1, p2) {
+	var angle = 0;
+	var dx = p2.x - p1.x;
+	var dy = p2.y - p1.y;
+	angle = Math.atan2(dy, dx);
+	return Math.round(180 * angle/(Math.PI));
+};
+
 function distance2Pts(x1,y1,x2,y2) {
     return Math.sqrt(Math.pow(x2-x1, 2)+Math.pow(y2-y1, 2));
+};
+
+function inrect(x, y, rect) {
+    if(x >= rect[0] && x <= rect[0]+rect[2] && y >= rect[1] && y <= rect[1]+rect[3]) return true;
+    else return false;
 };
 
 function imgBoundingInBox(img, width, height) {

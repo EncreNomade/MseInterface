@@ -473,7 +473,7 @@ var FindSimon = function() {
 	        this.simondir = 90;
 	    }
 	    else if(a >= 165 || a <= -165) {
-	        // Left
+	        // RIGHT
 	        this.disx = 4; this.disy = 0;
 	        this.simondir = 180;
 	    }
