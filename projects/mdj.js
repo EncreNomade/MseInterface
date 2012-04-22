@@ -17,10 +17,15 @@ mdj.setGame = function(game) {
 };
  
 
-mdj.Scene = function() {
+mdj.Scene = function(game, w, h) {
+    if(game instanceof mse.Game) this.game = game;
+    else return;
     this.layers = [];
+    this.uilayer = null;
     this.ox = 0;
     this.oy = 0;
+    this.width = isNaN(w) ? this.game.width : w;
+    this.height = isNaN(h) ? this.game.height : h;
 };
 mdj.Scene.prototype = {
     constructor: mdj.Scene,
@@ -30,6 +35,10 @@ mdj.Scene.prototype = {
     		this.layers.push(layer);
     		this.sortLayer();
     	}
+    },
+    setUILayer: function(uilayer) {
+        if(uilayer instanceof mdj.UILayer)
+            this.uilayer = uilayer;
     },
     delLayer: function(name) {
     	if(name == null) return;
@@ -53,13 +62,20 @@ mdj.Scene.prototype = {
     	});
     },
     
-	draw: function(ctx){
+    logic: function(delta) {
+        for(var i in this.layers) {
+            this.layers[i].logic(delta);
+        }
+        if(this.uilayer) this.uilayer.logic(delta);
+    },
+	drawInRect: function(ctx, x, y, w, h){
 	    ctx.save();
-	    ctx.translate(this.ox, this.oy);
+	    ctx.translate(x, y);
 		for(var i in this.layers) {
 		    this.layers[i].draw(ctx);
 		}
 		ctx.restore();
+		if(this.uilayer) this.uilayer.draw(ctx);
 	},
 	setPosition: function(offx, offy){
 		this.ox = offx;
@@ -80,11 +96,13 @@ mdj.Scene.prototype = {
 	}
 };
 
-mdj.TileMapScene = function(mapurl, lazyInit){
-    mdj.Scene.call(this);
+mdj.TileMapScene = function(game, w, h, mapurl, tileset, lazyInit){
+    mdj.Scene.call(this, game, w, h);
     this.tilesets = [];
+    this.tileset = tileset;
     
-    if(typeof lazyInit == "function") this.lazyInit = lazyInit;
+    if(lazyInit instanceof mse.Callback) this.lazyInit = lazyInit;
+    else this.lazyInit = null;
     var scene = this;
     $.ajax({
         url: mapurl,
@@ -104,7 +122,15 @@ $.extend(mdj.TileMapScene.prototype, {
     	var tileh = parseInt(map.attr("tileheight"));
     	if(isNaN(row) || isNaN(col) || isNaN(tilew) || isNaN(tileh)) return;
     	// Tile set
-    	var tileset = map.children("tileset").attr("name");
+    	//var tileset = map.children("tileset").attr("name");
+    	var tilesetnode = map.children("tileset").children("image");
+    	var tilesetW = tilesetnode.attr("width");
+    	var tilesetH = tilesetnode.attr("height");
+    	var tileset = {
+    	    'src': this.tileset,
+    	    'row': Math.floor(tilesetH / tileh),
+    	    'col': Math.floor(tilesetW / tilew)
+    	};
     	// Layers
     	var layers = map.children("layer");
     	for(var i = 0; i < layers.length; i++) {
@@ -134,12 +160,32 @@ $.extend(mdj.TileMapScene.prototype, {
             }
             // Init Layer
             var layer = new mdj.TileLayer(name, this, i, col, row, tilew, tileh, map, tileset);
-            this.addLayer(layer);
         }
         // Lazy Init
-        this.lazyInit();
+        if(this.lazyInit) this.lazyInit.invoke();
     },
     lazyInit: function(){
+    },
+    drawInRect: function(ctx, x, y, w, h){
+        ctx.save();
+        ctx.translate(x, y);
+        
+        if(x >= 0) var sx = 0;
+        else var sx = -x;
+        if(y >= 0) var sy = 0;
+        else var sy = -y;
+        
+        if(x + this.width > w) var sw = (x >= 0 ? w - x : w);
+        else var sw = (x >= 0 ? this.width : this.width - sx);
+        if(y + this.height > h) var sh = (y >= 0 ? h - y : h);
+        else var sh = (y >= 0 ? this.height : this.height - sy);
+        
+    	for(var i in this.layers) {
+    	    this.layers[i].draw(ctx, sx, sy, sw, sh);
+    	}
+    	ctx.restore();
+    	
+    	if(this.uilayer) this.uilayer.draw(ctx);
     }
 });
 
@@ -152,10 +198,19 @@ $.extend(mdj.TileMapScene.prototype, {
 
 mdj.Layer = function(name, parent, zid, ox, oy){
     this.name = name;
-	this.parent = parent;
+	this.parent = (parent instanceof mdj.Scene) ? parent : null;
 	this.zid = isNaN(zid) ? 0 : zid;
 	this.ox = isNaN(ox) ? 0 : ox;
 	this.oy = isNaN(oy) ? 0 : oy;
+	if(this.parent) {
+	    this.parent.addLayer(this);
+	    this.width = this.parent.width;
+	    this.height = this.parent.height;
+	}
+	else {
+	    this.width = 0;
+	    this.height = 0;
+	}
 };
 mdj.Layer.prototype = {
     setOrigin: function(ox, oy) {
@@ -173,6 +228,7 @@ mdj.Layer.prototype = {
     getScene: function() {
         return this.parent;
     },
+    logic: function(){},
 	draw: function(context) {}
 };
 
@@ -191,16 +247,33 @@ mdj.TileLayer = function(name, parent, zid, col, row, tilew, tileh, map, tileset
 extend(mdj.TileLayer, mdj.Layer);
 $.extend(mdj.TileLayer.prototype, {
 	drawTile: function(ctx, gid, offx, offy) {
-		var col = gid % this.col;
-		var row = Math.floor(gid / col);
-		var src = mse.src.getSrc(this.tileset);
+	    gid -= 1;
+	    if(gid < 0) return;
+		var col = gid % this.tileset.col;
+		var row = Math.floor(gid / this.tileset.col);
+		var src = mse.src.getSrc(this.tileset.src);
 		if(src)
 			ctx.drawImage(src, col*this.tilew, row*this.tileh, this.tilew, this.tileh, offx, offy, this.tilew, this.tileh);
 	},
-	draw: function(ctx) {
-	    for(var i = 0; i < this.map.length; ++i){
-	        var gid = this.map[i];
-	        this.drawTile(ctx, gid, this.ox+(i%this.col)*this.tilew, this.oy+Math.floor(i/this.col)*this.tileh);
+	draw: function(ctx, sx, sy, sw, sh) {
+	    if(arguments.length < 5) {
+	        var cmin = 0;
+	        var rmin = 0;
+	        var cmax = this.col;
+	        var rmax = this.row;
+	    }
+	    else {
+	        var cmin = Math.floor(sx/this.tilew);
+	        var rmin = Math.floor(sy/this.tileh);
+	        var cmax = Math.ceil((sx+sw)/this.tilew);
+	        var rmax = Math.ceil((sy+sh)/this.tileh);
+	    }
+	    
+	    for(var r = rmin; r < rmax; ++r){
+	        for(var c = cmin; c < cmax; ++c) {
+	            var gid = this.map[r * this.col + c];
+	            this.drawTile(ctx, gid, c*this.tilew, r*this.tileh);
+	        }
 	    }
 	}
 });
@@ -218,10 +291,18 @@ $.extend(mdj.ObjLayer.prototype, {
 		    obj.parent = this;
 		}
 	},
+	logic: function(delta) {
+	    for(var i = 0; i < this.objs.length; ++i) {
+	    	this.objs[i].model.logic(delta);
+	    }
+	},
 	draw: function(ctx){
+	    ctx.save();
+	    ctx.translate(this.ox, this.oy);
 		for(var i = 0; i < this.objs.length; ++i) {
 			this.objs[i].draw(ctx);
 		}
+		ctx.restore();
 	}
 });
 
@@ -243,7 +324,8 @@ mdj.View.prototype= {
 	    else return null;
 	},
 	setModel: function(model){
-		this.model = model;
+	    if(model instanceof mdj.Model)
+    		this.model = model;
 	}
 };
 
@@ -258,6 +340,7 @@ $.extend(mdj.Image.prototype, {
 		var img = mse.src.getSrc(this.img);
 		if(img){
 		    ctx.save();
+		    ctx.globalAlpha = this.model.opacity;
 		    var box = this.model.getBoundingBox();
 		    ctx.translate(box.x + box.w/2, box.y + box.h/2);
 		    ctx.rotate(this.model.rotation);
@@ -270,7 +353,6 @@ $.extend(mdj.Image.prototype, {
 
 mdj.Sprite = function(model, src, config) {
 	mdj.View.call(this, model);
-	this.model = null;
 	this.src = src;
 	this.currfr = 0;
 	this.animations = {};
@@ -292,12 +374,16 @@ $.extend( mdj.Sprite.prototype, {
         this.currfr = fr;
     },
 	draw: function(ctx){
+	    if (this.currAnime)
+	    	this.currAnime.logic();
+	    
 		var img = mse.src.getSrc(this.src);
 		var sx = this.sx + (this.currfr % this.col) * this.fw;
 		var sy = this.sy + Math.floor(this.currfr / this.col) * this.fh;
 		
 		if(this.model){
 		    ctx.save();
+		    ctx.globalAlpha = this.model.opacity;
 		    var box = this.model.getBoundingBox();
 		    ctx.translate(box.x + box.w/2, box.y + box.h/2);
 		    ctx.rotate(this.model.rotation);
@@ -305,12 +391,11 @@ $.extend( mdj.Sprite.prototype, {
 		    ctx.restore();
 		}
 	},
-	logic: function () {
-		if (this.currAnime) {
-			this.currAnime.logic();
-		}
+	getAnime: function(name){
+	    if(this.animations[name]) return this.animations[name];
+	    else return null;
 	},
-	addAnime: function (name, anime) {
+	addAnime: function(name, anime) {
 	    if (anime instanceof mdj.AnimationSprite)
 		    this.animations[name] = anime;
 	},
@@ -320,7 +405,7 @@ $.extend( mdj.Sprite.prototype, {
 		    this.currAnime.start();
 		}
 	},
-	stopAnime: function(name) {
+	stopAnime: function() {
 	    if(this.currAnime) {
 		    this.currAnime.stop();
 		    this.currAnime = null;
@@ -333,7 +418,7 @@ $.extend( mdj.Sprite.prototype, {
 
 
 //Les animations de sprite
-mdj.AnimationSprite = function (sprite, seq, rep, delay) {
+mdj.AnimationSprite = function(sprite, seq, rep, delay) {
 	if(!seq instanceof Array || !sprite instanceof mdj.Sprite) return null;
 	
 	this.sprite = sprite;
@@ -392,12 +477,17 @@ mdj.AnimationSprite.prototype = {
 mdj.Model = function(ox, oy, rotation) {
 	this.ox = isNaN(ox) ? 0 : ox;
 	this.oy = isNaN(oy) ? 0 : oy;
+	this.rotation = isNaN(rotation) ? 0 : rotation;
+	this.opacity = 1;
+	this.prevOx = this.ox;
+	this.prevOy = this.oy;
 	this.proxy = new mse.EventDelegateSystem();
 	this.parent = null;
-	this.configView(view);
 };
-mdj.Model.prototype ={
+mdj.Model.prototype = {
 	move: function(disx, disy) {
+	    this.prevOx = this.ox;
+	    this.prevOy = this.oy;
 		this.ox += disx;
 		this.oy += disy;
 		var e = {
@@ -408,6 +498,21 @@ mdj.Model.prototype ={
 		};
 		this.proxy.eventNotif('movement', e);
 	},
+	setPos: function(x, y) {
+	    var e = {
+	    	'dx' : x-this.ox,
+	    	'dy' : y-this.oy,
+	    	'x'  : x,
+	    	'y'  : y
+	    };
+	    this.ox = x;
+	    this.oy = y;
+	    this.proxy.eventNotif('movement', e);
+	},
+	cancelMove: function() {
+	    this.ox = this.prevOx;
+	    this.oy = this.prevOy;
+	},
 	getBoundingBox: function() {
 	    return {
 	        x: this.ox,
@@ -415,6 +520,18 @@ mdj.Model.prototype ={
 	        w: this.getWidth(),
 	        h: this.getHeight()
 	    };
+	},
+	setCollisionBox: function(x, y, w, h) {
+	    this.colliBox = {'x': x, 'y': y, 'w': w, 'h': h};
+	},
+	getCollisionBox: function() {
+	    if(this.colliBox) return {
+	            x: this.ox+this.colliBox.x,
+	            y: this.oy+this.colliBox.y,
+	            w: this.colliBox.w,
+	            h: this.colliBox.h
+	        };
+	    else return this.getBoundingBox();
 	},
 	getX: function() {
 	    if(this.parent) return this.parent.getX() + this.ox;
@@ -429,13 +546,14 @@ mdj.Model.prototype ={
 	},
 	getHeight: function() {
 	    return 0;
-	}
+	},
+	logic: function() {}
 };
 
 mdj.BoxModel = function(ox, oy, width, height, rotation) {
     mdj.Model.call(this, ox, oy, rotation);
-    this.width = isNaN(width) ? 0 : this.width;
-    this.height = isNaN(height) ? 0 : this.height;
+    this.width = isNaN(width) ? 0 : width;
+    this.height = isNaN(height) ? 0 : height;
 };
 extend(mdj.BoxModel, mdj.Model);
 $.extend(mdj.BoxModel.prototype, {
@@ -453,47 +571,65 @@ $.extend(mdj.BoxModel.prototype, {
 /********************************************* INPUT CONTROL ***********************************************/
 
 // gestion input clavier
-mdj.DirectionalInput = function(game, target, proxy){
+mdj.DirectionalInput = function(game, target, tarProxy){
     if(!(target instanceof mdj.Model)) return;
 	this.target = target;
-	this.proxy = proxy;
+	this.tarProxy = tarProxy;
 	this.game = game;
 	this.onmove = false;
+	this.prevDir = "NONE";
+	this.proxy = new mse.EventDelegateSystem();
 	
 	// Add default step move function in target model
-	if(!this.target.stepMove)
+	if(!this.target.stepMove && this.target.inputv == null) {
+	    this.target.inputv = 4;
 	    this.target.stepMove = this.stepMovefn;
+	}
 	
 	this.movecb = new mse.Callback(this.move, this);
 	this.moveEndcb = new mse.Callback(this.moveEnd, this);
 	this.touchStartcb = new mse.Callback(this.touchStart, this);
 	this.touchMovecb = new mse.Callback(this.touchMove, this);
+	this.disableCb = new mse.Callback(this.disable, this);
 	
-	this.proxy.addListener('keydown', this.movecb, true, game);
-	this.proxy.addListener('keyup', this.moveEndcb, true, game);
-	if(MseConfig.iOS){
-	    this.proxy.addListener('gestureStart', this.touchStartcb, true, game);
-	    this.proxy.addListener('gestureUpdate', this.touchMovecb, true, game);
-	    this.proxy.addListener('gestureEnd', this.moveEndcb, true, game);
-	    
-	    // Add vitural pad
-	    if(game.currScene.uiLayer) game.currScene.uiLayer.addObj(this.vituralPad());
-	}
+	// Add vitural pad
+	if(MseConfig.iOS && game.currScene.uiLayer) game.currScene.uiLayer.addObj(this.vituralPad());
+	
+	this.enable();
+	game.evtDeleg.addListener("end", this.disableCb);
 };
 mdj.DirectionalInput.prototype = {
+    enable: function() {
+        this.tarProxy.addListener('keydown', this.movecb, true, this.game);
+        this.tarProxy.addListener('keyup', this.moveEndcb, true, this.game);
+        if(MseConfig.iOS){
+            this.tarProxy.addListener('gestureStart', this.touchStartcb, true, this.game);
+            this.tarProxy.addListener('gestureUpdate', this.touchMovecb, true, this.game);
+            this.tarProxy.addListener('gestureEnd', this.moveEndcb, true, this.game);
+        }
+    },
+    disable: function() {
+        this.tarProxy.removeListener('keydown', this.movecb);
+        this.tarProxy.removeListener('keyup', this.moveEndcb);
+        if(MseConfig.iOS){
+            this.tarProxy.removeListener('gestureStart', this.touchStartcb);
+            this.tarProxy.removeListener('gestureUpdate', this.touchMovecb);
+            this.tarProxy.removeListener('gestureEnd', this.moveEndcb);
+        }
+    },
     stepMovefn: function(dir) {
         switch(dir) {
         case "LEFT":
-            var disx = -4, disy = 0;break;
+            var disx = -1, disy = 0;break;
         case "RIGHT":
-            var disx = 4, disy = 0;break;
+            var disx = 1, disy = 0;break;
         case "UP":
-            var disx = 0, disy = -4;break;
+            var disx = 0, disy = -1;break;
         case "DOWN":
-            var disx = 0, disy = 4;break;
+            var disx = 0, disy = 1;break;
         default : return;
         }
-        this.move(disx, disy);
+        this.move(disx*this.inputv, disy*this.inputv);
     },
     touchStart: function(e) {
         this.startPt = {x:e.offsetX,y:e.offsetY};
@@ -505,9 +641,9 @@ mdj.DirectionalInput.prototype = {
         
         var a = angleFor2Point(this.startPt, end);
         if((a >= 0 && a <= 15) || (a <= 0 && a >= -15)){
-            //Left
-            var disx = -4, disy = 0;
-            var dir = "LEFT";
+            // Right
+            var disx = 4, disy = 0;
+            var dir = "RIGHT";
         }
         else if(a >= 75 && a <= 105) {
             // Down
@@ -515,9 +651,9 @@ mdj.DirectionalInput.prototype = {
             var dir = "DOWN";
         }
         else if(a >= 165 || a <= -165) {
-            // Right
-            var disx = 4, disy = 0;
-            var dir = "RIGHT";
+            // Left
+            var disx = -4, disy = 0;
+            var dir = "LEFT";
         }
         else if(a <= -75 && a >= -105) {
             // Up
@@ -525,33 +661,48 @@ mdj.DirectionalInput.prototype = {
             var dir = "UP";
         }
         else return;
+        if(this.target.stepMove) this.target.stepMove(dir);
+        
+        // Direction change
+        if(this.prevDir != dir) {
+            this.proxy.eventNotif("dirChange", {'dir':dir});
+        }
+        
         if(!this.onmove) {
             this.onmove = true;
             if(typeof this.target.startMove == "function") this.target.startMove(dir);
         }
+        this.prevDir = dir;
     },
 	move: function(e) {
 	    switch(e.keyCode) {
 	    case __KEY_LEFT:
 	        var dir = "LEFT";break;
 	    case __KEY_RIGHT:
-	        var dir = "RIGHT";
-	    	break;
+	        var dir = "RIGHT";break;
 	    case __KEY_UP:
 	        var dir = "UP";break;
 	    case __KEY_DOWN:
 	        var dir = "DOWN";break;
 	    default : return;
 	    }
-	    this.target.stepMove(dir);
+	    if(this.target.stepMove) this.target.stepMove(dir);
+	    
+	    // Direction change
+	    if(this.prevDir != dir) {
+	        this.proxy.eventNotif("dirChange", {'dir':dir});
+	    }
 	    
 	    if(!this.onmove) {
 	        this.onmove = true;
 	        if(typeof this.target.startMove == "function") this.target.startMove(dir);
 	    }
+	    this.prevDir = dir;
 	},
 	moveEnd: function(e) {
 	    this.onmove = false;
+	    this.proxy.eventNotif("dirChange", {'prev':this.prevDir,'dir':'NONE'});
+	    this.prevDir = "NONE";
 	    if(typeof this.target.endMove == "function") superthis.target.endMove(dir);
 	    this.startPt = null;
 	},
@@ -581,25 +732,27 @@ mdj.Camera.prototype = {
 		this.scene = scene;
 		this.tarOffx = isNaN(tarOffx) ? 0 : tarOffx;
 		this.tarOffy = isNaN(tarOffy) ? 0 : tarOffy;
-		target.proxy.addListener('movement',this.moveCb);
+		// Reposition the camera
 		this.ox = target.getX() - (this.width/2 - this.tarOffx);
 		this.oy = target.getY() - (this.height/2 - this.tarOffy);
 	},
 	drawScene: function(ctx) {
 	    if(this.target && this.scene) {
-	        ctx.save();
-	        ctx.translate(-this.ox, -this.oy);
+	        // Reposition the camera
+	        this.ox = this.target.getX() - (this.width/2 - this.tarOffx);
+	        this.oy = this.target.getY() - (this.height/2 - this.tarOffy);
+	        
 	        // Clip masque for NPCs
 	        ctx.beginPath();
-	        ctx.moveTo(this.ox, this.oy);
+	        ctx.moveTo(0, 0);
 	        ctx.lineTo(this.width, 0);
 	        ctx.lineTo(this.width, this.height);
 	        ctx.lineTo(0,this.height);
 	        ctx.closePath();
 	        ctx.clip();
+	        
 	        // Draw scene
-	        this.scene.draw();
-	        ctx.restore();
+	        this.scene.drawInRect(ctx, -Math.round(this.ox), -Math.round(this.oy), this.width, this.height);
 	    }
 	}
 };
@@ -609,17 +762,88 @@ mdj.Camera.prototype = {
 
 /********************************************* COLLISION ***********************************************/
 
-mdj.Collision = function(map, target){
-	this.detectCb = new mse.Callback(this.detect, this);
-	this.setDetect(target);
+mdj.CollisionDetector = function(target){
+    this.setTarget(target);
+    this.detectors = {};
+    this.callbacks = {};
 };
-mdj.Collision.prototype = {
-	detect : function(e){
-		e.dx;
-		e.dy;
+mdj.CollisionDetector.prototype = {
+    // Register detectors
+	register: function(ref, detector, cb){
+		if(ref && (cb instanceof mse.Callback || typeof cb == 'function')) {
+		    this.detectors[ref] = detector;
+		    this.callbacks[ref] = cb;
+		}
 	},
-	setDetect : function(target){
-		target.proxy.addListener('movement',this.detectCb);
+	// Set the collision detect target
+	setTarget: function(target){
+	    if(target instanceof mdj.Model) {
+	        this.tar = target;
+		    target.proxy.addListener('movement', new mse.Callback(this.detect, this));
+		    target.proxy.addListener('collision', new mse.Callback(this.triger, this));
+		}
+	},
+	// Triger of all callbacks
+	triger: function(e) {
+	    var ref = e.detector;
+	    if( this.detectors[ref] && this.callbacks[ref] ) {
+	        e.detector = this.detectors[ref];
+	        cb = this.callbacks[ref];
+	        if(cb instanceof mse.Callback)
+	            cb.invoke(e);
+	        else if(typeof cb == 'function')
+	            cb.call(this.tar, e);
+	    }
+	},
+	// Detect collision function
+	detect: function(e) {
+	    if(this.tar) {
+	        var box = this.tar.getCollisionBox();
+	        for(var i in this.detectors) {
+	            var detector = this.detectors[i];
+	            // Detect collision between objs
+	            if(detector instanceof mdj.Model) {
+	                var comp = detector.getCollisionBox();
+	                // Detect for two rectangle no rotation
+	                if( ((comp.x >= box.x && comp.x <= box.x+box.w) ||
+	                    (box.x >= comp.x && box.x <= comp.x+comp.w)) &&
+	                    ((comp.y >= box.y && comp.y <= box.y+box.h) ||
+	                    (box.y >= comp.y && box.y <= comp.y+comp.h)) ) {
+	                    
+	                    this.tar.proxy.eventNotif('collision', {
+	                        'detector':i,
+	                        'offx':box.x+box.w-comp.x,
+	                        'offy':box.y+box.h-comp.y
+	                    });
+	                    return;
+	                }
+	            }
+	            // Detect collision between obj and tile layer
+	            else if(detector instanceof mdj.TileLayer) {
+	                var colmin = Math.floor(box.x/detector.tilew);
+	                var rowmin = Math.floor(box.y/detector.tileh);
+	                var colmax = Math.floor((box.x+box.w)/detector.tilew);
+	                var rowmax = Math.floor((box.y+box.h)/detector.tileh);
+	                for(var r = rowmin; r <= rowmax; ++r) {
+	                    for(var c = colmin; c <= colmax; ++c) {
+	                        // Collision
+	                        var gid = r * detector.col + c;
+	                        if(detector.map[gid] != 0) {
+	                            var offy = r * detector.tileh;
+	                            var offx = c * detector.tilew;
+	                            this.tar.proxy.eventNotif('collision', {
+	                                'detector':i,
+	                                'gid':gid,
+	                                'offx':box.x+box.w-offx,
+	                                'offy':box.y+box.h-offy
+	                            });
+	                            return;
+	                        }
+	                    }
+	                }
+	            }
+	        }
+	    }
 	}
 };
 

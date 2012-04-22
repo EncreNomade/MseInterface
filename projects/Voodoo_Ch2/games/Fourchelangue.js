@@ -369,7 +369,7 @@ var Fourchelangue = function() {
         if(this.state == "INIT") {
             ctx.fillText("Mémorise vite la phrase qui va suivre", 0,-80);
             ctx.fillText("puis fais la répéter par les rats !", 0,-40);
-            ctx.fillText("Cliquer pour commencer...", 0,0);
+            ctx.fillText("Clique pour commencer...", 0,0);
         }
         else if(this.currTime > 6.5 && this.currTime < 7.5)
             ctx.fillText("3", 0,0);

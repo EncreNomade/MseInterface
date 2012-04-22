@@ -1716,7 +1716,7 @@ mse.Sprite = function(parent, param, src, fw0frames, fh, sx, sy, sw, sh) {
 		}
 		else {
 			this.sx = 0; this.sy = 0; 
-			this.sw = this.img.width; this.sh = this.img.height;
+			this.sw = this.width; this.sh = this.height;
 		}
 		// Number of column and row in the sprite
 		if(fw0frames < this.sw) this.col = Math.floor(this.sw/fw0frames);
@@ -1769,10 +1769,10 @@ $.extend(mse.Sprite.prototype, {
 
 // Game object
 mse.Game = function(params) {
-    this.offx = 0.2*mse.root.width;
-    this.offy = 0.2*mse.root.height;
-    this.width = 0.6*mse.root.width;
-    this.height = 0.6*mse.root.height;
+    this.offx = Math.round(0.2*mse.root.width);
+    this.offy = Math.round(0.2*mse.root.height);
+    this.width = Math.round(0.6*mse.root.width);
+    this.height = Math.round(0.6*mse.root.height);
     
     mse.UIObject.call(this, null, params);
     
@@ -1791,6 +1791,9 @@ $.extend(mse.Game.prototype, {
     getMsg: function() {
         return this.msg[this.state];
     },
+    getEvtProxy: function() {
+        return mse.root.evtDistributor;
+    },
     setExpose: function(expo) {
         this.expo = expo;
         this.type = "INDEP";
@@ -1808,9 +1811,11 @@ $.extend(mse.Game.prototype, {
     	mse.root.container.evtDeleg.setDominate(this);
         if(!this.directShow) mse.root.gamewindow.loadandstart(this);
         else this.init();
+        this.evtDeleg.eventNotif("start");
     },
     draw: function(ctx) {},
     end: function() {
+        this.evtDeleg.eventNotif("end");
         if(!this.directShow) mse.root.gamewindow.end();
         else mse.root.container.evtDeleg.setDominate(null);
         if(this.expo) this.expo.endGame();
