@@ -1715,6 +1715,7 @@ var initWikiTool = function() {
                 }
             }
             button.before(temp);
+            //button.prev('h4,h3').editable();
             button.prevAll().css({'font-family':font, 'font-size':fsize, 'color':fcolor});
             return true;
         },

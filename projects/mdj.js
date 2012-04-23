@@ -15,7 +15,7 @@ var mdj = function() {};
 mdj.setGame = function(game) {
     mdj.currGame = game;
 };
- 
+
 
 mdj.Scene = function(game, w, h) {
     if(game instanceof mse.Game) this.game = game;
@@ -96,10 +96,10 @@ mdj.Scene.prototype = {
 	}
 };
 
-mdj.TileMapScene = function(game, w, h, mapurl, tileset, lazyInit){
+mdj.TileMapScene = function(game, w, h, mapurl, srcRelatPath, lazyInit) {
     mdj.Scene.call(this, game, w, h);
-    this.tilesets = [];
-    this.tileset = tileset;
+    this.srcRelatPath = srcRelatPath;
+    this.tilesetConfig = {};
     
     if(lazyInit instanceof mse.Callback) this.lazyInit = lazyInit;
     else this.lazyInit = null;
@@ -121,16 +121,23 @@ $.extend(mdj.TileMapScene.prototype, {
     	var tilew = parseInt(map.attr("tilewidth"));
     	var tileh = parseInt(map.attr("tileheight"));
     	if(isNaN(row) || isNaN(col) || isNaN(tilew) || isNaN(tileh)) return;
-    	// Tile set
-    	//var tileset = map.children("tileset").attr("name");
-    	var tilesetnode = map.children("tileset").children("image");
-    	var tilesetW = tilesetnode.attr("width");
-    	var tilesetH = tilesetnode.attr("height");
-    	var tileset = {
-    	    'src': this.tileset,
-    	    'row': Math.floor(tilesetH / tileh),
-    	    'col': Math.floor(tilesetW / tilew)
-    	};
+    	// Tilesets
+    	var tilesets = map.children("tileset");
+    	var srcRelatPath = this.srcRelatPath;
+    	var tilesetConfig = this.tilesetConfig;
+    	tilesets.each(function() {
+    	    var name = $(this).attr('name');
+    	    var firstgid = parseInt($(this).attr('firstgid'));
+    	    var tilew = parseInt($(this).attr('tilewidth'));
+    	    var tileh = parseInt($(this).attr('tileheight'));
+    	    var srcnode = $(this).children('image');
+    	    var src = srcRelatPath + srcnode.attr("source");
+    	    var srcw = parseInt(srcnode.attr('width'));
+    	    var srch = parseInt(srcnode.attr('height'));
+    	    tilesetConfig[name] = {'src':src, 'srcw':srcw, 'srch':srch, 'fgid':firstgid, 'tilew':tilew, 'tileh':tileh};
+    	    mse.src.addSource(name, src, 'img', true);
+    	});
+    	
     	// Layers
     	var layers = map.children("layer");
     	for(var i = 0; i < layers.length; i++) {
@@ -155,16 +162,24 @@ $.extend(mdj.TileMapScene.prototype, {
                 continue;
             case "gzip":
                 continue;
-            case "": 
+            case "":
                 break;
             }
             // Init Layer
-            var layer = new mdj.TileLayer(name, this, i, col, row, tilew, tileh, map, tileset);
+            var layer = new mdj.TileLayer(name, this, i, col, row, tilew, tileh, map);
         }
         // Lazy Init
         if(this.lazyInit) this.lazyInit.invoke();
     },
-    lazyInit: function(){
+    init: function() {
+        this.tileset = new mdj.Tileset(this);
+        for(var i in this.tilesetConfig) {
+            var conf = this.tilesetConfig[i];
+            this.tileset.addTileset(i, conf.srcw, conf.srch, conf.fgid, conf.tilew, conf.tileh);
+        }
+        for(var i in this.layers) {
+            if(typeof this.layers[i].init == "function") this.layers[i].init();
+        }
     },
     drawInRect: function(ctx, x, y, w, h){
         ctx.save();
@@ -188,6 +203,45 @@ $.extend(mdj.TileMapScene.prototype, {
     	if(this.uilayer) this.uilayer.draw(ctx);
     }
 });
+
+
+
+
+
+
+/********************************************* Tileset ***********************************************/
+mdj.Tileset = function(scene) {
+    if(scene instanceof mdj.Scene) this.scene = scene;
+    
+    this.grids = [];
+};
+mdj.Tileset.prototype = {
+    constructor: mdj.Tileset,
+    getGrid: function(gid) {
+        if(this.grids[gid]) return this.grids[gid];
+        else return null;
+    },
+    addTileset: function(srcname, srcw, srch, firstgid, tilew, tileh) {
+        if((typeof srcname != "string") || mse.src.getSrc(srcname) == null || isNaN(srcw) || isNaN(srch) || isNaN(firstgid) || isNaN(tilew) || isNaN(tileh)) return;
+        
+        var row = Math.floor(srch / tileh);
+        var col = Math.floor(srcw / tilew);
+        var gid = firstgid;
+        for(var r = 0; r < row; ++r) {
+            for(var c = 0; c < col; ++c) {
+                var canvas = document.createElement("canvas");
+                var ctx = canvas.getContext("2d");
+                canvas.width = tilew;
+                canvas.style.width = tilew;
+                canvas.height = tileh;
+                canvas.style.height = tileh;
+                ctx.drawImage(mse.src.getSrc(srcname), c*tilew, r*tileh, tilew, tileh, 0, 0, tilew, tileh);
+                this.grids[gid] = canvas;
+                gid++;
+            }
+        }
+    }
+};
 
 
 
@@ -233,46 +287,62 @@ mdj.Layer.prototype = {
 };
 
 
-mdj.TileLayer = function(name, parent, zid, col, row, tilew, tileh, map, tileset){
+mdj.TileLayer = function(name, parent, zid, col, row, tilew, tileh, map){
 	mdj.Layer.call(this, name, parent, zid);
-	if(!map || !tileset) return;
+	if(!map) return;
 	this.col = isNaN(col) ? 0 : col;
 	this.row = isNaN(row) ? 0 : row;
 	this.tilew = isNaN(tilew) ? 0 : tilew;
 	this.tileh = isNaN(tileh) ? 0 : tileh;
 	
 	this.map = map;
-	this.tileset = tileset;
 };
 extend(mdj.TileLayer, mdj.Layer);
 $.extend(mdj.TileLayer.prototype, {
+    init: function() {
+        this.cache = document.createElement("canvas");
+        var ctx = this.cache.getContext("2d");
+        this.cache.width = this.col * this.tilew;
+        this.cache.style.width = this.col * this.tilew;
+        this.cache.height = this.row * this.tileh;
+        this.cache.style.height = this.row * this.tileh;
+        
+        for(var r = 0; r < this.row; ++r){
+            for(var c = 0; c < this.col; ++c) {
+                var gid = this.map[r * this.col + c];
+                this.drawTile(ctx, gid, Math.floor(c*this.tilew), Math.floor(r*this.tileh));
+            }
+        }
+    },
 	drawTile: function(ctx, gid, offx, offy) {
-	    gid -= 1;
-	    if(gid < 0) return;
-		var col = gid % this.tileset.col;
-		var row = Math.floor(gid / this.tileset.col);
-		var src = mse.src.getSrc(this.tileset.src);
-		if(src)
-			ctx.drawImage(src, col*this.tilew, row*this.tileh, this.tilew, this.tileh, offx, offy, this.tilew, this.tileh);
+		if(this.parent.tileset) {
+		    var grid = this.parent.tileset.getGrid(gid);
+		    if(grid) ctx.drawImage(grid, offx, offy);
+		}
 	},
 	draw: function(ctx, sx, sy, sw, sh) {
-	    if(arguments.length < 5) {
-	        var cmin = 0;
-	        var rmin = 0;
-	        var cmax = this.col;
-	        var rmax = this.row;
+	    if(this.cache) {
+	        ctx.drawImage(this.cache, sx, sy, sw, sh, sx, sy, sw, sh);
 	    }
 	    else {
-	        var cmin = Math.floor(sx/this.tilew);
-	        var rmin = Math.floor(sy/this.tileh);
-	        var cmax = Math.ceil((sx+sw)/this.tilew);
-	        var rmax = Math.ceil((sy+sh)/this.tileh);
-	    }
-	    
-	    for(var r = rmin; r < rmax; ++r){
-	        for(var c = cmin; c < cmax; ++c) {
-	            var gid = this.map[r * this.col + c];
-	            this.drawTile(ctx, gid, c*this.tilew, r*this.tileh);
+	        if(arguments.length < 5) {
+	            var cmin = 0;
+	            var rmin = 0;
+	            var cmax = this.col;
+	            var rmax = this.row;
+	        }
+	        else {
+	            var cmin = Math.floor(sx/this.tilew);
+	            var rmin = Math.floor(sy/this.tileh);
+	            var cmax = Math.ceil((sx+sw)/this.tilew);
+	            var rmax = Math.ceil((sy+sh)/this.tileh);
+	        }
+	        
+	        for(var r = rmin; r < rmax; ++r){
+	            for(var c = cmin; c < cmax; ++c) {
+	                var gid = this.map[r * this.col + c];
+	                this.drawTile(ctx, gid, c*this.tilew, r*this.tileh);
+	            }
 	        }
 	    }
 	}
@@ -305,6 +375,14 @@ $.extend(mdj.ObjLayer.prototype, {
 		ctx.restore();
 	}
 });
+
+
+mdj.UILayer = function(name, parent, zid, logic, draw){
+    mdj.Layer.call(this, name, parent, zid);
+    if(typeof draw == "function") this.draw = draw;
+    if(typeof logic == "function") this.logic = logic;
+};
+extend(mdj.UILayer, mdj.Layer);
 
 
 
@@ -739,8 +817,8 @@ mdj.Camera.prototype = {
 	drawScene: function(ctx) {
 	    if(this.target && this.scene) {
 	        // Reposition the camera
-	        this.ox = this.target.getX() - (this.width/2 - this.tarOffx);
-	        this.oy = this.target.getY() - (this.height/2 - this.tarOffy);
+	        this.ox = Math.round(this.target.getX() - (this.width/2 - this.tarOffx));
+	        this.oy = Math.round(this.target.getY() - (this.height/2 - this.tarOffy));
 	        
 	        // Clip masque for NPCs
 	        ctx.beginPath();
@@ -752,7 +830,7 @@ mdj.Camera.prototype = {
 	        ctx.clip();
 	        
 	        // Draw scene
-	        this.scene.drawInRect(ctx, -Math.round(this.ox), -Math.round(this.oy), this.width, this.height);
+	        this.scene.drawInRect(ctx, -this.ox, -this.oy, this.width, this.height);
 	    }
 	}
 };

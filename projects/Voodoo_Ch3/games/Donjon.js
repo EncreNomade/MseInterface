@@ -97,7 +97,6 @@ var Ghost = function(ox, oy, target, layer) {
 var Donjon = function(){
     mse.Game.call(this, {fillback:true});
     
-    mse.src.addSource('tileset', 'games/Tileset.png', 'img', true);
     mse.src.addSource('light', 'games/trans.png', 'img', true);
     mse.src.addSource('sprite', 'games/sprite.png', 'img', true);
     mse.src.addSource('batery', 'games/Batterie.png', 'img', true);
@@ -115,8 +114,8 @@ var Donjon = function(){
     };
     
     this.currScene = new mdj.TileMapScene(this, 1920, 1376, 
-                                          mse.configs.getSrcPath("games/map.tmx"), 
-                                          "tileset", 
+                                          mse.configs.getSrcPath("games/map.tmx"),
+                                          "games/", 
                                           new mse.Callback(function(){
         // Lazy init function
         // Simon model and input
@@ -178,7 +177,7 @@ var Donjon = function(){
             }
         }, this));
         
-        var persoLayer = new mdj.ObjLayer("perso", this.currScene, 3, 0, 0);
+        var persoLayer = new mdj.ObjLayer("perso", this.currScene, 4, 0, 0);
         persoLayer.addObj(this.simonV);
         
         // Ghost layer
@@ -189,6 +188,30 @@ var Donjon = function(){
         
         this.camera = new mdj.Camera(this.width, this.height, this.currScene, this.simonM, 8, 18);
     }, this));
+    
+    var maskLayer = new mdj.Layer("mask", this.currScene, 3);
+    maskLayer.draw = function(ctx){
+        var game = this.getScene().game;
+        ctx.save();
+        ctx.translate(game.camera.ox, game.camera.oy);
+        ctx.globalAlpha = 0.75;
+        ctx.fillStyle = "#000";
+        ctx.beginPath();
+        ctx.rect(0,0,game.width,game.height);
+        
+        ctx.translate(game.width/2, game.height/2);
+        switch(game.simonM.orient) {
+        case "DOWN": ctx.rotate(0.5*Math.PI);break;
+        case "UP": ctx.rotate(-0.5*Math.PI);break;
+        case "LEFT": ctx.rotate(Math.PI);break;
+        case "RIGHT": break;
+        }
+        ctx.arc(0, 0, 118.5, 0, Math.PI*2, true);
+        ctx.closePath();
+        ctx.fill();
+        ctx.drawImage(mse.src.getSrc('light'), -119, -119);
+        ctx.restore();
+    };
     
     // Help message
     if(MseConfig.iOS) this.help = "Aide Simon à sortir du labyrinthe, fais glliser ton doigt dans la direction souhaitée pour diriger Simon.";
@@ -206,6 +229,7 @@ var Donjon = function(){
 extend(Donjon, mse.Game);
 $.extend(Donjon.prototype, {
     init: function() {
+        this.currScene.init();
         this.simonM.setPos(136, 96);
         // Orientation
         this.simonM.orient = "DOWN";
@@ -278,25 +302,6 @@ $.extend(Donjon.prototype, {
         ctx.translate(this.offx, this.offy);
         
         this.camera.drawScene(ctx);
-        
-        ctx.save();
-        ctx.globalAlpha = 0.6;
-        ctx.fillStyle = "#000";
-        ctx.beginPath();
-        ctx.rect(0,0,this.width,this.height);
-        
-        ctx.translate(this.width/2, this.height/2);
-        switch (this.simonM.orient) {
-        case "DOWN": ctx.rotate(0.5*Math.PI);break;
-        case "UP": ctx.rotate(-0.5*Math.PI);break;
-        case "LEFT": ctx.rotate(Math.PI);break;
-        case "RIGHT": break;
-        }
-        ctx.arc(0, 0, 118.5, 0, Math.PI*2, true);
-        ctx.closePath();
-        ctx.fill();
-        ctx.drawImage(mse.src.getSrc('light'), -119, -119);
-        ctx.restore();
         
         // Light
         this.light.draw(ctx);
