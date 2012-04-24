@@ -72,7 +72,7 @@ CanvasRenderingContext2D.prototype.strokeRoundRect = function(x,y,width,height,r
 };
 
 CanvasRenderingContext2D.prototype.fillTextWrapped = function(text, x, y, width, lineHeight){
-    var lines = wrapText(text, this, width);
+    var lines = wrapTextWithWrapIndice(text, this, width);
     if(!lineHeight) lineHeight = checkFontSize(ctx.font)*1.2;
     for(var i = 0; i < lines.length; i++)
         this.fillText(lines[i], x, y+lineHeight*i);

@@ -376,6 +376,7 @@ body{
     position: relative;
     margin: 30px 30px 0px 30px;
     padding: none;
+    cursor: move;
     -webkit-border-radius: 10px;
     -moz-border-radius: 10px;
     border-radius: 10px;
@@ -383,7 +384,7 @@ body{
     -moz-box-shadow: 0px 0px 5px #4d4d4d;
     box-shadow: 0px 0px 5px #4d4d4d;
 }
-.wiki_card img, .wiki_card input, .wiki_card img, .wiki_card .drop_zone, .wiki_card h5, .wiki_card h3, .wiki_card h4, .wiki_card .sepline{
+.wiki_card img, .wiki_card input, .wiki_card textarea, .wiki_card img, .wiki_card .drop_zone, .wiki_card h5, .wiki_card h3, .wiki_card h4, .wiki_card div.wikitext, .wiki_card .sepline{
     width: 80%;
     left: 10%;
     display: block;
@@ -401,15 +402,20 @@ body{
     font-weight: bold;
     margin-top: 10px;
 }
-.wiki_card h4 {
+.wiki_card h4, .wiki_card div.wikitext{
     position: relative;
     width: 70%;
     left: 20%;
+    white-space: pre-wrap;
 }
 .wiki_card .sepline{
     position: relative;
     height: 1px;
     border-top: 2px solid #000;
+}
+.card_over {
+    border: 4px dotted #888;
+    margin: 22px 26px 0px 26px;
 }
 #editor div.frame {
 	background-color:rgba(255,255,255,0);

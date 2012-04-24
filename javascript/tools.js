@@ -130,10 +130,10 @@ var Callback = function(func, caller) {
 		this.linked.push(cb);
 	};
 	
-	this.invoke = function(paramSup) {
+	this.invoke = function() {
 		var arr = null;
-		if(this.args) arr = (paramSup ? this.args.concat(paramSup) : this.args);
-		else if(!this.args && paramSup) var arr = [paramSup];
+		if(this.args) arr = (arguments.length>0 ? this.args.concat(arguments) : this.args);
+		else if(!this.args && arguments.length>0) var arr = arguments;
 		this.func.apply(caller, arr);
 		
 		if(this.linked) {
@@ -887,7 +887,7 @@ var Wiki = function(name, cardsDom, font, fontsize, color) {
                 // Text section
                 else {
                     section.type = 'text';
-                    section.content = (title.next()[0].tagName=='H4') ? title.next().text() : "";
+                    section.content = (title.next()[0].tagName=='DIV') ? title.next().text() : "";
                 }
                 card.sections.push(section);
             }
@@ -912,14 +912,14 @@ Wiki.prototype = {
                 // Change image
                 var img = $('<img name="'+card.image+'" src="'+srcMgr.getSource(card.image)+'" style="top:20px;">');
                 img.bind('dragover', DropZone.prototype.dragOverElemZone)
-                    .bind('dragleave', DropZone.prototype.dragLeaveElemZone)
-                    .bind('drop', wikiTool.dropImgToWikiCard);
+                   .bind('dragleave', DropZone.prototype.dragLeaveElemZone)
+                   .bind('drop', wikiTool.dropImgToWikiCard);
                 img.mouseup(DropZone.prototype.dragLeaveElemZone);
                 jqCard.children(".drop_zone").replaceWith(img);
                 // Change legend
                 var newlegend = $('<h5>'+card.legend+'</h5>');
                 newlegend.css({'top':(config.wikiHeight-45)+'px'});
-                jqCard.children("input").replaceWith(newlegend);
+                jqCard.children("textarea").replaceWith(newlegend);
                 newlegend.editable();
             }
             else if(this.cards[i].type == "text"){
@@ -1633,13 +1633,13 @@ var initWikiTool = function() {
     var tool = new CreatTool($('#wikiTools'), $('#wikiicon'));
     // Font configue in Wiki tools
     tool.color = $('#wiki_color').change(function(){
-        tool.editor.find('h5, h3, h4').css('color', $(this).val());
+        tool.editor.find('h5, h3, h4, div').css('color', $(this).val());
     });
     tool.font = $('#wiki_font').change(function(){
-        tool.editor.find('h5, h3, h4').css('font-family', $(this).val());
+        tool.editor.find('h5, h3, h4, div').css('font-family', $(this).val());
     });
     tool.fsize = $('#wiki_size').change(function(){
-        tool.editor.find('h5, h3, h4').css('font-size', config.sceneY($(this).val())+'px');
+        tool.editor.find('h5, h3, h4, div').css('font-size', config.sceneY($(this).val())+'px');
     });
     
     $.extend(tool, {
@@ -1650,13 +1650,61 @@ var initWikiTool = function() {
         finishEdit: function(elems) {
             this.editor.css('overflow','hidden');
         },
+        dragStart: function(e) {
+            if(e.originalEvent) e = e.originalEvent;
+            e.dataTransfer.effectAllowed = 'copy';
+            e.dataTransfer.setData('text/html', $(this).html());
+            tool.dragSrc = $(this);
+        },
+        dragOverZone: function(e) {
+            if(e.originalEvent) e = e.originalEvent;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            return false;
+        },
+        dragOver: function(e) {
+            if(e.originalEvent) e = e.originalEvent;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            
+            // Create or move dropzone
+            var zone = $(this).siblings('#card_drop');
+            if(zone.length == 0) {
+                zone = $('<div id="card_drop" class="wiki_card">');
+                zone.width(config.wikiWidth)
+                    .height(config.wikiHeight)
+                    .addClass('card_over');
+            }
+            else zone.detach();
+            $(this).before(zone);
+            zone.bind('dragover', tool.dragOverZone).bind('drop', tool.drop);
+            
+            return false;
+        },
+        dragEnd: function(e) {
+            $('#card_drop').remove();
+            tool.dragSrc = null;
+        },
+        drop: function(e) {
+            if(e.originalEvent) e = e.originalEvent;
+            e.stopPropagation();
+            
+            var card = e.dataTransfer.getData('text/html');
+            if(!card || !tool.dragSrc) return false;
+            $(this).replaceWith(tool.dragSrc.detach());
+            tool.dragSrc = null;
+            
+            return false;
+        },
         addWikiCard: function(type) {
             var w = config.wikiWidth;
             var h = config.wikiHeight;
-            var card = $('<div class="wiki_card"></div>');
-            card.css({'width':w+'px', 'height':h+'px'});
+            var card = $('<div class="wiki_card" draggable="true"></div>');
+            card.width(config.wikiWidth).height(config.wikiHeight);
             switch(type) {
             case 'generator':
+                card.prop('draggable', false);
+                card.css('cursor', 'default');
                 this.editor.append(card);
                 card.append('<img id="wiki_addDesc" src="./images/tools/wiki_addDescription.png" style="top:'+(1/7*h)+'px;height:'+(1/7*h)+'px;">');
                 card.append('<img id="wiki_addImg" src="./images/tools/wiki_addImg.png" style="top:'+(3/8*h)+'px;height:'+(1/7*h)+'px;">');
@@ -1670,7 +1718,7 @@ var initWikiTool = function() {
                 card.insertBefore('.wiki_card:last').deletable();
                 var img = (new DropZone(this.dropImgToWikiCard, {'top':'20px','height':(h-90)+'px'}, "wikiImgInput")).jqObj;
                 card.append(img);
-                var legend = $('<input type="text" placeholder="legend" style="top:'+(h-45)+'px;height:20px;font-style:italic;">');
+                var legend = $('<textarea row="1" col="18" style="top:'+(h-45)+'px;height:20px;font-style:italic;">Legend</textarea>');
                 legend.blur(function(){
                     var newlegend = $('<h5>'+$(this).val()+'</h5>');
                     newlegend.css({'top':(h-45)+'px'});
@@ -1678,12 +1726,18 @@ var initWikiTool = function() {
                     newlegend.editable();
                 });
                 card.append(legend);
+                card.bind('dragstart', this.dragStart);
+                card.bind('dragover', this.dragOver);
+                card.bind('dragend', this.dragEnd);
             break;
             case 'description':
                 card.insertBefore('.wiki_card:last').deletable();
                 addSect = $('<input type="button" value="Nouvelle section" style="margin-top:10px;height:30px;">');
                 card.append(addSect);
                 addSect.click(this.addSectionDialog);
+                card.bind('dragstart', this.dragStart);
+                card.bind('dragover', this.dragOver);
+                card.bind('dragend', this.dragEnd);
             break;
             }
             return card;
@@ -1696,26 +1750,28 @@ var initWikiTool = function() {
             var font = this.font.val();
             var fsize = config.sceneY(this.fsize.val());
             var fcolor = this.color.val();
-            var temp = '<h3>'+title+'</h3>';
-            temp += '<div class="sepline"></div>';
+            var h3 = $('<h3>'+title+'</h3>');
             if(type == 'text') {
                 if(!content) {
                     alert('Information incomplete.');
                     return false;
                 }
-                temp += '<h4>'+content+'</h4>';
+                var temp = $('<div class="wikitext">'+content+'</div>');
             }
             else if(type == 'link') {
                 if( content.match(/^\w+:\/(\/[\-\_\w\?\&\.]+)+/) ) {
-                    temp += '<img src="./images/UI/wikibutton.png" style="width:'+(config.wikiWidth*0.5)+'px;height:'+fsize+'px;left:20%;position:relative;" value="'+content+'">';
+                    var temp = $('<img src="./images/UI/wikibutton.png" style="width:'+(config.wikiWidth*0.5)+'px;height:'+fsize+'px;left:20%;position:relative;" value="'+content+'">');
                 }
                 else {
                     alert('Votre lien url n\'est pas correct.');
                     return false;
                 }
             }
-            button.before(temp);
-            //button.prev('h4,h3').editable();
+            h3.editable();
+            temp.editable(new Callback(function(content, obj) {
+                obj.addClass('wikitext');
+            }, window));
+            button.before(h3).before('<div class="sepline"></div>').before(temp);
             button.prevAll().css({'font-family':font, 'font-size':fsize, 'color':fcolor});
             return true;
         },
@@ -1743,8 +1799,8 @@ var initWikiTool = function() {
                 dialog.main.append('<p><label>Ecraser : </label><input id="eraseName" type="checkbox"></p>');
                 dialog.confirm.click(function(){
                     if($('#rename').val() != name || $('#eraseName').get(0).checked) {
-                    srcMgr.addSource('wiki', wiki, $('#rename').val());
-                    dialog.close();
+                        srcMgr.addSource('wiki', wiki, $('#rename').val());
+                        dialog.close();
                     }
                 });				 
             }
@@ -2502,7 +2558,7 @@ var tag = {
 };
 var prevState = {};
 var curr = {};
-var editSupportTag = ['SPAN', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'];
+var editSupportTag = ['SPAN', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'DIV'];
 
 
 // Add top right hover icon
@@ -2825,19 +2881,23 @@ $.fn.editable = function(callback) {
 	// Don't support
 	if( $.inArray(tagName.toUpperCase(), editSupportTag) == -1 ) return;
 	
-	var name = $(this).html();
+	var content = $(this).html();
 	$(this).click(function() {
-		var editfield = $('<input type="text" size="10" value="'+ name +'"></input>');
-		var color = $(this).css('color');
-		editfield.css({'color':color, 'background':'rgba(255,255,255,0.3)', 'top':$(this).css('top'), 'left':$(this).css('left'), 'position':$(this).css('position'), 'font-family':$(this).css('font-family'), 'font-size':$(this).css('font-size')});
+	    // Get infos
+	    var color = $(this).css('color');
+	    var fsize = parseInt($(this).css('font-size'));
+	    var width = $(this).innerWidth();
+	    var height = $(this).innerHeight();
+		var editfield = $('<textarea row="'+Math.round(height/fsize)+'" col="'+Math.round(width*1.5/fsize)+'">'+content+'</textarea>');
+		editfield.css({'width':width, 'height':height, 'color':color, 'background':'rgba(255,255,255,0.3)', 'top':$(this).css('top'), 'left':$(this).css('left'), 'position':$(this).css('position'), 'font-family':$(this).css('font-family'), 'font-size':$(this).css('font-size'), 'text-align':$(this).css('text-align')});
 		$(this).replaceWith(editfield);
 		editfield.blur(function() {
-			var newname = $(this).val();
-			var newtext = $('<'+tagName+'>'+newname+'</'+tagName+'>');
+			var newcontent = $(this).val();
+			var newtext = $('<'+tagName+'>'+newcontent+'</'+tagName+'>');
 			newtext.css({'color':$(this).css('color'), 'top':$(this).css('top'), 'left':$(this).css('left'), 'position':$(this).css('position'), 'font-family':$(this).css('font-family'), 'font-size':$(this).css('font-size')});
 			$(this).replaceWith(newtext);
 			if(callback) {
-			    callback.invoke(newname);
+			    callback.invoke(newcontent, newtext);
 			    newtext.editable(callback);
 			}
 			else newtext.editable();

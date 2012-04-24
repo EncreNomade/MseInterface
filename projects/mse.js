@@ -2354,7 +2354,7 @@ $.extend(mse.TextContent.prototype, {
         this.sections.push([type, title, content]);
         this.configCtx(mse.root.ctx);
         var l = wrapText(title, mse.root.ctx, this.width).length;
-        l += wrapText(text, mse.root.ctx, this.width-15).length;
+        l += wrapTextWithWrapIndice(text, mse.root.ctx, this.width-15).length;
         l = l*this.lineHeight + this.titletextoff + this.sectionsep;
         this.length += l;
     },

@@ -155,11 +155,12 @@ class ProjectGenerator {
                     if( $card->type == "text" ) {
                         $this->jstr .= "wikis.$name.addTextCard();";
                         foreach($card->sections as $section) {
-                            $content = str_replace("/", "\/", addslashes(str_replace("\n", "", $section->content)));
+                            $content = str_replace("\n", "\\n", str_replace("/", "\/", addslashes($section->content)));
+                            $title = str_replace("\n", "", $section->title);
                             if($section->type == "link")
-                                $this->jstr .= "wikis.$name.textCard.addLink('".$section->title."', '$content');";
+                                $this->jstr .= "wikis.$name.textCard.addLink('$title', '$content');";
                             else if($section->type == "text")
-                                $this->jstr .= "wikis.$name.textCard.addSection('".$section->title."', '$content');";
+                                $this->jstr .= "wikis.$name.textCard.addSection('$title', '$content');";
                         }
                     }
                     else if( $card->type == "img" ){
