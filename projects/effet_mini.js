@@ -321,7 +321,7 @@ mse.EffectImage.prototype = {
 mse.EIColorFilter = function(subject, config, multi) {    
     this.config = {
     	duration : Number.POSITIVE_INFINITY,
-    	rMulti: 0.5,
+    	rMulti: 1,
     	gMulti: 1,
     	bMulti: 1
     };
@@ -441,6 +441,7 @@ mse.initImageEffect = function (effectConf,subject) {
 				case "erase" : return (new mse.EIErase(subject,effectConf[nEffect],false));
 				case "vibration" : return (new mse.EIVibration(subject,effectConf[nEffect],false));
 				case "sunrise" : return (new mse.EISunrise(subject,effectConf[nEffect],false));
+				case "colorfilter" : return (new mse.EIColorFilter(subject,effectConf[nEffect],false));
 				default : return null;				
 			}
 		}
@@ -460,6 +461,7 @@ mse.initImageEffect = function (effectConf,subject) {
 				case "erase": dictObjEffects[nEffect] = new mse.EIErase(subject,effectConf[nEffect],true);break;
 				case "vibration": dictObjEffects[nEffect] = new mse.EIVibration(subject,effectConf[nEffect],true);break;
 				case "sunrise": dictObjEffects[nEffect] = new mse.EISunrise(subject,effectConf[nEffect],true);break;
+				case "colorfilter" : dictObjEffects[nEffect] = new mse.EIColorFilter(subject,effectConf[nEffect],false);break;
 				default: break;
 			}
 		}
