@@ -47,10 +47,11 @@ class ProjectGenerator {
     function putAllinContentJS() {
         $path = $this->pj->getRelatJSPath();
         $js = $this->generateJS();
+        $content = "";
         // System mse
-        $content = file_get_contents("projects/mse.js");
+        //$content .= file_get_contents("projects/mse.js");
         // System mse effet
-        $content .= file_get_contents("projects/effet_mini.js");
+        //$content .= file_get_contents("projects/effet_mini.js");
         // External js (game)
         foreach($this->scriptExt as $extjs) {
             if(file_exists($extjs))

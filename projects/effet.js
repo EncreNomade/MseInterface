@@ -765,30 +765,38 @@ mse.initTextEffect = function (effectConf,subject) {
 };
 /*******************************************************************/
 mse.EffectImage = function (subject,config,multi) {
-	this.config = config;
+    if(!this.config) this.config = {};
+	if(config) $.extend(this.config, config);
 	this.subject = subject;	
-	this.multi = multi;
+	this.multi = multi===true ? true : false;
+	this.count = 0;
 };
 mse.EffectImage.prototype = {
 	constructor	: mse.EffectImage,
 	config : {} ,
 	draw : function(ctx,x,y){},
-	logic : function(delta){},
+	logic : function(delta){
+		if(this.count <= this.config.duration){							
+			this.count++;
+			if(this.multi) return true;
+		}
+		else{
+			if(this.multi) return false;
+			this.subject.endEffect();
+		}
+	},
 	toString : function(){return "[object mse.EffectImage]"}
 };
 /*******************************************************************/
 mse.EIFade = function(subject,config,multi) {
+    this.config = {
+    	duration : 30,
+    	start : 0,
+    	end : 1
+    };
 	mse.EffectImage.call(this,subject,config,multi);
 
 	this.count = 0;
-	
-	this.config = {
-		duration : 30,
-		start : 0,
-		end : 1
-	};
-	
-	if(config)$.extend(this.config,config);
 };
 extend(mse.EIFade,mse.EffectImage);
 $.extend(mse.EIFade.prototype, {
@@ -814,6 +822,13 @@ $.extend(mse.EIFade.prototype, {
 });
 /*******************************************************************/
 mse.EISnow = function(subject,config,multi) {
+    this.config = {
+    	duration : Number.POSITIVE_INFINITY,
+    	numSnowflake : 800,
+    	ratioSmallFlake : 0.833,
+    	minR : 0.8,
+    	maxR : 13
+    };
 	mse.EffectImage.call(this,subject,config,multi);
 	
 	this.count = 0;
@@ -822,16 +837,6 @@ mse.EISnow = function(subject,config,multi) {
 	this.sfSin = new Array();
 	this.arrayR = new Array();
 	this.arrayAlpha = new Array();
-	
-	this.config = {
-		duration : Number.POSITIVE_INFINITY,
-		numSnowflake : 800,
-		ratioSmallFlake : 0.833,
-		minR : 0.8,
-		maxR : 13
-	};
-	
-	if(config)$.extend(this.config,config);
 
 	for (i = 0; i <= this.config.numSnowflake; i++) {
     	var posX = Math.floor(Math.random()*this.subject.width);
@@ -904,6 +909,14 @@ $.extend(mse.EISnow.prototype, {
 });
 /*******************************************************************/
 mse.EIRain = function(subject,config,multi) {
+    this.config = {
+    	duration : Number.POSITIVE_INFINITY,
+    	numRainline : 120,
+    	minL : 15,
+    	maxL : 40,
+    	rainDirection : 5, //Il égale à speedRain si PAS DE 0
+    	speedRain : 25
+    };
 	mse.EffectImage.call(this,subject,config,multi);
 
 	this.count = 0;
@@ -911,17 +924,6 @@ mse.EIRain = function(subject,config,multi) {
 	this.arrayY = new Array();
 	this.arrayRainLength = new Array();
 	this.arrayRainAlpha = new Array();
-	
-	this.config = {
-		duration : Number.POSITIVE_INFINITY,
-		numRainline : 120,
-		minL : 15,
-		maxL : 40,
-		rainDirection : 5, //Il égale à speedRain si PAS DE 0
-		speedRain : 25
-	};
-	
-	if(config)$.extend(this.config,config);
 
 	for (i = 0; i <= this.config.numRainline; i++) {
     	var posX = Math.floor(Math.random()*this.subject.width);
@@ -940,16 +942,6 @@ mse.EIRain = function(subject,config,multi) {
 extend(mse.EIRain,mse.EffectImage);
 $.extend(mse.EIRain.prototype, {
 	label : "rainImage",
-	logic : function(delta){
-		if(this.count <= this.config.duration){							
-			this.count++;
-			if(this.multi)return true;
-		}
-		else{
-			if(this.multi)return false;
-			this.subject.endEffect();
-		}		
-	},
 	draw : function (ctx,x,y){		
 		var img = mse.src.getSrc(this.subject.img);
 		ctx.drawImage(img,x,y,this.subject.width,this.subject.height);
@@ -1012,6 +1004,11 @@ $.extend(mse.EIRain.prototype, {
 });
 /*******************************************************************/
 mse.EIFog = function(subject,config,multi) {
+    this.config = {
+    	duration : Number.POSITIVE_INFINITY,
+    	density : 5,
+    	speed : 3
+    };
 	mse.EffectImage.call(this,subject,config,multi);
 	
 	this.count = 0;
@@ -1022,14 +1019,6 @@ mse.EIFog = function(subject,config,multi) {
 	this.puffs = new Array();
 	this.canvas1 = document.createElement('canvas'); //Temporary printing
 	this.canvas2 = document.createElement('canvas'); //Source of FOG
-	
-	this.config = {
-		duration : Number.POSITIVE_INFINITY,
-		density : 5,
-		speed : 3
-	};
-	
-	if(config)$.extend(this.config,config);
 	
 	this.canvas1.width = this.subject.width/2;
 	this.canvas1.height = this.subject.height/2;
@@ -1103,18 +1092,15 @@ $.extend(mse.EIFog.prototype, {
 });
 /*******************************************************************/
 mse.EIVibration = function(subject,config,multi) {
+    this.config = {
+    	duration : Number.POSITIVE_INFINITY,
+    	vertical : 8,
+    	horizontal : 8
+    };
 	mse.EffectImage.call(this,subject,config,multi);
 	this.count = 0;
 	this.offsetX = 0;
 	this.offsetY = 0;
-	
-	this.config = {
-		duration : Number.POSITIVE_INFINITY,
-		vertical : 8,
-		horizontal : 8
-	};	
-	if(config)$.extend(this.config,config);
-
 };
 extend(mse.EIVibration,mse.EffectImage);
 $.extend(mse.EIVibration.prototype, {
@@ -1145,6 +1131,16 @@ $.extend(mse.EIVibration.prototype, {
 });
 /*******************************************************************/
 mse.EIErase = function(subject,config,multi) {
+    this.config = {
+    	duration : Number.POSITIVE_INFINITY,
+    	src : 'vapeur',
+    	k : 1,
+    	r : 1,
+    	R : 15,
+    	opacityBlur : 0.7,
+    	eraseAllRatio : 0.2,
+    	eraseZone : [[0,0,this.subject.width,this.subject.height]]
+    };
 	mse.EffectImage.call(this,subject,config,multi);
 	
 	this.canvas2 = document.createElement('canvas');
@@ -1153,19 +1149,6 @@ mse.EIErase = function(subject,config,multi) {
 	this.imgPixels = null;
 	this.count = 0;
 	this.eraseAll = false;
-	
-	this.config = {
-		duration : Number.POSITIVE_INFINITY,
-		src : 'vapeur',
-		k : 1,
-		r : 1,
-		R : 15,
-		opacityBlur : 0.7,
-		eraseAllRatio : 0.2,
-		eraseZone : [[0,0,this.subject.width,this.subject.height]]
-	};
-	
-	if(config)$.extend(this.config,config);
 	
 	this.opacityBlur = this.config.opacityBlur;
 	
@@ -1271,6 +1254,12 @@ $.extend(mse.EIErase.prototype, {
 });
 /*******************************************************************/
 mse.EILightcandle = function(subject,config,multi) {
+    this.config = {
+    	duration : Number.POSITIVE_INFINITY,
+    	src : 'grotte',
+    	initlightR : 75,
+    	chglightR : 0.05,
+    };
 	mse.EffectImage.call(this,subject,config,multi);
 
 	this.count = 0;
@@ -1282,14 +1271,6 @@ mse.EILightcandle = function(subject,config,multi) {
 	
 	this.canvas1 = document.createElement('canvas');
 	
-	this.config = {
-		duration : Number.POSITIVE_INFINITY,
-		src : 'grotte',
-		initlightR : 75,
-		chglightR : 0.05,
-	};
-	
-	if(config)$.extend(this.config,config);
 	this.lightR = this.initlightR = this.config.initlightR;
 
 	var cb = new mse.Callback(this.interaction, this);
@@ -1387,6 +1368,14 @@ $.extend(mse.EILightcandle.prototype, {
 });
 /*******************************************************************/
 mse.EIBlur = function(subject,config,multi) {
+    this.config = {
+    	duration : Number.POSITIVE_INFINITY,
+    	frainDuration : 200,
+    	step : 10,
+    	startRadius : 10,
+    	endRadius : 1,
+    	iteration : 1
+    };
 	mse.EffectImage.call(this,subject,config,multi);
 	
 	this.count = 0;
@@ -1413,19 +1402,7 @@ mse.EIBlur = function(subject,config,multi) {
 	
 	var cb = new mse.Callback(this.interaction, this);
 	this.subject.getContainer().evtDeleg.addListener('keydown', cb);
-	
-	this.config = {
-		duration : Number.POSITIVE_INFINITY,
-		frainDuration : 200,
-		step : 10,
-		startRadius : 10,
-		endRadius : 1,
-		iteration : 1
-	};
-	
-	if(config)$.extend(this.config,config);
 	this.config.speedRefresh = Math.ceil(this.config.frainDuration/this.config.step);
-	
 };
 extend(mse.EIBlur,mse.EffectImage);
 $.extend(mse.EIBlur.prototype, {
@@ -1620,6 +1597,14 @@ $.extend(mse.EIBlur.prototype, {
 });
 /*******************************************************************/
 mse.EIColorSwitch = function(subject,config,multi) {
+    this.config = {
+    	duration : Number.POSITIVE_INFINITY,
+    	paramHSL : [36,1.6,0.95],
+    	concertDuration : 300,
+    	concertStep : 30,
+    	flickerDuration : 300,
+    	flickerStep : 30
+    };
 	mse.EffectImage.call(this,subject,config,multi);
 	
 	this.count = 0;
@@ -1649,16 +1634,6 @@ mse.EIColorSwitch = function(subject,config,multi) {
 	var cb = new mse.Callback(this.interaction, this);
 	this.subject.getContainer().evtDeleg.addListener('keydown', cb);
 
-	this.config = {
-		duration : Number.POSITIVE_INFINITY,
-		paramHSL : [36,1.6,0.95],
-		concertDuration : 300,
-		concertStep : 30,
-		flickerDuration : 300,
-		flickerStep : 30
-	};
-	
-	if(config)$.extend(this.config,config);
 	this.config.concertSpeedRefresh = Math.ceil(this.config.concertDuration/this.config.concertStep);
 	this.config.flickerSpeedRefresh = Math.ceil(this.config.flickerDuration/this.config.flickerStep);
 	
@@ -1816,6 +1791,11 @@ $.extend(mse.EIColorSwitch.prototype, {
 });
 /*******************************************************************/
 mse.EISunrise = function(subject,config,multi) {
+    this.config = {
+    	duration : Number.POSITIVE_INFINITY,
+    	sunriseDuration : 600,
+    	step : 150
+    };
 	mse.EffectImage.call(this,subject,config,multi);
 	
 	this.count = 0;
@@ -1842,13 +1822,6 @@ mse.EISunrise = function(subject,config,multi) {
 	var cb = new mse.Callback(this.interaction, this);
 	this.subject.getContainer().evtDeleg.addListener('keydown', cb);
 
-	this.config = {
-		duration : Number.POSITIVE_INFINITY,
-		sunriseDuration : 600,
-		step : 150
-	};
-	
-	if(config)$.extend(this.config,config);
 	this.config.sunriseSpeedRefresh = Math.ceil(this.config.sunriseDuration/this.config.step);
 };
 extend(mse.EISunrise,mse.EffectImage);
@@ -1916,7 +1889,7 @@ $.extend(mse.EISunrise.prototype, {
 			}
 			
 			this.count++;
-			if(this.multi)return true;
+			if(this.multi) return true;
 		}
 		else{
 			this.subject.getContainer().evtDeleg.removeListener('keydown', cb);
@@ -1937,6 +1910,46 @@ $.extend(mse.EISunrise.prototype, {
 	}
 });
 /*******************************************************************/
+
+mse.EIColorFilter = function(subject, config, multi) {    
+    this.config = {
+    	duration : Number.POSITIVE_INFINITY,
+    	rMulti: 0.5,
+    	gMulti: 1,
+    	bMulti: 1
+    };
+    if(config.rMulti > 1 || config.rMulti < 0) delete config.rMulti;
+    if(config.gMulti > 1 || config.gMulti < 0) delete config.gMulti;
+    if(config.bMulti > 1 || config.bMulti < 0) delete config.bMulti;
+    mse.EffectImage.call(this, subject, config, multi);
+}
+extend(mse.EIColorFilter, mse.EffectImage);
+$.extend(mse.EIColorFilter.prototype, {
+    draw : function (ctx, x,y, sx,sy,sw,sh){
+    	var img = mse.src.getSrc(this.subject.img);
+    	if(arguments.length == 7)
+    	    ctx.drawImage(img, sx,sy,sw,sh, x,y, this.subject.width, this.subject.height);
+    	else ctx.drawImage(img, x,y, this.subject.width, this.subject.height);
+    	
+    	ctx.globalCompositeOperation = "source-atop";
+    	
+    	ctx.fillStyle = "#f00";
+    	ctx.globalAlpha = 1 - this.config.rMulti;
+    	ctx.fillRect(x, y, this.subject.width, this.subject.height);
+    	ctx.fillStyle = "#0f0";
+    	ctx.globalAlpha = 1 - this.config.gMulti;
+    	ctx.fillRect(x, y, this.subject.width, this.subject.height);
+    	ctx.fillStyle = "#00f";
+    	ctx.globalAlpha = 1 - this.config.bMulti;
+    	ctx.fillRect(x, y, this.subject.width, this.subject.height);
+    	
+    	ctx.globalCompositeOperation = "source-over";
+    }
+});
+
+/*******************************************************************/
+
+
 mse.MultiImageEffectContainer = function (subject,dictObjEffects){
 	mse.EffectImage.call(this,subject);
 	this.dictObjEffects = dictObjEffects;

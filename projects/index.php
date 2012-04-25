@@ -47,6 +47,8 @@ addEventListener("load", function(){
 <script src="./support/flarevideo/flarevideo.js" type="text/javascript"></script> 
 <script src="./support/Interaction.js"></script>
 <script src="./support/Tools.js"></script>
+<script src="./mse.js"></script>
+<script src="./effet_mini.js"></script>
 <script src="./mdj.js"></script>
 
 </head>

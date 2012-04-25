@@ -12,6 +12,7 @@
 
 var mdj = function() {};
  
+(function(window, mse, mdj, $) {
 mdj.setGame = function(game) {
     mdj.currGame = game;
 };
@@ -925,3 +926,6 @@ mdj.CollisionDetector.prototype = {
 	}
 };
 
+
+
+})(window, mse, mdj, $);

@@ -1669,10 +1669,10 @@ $.extend(mse.Image.prototype, {
 			this.evtDeleg.eventNotif('firstShow');
 		}
 
-		if(this.currentEffect != null)this.currentEffect.logic(delta);		
+		if(this.currentEffect != null) this.currentEffect.logic(delta);		
 	},
     draw: function(ctx, x, y) {
-    	var img = mse.src.getSrc(this.img);
+    	var img = (typeof this.img == "string" ? mse.src.getSrc(this.img) : this.img);
     	this.configCtxFlex(ctx);
     	if(isNaN(x) || isNaN(y)) {x = this.getX(); y = this.getY();}
     	
@@ -1748,16 +1748,18 @@ $.extend(mse.Sprite.prototype, {
         this.configCtxFlex(ctx);
         if(isNaN(ox)) var ox = this.getX();
         if(isNaN(oy)) var oy = this.getY();
-        var img = mse.src.getSrc(this.img);
+        var img = (typeof this.img == "string" ? mse.src.getSrc(this.img) : this.img);
         if(!this.frames) {
         	var x = this.sx + (frame % this.col) * this.fw;
         	var y = this.sy + (Math.floor(frame / this.col)) * this.fh;
-        	ctx.drawImage(img, x, y, this.fw,this.fh, ox,oy, this.getWidth(), this.getHeight());
+        	if(this.currentEffect != null) this.currentEffect.draw(ctx, ox,oy, x,y, this.fw,this.fh);
+        	else ctx.drawImage(img, x, y, this.fw,this.fh, ox,oy, this.width, this.height);
         }
         else {
         	var x = this.frames[frame][0]; var y = this.frames[frame][1];
         	var fw = this.frames[frame][2]; var fh = this.frames[frame][3];
-        	ctx.drawImage(img, x, y, fw,fh, ox,oy, this.getWidth(), this.getHeight());
+        	if(this.currentEffect != null) this.currentEffect.draw(ctx, ox,oy, x,y, fw,fh);
+        	else ctx.drawImage(img, x, y, fw,fh, ox,oy, this.width, this.height);
         }
     },
     draw: function(ctx, ox, oy) {
@@ -1889,6 +1891,7 @@ mse.GameShower = function() {
 	this.lose = function() {
 	    this.state = "LOSE";
 	    //mse.fadein(this.loseimg, 5);
+	    mse.root.evtDistributor.removeListener('click');
 	    this.losetext.evtDeleg.eventNotif('show');
 	    mse.root.evtDistributor.addListener('click', cbrestart, true, this.currGame);
 	};

@@ -262,10 +262,10 @@ $.extend(Donjon.prototype, {
             this.currTime == 1;
         }
         if(this.state == "PLAYING") {
-            if(this.currTime % 10 < 0.04) {
+            if(this.currTime % 15 < 0.04) {
                 if(this.light.curr < 5) this.light.curr++;
             }
-            if(this.currTime % 50 < 0.04) {
+            if(this.currTime % 75 < 0.04) {
                 if(this.nblight >= 1) {
                     this.nblight--;
                     this.light.curr = 0;

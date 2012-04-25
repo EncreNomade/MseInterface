@@ -295,17 +295,64 @@ mse.initTextEffect = function (effectConf,subject) {
 };
 /*******************************************************************/
 mse.EffectImage = function (subject,config,multi) {
-	this.config = config;
+    if(!this.config) this.config = {};
+	if(config) $.extend(this.config, config);
 	this.subject = subject;	
-	this.multi = multi;
+	this.multi = multi===true ? true : false;
+	this.count = 0;
 };
 mse.EffectImage.prototype = {
 	constructor	: mse.EffectImage,
 	config : {} ,
 	draw : function(ctx,x,y){},
-	logic : function(delta){},
+	logic : function(delta){
+		if(this.count <= this.config.duration){							
+			this.count++;
+			if(this.multi) return true;
+		}
+		else{
+			if(this.multi) return false;
+			this.subject.endEffect();
+		}
+	},
 	toString : function(){return "[object mse.EffectImage]"}
 };
+/*******************************************************************/
+mse.EIColorFilter = function(subject, config, multi) {    
+    this.config = {
+    	duration : Number.POSITIVE_INFINITY,
+    	rMulti: 0.5,
+    	gMulti: 1,
+    	bMulti: 1
+    };
+    if(config.rMulti > 1 || config.rMulti < 0) delete config.rMulti;
+    if(config.gMulti > 1 || config.gMulti < 0) delete config.gMulti;
+    if(config.bMulti > 1 || config.bMulti < 0) delete config.bMulti;
+    mse.EffectImage.call(this, subject, config, multi);
+}
+extend(mse.EIColorFilter, mse.EffectImage);
+$.extend(mse.EIColorFilter.prototype, {
+    draw : function (ctx, x,y, sx,sy,sw,sh){
+    	var img = mse.src.getSrc(this.subject.img);
+    	if(arguments.length == 7)
+    	    ctx.drawImage(img, sx,sy,sw,sh, x,y, this.subject.width, this.subject.height);
+    	else ctx.drawImage(img, x,y, this.subject.width, this.subject.height);
+    	
+    	ctx.globalCompositeOperation = "source-atop";
+    	
+    	ctx.fillStyle = "#f00";
+    	ctx.globalAlpha = 1 - this.config.rMulti;
+    	ctx.fillRect(x, y, this.subject.width, this.subject.height);
+    	ctx.fillStyle = "#0f0";
+    	ctx.globalAlpha = 1 - this.config.gMulti;
+    	ctx.fillRect(x, y, this.subject.width, this.subject.height);
+    	ctx.fillStyle = "#00f";
+    	ctx.globalAlpha = 1 - this.config.bMulti;
+    	ctx.fillRect(x, y, this.subject.width, this.subject.height);
+    	
+    	ctx.globalCompositeOperation = "source-over";
+    }
+});
 /*******************************************************************/
 mse.MultiImageEffectContainer = function (subject,dictObjEffects){
 	mse.EffectImage.call(this,subject);
