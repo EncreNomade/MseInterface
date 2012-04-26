@@ -1664,9 +1664,11 @@ $.extend(mse.Image.prototype, {
         this.cache.style.height = this.height;
         ctx.drawImage(img, 0, 0, this.width, this.height);
     },
-    startEffect: function (dictEffectAndConfig) {
-    	if(mse.initImageEffect) this.currentEffect = mse.initImageEffect(dictEffectAndConfig,this);
-    	if(this.currentEffect) this.currentEffect.init();
+    startEffect: function (effet) {
+    	if(effet instanceof mse.EffectImage && effet.subject == this) { 
+    	    this.currentEffect = effet;
+    	    this.currentEffect.init();
+    	}
     },
     endEffect: function (){
     	this.currentEffect = null;
