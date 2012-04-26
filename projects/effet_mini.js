@@ -303,14 +303,15 @@ mse.EffectImage = function (subject,config,multi) {
 };
 mse.EffectImage.prototype = {
 	constructor	: mse.EffectImage,
-	config : {} ,
-	draw : function(ctx,x,y){},
+	init : function() {},
+	end : function() {},
 	logic : function(delta){
 		if(this.count <= this.config.duration){							
 			this.count++;
 			if(this.multi) return true;
 		}
 		else{
+		    this.end();
 			if(this.multi) return false;
 			this.subject.endEffect();
 		}
@@ -329,28 +330,39 @@ mse.EIColorFilter = function(subject, config, multi) {
     if(config.gMulti > 1 || config.gMulti < 0) delete config.gMulti;
     if(config.bMulti > 1 || config.bMulti < 0) delete config.bMulti;
     mse.EffectImage.call(this, subject, config, multi);
+    
+    this.canvas = document.createElement("canvas");
 }
 extend(mse.EIColorFilter, mse.EffectImage);
 $.extend(mse.EIColorFilter.prototype, {
-    draw : function (ctx, x,y, sx,sy,sw,sh){
-    	var img = mse.src.getSrc(this.subject.img);
-    	if(arguments.length == 7)
-    	    ctx.drawImage(img, sx,sy,sw,sh, x,y, this.subject.width, this.subject.height);
-    	else ctx.drawImage(img, x,y, this.subject.width, this.subject.height);
-    	
+    init : function (){
+        var cache = this.subject.cache;
+        if(!cache) return;
+        var ctx = this.canvas.getContext("2d");
+        this.canvas.width = cache.width;
+        this.canvas.style.width = cache.width;
+        this.canvas.height = cache.height;
+        this.canvas.style.height = cache.height;
+        
+        ctx.clearRect(0, 0, cache.width, cache.height);
+    	ctx.drawImage(cache, 0,0, cache.width, cache.height);
     	ctx.globalCompositeOperation = "source-atop";
     	
     	ctx.fillStyle = "#f00";
     	ctx.globalAlpha = 1 - this.config.rMulti;
-    	ctx.fillRect(x, y, this.subject.width, this.subject.height);
+    	ctx.fillRect(0, 0, cache.width, cache.height);
     	ctx.fillStyle = "#0f0";
     	ctx.globalAlpha = 1 - this.config.gMulti;
-    	ctx.fillRect(x, y, this.subject.width, this.subject.height);
+    	ctx.fillRect(0, 0, cache.width, cache.height);
     	ctx.fillStyle = "#00f";
     	ctx.globalAlpha = 1 - this.config.bMulti;
-    	ctx.fillRect(x, y, this.subject.width, this.subject.height);
+    	ctx.fillRect(0, 0, cache.width, cache.height);
     	
-    	ctx.globalCompositeOperation = "source-over";
+    	this.cache = cache;
+    	this.subject.cache = this.canvas;
+    },
+    end : function() {
+        if(this.cache) this.subject.cache = this.cache;
     }
 });
 /*******************************************************************/
@@ -368,7 +380,8 @@ $.extend(mse.MultiImageEffectContainer.prototype, {
 		"param" : [],
 		"weather" : ["weather","pixel","candle"],
 		"pixel" : ["pixel","weather","candle"],
-		"candle" : ["pixel","weather"]
+		"candle" : ["pixel","weather"],
+		"filter": []
 	},
 	classification : {
 		"fade" : "param",
@@ -380,7 +393,8 @@ $.extend(mse.MultiImageEffectContainer.prototype, {
 		"colorswitch" : "pixel",
 		"blur" : "pixel",
 		"sunrise" : "pixel",
-		"lightcandle" : "candle"
+		"lightcandle" : "candle",
+		"colorfilter": "filter"
 	},
 	filterEffect : function (listEffect){
 		var principalDraw = null;
@@ -404,23 +418,29 @@ $.extend(mse.MultiImageEffectContainer.prototype, {
 				conflictArray = conflictArray.concat(mse.MultiImageEffectContainer.prototype.conflict[typeEffect]);
 				//Determine the type of draw
 				switch(typeEffect){
+				    case "filter": break;
 					case "pixel" :
 					case "weather" : principalDraw = listEffect[i];break;
-					default : if(null == principalDraw)principalDraw = listEffect[i];break;
 				}
 			}
 		}
 		return {"filteredEffectArray":filteredEffectArray,"principalDraw": principalDraw};		
 	},
+	init : function() {
+	    for(var effect in this.filtered["filteredEffectArray"])
+	        this.dictObjEffects[this.filtered["filteredEffectArray"][effect]].init();
+	},
 	logic : function(delta){
 		var endMultiEffect = true;
 		for(var effect in this.filtered["filteredEffectArray"]){
-			if(this.dictObjEffects[this.filtered["filteredEffectArray"][effect]].logic(delta))endMultiEffect = false;
+			if(this.dictObjEffects[this.filtered["filteredEffectArray"][effect]].logic(delta))
+			    endMultiEffect = false;
 		}
-		if(endMultiEffect)this.subject.endEffect();
+		if(endMultiEffect) this.subject.endEffect();
 	},
 	draw : function (ctx,x,y){
-		this.dictObjEffects[this.filtered["principalDraw"]].draw(ctx,x,y);
+		if(this.filtered["principalDraw"]) 
+		    this.dictObjEffects[this.filtered["principalDraw"]].draw(ctx,x,y);
 	},
 	toString : function(){
 		return this.label;

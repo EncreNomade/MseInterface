@@ -1651,14 +1651,22 @@ mse.Image = function(parent, param, src) {
 extend(mse.Image, mse.UIObject);
 $.extend(mse.Image.prototype, {
     init: function() {
+        var img = mse.src.getSrc(this.img);
         if(!this.width){
-        	var img = mse.src.getSrc(this.img);
         	this.width = img.width;
         	this.height = img.height;
         }
+        this.cache = document.createElement("canvas");
+        var ctx = this.cache.getContext("2d");
+        this.cache.width = this.width;
+        this.cache.style.width = this.width;
+        this.cache.height = this.height;
+        this.cache.style.height = this.height;
+        ctx.drawImage(img, 0, 0, this.width, this.height);
     },
     startEffect: function (dictEffectAndConfig) {
     	if(mse.initImageEffect) this.currentEffect = mse.initImageEffect(dictEffectAndConfig,this);
+    	if(this.currentEffect) this.currentEffect.init();
     },
     endEffect: function (){
     	this.currentEffect = null;
@@ -1672,11 +1680,12 @@ $.extend(mse.Image.prototype, {
 		if(this.currentEffect != null) this.currentEffect.logic(delta);		
 	},
     draw: function(ctx, x, y) {
-    	var img = (typeof this.img == "string" ? mse.src.getSrc(this.img) : this.img);
+    	var img = (this.cache ? this.cache : mse.src.getSrc(this.img));
     	this.configCtxFlex(ctx);
     	if(isNaN(x) || isNaN(y)) {x = this.getX(); y = this.getY();}
     	
-    	if(this.currentEffect != null) this.currentEffect.draw(ctx,x,y);
+    	if(this.currentEffect != null && this.currentEffect.draw) 
+    	    this.currentEffect.draw(ctx, img, x,y);
     	else ctx.drawImage(img, x, y, this.width, this.height);
     },
     toString: function() {
@@ -1737,7 +1746,34 @@ mse.Sprite = function(parent, param, src, fw0frames, fh, sx, sy, sw, sh) {
 };
 extend(mse.Sprite, mse.Image);
 $.extend(mse.Sprite.prototype, {
-    init: function(){},
+    init: function() {
+        this.cache = document.createElement("canvas");
+        this.setFrame(this.curr);
+    },
+    setFrame: function(fr) {
+        var img = mse.src.getSrc(this.img);
+        var ctx = this.cache.getContext("2d");
+        if(this.frames){
+            this.cache.width = this.frames[fr][2];
+            this.cache.style.width = this.frames[fr][2];
+            this.cache.height = this.frames[fr][3];
+            this.cache.style.height = this.frames[fr][3];
+            
+            ctx.drawImage(img, this.frames[fr][0], this.frames[fr][1], this.frames[fr][2], this.frames[fr][3], 0, 0, this.frames[fr][2], this.frames[fr][3]);
+        }
+        else {
+            this.cache.width = this.fw;
+            this.cache.style.width = this.fw;
+            this.cache.height = this.fh;
+            this.cache.style.height = this.fh;
+            var x = this.sx + (fr % this.col) * this.fw;
+            var y = this.sy + (Math.floor(fr / this.col)) * this.fh;
+            
+            ctx.drawImage(img, x, y, this.fw, this.fh, 0, 0, this.fw, this.fh);
+        }
+        
+        if(this.currentEffect) this.currentEffect.init();
+    },
     appendFrames: function(frames){
         if(this.frames) this.frames = this.frames.concat(frames);
     },
@@ -1748,22 +1784,28 @@ $.extend(mse.Sprite.prototype, {
         this.configCtxFlex(ctx);
         if(isNaN(ox)) var ox = this.getX();
         if(isNaN(oy)) var oy = this.getY();
-        var img = (typeof this.img == "string" ? mse.src.getSrc(this.img) : this.img);
+        
+        var img = mse.src.getSrc(this.img);
         if(!this.frames) {
         	var x = this.sx + (frame % this.col) * this.fw;
         	var y = this.sy + (Math.floor(frame / this.col)) * this.fh;
-        	if(this.currentEffect != null) this.currentEffect.draw(ctx, ox,oy, x,y, this.fw,this.fh);
-        	else ctx.drawImage(img, x, y, this.fw,this.fh, ox,oy, this.width, this.height);
+        	ctx.drawImage(img, x, y, this.fw,this.fh, ox,oy, this.width, this.height);
         }
         else {
         	var x = this.frames[frame][0]; var y = this.frames[frame][1];
         	var fw = this.frames[frame][2]; var fh = this.frames[frame][3];
-        	if(this.currentEffect != null) this.currentEffect.draw(ctx, ox,oy, x,y, fw,fh);
-        	else ctx.drawImage(img, x, y, fw,fh, ox,oy, this.width, this.height);
+        	ctx.drawImage(img, x, y, fw,fh, ox,oy, this.width, this.height);
         }
     },
     draw: function(ctx, ox, oy) {
-    	this.drawFrame(this.curr, ctx, ox, oy);
+    	this.configCtxFlex(ctx);
+    	if(isNaN(ox)) var ox = this.getX();
+    	if(isNaN(oy)) var oy = this.getY();
+    	if(this.cache) {
+    	    if(this.currentEffect != null && this.currentEffect.draw)
+    	        this.currentEffect.draw(ctx, this.cache, ox,oy);
+    	    else ctx.drawImage(this.cache, ox,oy, this.width, this.height);
+    	}
     }
 });
 
@@ -2816,7 +2858,7 @@ mse.FrameAnimation.prototype = {
     			return true;
     		}
     	}
-    	this.sprite.curr = this.seq[this.currFr];
+    	this.sprite.setFrame(this.seq[this.currFr]);
     	return false;
     }
 };
@@ -2898,7 +2940,7 @@ mse.KeyFrameAnimation.prototype = {
     				case 'scale':
     					this.element.scale = curr;break;
     				case 'spriteSeq':
-    				    this.element.curr = curr;break;
+    				    this.element.setFrame(curr);break;
     				}
     			}
     		}

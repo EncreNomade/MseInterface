@@ -1925,11 +1925,8 @@ mse.EIColorFilter = function(subject, config, multi) {
 }
 extend(mse.EIColorFilter, mse.EffectImage);
 $.extend(mse.EIColorFilter.prototype, {
-    draw : function (ctx, x,y, sx,sy,sw,sh){
-    	var img = mse.src.getSrc(this.subject.img);
-    	if(arguments.length == 7)
-    	    ctx.drawImage(img, sx,sy,sw,sh, x,y, this.subject.width, this.subject.height);
-    	else ctx.drawImage(img, x,y, this.subject.width, this.subject.height);
+    draw : function (ctx, img, x,y){
+    	ctx.drawImage(img, x,y, this.subject.width, this.subject.height);
     	
     	ctx.globalCompositeOperation = "source-atop";
     	
