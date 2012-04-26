@@ -1716,7 +1716,6 @@ mse.Mask.prototype.constructor = mse.Mask;
 
 // Sprite
 mse.Sprite = function(parent, param, src, fw0frames, fh, sx, sy, sw, sh) {
-	mse.Image.call(this, parent, param, src);
 	if(arguments.length == 4) this.frames = fw0frames;
 	else {
 		// Frame width and height
@@ -1745,6 +1744,8 @@ mse.Sprite = function(parent, param, src, fw0frames, fh, sx, sy, sw, sh) {
 		if(this.height==0) this.height = this.fh;
 	}
 	this.curr = 0;
+	
+	mse.Image.call(this, parent, param, src);
 };
 extend(mse.Sprite, mse.Image);
 $.extend(mse.Sprite.prototype, {
