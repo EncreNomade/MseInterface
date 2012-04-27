@@ -79,6 +79,16 @@ CanvasRenderingContext2D.prototype.fillTextWrapped = function(text, x, y, width,
     return lineHeight * lines.length;
 };
 
+function clipRect(ctx, x, y, width, height) {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(width, y);
+    ctx.lineTo(width, height);
+    ctx.lineTo(x,height);
+    ctx.closePath();
+    ctx.clip();
+}
+
 // Object.keys not supported solution
 if (!Object.keys) {  
   Object.keys = (function () {  

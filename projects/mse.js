@@ -1753,6 +1753,30 @@ $.extend(mse.Sprite.prototype, {
         this.cache = document.createElement("canvas");
         this.setFrame(this.curr);
     },
+    configSprite: function(fw, fh, sx, sy, sw, sh, width, height) {
+        if(!fw || !fh || isNaN(sx) || isNaN(sy) || !sw || !sh) return;
+        // Frame width and height
+        this.fw = fw; this.fh = fh;
+        // Source region
+        this.sx = sx; this.sy = sy; this.sw = sw; this.sh = sh;
+        // Number of column and row in the sprite
+        if(fw < this.sw) this.col = Math.floor(this.sw/fw);
+        else {
+        	this.fw = this.sw; this.col = 1;
+        }
+        if(fh < this.sh) this.row = Math.floor(this.sh/fh);
+        else {
+        	this.fh = this.sh; this.row = 1;
+        }
+        // Number of frame
+        this.nb = this.col * this.row;
+        // Destination region
+        if(!width) this.width = this.fw;
+        if(!height) this.height = this.fh;
+        // Reset frame
+        this.curr = 0;
+        this.setFrame(this.curr);
+    },
     setFrame: function(fr) {
         var img = mse.src.getSrc(this.img);
         var ctx = this.cache.getContext("2d");

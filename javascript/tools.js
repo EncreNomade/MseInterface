@@ -132,7 +132,7 @@ var Callback = function(func, caller) {
 	
 	this.invoke = function() {
 		var arr = null;
-		if(this.args) arr = (arguments.length>0 ? this.args.concat(arguments) : this.args);
+		if(this.args) arr = (arguments.length>0 ? this.args.concat(Array.prototype.slice.call(arguments)) : this.args);
 		else if(!this.args && arguments.length>0) var arr = arguments;
 		this.func.apply(caller, arr);
 		

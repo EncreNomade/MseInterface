@@ -821,7 +821,7 @@ mdj.Camera.prototype = {
 	        this.ox = Math.round(this.target.getX() - (this.width/2 - this.tarOffx));
 	        this.oy = Math.round(this.target.getY() - (this.height/2 - this.tarOffy));
 	        
-	        // Clip masque for NPCs
+	        // Clip masque
 	        ctx.beginPath();
 	        ctx.moveTo(0, 0);
 	        ctx.lineTo(this.width, 0);
