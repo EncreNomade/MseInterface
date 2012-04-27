@@ -335,7 +335,11 @@ mse.EIColorFilter = function(subject, config, multi) {
 }
 extend(mse.EIColorFilter, mse.EffectImage);
 $.extend(mse.EIColorFilter.prototype, {
-    init : function (){
+    init: function() {
+        this.count = 0;
+        this.update();
+    },
+    update : function (){
         var cache = this.subject.cache;
         if(!cache) return;
         var ctx = this.canvas.getContext("2d");
@@ -348,6 +352,7 @@ $.extend(mse.EIColorFilter.prototype, {
             this.canvas.style.height = cache.height;
         }
         
+        ctx.save();
         ctx.clearRect(0, 0, cache.width, cache.height);
     	ctx.drawImage(cache, 0,0, cache.width, cache.height);
     	ctx.globalCompositeOperation = "source-atop";
@@ -361,6 +366,7 @@ $.extend(mse.EIColorFilter.prototype, {
     	ctx.fillStyle = "#00f";
     	ctx.globalAlpha = 1 - this.config.bMulti;
     	ctx.fillRect(0, 0, cache.width, cache.height);
+    	ctx.restore();
     },
     draw: function(ctx, cache, ox, oy, width, height) {
         ctx.drawImage(this.canvas, ox, oy, width, height);

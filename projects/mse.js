@@ -1799,7 +1799,7 @@ $.extend(mse.Sprite.prototype, {
             ctx.drawImage(img, x, y, this.fw, this.fh, 0, 0, this.fw, this.fh);
         }
         
-        if(this.currentEffect) this.currentEffect.init();
+        if(this.currentEffect && this.currentEffect.update) this.currentEffect.update();
     },
     appendFrames: function(frames){
         if(this.frames) this.frames = this.frames.concat(frames);
