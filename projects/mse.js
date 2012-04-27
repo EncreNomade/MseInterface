@@ -1665,7 +1665,7 @@ $.extend(mse.Image.prototype, {
         ctx.drawImage(img, 0, 0, this.width, this.height);
     },
     startEffect: function (effet) {
-    	if(effet instanceof mse.EffectImage && effet.subject == this) { 
+    	if(!this.currentEffect && effet instanceof mse.EffectImage && effet.subject == this) { 
     	    this.currentEffect = effet;
     	    this.currentEffect.init();
     	}
@@ -1830,7 +1830,7 @@ $.extend(mse.Sprite.prototype, {
     	if(isNaN(oy)) var oy = this.getY();
     	if(this.cache) {
     	    if(this.currentEffect != null && this.currentEffect.draw)
-    	        this.currentEffect.draw(ctx, this.cache, ox,oy);
+    	        this.currentEffect.draw(ctx, this.cache, ox,oy, this.width,this.height);
     	    else ctx.drawImage(this.cache, ox,oy, this.width, this.height);
     	}
     }

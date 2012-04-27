@@ -1,3 +1,10 @@
+function angleForLine(x1, y1, x2, y2) {
+	var angle = 0;
+	var dx = x2 - x1;
+	var dy = y2 - y1;
+	angle = Math.atan2(dy, dx);
+	return angle;
+};
 function mseAngleForLine(x1, y1, x2, y2) {
 	var angle = 0;
 	var dx = x2 - x1;

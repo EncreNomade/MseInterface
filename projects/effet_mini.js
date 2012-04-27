@@ -339,10 +339,14 @@ $.extend(mse.EIColorFilter.prototype, {
         var cache = this.subject.cache;
         if(!cache) return;
         var ctx = this.canvas.getContext("2d");
-        this.canvas.width = cache.width;
-        this.canvas.style.width = cache.width;
-        this.canvas.height = cache.height;
-        this.canvas.style.height = cache.height;
+        if(this.canvas.width != cache.width) {
+            this.canvas.width = cache.width;
+            this.canvas.style.width = cache.width;
+        }
+        if(this.canvas.height != cache.height) {
+            this.canvas.height = cache.height;
+            this.canvas.style.height = cache.height;
+        }
         
         ctx.clearRect(0, 0, cache.width, cache.height);
     	ctx.drawImage(cache, 0,0, cache.width, cache.height);
@@ -357,12 +361,9 @@ $.extend(mse.EIColorFilter.prototype, {
     	ctx.fillStyle = "#00f";
     	ctx.globalAlpha = 1 - this.config.bMulti;
     	ctx.fillRect(0, 0, cache.width, cache.height);
-    	
-    	this.cache = cache;
-    	this.subject.cache = this.canvas;
     },
-    end : function() {
-        if(this.cache) this.subject.cache = this.cache;
+    draw: function(ctx, cache, ox, oy, width, height) {
+        ctx.drawImage(this.canvas, ox, oy, width, height);
     }
 });
 /*******************************************************************/
