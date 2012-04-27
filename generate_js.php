@@ -107,18 +107,23 @@ class ProjectGenerator {
         // Initiale Mse system
         $this->jstr .= "initMseConfig();";
         $this->jstr .= "mse.init();";
+        // Pages, Layers, Objects
+        $this->jstr .= "var pages={};";
+        $this->jstr .= "var layers={};";
+        $this->jstr .= "var objs={};";
+        $this->jstr .= "var animes={};";
+        $this->jstr .= "var games={};";
+        $this->jstr .= "var wikis={};";
+        
         $this->jstr .= "function createbook(){";
         $this->jstr .= "mse.configs.srcPath='./".$this->pj->getName()."/';";
         // Initiale root
-        $this->jstr .= "var root = new mse.Root('".$this->pj->getName()."',".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight).",'".$this->pj->getOrientation()."');";
+        $this->jstr .= "window.root = new mse.Root('".$this->pj->getName()."',".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight).",'".$this->pj->getOrientation()."');";
         $this->autoid = 0;
         $startPageSet = false;
         $this->jstr .= "var temp = {};";
         
         // Add all ressources to xml structure
-        $this->jstr .= "var animes={};";
-        $this->jstr .= "var games={};";
-        $this->jstr .= "var wikis={};";
         $srcs = $this->pj->getAllSrcs();
         $animesrcs = array();
         foreach( $srcs as $name=>$srcData ) {
@@ -171,11 +176,6 @@ class ProjectGenerator {
                 break;
             }
         }
-        
-        // Pages, Layers, Objects
-        $this->jstr .= "var pages = {};";
-        $this->jstr .= "var layers = {};";
-        $this->jstr .= "var objs = {};";
         
         // Generate pages
         $pages = $this->pj->getStruct();
