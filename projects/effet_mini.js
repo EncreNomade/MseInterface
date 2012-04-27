@@ -297,7 +297,7 @@ mse.initTextEffect = function (effectConf,subject) {
 mse.EffectImage = function (subject,config,multi) {
     if(!this.config) this.config = {};
 	if(config) $.extend(this.config, config);
-	this.subject = subject;	
+	this.subject = subject;
 	this.multi = multi===true ? true : false;
 	this.count = 0;
 };
@@ -335,7 +335,9 @@ mse.EIColorFilter = function(subject, config, multi) {
 }
 extend(mse.EIColorFilter, mse.EffectImage);
 $.extend(mse.EIColorFilter.prototype, {
-    init: function() {
+    init: function(config, subject) {
+        if(config) $.extend(this.config, config);
+        if(subject) this.subject = subject;
         this.count = 0;
         this.update();
     },
