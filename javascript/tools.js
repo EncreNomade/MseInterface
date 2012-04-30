@@ -948,6 +948,7 @@ Animation.prototype = {
     constructor: Animation,
     createAnimation: function(frames) {
         var statiq = this.statiq;
+        var objs = {};
         // Analyze
         for(var i = 0; i < frames.length; i++){
             var frame = {};
@@ -957,7 +958,6 @@ Animation.prototype = {
             if(isNaN(frame.interval) || frame.interval > 20 || frame.interval <= 0) 
                 frame.interval = 0.5;
             frame.objs = {};
-            var objs = {};
             var content = framexpo.data('frame').children();
             content.each(function(){
                 var params = {};
@@ -1042,8 +1042,8 @@ Animation.prototype = {
             if(!isNaN(font)) frame.trans.font = font;
             
             this.frames.push(frame);
-            this.objs = objs;
         }
+        this.objs = objs;
     },
     showAnimeOnEditor: function(){
         var editor = $('#editor');

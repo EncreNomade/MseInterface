@@ -1687,7 +1687,7 @@ $.extend(mse.Image.prototype, {
     	if(isNaN(x) || isNaN(y)) {x = this.getX(); y = this.getY();}
     	
     	if(this.currentEffect != null && this.currentEffect.draw) 
-    	    this.currentEffect.draw(ctx, img, x,y);
+    	    this.currentEffect.draw(ctx, img, x,y, this.width, this.height);
     	else ctx.drawImage(img, x, y, this.width, this.height);
     },
     toString: function() {
@@ -1740,8 +1740,8 @@ mse.Sprite = function(parent, param, src, fw0frames, fh, sx, sy, sw, sh) {
 		// Number of frame
 		this.nb = this.col * this.row;
 		// Destination region
-		if(this.width==0) this.width = this.fw;
-		if(this.height==0) this.height = this.fh;
+		if(!this.width) this.width = this.fw;
+		if(!this.height) this.height = this.fh;
 	}
 	this.curr = 0;
 	
@@ -1773,6 +1773,8 @@ $.extend(mse.Sprite.prototype, {
         // Destination region
         if(!width) this.width = this.fw;
         if(!height) this.height = this.fh;
+        // Reset properties
+        this.endEffect();
         // Reset frame
         this.curr = 0;
         this.setFrame(this.curr);
@@ -2844,7 +2846,6 @@ mse.FrameAnimation = function(sprite, seq, rep, delay){
 	this.delay = isNaN(delay) ? 0 : delay;
 	this.active = false;
 	this.evtDeleg = new mse.EventDelegateSystem();
-	mse.root.animations.push(this);
 };
 mse.FrameAnimation.prototype = {
     constructor: mse.FrameAnimation,
@@ -2854,6 +2855,9 @@ mse.FrameAnimation.prototype = {
     	this.delayCount = this.delay;
     	this.active = true;
     	this.evtDeleg.eventNotif('start');
+    	for(var i in mse.root.animations)
+    		if(mse.root.animations[i] == this) return;
+        mse.root.animations.push(this);
     },
     stop: function() {
     	this.currFr = 0;
