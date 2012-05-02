@@ -1122,7 +1122,7 @@ mse.Text = function(parent, param, text, styled) {
 	else this.lineHeight = checkFontSize(ctx.font)*1.2;
 	// Wrap text
 	if(ctx.measureText(this.text).width > this.width) {
-	    this.lines = wrapText(this.text, ctx, this.width);
+	    this.lines = wrapTextWithWrapIndice(this.text, ctx, this.width);
 	    // Redefine height of text object
 	    this.height = this.lineHeight * this.lines.length;
 	}
@@ -1131,7 +1131,7 @@ mse.Text = function(parent, param, text, styled) {
 	
 	// Centralize the text
 	if(this.textAlign == "center" && this.width > 0)
-	    this.offx += this.width/2;
+	    this.offx += Math.round(this.width/2);
 	
 	//Integraion d'effets
 	this.currentEffect = null;

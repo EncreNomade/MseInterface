@@ -356,6 +356,7 @@ body{
 }
 .text textarea {
 	position:relative;
+	background: rgba(255,255,255,0.5);
 }
 .text p {
 	width:auto;

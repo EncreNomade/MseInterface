@@ -111,6 +111,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
                 $scripts = json_decode($encodedStr);
             }
             if(!is_null($scripts)) {
+                $pj->resetScripts(null);
                 foreach( $scripts as $key=>$script )
                     $pj->addScript($key, $script);
             }

@@ -156,7 +156,7 @@ class MseProject {
         return $this->scripts;
     }
     function resetScripts($scripts){
-        if($scripts) $this->scripts = $scripts;
+        if(!is_null($scripts)) $this->scripts = $scripts;
         else $this->scripts = array();
     }
     
