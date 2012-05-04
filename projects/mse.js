@@ -29,6 +29,7 @@ var cfs = mse.configs;
 
 mse.root = null;
 mse.currTimeline = null;
+mse.Callback = Callback;
 
 
 // Gestion de ressources
@@ -283,33 +284,6 @@ mse.createBackLayer = function(img) {
 
 // Event System
 
-mse.Callback = function(func, caller) {
-    if(!func) return null; 
-	this.func = func;
-	this.caller = caller;
-	if(arguments.length > 2) {
-		this.args = new Array();
-		for(var i = 2; i < arguments.length; i++)
-			this.args.push(arguments[i]);
-	}
-	
-	this.link = function(cb) {
-		if(!this.linked) this.linked = new Array();
-		this.linked.push(cb);
-	};
-	
-	this.invoke = function(paramSup) {
-		var arr = null;
-		if(this.args) arr = (paramSup ? this.args.concat(paramSup) : this.args);
-		else if(!this.args && paramSup) var arr = [paramSup];
-		this.func.apply(caller, arr);
-		
-		if(this.linked) {
-			for(var i in this.linked) this.linked[i].invoke();
-		}
-	};
-}
-
 mse.EventListener = function(evtName, callback, prevent, target) {
 	this.evtName = evtName;
 	this.callback = callback;
@@ -392,12 +366,6 @@ mse.EventDelegateSystem = function() {
 		}
 	};
 	this.eventNotif = function(evtName, evt) {
-	    // Correction coordinates with root viewport
-	    if(mse.root.viewport && evt && !evt.corrected && !isNaN(evt.offsetX)) {
-	        evt.offsetX += mse.root.viewport.x;
-	        evt.offsetY += mse.root.viewport.y;
-	        evt.corrected = true;
-	    }
 	    var success = false;
 		switch(evtName) {
 		case 'move':
@@ -434,6 +402,12 @@ mse.EventDelegateSystem = function() {
 // Event distributor
 mse.EventDistributor = function(src, jqObj, deleg) {
 	this.distributor = function(e) {
+	    // Correction coordinates with root viewport
+	    if(mse.root.viewport && evt && !evt.corrected && !isNaN(evt.offsetX)) {
+	        evt.offsetX += mse.root.viewport.x;
+	        evt.offsetY += mse.root.viewport.y;
+	        evt.corrected = true;
+	    }
 		this.rootEvt.eventNotif(e.type, e);
 		if(this.delegate) this.delegate.eventNotif(e.type, e);
 	};
@@ -443,7 +417,7 @@ mse.EventDistributor = function(src, jqObj, deleg) {
 
 	this.src = src;
 	jqObj.mseInteraction(this);
-	jqObj.mseInteraction('setDelegate', this.distributor);
+	jqObj.mseInteraction('setDelegate', new Callback(this.distributor, this));
 	
 	this.rootEvt = new mse.EventDelegateSystem();
 	
@@ -808,7 +782,8 @@ mse.Root = function(id, width, height, orientation) {
 				   'padding':'0px',
 				  'position':'absolute',
 				  	  'left':x+'px',
-				  	   'top':'0px'});
+				  	   'top':'0px',
+				   'z-index':10});
 	$('body').css({'position':'relative'}).append(this.jqObj);
 	this.scale = 1;
 	this.setSize(width, height);
@@ -831,11 +806,12 @@ mse.Root = function(id, width, height, orientation) {
 	           'width':width*0.8+'px',
 	           'height':height*0.8+'px',
 	           'left':x+width*0.1+'px',
-	           'top':height*0.1+'px'
+	           'top':height*0.1+'px',
+	           'z-index':0
 	           });
 	$('body').prepend(video);
 	//this.video = video.flareVideo($('body'));
-	this.video = video.hide();
+	//this.video = video.hide();
 	// Game element
 	this.gamewindow = new mse.GameShower();
 	
@@ -1842,8 +1818,8 @@ $.extend(mse.Sprite.prototype, {
 
 // Game object
 mse.Game = function(params) {
-    this.offx = Math.round(0.2*mse.root.width);
-    this.offy = Math.round(0.2*mse.root.height);
+    this.offx = 0;
+    this.offy = 0;
     this.width = Math.round(0.6*mse.root.width);
     this.height = Math.round(0.6*mse.root.height);
     
@@ -1854,6 +1830,7 @@ mse.Game = function(params) {
     }
     this.type = "DEP";
     this.directShow = false;
+    this.setEvtProxy(mse.root.evtDistributor);
 };
 extend(mse.Game, mse.UIObject);
 $.extend(mse.Game.prototype, {
@@ -1864,8 +1841,13 @@ $.extend(mse.Game.prototype, {
     getMsg: function() {
         return this.msg[this.state];
     },
+    setEvtProxy: function(proxy) {
+        if(proxy instanceof mse.EventDistributor || proxy instanceof mse.EventDelegateSystem) {
+            this.proxy = proxy;
+        }
+    },
     getEvtProxy: function() {
-        return mse.root.evtDistributor;
+        return this.proxy;
     },
     setExpose: function(expo) {
         this.expo = expo;
@@ -1903,18 +1885,25 @@ $.extend(mse.Game.prototype, {
 
 // GameShower object, window of the games, one object for all the games
 mse.GameShower = function() {
-	// Super constructor
-	mse.UIObject.call(this, null, {});
+	this.jqObj = $("<canvas id='game' width=50 height=50></canvas>");
+	$('body').append(this.jqObj);
+	this.jqObj.css("display", "none");
+	this.ctx = this.jqObj.get(0).getContext('2d');
+	
+	this.evtDeleg = new mse.EventDelegateSystem();
+	this.jqObj.mseInteraction('init');
+	this.jqObj.mseInteraction('setDelegate', new Callback(function(e){
+	    this.evtDeleg.eventNotif(e.type, e);
+	}, this));
 	
 	this.currGame = null;
-	this.globalAlpha = 0;
 	this.state = "DESACTIVE";
 	mse.src.addSource('gameover', './UI/gameover.jpg', 'img', true);
-	this.loseimg = new mse.Image(this, {pos:[0,0]}, 'gameover');
-	this.losetext = new mse.Text(this, {font:'Bold 36px '+mse.configs.font,fillStyle:'#FFF',textBaseline:'middle',textAlign:'center'},'Perdu ...',true);
+	this.loseimg = new mse.Image(null, {pos:[0,0]}, 'gameover');
+	this.losetext = new mse.Text(null, {font:'Bold 36px '+mse.configs.font,fillStyle:'#FFF',textBaseline:'middle',textAlign:'center'}, 'Perdu ...', true);
 	this.losetext.evtDeleg.addListener('show', new mse.Callback(this.losetext.startEffect, this.losetext, {"typewriter":{speed:2}}));
-	this.passBn = new mse.Button(this, {size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je ne joue plus', 'wikiBar');
-	this.restartBn = new mse.Button(this, {size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je rejoue', 'aideBar');
+	this.passBn = new mse.Button(null, {size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je ne joue plus', 'wikiBar');
+	this.restartBn = new mse.Button(null, {size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je rejoue', 'aideBar');
 	this.firstShow = false;
 	
 	this.isFullScreen = function() {
@@ -1925,20 +1914,30 @@ mse.GameShower = function() {
 	this.load = function(game) {
 	    if(!game || !(game instanceof mse.Game)) return;
 	    this.currGame = game;
+	    this.currGame.setEvtProxy(this.evtDeleg);
 	    this.firstShow = false;
 	    this.state = "LOAD";
-	    mse.fadein(this, 15);
-	    mse.fadein(this.currGame, 15);
+	    
+	    // Init game shower size and pos
+	    this.jqObj.get(0).width = this.currGame.width;
+	    this.jqObj.get(0).height = this.currGame.height;
+	    this.width = this.currGame.width;
+	    this.height = this.currGame.height;
+	    this.jqObj.css({
+	        'left': ($(document).width()-this.width)/2,
+	        'top': ($(document).height()-this.height)/2,
+	        'width': this.width,
+	        'height': this.height,
+	        'z-index': 11
+	    });
+	    this.loseimg.setSize(this.width-5, this.height-5);
+	    this.losetext.setPos(this.width/2, this.height/2);
+	    this.restartBn.setPos(this.width-115, this.height-50);
+	    this.passBn.setPos(10, this.height-50);
+	    this.jqObj.show();
 	};
 	this.start = function() {
 	    if(!this.currGame) return;
-	    // Init game shower size and pos
-	    this.setPos(this.currGame.offx, this.currGame.offy);
-	    this.setSize(this.currGame.width, this.currGame.height);
-	    this.loseimg.setSize(this.width-5, this.height-5);
-	    this.losetext.setPos(this.width/2, this.height/2);
-	    this.restartBn.setPos(this.currGame.width-115, this.currGame.height-50);
-	    this.passBn.setPos(10, this.currGame.height-50);
 	    // Init game
 	    this.currGame.init();
 	    this.state = "START";
@@ -1950,31 +1949,26 @@ mse.GameShower = function() {
 	this.restart = function(e){
 	    if(this.passBn.inObj(e.offsetX, e.offsetY)) {
 	        this.currGame.end();
-	        mse.root.evtDistributor.removeListener('click', cbrestart);
+	        this.evtDeleg.removeListener('click', cbrestart);
 	    }
 	    else if(this.restartBn.inObj(e.offsetX, e.offsetY)) {
 	        this.state = "START";
 	        this.currGame.init();
-	        mse.root.evtDistributor.removeListener('click', cbrestart);
+	        this.evtDeleg.removeListener('click', cbrestart);
 	    }
 	};
 	var cbrestart = new mse.Callback(this.restart, this);
 	this.lose = function() {
 	    this.state = "LOSE";
 	    //mse.fadein(this.loseimg, 5);
-	    mse.root.evtDistributor.removeListener('click');
+	    this.evtDeleg.removeListener('click');
 	    this.losetext.evtDeleg.eventNotif('show');
-	    mse.root.evtDistributor.addListener('click', cbrestart, true, this.currGame);
+	    this.evtDeleg.addListener('click', cbrestart);
 	};
 	this.end = function() {
-	    mse.fadeout(this.currGame, 25);
-	    mse.fadeout(this, 25, this.cbdesact);
+	    this.jqObj.hide(1000);
+	    this.jqObj.css('z-index', 1);
 	};
-	this.desactive = function() {
-	    this.state = "DESACTIVE";
-	    mse.root.evtDistributor.setDominate(null);
-	};
-	this.cbdesact = new mse.Callback(this.desactive, this);
 	
 	this.logic = function(delta) {
 	    if(this.state == "LOSE") this.losetext.logic();
@@ -1984,31 +1978,16 @@ mse.GameShower = function() {
 	    else this.currGame.logic(delta);
 	    return true;
 	};
-	this.draw = function(ctx) {
-	    if(this.globalAlpha < 0.1) return;
-	    
-	    this.configCtxFlex(ctx);
-	    
-	    // Border
-	    if(!MseConfig.iPhone){
-	        if(this.currGame.fillback) {
-	            ctx.fillStyle = "#000";
-	            ctx.shadowColor ="black";
-	            ctx.shadowBlur = 20;
-	            ctx.fillRect(this.offx, this.offy, this.width, this.height);
-	            ctx.shadowBlur = 0;
-	        }
-	        else {
-	            ctx.strokeStyle = "rgb(188,188,188)";
-	            ctx.lineWidth = 5;
-	            ctx.strokeRect(this.offx-2.5, this.offy-2.5, this.width, this.height);
-	            ctx.lineWidth = 1;
-	        }
+	this.draw = function() {
+	    this.ctx.clearRect(0,0,this.width,this.height);
+	    if(this.currGame.fillback) {
+	        this.ctx.fillStyle = "#000";
+	        this.ctx.fillRect(0, 0, this.width, this.height);
 	    }
 	    
 	    if(this.currGame.type == "INDEP" && MseConfig.iPhone && MseConfig.orientation != "landscape") {
 	        // Draw orientation change notification page
-	        ctx.drawImage(mse.src.getSrc('imgNotif'), (mse.root.width-50)/2, (mse.root.height-80)/2, 50, 80);
+	        this.ctx.drawImage(mse.src.getSrc('imgNotif'), (this.width-50)/2, (this.height-80)/2, 50, 80);
 	    }
 	    else if(this.state == "START") {
 	        if(!this.firstShow){
@@ -2016,26 +1995,24 @@ mse.GameShower = function() {
 	            if(this.currGame.type == "INDEP") {
 	                this.evtDeleg.eventNotif("firstShow");
 	                if(MseConfig.iPhone){
-	                    this.currGame.setPos(mse.root.viewport.x,mse.root.viewport.y);
+	                    this.currGame.setPos(0, 0);
 	                    this.currGame.setSize(480, 270);
 	                    this.currGame.mobileLazyInit();
 	                }
 	            }
 	        }
-    	    this.currGame.draw(ctx);
+    	    this.currGame.draw(this.ctx);
     	}
     	else if(this.state == "LOSE") {
     	    //this.loseimg.draw(ctx);
-    	    ctx.fillStyle = "#000";
-    	    ctx.fillRect(this.offx+5, this.offy+5, this.width-10, this.height-10);
-    	    this.losetext.draw(ctx);
-    	    this.passBn.draw(ctx);
-    	    this.restartBn.draw(ctx);
+    	    this.ctx.fillStyle = "#000";
+    	    this.ctx.fillRect(0, 0, this.width, this.height);
+    	    this.losetext.draw(this.ctx);
+    	    this.passBn.draw(this.ctx);
+    	    this.restartBn.draw(this.ctx);
     	}
 	};
 };
-mse.GameShower.prototype = new mse.UIObject();
-mse.GameShower.prototype.constructor = mse.GameShower;
 
 
 // GameExpose is the small object integrate in the articles, it can be clicked for load the game in GameShower and start it

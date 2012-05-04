@@ -39,14 +39,15 @@ addEventListener("load", function(){
 }, false);
 </script>
 
+<link rel="stylesheet" href="./support/main.css" type="text/css">
 <link rel="stylesheet" href="./support/flarevideo/flarevideo.css" type="text/css">
 <link rel="stylesheet" href="./support/flarevideo/flarevideo.default.css" type="text/css">
 <script src="./support/jquery-latest.js"></script>
 <script src="./support/BrowserDetect.js"></script>
 <script src="./support/flarevideo/jquery.ui.slider.js" type="text/javascript"></script>
 <script src="./support/flarevideo/flarevideo.js" type="text/javascript"></script> 
-<script src="./support/Interaction.js"></script>
 <script src="./support/Tools.js"></script>
+<script src="./support/Interaction.js"></script>
 <script src="./mse.js"></script>
 <script src="./effet_mini.js"></script>
 <script src="./mdj.js"></script>

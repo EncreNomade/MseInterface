@@ -1,6 +1,35 @@
 // Plugin jQuery of Interaction for MSEdition
 // Ref: http://docs.jquery.com/Plugins/Authoring
 
+// Callback
+
+var Callback = function(func, caller) {
+    if(!func) return null;
+	this.func = func;
+	this.caller = caller;
+	if(arguments.length > 2) {
+		this.args = new Array();
+		for(var i = 2; i < arguments.length; i++)
+			this.args.push(arguments[i]);
+	}
+	
+	this.link = function(cb) {
+		if(!this.linked) this.linked = new Array();
+		this.linked.push(cb);
+	};
+	
+	this.invoke = function(paramSup) {
+		var arr = null;
+		if(this.args) arr = (arguments.length>0 ? this.args.concat(Array.prototype.slice.call(arguments)) : this.args);
+		else if(!this.args && arguments.length>0) var arr = arguments;
+		this.func.apply(caller, arr);
+		
+		if(this.linked) {
+			for(var i in this.linked) this.linked[i].invoke();
+		}
+	};
+};
+
 (function( $ ){
 
 var _pressTimer;
@@ -18,8 +47,6 @@ var _clicked = false;
 var _clickDown = false;
 
 var _prevLoc = [0,0];
-
-var _data = {};
 
 var eventsWeb = {
 
@@ -82,12 +109,9 @@ var methods = {
 			$.fn.mseInteraction.prototype.dominateElem = null;
 	},
 	
-	addListener : function(type, func, tag, data) {
-		if( typeof(type) != 'string' && isNaN(type) )
+	addListener : function(type, cb) {
+		if( typeof(type) != 'string' || !(cb instanceof Callback) )
 			return false;
-			
-		if(data)
-			_data = data;
 		
 		// Events corresponds
 		var evts;
@@ -102,7 +126,7 @@ var methods = {
 				var lis = {};
 				listeners = $.data( $(this).get(0), 'mselisteners', lis );
 			}
-			listeners[type] = func;
+			listeners[type] = cb;
 			
 			// Bind event to delegate function 'analyse'
 			// No need for spercial bind
@@ -118,10 +142,13 @@ var methods = {
 			}
 		}
 	},
+	removeListener : function(type) {
+	    var listeners = $.data( $(this).get(0), 'mselisteners' );
+	    if(listeners) delete listeners[type];
+	},
 	
-	setDelegate : function(func, data) {
-		if(data)
-			_data = data;
+	setDelegate : function(cb) {
+	    if(!cb instanceof Callback) return;
 		// Events corresponds
 		var evts;
 		if(MseConfig.iOS) evts = eventsMobile;
@@ -132,7 +159,7 @@ var methods = {
 		// If not existe, fail to set delegate
 		if( !listeners ) return;
 		for(var type in evts)
-			listeners[type] = func;
+			listeners[type] = cb;
 		// Bind all events
 		if(MseConfig.iOS) {
 			$(this).bind('click dblclick taphold swipeleft swiperight.mseInteraction', analyse);
@@ -146,9 +173,9 @@ var methods = {
 			$(document).mseInteraction($.data( $(this).get(0), 'mseSrc' ));
 			$(document).bind('keydown keypress keyup.mseInteraction', analyse);
 			listeners = $.data( $(document).get(0), 'mselisteners' );
-			listeners['keydown'] = func;
-			listeners['keyup'] = func;
-			listeners['keypress'] = func;
+			listeners['keydown'] = cb;
+			listeners['keyup'] = cb;
+			listeners['keypress'] = cb;
 		}
 	}
 
@@ -193,15 +220,15 @@ function analyse(e) {
 	switch( event.type ) {
 	
 	case 'click' :
-		if( typeof(_listeners['click']) == 'function' )
-			_listeners['click'].call( _src, event );
-		if( typeof(_listeners['doubleClick']) == 'function' ) {
+		if( _listeners['click'] instanceof Callback )
+			_listeners['click'].invoke( event );
+		if( _listeners['doubleClick'] instanceof Callback ) {
 			// Detect the double click on mobile
 			if(MseConfig.iOS) {
 				// Already clicked
 				if( _clicked ) {
 					event.type = 'doubleClick';
-					_listeners['doubleClick'].call( _src, event );
+					_listeners['doubleClick'].invoke( event );
 					_clicked = false;
 				}
 				else {
@@ -216,9 +243,9 @@ function analyse(e) {
 		break;
 	
 	case 'dblclick' : 
-		if( typeof(_listeners['doubleClick']) == 'function' )
+		if( _listeners['doubleClick'] instanceof Callback )
 			event.type = 'doubleClick';
-			_listeners['doubleClick'].call( _src, event );
+			_listeners['doubleClick'].invoke( event );
 		break;
 	
 // Mouse Events	
@@ -231,10 +258,10 @@ function analyse(e) {
 		if(_currentEvt != null)
 			gestureUpdate(e);
 
-		if( typeof(_listeners['move']) == 'function' ) {
+		if( _listeners['move'] instanceof Callback ) {
 			event.type = 'move';
 			event.prev = _prevLoc;
-			_listeners['move'].call( _src, event );
+			_listeners['move'].invoke( event );
 			_prevLoc = [event.offsetX, event.offsetY];
 		}
 		break;
@@ -246,16 +273,16 @@ function analyse(e) {
 		break;
 		
 	case 'mousewheel' :
-		if( typeof(_listeners['scroll']) == 'function' )
-			_listeners['scroll'].call( _src, event );
+		if( _listeners['scroll'] instanceof Callback )
+			_listeners['scroll'].invoke( event );
 		break;
 		
 	
 // Touch Events for iOS
 	case 'taphold' :
-		if( typeof(_listeners['longPress']) == 'function' ){
+		if( _listeners['longPress'] instanceof Callback ){
 			event.type = 'longPress';
-			_listeners['longPress'].call( _src, event );
+			_listeners['longPress'].invoke( event );
 		}
 		break;
 		
@@ -267,10 +294,10 @@ function analyse(e) {
 		if(_currentEvt != null)
 			gestureUpdate(e);
 	
-		if( e.touches.length === 1 && typeof(_listeners['move']) == 'function' ) {
+		if( e.touches.length === 1 && _listeners['move'] instanceof Callback ) {
 			event.type = 'move';
 			event.prev = _prevLoc;
-			_listeners['move'].call( _src, event );
+			_listeners['move'].invoke( event );
 			_prevLoc = [event.offsetX, event.offsetY];
 		}
 		break;
@@ -284,8 +311,8 @@ function analyse(e) {
 // Swipe Event propose by jQuery Mobile
 	case 'swipeleft' :
 	case 'swiperight' :
-		if( typeof(_listeners[event.type]) == 'function' )
-			_listeners[event.type].call( _src, event );
+		if( _listeners[event.type] instanceof Callback )
+			_listeners[event.type].invoke( event );
 		break;
 		
 		
@@ -295,8 +322,8 @@ function analyse(e) {
 	case 'keydown' :
 	case 'keyup' :
 	case 'keypress' :
-		if( typeof(_listeners[event.type]) == 'function' )
-			_listeners[event.type].call( _src, event );
+		if( _listeners[event.type] instanceof Callback )
+			_listeners[event.type].invoke( event );
 		break;
 		
 	}
@@ -305,7 +332,7 @@ function analyse(e) {
 function pressTimeout() {
 	if(_currentEvt) {
 		_currentEvt.type = 'longPress';
-		_listeners['longPress'].call( _src, _currentEvt );
+		_listeners['longPress'].invoke( _currentEvt );
 	}
 }
 function clickTimeout() {_clickDown=false;}
@@ -315,26 +342,26 @@ function gestureStart(e) {
 	_currentEvt = new MseGestEvt(e, true);
 	_addPoint(e);
 	
-	if( typeof(_listeners['longPress']) == 'function' )
+	if( _listeners['longPress'] instanceof Callback )
 		_pressTimer = setTimeout( pressTimeout, pressTime );
-	if( MseConfig.iOS && typeof(_listeners['click']) == 'function' ) {
+	if( MseConfig.iOS && _listeners['click'] instanceof Callback ) {
 		_clickDown = true;
 		setTimeout( clickTimeout, clickTime );
 	}
-	if( typeof(_listeners['gestureSingle']) == 'function' ) {
+	if( _listeners['gestureSingle'] instanceof Callback ) {
 		_currentEvt.type = 'gestureStart';
-		_listeners['gestureSingle'].call( _src, _currentEvt );
+		_listeners['gestureSingle'].invoke( _currentEvt );
 	}
 }
 
 function gestureUpdate(e) {
 	_addPoint(e);
 	
-	if( typeof(_listeners['longPress']) == 'function' )
+	if( _listeners['longPress'] instanceof Callback )
 		clearTimeout(_pressTimer);
-	if( typeof(_listeners['gestureSingle']) == 'function' ) {
+	if( _listeners['gestureSingle'] instanceof Callback ) {
 		_currentEvt.type = 'gestureUpdate';
-		_listeners['gestureSingle'].call( _src, _currentEvt );
+		_listeners['gestureSingle'].invoke( _currentEvt );
 	}
 }
 
@@ -347,15 +374,15 @@ function gestureEnd(e) {
 	// Click
 	if(_clickDown) {
 		_currentEvt.type = 'click';
-		_listeners['click'].call( _src, _currentEvt );
+		_listeners['click'].invoke( _currentEvt );
 		_clickDown = false;
 	}
 	// Long Press
-	if( typeof(_listeners['longPress']) == 'function' )
+	if( _listeners['longPress'] instanceof Callback )
 		clearTimeout(_pressTimer);
 		
 	// Swipe left right
-	if( typeof(_listeners['swipe']) == 'function' ) {
+	if( _listeners['swipe'] instanceof Callback ) {
 		if(!MseConfig.iOS) {
 			// Init
 			var maxY = _currentEvt.listY[0];
@@ -387,11 +414,11 @@ function gestureEnd(e) {
 			if(maxY-minY < swipeWSeuil && _currentEvt.distance > swipeLSeuil) {
 				if(validLeft) { // Swipe Left
 					_currentEvt.type = 'swipeleft';
-					_listeners['swipe'].call( _src, _currentEvt );
+					_listeners['swipe'].invoke( _currentEvt );
 				}
 				else if(validRight) { // Swipe Left
 					_currentEvt.type = 'swiperight';
-					_listeners['swipe'].call( _src, _currentEvt );
+					_listeners['swipe'].invoke( _currentEvt );
 				}
 			}
 		}
@@ -421,19 +448,19 @@ function gestureEnd(e) {
 		if(maxX-minX < swipeWSeuil && _currentEvt.distance > swipeLSeuil) {
 			if(validUp) {
 				_currentEvt.type = 'swipeup';
-				_listeners['swipe'].call( _src, _currentEvt );
+				_listeners['swipe'].invoke( _currentEvt );
 			}
 			else if(validDown) {
 				_currentEvt.type = 'swipedown';
-				_listeners['swipe'].call( _src, _currentEvt );
+				_listeners['swipe'].invoke( _currentEvt );
 			}
 		}
 	}
 	
 	// Gesture Single
-	if( typeof(_listeners['gestureSingle']) == 'function' ) {
+	if( _listeners['gestureSingle'] instanceof Callback ) {
 		_currentEvt.type = 'gestureEnd';
-		_listeners['gestureSingle'].call( _src, _currentEvt );
+		_listeners['gestureSingle'].invoke( _currentEvt );
 	}
 	
 	
@@ -473,7 +500,7 @@ function MseGestEvt( e, forAnalyse ) {
 	// Event for analyser to analyse the gestures
 	if(forAnalyse) this.type = 'temporary';
 	else this.type = e.type;
-		
+	
 	this.windowX = e.clientX;
 	this.windowY = e.clientY;
 	if(e.type === 'touchmove') {
@@ -527,10 +554,6 @@ function MseGestEvt( e, forAnalyse ) {
     	    this.rolled = e.wheelDelta;
     	else this.rolled = 0;
 	}
-	
-	// Optional data
-	if(_data)
-		this.data = _data;
 }
 
 

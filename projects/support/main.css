@@ -1,0 +1,12 @@
+#game {
+    position: fixed;
+    display: block;
+    z-index: 0;
+    -moz-box-shadow: 0 0 10px #000000;
+    -webkit-box-shadow: 0 0 10px #000000;
+    box-shadow: 0 0 10px #000000;
+    border: 3px solid #4c4c4c;
+    margin: auto;
+    padding: 0;
+    overflow: hidden;
+}
