@@ -679,12 +679,12 @@ mdj.DirectionalInput = function(game, target, tarProxy){
 };
 mdj.DirectionalInput.prototype = {
     enable: function() {
-        this.tarProxy.addListener('keydown', this.movecb, true, this.game);
-        this.tarProxy.addListener('keyup', this.moveEndcb, true, this.game);
+        this.tarProxy.addListener('keydown', this.movecb);
+        this.tarProxy.addListener('keyup', this.moveEndcb);
         if(MseConfig.iOS){
-            this.tarProxy.addListener('gestureStart', this.touchStartcb, true, this.game);
-            this.tarProxy.addListener('gestureUpdate', this.touchMovecb, true, this.game);
-            this.tarProxy.addListener('gestureEnd', this.moveEndcb, true, this.game);
+            this.tarProxy.addListener('gestureStart', this.touchStartcb);
+            this.tarProxy.addListener('gestureUpdate', this.touchMovecb);
+            this.tarProxy.addListener('gestureEnd', this.moveEndcb);
         }
     },
     disable: function() {

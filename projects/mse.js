@@ -1756,6 +1756,7 @@ $.extend(mse.Sprite.prototype, {
         this.setFrame(this.curr);
     },
     setFrame: function(fr) {
+        this.curr = fr;
         var img = mse.src.getSrc(this.img);
         var ctx = this.cache.getContext("2d");
         if(this.frames){
@@ -1871,8 +1872,8 @@ $.extend(mse.Game.prototype, {
     draw: function(ctx) {},
     end: function() {
         this.evtDeleg.eventNotif("end");
+        mse.root.container.evtDeleg.setDominate(null);
         if(!this.directShow) mse.root.gamewindow.end();
-        else mse.root.container.evtDeleg.setDominate(null);
         if(this.expo) this.expo.endGame();
     },
     lose: function() {
@@ -1923,9 +1924,13 @@ mse.GameShower = function() {
 	    this.jqObj.get(0).height = this.currGame.height;
 	    this.width = this.currGame.width;
 	    this.height = this.currGame.height;
+	    if(isNaN(this.currGame.canvasox)) this.left = Math.round($(document).width()-this.width)/2;
+	    else this.left = mse.root.jqObj.offset().left + this.currGame.canvasox;
+	    if(isNaN(this.currGame.canvasoy)) this.top = Math.round($(document).height()-this.height)/2;
+	    else this.top = mse.root.jqObj.offset().top + this.currGame.canvasoy;
 	    this.jqObj.css({
-	        'left': ($(document).width()-this.width)/2,
-	        'top': ($(document).height()-this.height)/2,
+	        'left': this.left,
+	        'top': this.top,
 	        'width': this.width,
 	        'height': this.height,
 	        'z-index': 11
@@ -1968,6 +1973,7 @@ mse.GameShower = function() {
 	this.end = function() {
 	    this.jqObj.hide(1000);
 	    this.jqObj.css('z-index', 1);
+	    this.state = "DESACTIVE";
 	};
 	
 	this.logic = function(delta) {

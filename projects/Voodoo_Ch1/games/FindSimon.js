@@ -246,12 +246,12 @@ var FindSimon = function() {
         this.disx = this.disy = 0;
     	
     	// Key event listener
-    	mse.root.evtDistributor.addListener('keydown', this.movecb, true, this);
-    	mse.root.evtDistributor.addListener('keyup', this.moveovercb, true, this);
+    	this.getEvtProxy().addListener('keydown', this.movecb, true, this);
+    	this.getEvtProxy().addListener('keyup', this.moveovercb, true, this);
     	if(MseConfig.iOS){
-    	    mse.root.evtDistributor.addListener('gestureStart', this.touchStartcb, true, this);
-    	    mse.root.evtDistributor.addListener('gestureUpdate', this.touchMovecb, true, this);
-    	    mse.root.evtDistributor.addListener('gestureEnd', this.moveovercb, true, this);
+    	    this.getEvtProxy().addListener('gestureStart', this.touchStartcb, true, this);
+    	    this.getEvtProxy().addListener('gestureUpdate', this.touchMovecb, true, this);
+    	    this.getEvtProxy().addListener('gestureEnd', this.moveovercb, true, this);
     	}
     };
     this.mobileLazyInit = function() {
@@ -263,15 +263,6 @@ var FindSimon = function() {
     
     this.draw = function(ctx) {
         ctx.save();
-        ctx.translate(this.offx, this.offy);
-		// Clip masque for NPCs
-		ctx.beginPath();
-		ctx.moveTo(0,0);
-		ctx.lineTo(this.width-5,0);
-		ctx.lineTo(this.width-5,this.height-5);
-		ctx.lineTo(0,this.height-5);
-		ctx.closePath();
-		ctx.clip();
 		var parc = mse.src.getSrc('parc');
 		var scale = parc.width/1920;
 		// Background
@@ -364,12 +355,12 @@ var FindSimon = function() {
 		
 		// Win check
 		if(Math.abs(this.sp.x - 1690) <= 60 && Math.abs(this.sp.y - 290) <= 10) {
-		    mse.root.evtDistributor.removeListener('keydown', this.movecb);
-		    mse.root.evtDistributor.removeListener('keyup', this.moveoverc);
+		    this.getEvtProxy().removeListener('keydown', this.movecb);
+		    this.getEvtProxy().removeListener('keyup', this.moveoverc);
 		    if(MseConfig.iOS){
-		        mse.root.evtDistributor.removeListener('gestureStart', this.touchStartcb);
-		        mse.root.evtDistributor.removeListener('gestureUpdate', this.touchMovecb);
-		        mse.root.evtDistributor.removeListener('gestureEnd', this.moveovercb);
+		        this.getEvtProxy().removeListener('gestureStart', this.touchStartcb);
+		        this.getEvtProxy().removeListener('gestureUpdate', this.touchMovecb);
+		        this.getEvtProxy().removeListener('gestureEnd', this.moveovercb);
 		    }
 		    this.state = "WIN";
 		    this.end();
@@ -388,12 +379,12 @@ var FindSimon = function() {
 		    // Simon is found!!!
 		        n.direction = angle;
 		        // Remove Key event listener
-		        mse.root.evtDistributor.removeListener('keydown', this.movecb);
-		        mse.root.evtDistributor.removeListener('keyup', this.moveovercb);
+		        this.getEvtProxy().removeListener('keydown', this.movecb);
+		        this.getEvtProxy().removeListener('keyup', this.moveovercb);
 		        if(MseConfig.iOS){
-		            mse.root.evtDistributor.removeListener('gestureStart', this.touchStartcb);
-		            mse.root.evtDistributor.removeListener('gestureUpdate', this.touchMovecb);
-		            mse.root.evtDistributor.removeListener('gestureEnd', this.moveovercb);
+		            this.getEvtProxy().removeListener('gestureStart', this.touchStartcb);
+		            this.getEvtProxy().removeListener('gestureUpdate', this.touchMovecb);
+		            this.getEvtProxy().removeListener('gestureEnd', this.moveovercb);
 		        }
 		        this.lazylose = true;
 		        this.moveover();

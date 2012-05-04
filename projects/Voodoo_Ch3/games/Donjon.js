@@ -29,7 +29,7 @@ var Ghost = function(ox, oy, target, layer) {
             this.target.game.state = "LOSE";
             this.target.game.count = 50;
             this.target.game.input.disable();
-            this.target.game.showMsg("Tu es rattrapé par un fantôme !");
+            this.target.game.showMsg("Tu as été rattrapé par un fantôme !");
         }
         // Dead check
         var angle = mseAngleForLine(this.target.ox+8, this.target.oy+18, this.ox+8, this.oy+18);
@@ -123,12 +123,9 @@ var Donjon = function(){
         this.simonM.setCollisionBox(2,20,13,17);
         this.simonM.orient = "DOWN";
         this.simonM.game = this;
-        this.input = new mdj.DirectionalInput(this, this.simonM, this.getEvtProxy());
-        this.input.disable();
         var colliDetector = new mdj.CollisionDetector(this.simonM);
         colliDetector.register('tilelayer', this.currScene.getLayer('colli'), this.simonM.cancelMove);
         // Collision with objs
-        this.simonM.inputv = 6;
         colliDetector.register('objs', this.currScene.getLayer('elem'), new mse.Callback(function(e){
             if($.inArray(e.gid, this.objGid.hole) != -1) {
                 this.simonV.playAnime('turn');
@@ -160,22 +157,6 @@ var Donjon = function(){
         this.simonV.addAnime("runRIGHT", new mdj.AnimationSprite(this.simonV, [8,9,10,11,10,9,8], 0, 4));
         this.simonV.addAnime("runLEFT", new mdj.AnimationSprite(this.simonV, [15,14,13,12,13,14,15], 0, 4));
         this.simonV.addAnime("turn", new mdj.AnimationSprite(this.simonV, [15,4,8,0], 8, 2));
-        this.input.proxy.addListener('dirChange', new mse.Callback(function(e){
-            switch(e.dir) {
-            case "DOWN": case "UP": case "LEFT": case "RIGHT": 
-                this.simonV.playAnime('run'+e.dir);
-                this.simonM.orient = e.dir;
-                break;
-            case "NONE":
-                this.simonV.stopAnime();
-                switch (e.prev) {
-                case "DOWN": this.simonV.setFrame(0);break;
-                case "UP": this.simonV.setFrame(4);break;
-                case "LEFT": this.simonV.setFrame(15);break;
-                case "RIGHT": this.simonV.setFrame(8);break;
-                }
-            }
-        }, this));
         
         var persoLayer = new mdj.ObjLayer("perso", this.currScene, 4, 0, 0);
         persoLayer.addObj(this.simonV);
@@ -214,8 +195,8 @@ var Donjon = function(){
     };
     
     // Help message
-    if(MseConfig.iOS) this.help = "Aide Simon à sortir du labyrinthe, fais glliser ton doigt dans la direction souhaitée pour diriger Simon.";
-    else this.help = "Aide Simon à sortir du labyrinthe, utilise les flèches pour diriger Simon.";
+    if(MseConfig.iOS) this.help = "Aide Simon à sortir du labyrinthe, fais glliser ton doigt dans la direction souhaitée.";
+    else this.help = "Aide Simon à sortir du labyrinthe, à l'aide des flèches.";
     this.info = new mse.Text(null, {pos:[90,0],size:[this.width-180,0],font:"20px Arial",textAlign:"center",textBaseline:"top",fillStyle:"#000",lineHeight:25}, this.help, true);
     this.info.setY((this.height - this.info.height)/2);
     
@@ -230,6 +211,25 @@ extend(Donjon, mse.Game);
 $.extend(Donjon.prototype, {
     init: function() {
         this.currScene.init();
+        this.input = new mdj.DirectionalInput(this, this.simonM, this.getEvtProxy());
+        this.input.disable();
+        this.input.proxy.addListener('dirChange', new mse.Callback(function(e){
+            switch(e.dir) {
+            case "DOWN": case "UP": case "LEFT": case "RIGHT": 
+                this.simonV.playAnime('run'+e.dir);
+                this.simonM.orient = e.dir;
+                break;
+            case "NONE":
+                this.simonV.stopAnime();
+                switch (e.prev) {
+                case "DOWN": this.simonV.setFrame(0);break;
+                case "UP": this.simonV.setFrame(4);break;
+                case "LEFT": this.simonV.setFrame(15);break;
+                case "RIGHT": this.simonV.setFrame(8);break;
+                }
+            }
+        }, this));
+        this.simonM.inputv = 6;
         this.simonM.setPos(136, 96);
         // Orientation
         this.simonM.orient = "DOWN";
@@ -240,7 +240,7 @@ $.extend(Donjon.prototype, {
         
         // UI objects
         this.showMsg(this.help);
-        this.light.curr = 0;
+        this.light.setFrame(0);
 
         this.simonV.playAnime('turn');
         this.state = "INIT";
@@ -263,12 +263,12 @@ $.extend(Donjon.prototype, {
         }
         if(this.state == "PLAYING") {
             if(this.currTime % 15 < 0.04) {
-                if(this.light.curr < 5) this.light.curr++;
+                if(this.light.curr < 5) this.light.setFrame(this.light.curr+1);
             }
             if(this.currTime % 75 < 0.04) {
                 if(this.nblight >= 1) {
                     this.nblight--;
-                    this.light.curr = 0;
+                    this.light.setFrame(0);
                 }
                 if(this.nblight == 0) {
                     this.state = "LOSE";
@@ -299,7 +299,6 @@ $.extend(Donjon.prototype, {
     },
     draw: function(ctx) {
         ctx.save();
-        ctx.translate(this.offx, this.offy);
         
         this.camera.drawScene(ctx);
         

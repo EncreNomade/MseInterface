@@ -6,16 +6,16 @@ var RatGame = function() {
 	var wid = mse.joinCoor(360);
 	var hid = mse.joinCoor(600);
 	
-	this.offx = mse.coor(oxid); this.offy = mse.coor(oyid);
+	this.canvasox = mse.coor(oxid); this.canvasoy = mse.coor(oyid);
 	this.width = mse.coor(wid); this.height = mse.coor(hid);
 	
 	mse.src.addSource('ratImg', 'games/rat.png', 'img');
-	var ratSit = new mse.Sprite(this,{pos:[30,this.height-80]}, 'ratImg', 80,50, 0,0,400,100);
-	var ratHead = new mse.Sprite(this,{pos:[20,this.height-96]}, 'ratImg', 39,34, 400,0,39,34);
-	var ratHang = new mse.Sprite(this, {pos:[45,this.height-80]}, 'ratImg', 40,113, 0,101,400,113);
+	var ratSit = new mse.Sprite(null,{pos:[30,this.height-80]}, 'ratImg', 80,50, 0,0,400,100);
+	var ratHead = new mse.Sprite(null,{pos:[20,this.height-96]}, 'ratImg', 39,34, 400,0,39,34);
+	var ratHang = new mse.Sprite(null, {pos:[45,this.height-80]}, 'ratImg', 40,113, 0,101,400,113);
 	mse.src.addSource('sacImg', 'games/sac.png', 'img');
-	var sac = new mse.Image(this, {pos:[this.width-160,20], insideRec:[60,40,60,60]}, 'sacImg');
-	var pochet = new mse.Sprite(this, {pos:[this.width-100,175]}, 'sacImg', 60,40, 60,155,60,40);
+	var sac = new mse.Image(null, {pos:[this.width-160,20], insideRec:[60,40,60,60]}, 'sacImg');
+	var pochet = new mse.Sprite(null, {pos:[this.width-100,175]}, 'sacImg', 60,40, 60,155,60,40);
 	
 	var seq = [0,1,2,3,4,5,6,7,8,9];
 	var sitAnim = new mse.FrameAnimation(ratSit, seq, 0, 2);
@@ -24,20 +24,20 @@ var RatGame = function() {
 	this.dragStart = function(e) {
 		if(ratSit.inObj(e.offsetX, e.offsetY)){
 			this.sit = false;
-			ratHang.offx = e.offsetX-this.offx-20; 
-			ratHang.offy = e.offsetY-this.offy-14;
+			ratHang.offx = e.offsetX-20; 
+			ratHang.offy = e.offsetY-14;
 			
 			sitAnim.stop();
 			hangAnim.start();
 		}
 	};
 	this.dragMove = function(e) {
-		ratHang.offx = e.offsetX - this.offx - 20;
-		ratHang.offy = e.offsetY - this.offy - 14;
+		ratHang.offx = e.offsetX - 20;
+		ratHang.offy = e.offsetY - 14;
 	};
 	this.dragEnd = function(e) {
-		var x = e.offsetX - this.offx;
-		var y = e.offsetY - this.offy;
+		var x = e.offsetX;
+		var y = e.offsetY;
 		if(this.sit) return;
 		if(sac.inObj(e.offsetX, e.offsetY)) {
 			var drop = new mse.KeyFrameAnimation(ratHang, {
@@ -47,9 +47,9 @@ var RatGame = function() {
 			drop.evtDeleg.addListener('end', new mse.Callback(this.end, this));
 			drop.start();
 			this.droped = true;
-			mse.root.evtDistributor.removeListener('gestureStart', cbStart);
-			mse.root.evtDistributor.removeListener('gestureUpdate', cbMove);
-			mse.root.evtDistributor.removeListener('gestureEnd', cbEnd);
+			this.getEvtProxy().removeListener('gestureStart', cbStart);
+			this.getEvtProxy().removeListener('gestureUpdate', cbMove);
+			this.getEvtProxy().removeListener('gestureEnd', cbEnd);
 		}
 		else {
 			this.sit = true;
@@ -63,9 +63,9 @@ var RatGame = function() {
 	var cbEnd = new mse.Callback(this.dragEnd, this);
 	
 	this.init = function() {
-		mse.root.evtDistributor.addListener('gestureStart', cbStart, true, this);
-		mse.root.evtDistributor.addListener('gestureUpdate', cbMove, true, this);
-		mse.root.evtDistributor.addListener('gestureEnd', cbEnd, true, this);
+		this.getEvtProxy().addListener('gestureStart', cbStart, true, this);
+		this.getEvtProxy().addListener('gestureUpdate', cbMove, true, this);
+		this.getEvtProxy().addListener('gestureEnd', cbEnd, true, this);
 		
 		this.sit = true;
 		this.droped = false;

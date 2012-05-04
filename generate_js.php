@@ -170,7 +170,8 @@ class ProjectGenerator {
                         }
                     }
                     else if( $card->type == "img" ){
-                        $this->jstr .= "wikis.$name.addImage('".$card->image."', '".addslashes($card->legend)."');";
+                        $legend = str_replace("\n", "\\n", str_replace("/", "\/", addslashes($card->legend)));
+                        $this->jstr .= "wikis.$name.addImage('".$card->image."', '".addslashes($legend)."');";
                     }
                 }
                 break;

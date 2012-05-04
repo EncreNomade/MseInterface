@@ -1,5 +1,5 @@
 var Fourchelangue = function() {
-    mse.Game.call(this, {fillback:true, pos:[(mse.root.width-600)/2, (mse.root.height-480)/2], size:[600,480]});
+    mse.Game.call(this, {fillback:true, size:[600,480]});
     
     var base = [
         {fr:6,x:234,y:369,head:0,color:"#d4bf11"},
@@ -73,7 +73,7 @@ var Fourchelangue = function() {
                 // Head up
                 ratHead.drawFrame(this.base.head+1, ctx, ratPos.head.x, ratPos.head.y);
                 var r = 65;
-                var font = "blod 22px Arial";
+                var font = "Bold 22px Arial";
             }
             else {
                 // Head down
@@ -81,7 +81,7 @@ var Fourchelangue = function() {
                 var r = 48;
                 var font = "16px Arial";
             }
-                
+            
             // Bull
             ctx.save();
             ctx.fillStyle = "#fff";
@@ -195,7 +195,7 @@ var Fourchelangue = function() {
         this.keycount = 0;
         this.state = "INIT";
         mse.setCursor("pointer");
-        mse.root.evtDistributor.addListener('click', this.clickcb, true, this);
+        this.getEvtProxy().addListener('click', this.clickcb, true, this);
     };
     this.mobileLazyInit = function() {
     };
@@ -226,8 +226,8 @@ var Fourchelangue = function() {
         this.checkSuccess();
     };
     this.clicked = function(e) {
-        var x = e.offsetX - this.offx;
-        var y = e.offsetY - this.offy;
+        var x = e.offsetX;
+        var y = e.offsetY;
         if(this.state == "INIT") {
             mse.setCursor("default");
             this.state = "START";
@@ -242,7 +242,7 @@ var Fourchelangue = function() {
         }
         // Finish game
         else if((this.state == "FAIL" || this.state == "SUCCESS") && passbn.inObj(x, y)) {
-            mse.root.evtDistributor.removeListener('click', this.clickcb);
+            this.getEvtProxy().removeListener('click', this.clickcb);
             if(this.successed >= 0) {
                 this.state = "WIN";
                 this.msg.WIN += "le niveau " + (this.successed+1);
@@ -315,6 +315,7 @@ var Fourchelangue = function() {
     };
     this.drawColoredText = function(ctx) {
         ctx.textAlign = "left";
+        ctx.textBaseline = "top";
         ctx.font = "20px Arial";
         var y = 100, x = 100;
         for(var i in this.lines) {
@@ -343,7 +344,6 @@ var Fourchelangue = function() {
     
     this.draw = function(ctx) {
         ctx.save();
-        ctx.translate(this.offx, this.offy);
         back.draw(ctx);
         for(var i in this.bases) {
             this.bases[i].draw(ctx);
