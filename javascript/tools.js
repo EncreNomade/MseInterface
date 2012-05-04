@@ -1237,6 +1237,12 @@ var scriptMgr = function() {
             delete this.scripts[name];
             this.countScripts(relatedObj, relatedType);            
         },
+        delRelatedScripts: function(objId){
+            for(var elem in this.scripts) {
+                if(this.scripts[elem].src == objId) // each related scripts
+                    delete this.scripts[elem];
+            }
+        },
         saveLocal: function(){
             return this.scripts;
         },
@@ -2587,7 +2593,11 @@ var staticIcon = function(elem, func, img, data) {
 	icon.bind('click', data, func);
 };
 	
-function delParent(e) {e.preventDefault();e.stopPropagation();$(this).parent().parent().remove();}
+function delParent(e) {
+    e.preventDefault();e.stopPropagation();
+    scriptMgr.delRelatedScripts($(this).parent().parent().attr('id'));
+    $(this).parent().parent().remove();
+}
 function hideParent(e) {e.preventDefault();e.stopPropagation();$(this).parent().parent().hide();}
 function configParent(e) {e.preventDefault();e.stopPropagation();showParameter($(this).parent().parent(), e.data.list);}
 function goDown(e) {
