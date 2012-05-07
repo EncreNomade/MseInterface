@@ -658,14 +658,14 @@ mdj.Box2DModel = function(ox, oy, rotation, worldObj, width, height, fixDefParam
  *  - Position of origin in the scene
  *  - The orientation initial of the objet
  *  - Save other information if necessary
- */
+ */    
     this.sceneW = worldObj.data.sceneW;
     this.sceneH = worldObj.data.sceneH;
     this.width = width;
     this.height = height;
     
-    var fixDef = new b2fixtureDef;
-    fixDef.shape = new b2PolygonShape;
+    var fixDef = new Box2D.Dynamics.b2FixtureDef;
+    fixDef.shape = new Box2D.Collision.Shapes.b2PolygonShape;
     fixDef.shape.SetAsBox(
        (width/2)/this.sceneW  //half width
     ,  (height/2)/this.sceneH //half height
@@ -675,10 +675,10 @@ mdj.Box2DModel = function(ox, oy, rotation, worldObj, width, height, fixDefParam
     fixDef.friction = (typeof fixDefParam.friction == 'number')? fixDefParam.friction : 0.3;
     fixDef.restitution = (typeof fixDefParam.restitution == 'number')? fixDefParam.restitution : 0.2;
     
-    var bodyDef = new b2BodyDef;
-    bodyDef.type = b2Body.b2_dynamicBody;
-    bodyDef.position.x = ox;
-    bodyDef.position.y = oy;
+    var bodyDef = new Box2D.Dynamics.b2BodyDef;
+    bodyDef.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
+    bodyDef.position.x = ox / this.sceneW;
+    bodyDef.position.y = oy / this.sceneH;
     bodyDef.angle = rotation;
     
     this.body = worldObj.CreateBody(bodyDef);
