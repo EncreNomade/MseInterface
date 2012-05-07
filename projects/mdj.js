@@ -653,25 +653,56 @@ $.extend(mdj.BoxModel.prototype, {
 });
 
 // TODO: Define the parameters of initialization (un box2d body or other information necessary)
-mdj.Box2DModel = function() {
+mdj.Box2DModel = function(ox, oy, rotation, worldObj, width, height, fixDefParam) {
 /* TODO: Find all information needed for parent initialization: 
  *  - Position of origin in the scene
  *  - The orientation initial of the objet
  *  - Save other information if necessary
  */
+    this.sceneW = worldObj.data.sceneW;
+    this.sceneH = worldObj.data.sceneH;
+    this.width = width;
+    this.height = height;
+    
+    var fixDef = new b2fixtureDef;
+    fixDef.shape = new b2PolygonShape;
+    fixDef.shape.SetAsBox(
+       (width/2)/this.sceneW  //half width
+    ,  (height/2)/this.sceneH //half height
+    );
+    if(typeof fixDefParam != 'object') fixDefParam = {};    
+    fixDef.density = (typeof fixDefParam.density == 'number')? fixDefParam.density : 1;
+    fixDef.friction = (typeof fixDefParam.friction == 'number')? fixDefParam.friction : 0.3;
+    fixDef.restitution = (typeof fixDefParam.restitution == 'number')? fixDefParam.restitution : 0.2;
+    
+    var bodyDef = new b2BodyDef;
+    bodyDef.type = b2Body.b2_dynamicBody;
+    bodyDef.position.x = ox;
+    bodyDef.position.y = oy;
+    bodyDef.angle = rotation;
+    
+    this.body = worldObj.CreateBody(bodyDef);
+    this.body.CreateFixture(fixDef);
+    
     mdj.Model.call(this, ox, oy, rotation);
 };
-extend(mdj.BoxModel, mdj.Model);
-$.extend(mdj.BoxModel.prototype, {
+extend(mdj.Box2DModel, mdj.Model);
+$.extend(mdj.Box2DModel.prototype, {
     getWidth: function() {
-        // TODO: Find right width information
+        return this.width;
     },
     getHeight: function() {
-        // TODO: Find right height information
+        return this.height;
     },
     getOrientation: function() {
-        // TODO: Find right orientation information
-    }
+        return this.body.GetAngle();
+    },
+    getX: function() {
+        return this.body.GetDefinition().position.x * this.sceneW;
+    },
+    getY: function() {
+        return this.body.GetDefinition().position.y * this.sceneH;
+    }    
 });
 
 
