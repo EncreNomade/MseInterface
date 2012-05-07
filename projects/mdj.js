@@ -368,7 +368,7 @@ $.extend(mdj.ObjLayer.prototype, {
 	},
 	logic: function(delta) {
 	    for(var i = 0; i < this.objs.length; ++i) {
-	    	if(obj instanceof mdj.View) this.objs[i].model.logic(delta);
+	    	if(this.objs[i] instanceof mdj.View) this.objs[i].model.logic(delta);
 	    	else this.objs[i].logic(delta);
 	    }
 	},
