@@ -357,14 +357,19 @@ mdj.ObjLayer = function(name, parent, zid, ox, oy){
 extend(mdj.ObjLayer, mdj.Layer);
 $.extend(mdj.ObjLayer.prototype, {
 	addObj: function(obj){
-		if(obj instanceof mdj.View) { 
+		if(obj instanceof mdj.View) {
 		    this.objs.push(obj);
 		    obj.parent = this;
+		}
+		else if(obj instanceof mse.UIObject) {
+		    this.objs.push(obj);
+		    obj.parent = null;
 		}
 	},
 	logic: function(delta) {
 	    for(var i = 0; i < this.objs.length; ++i) {
-	    	this.objs[i].model.logic(delta);
+	    	if(obj instanceof mdj.View) this.objs[i].model.logic(delta);
+	    	else this.objs[i].logic(delta);
 	    }
 	},
 	draw: function(ctx){
