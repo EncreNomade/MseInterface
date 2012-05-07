@@ -35,7 +35,9 @@ class ProjectGenerator {
         "textAlign" => "/text\-align:\s*(\w+);/",
         "textBaseline" => "/vertical\-align:\s*(\w+);/",
         "lineHeight" => "/line\-height:\s*([\.\-\d]+)px/",
-        "linkCutter" => "/<p>([\W\w]*)<span[\W\w]*>([\W\w]*)<\/span>([\W\w]*)<\/p>/"
+        "linkCutter" => "/<p>([\W\w]*)<span[\W\w]*>([\W\w]*)<\/span>([\W\w]*)<\/p>/",
+        "linkFinder" => "/<span[\W\w]*>([\W\w]*)<\/span>/",
+        "tagReplace" => "/<[\/\w]+(\s[\w]*\=\"[\S]*\")*>/"
     );
 
     function ProjectGenerator($project) {
@@ -647,8 +649,8 @@ class ProjectGenerator {
             // Detect link
             $p = $objnode->p;
             if(count($p->span) > 0){
-                preg_match(self::$patterns['linkCutter'], $p[0]->asXML(), $content);
-                $content = $content[1].$content[2].$content[3];
+                //preg_match_all(self::$patterns['linkFinder'], $p[0]->asXML(), $matches);
+                $content = preg_replace(self::$patterns['tagReplace'], '', $p[0]->asXML());
                 $this->jstr .= "$obj=new mse.Text($layer,".$params[1].",'".addslashes($content)."',true);";
                 foreach($p->span as $link)
                     $this->addLink($link, $obj, $index);

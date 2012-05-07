@@ -422,7 +422,7 @@ $.extend(mdj.Image.prototype, {
 		    ctx.globalAlpha = this.model.opacity;
 		    var box = this.model.getBoundingBox();
 		    ctx.translate(box.x + box.w/2, box.y + box.h/2);
-		    ctx.rotate(this.model.rotation);
+		    ctx.rotate(this.model.getOrientation());
 		    ctx.drawImage(img, -box.w/2, -box.h/2, box.w, box.h);
 		    ctx.restore();
 		}
@@ -465,7 +465,7 @@ $.extend( mdj.Sprite.prototype, {
 		    ctx.globalAlpha = this.model.opacity;
 		    var box = this.model.getBoundingBox();
 		    ctx.translate(box.x + box.w/2, box.y + box.h/2);
-		    ctx.rotate(this.model.rotation);
+		    ctx.rotate(this.model.getOrientation());
 		    ctx.drawImage(img, sx, sy, this.fw, this.fh, -box.w/2, -box.h/2, box.w, box.h);
 		    ctx.restore();
 		}
@@ -626,6 +626,9 @@ mdj.Model.prototype = {
 	getHeight: function() {
 	    return 0;
 	},
+	getOrientation: function() {
+	    return this.rotation;
+	},
 	logic: function() {}
 };
 
@@ -641,6 +644,28 @@ $.extend(mdj.BoxModel.prototype, {
     },
     getHeight: function() {
         return this.height;
+    }
+});
+
+// TODO: Define the parameters of initialization (un box2d body or other information necessary)
+mdj.Box2DModel = function() {
+/* TODO: Find all information needed for parent initialization: 
+ *  - Position of origin in the scene
+ *  - The orientation initial of the objet
+ *  - Save other information if necessary
+ */
+    mdj.Model.call(this, ox, oy, rotation);
+};
+extend(mdj.BoxModel, mdj.Model);
+$.extend(mdj.BoxModel.prototype, {
+    getWidth: function() {
+        // TODO: Find right width information
+    },
+    getHeight: function() {
+        // TODO: Find right height information
+    },
+    getOrientation: function() {
+        // TODO: Find right orientation information
     }
 });
 
@@ -806,7 +831,7 @@ mdj.Camera.prototype = {
 		this.oy += e.dy;
 	},
 	setTarget: function(scene, target, tarOffx, tarOffy){
-		if(!target instanceof mdj.Model || !(scene instanceof mdj.Scene)) return;
+		if(!target instanceof mdj.Model || !target instanceof mse.UIObject || !scene instanceof mdj.Scene) return;
 		this.target = target;
 		this.scene = scene;
 		this.tarOffx = isNaN(tarOffx) ? 0 : tarOffx;
