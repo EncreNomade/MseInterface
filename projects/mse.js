@@ -2851,7 +2851,7 @@ mse.FrameAnimation.prototype = {
     logic: function(delta) {
     	if (!this.active) return false;
     	
-    	if (this.currFr < this.seq.length-1) {
+    	if (this.currFr < this.seq.length) {
     		if (this.delay != 0) {
     			if (this.delayCount == 0) {
     				this.currFr++;
@@ -2861,7 +2861,7 @@ mse.FrameAnimation.prototype = {
     		}
     		else this.currFr++;
     	}
-    	else {
+    	if(this.currFr >= this.seq.length) {
     		if (this.currRep < this.rep || this.rep == 0) {
     			this.currRep++;
     			this.currFr = 0;

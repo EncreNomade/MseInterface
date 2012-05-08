@@ -289,3 +289,56 @@ var Base64 = {
 		return ar;
 	}
 };
+
+
+
+
+// Object Pool
+var ObjectPool = function(constructor, capacity){
+    this.capacity = capacity;
+    this.objCons = constructor;
+    this.pool = [];
+    
+    this.NewObjCons = function() {
+        var instance = constructor.apply(this, args);
+        // Init the reference count to 1
+        this._refCount = 1;
+        return instance;
+    }
+    this.NewObjCons.prototype = constructor.prototype;
+};
+ObjectPool.prototype = {
+    constructor: ObjectPool,
+    initInstance: function() {
+        var args = Array.prototype.slice.call(arguments);
+        // Find a totally released (reference count equals to 0) to reinitialize with the arguments
+        for(var i in this.pool) {
+            if(this.pool[i]._refCount === 0) {
+                this.objCons.apply(this.pool[i], args);
+                // Reset the reference count to 1
+                this.pool[i]._refCount = 1;
+                return this.pool[i];
+            }
+        }
+        // No available instance, push one into the object pool
+        var instance = new this.NewObjCons(args);
+        this.pool.push(instance);
+        return instance;
+    },
+    retain: function(obj) {
+        // Ignore obj out of the pool
+        var id = this.pool.indexOf(obj);
+        if(id == -1) return;
+        // Increase the reference count by 1
+        if(isNaN(obj._refCount)) obj._refCount = 1;
+        else obj._refCount++;
+    },
+    release: function(obj) {
+        // Ignore obj out of the pool
+        var id = this.pool.indexOf(obj);
+        if(id == -1) return;
+        // Reduce the referece count by 1, if it's bigger than 0
+        if(isNaN(obj._refCount)) obj._refCount = 0;
+        else if(obj._refCount > 0) obj._refCount--;
+    }
+};

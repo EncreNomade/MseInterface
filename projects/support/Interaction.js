@@ -171,7 +171,7 @@ var methods = {
 			$(this).bind('click dblclick mousedown mousemove mouseup mousewheel DOMMouseScroll.mseInteraction', analyse);
 			
 			$(document).mseInteraction($.data( $(this).get(0), 'mseSrc' ));
-			$(document).bind('keydown keypress keyup.mseInteraction', analyse);
+			$(document).bind('keypress keydown keyup.mseInteraction', analyse);
 			listeners = $.data( $(document).get(0), 'mselisteners' );
 			listeners['keydown'] = cb;
 			listeners['keyup'] = cb;
@@ -319,9 +319,12 @@ function analyse(e) {
 // Key Events Handling Generate a common result for all navigators
 // Capable to handle normal key events and alt/shift pressed event(not implemented for ctrl)
 // In Firefox, key 'enter' doesn't function in keypress events
+    case 'keypress' :
+    	if( _listeners[event.type] instanceof Callback )
+    		_listeners[event.type].invoke( event );
+    	break;
 	case 'keydown' :
 	case 'keyup' :
-	case 'keypress' :
 		if( _listeners[event.type] instanceof Callback )
 			_listeners[event.type].invoke( event );
 		break;
@@ -565,6 +568,7 @@ __KEY_DOWN	= 40;
 __KEY_UP	= 38;
 __KEY_LEFT	= 37;
 __KEY_RIGHT	= 39;
+__KEY_SPACE = 32;
 
 
 
