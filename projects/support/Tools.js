@@ -294,12 +294,13 @@ var Base64 = {
 
 
 // Object Pool
-var ObjectPool = function(constructor, capacity){
+var ObjectPool = function(constructor, capacity, activeList){
     this.capacity = capacity;
     this.objCons = constructor;
+    if(activeList) this.activeList = activeList;
     this.pool = [];
     
-    this.NewObjCons = function() {
+    this.NewObjCons = function(args) {
         var instance = constructor.apply(this, args);
         // Init the reference count to 1
         this._refCount = 1;
@@ -317,12 +318,16 @@ ObjectPool.prototype = {
                 this.objCons.apply(this.pool[i], args);
                 // Reset the reference count to 1
                 this.pool[i]._refCount = 1;
+                // Add a reference to active objects list
+                if(this.activeList) this.activeList.push(this.pool[i]);
                 return this.pool[i];
             }
         }
         // No available instance, push one into the object pool
         var instance = new this.NewObjCons(args);
         this.pool.push(instance);
+        // Add a reference to active objects list
+        if(this.activeList) this.activeList.push(instance);
         return instance;
     },
     retain: function(obj) {
@@ -340,5 +345,10 @@ ObjectPool.prototype = {
         // Reduce the referece count by 1, if it's bigger than 0
         if(isNaN(obj._refCount)) obj._refCount = 0;
         else if(obj._refCount > 0) obj._refCount--;
+        // Remove from the active objects list
+        if(obj._refCount == 0 && this.activeList) {
+            var id = this.activeList.indexOf(obj);
+            if(id != -1) this.activeList.splice(id, 1);
+        }
     }
 };
