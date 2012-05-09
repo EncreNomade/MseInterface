@@ -21,6 +21,14 @@ function angleFor2Point(p1, p2) {
 	return Math.round(180 * angle/(Math.PI));
 };
 
+function ptRotated(x, y, ox, oy, a) {
+    var dx = x-ox, dy = y-oy;
+    var sina = Math.sin(a), cosa = Math.cos(a);
+    var xp = dx*cosa + dy*sina;
+    var yp = -dx*sina + dy*cosa;
+    return {x:ox+xp, y:oy+yp};
+};
+
 function distance2Pts(x1,y1,x2,y2) {
     return Math.sqrt(Math.pow(x2-x1, 2)+Math.pow(y2-y1, 2));
 };
