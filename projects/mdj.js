@@ -72,11 +72,22 @@ mdj.Scene.prototype = {
 	drawInRect: function(ctx, x, y, w, h){
 	    ctx.save();
 	    ctx.translate(x, y);
-		for(var i in this.layers) {
-		    this.layers[i].draw(ctx);
-		}
-		ctx.restore();
-		if(this.uilayer) this.uilayer.draw(ctx);
+	    
+	    if(x >= 0) var sx = 0;
+	    else var sx = -x;
+	    if(y >= 0) var sy = 0;
+	    else var sy = -y;
+	    
+	    if(x + this.width > w) var sw = (x >= 0 ? w - x : w);
+	    else var sw = (x >= 0 ? this.width : this.width - sx);
+	    if(y + this.height > h) var sh = (y >= 0 ? h - y : h);
+	    else var sh = (y >= 0 ? this.height : this.height - sy);
+	    
+	    for(var i in this.layers) {
+	        this.layers[i].draw(ctx, sx, sy, sw, sh);
+	    }
+	    ctx.restore();
+	    if(this.uilayer) this.uilayer.draw(ctx);
 	},
 	setPosition: function(offx, offy){
 		this.ox = offx;
@@ -181,27 +192,6 @@ $.extend(mdj.TileMapScene.prototype, {
         for(var i in this.layers) {
             if(typeof this.layers[i].init == "function") this.layers[i].init();
         }
-    },
-    drawInRect: function(ctx, x, y, w, h){
-        ctx.save();
-        ctx.translate(x, y);
-        
-        if(x >= 0) var sx = 0;
-        else var sx = -x;
-        if(y >= 0) var sy = 0;
-        else var sy = -y;
-        
-        if(x + this.width > w) var sw = (x >= 0 ? w - x : w);
-        else var sw = (x >= 0 ? this.width : this.width - sx);
-        if(y + this.height > h) var sh = (y >= 0 ? h - y : h);
-        else var sh = (y >= 0 ? this.height : this.height - sy);
-        
-    	for(var i in this.layers) {
-    	    this.layers[i].draw(ctx, sx, sy, sw, sh);
-    	}
-    	ctx.restore();
-    	
-    	if(this.uilayer) this.uilayer.draw(ctx);
     }
 });
 
@@ -372,11 +362,11 @@ $.extend(mdj.ObjLayer.prototype, {
 	    	else this.objs[i].logic(delta);
 	    }
 	},
-	draw: function(ctx){
+	draw: function(ctx, sx, sy, sw, sh){
 	    ctx.save();
 	    ctx.translate(this.ox, this.oy);
 		for(var i = 0; i < this.objs.length; ++i) {
-			this.objs[i].draw(ctx);
+			this.objs[i].draw(ctx, sx-this.ox, sy-this.oy, sw, sh);
 		}
 		ctx.restore();
 	}
@@ -599,8 +589,8 @@ mdj.Model.prototype = {
 	},
 	getBoundingBox: function() {
 	    return {
-	        x: this.getX(),
-	        y: this.getY(),
+	        x: getRelatX(),
+	        y: getRelatY(),
 	        w: this.getWidth(),
 	        h: this.getHeight()
 	    };
@@ -616,6 +606,12 @@ mdj.Model.prototype = {
 	            h: this.colliBox.h
 	        };
 	    else return this.getBoundingBox();
+	},
+	getRelatX: function() {
+	    return this.ox;
+	},
+	getRelatY: function() {
+	    return this.oy;
 	},
 	getX: function() {
 	    if(this.parent) return this.parent.getX() + this.ox;
@@ -694,11 +690,11 @@ $.extend(mdj.Box2DModel.prototype, {
     getOrientation: function() {
         return this.body.GetAngle();
     },
-    getX: function() {
-        return this.body.GetPosition().x * 30 - this.width/2      
+    getRelatX: function() {
+        return this.body.GetDefinition().position.x * this.sceneW;
     },
-    getY: function() {
-        return this.body.GetPosition().y * 30 - this.height/2   
+    getRelatY: function() {
+        return this.body.GetDefinition().position.y * this.sceneH;
     }    
 });
 
