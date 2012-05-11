@@ -366,7 +366,7 @@ $.extend(mdj.ObjLayer.prototype, {
 	    ctx.save();
 	    ctx.translate(this.ox, this.oy);
 		for(var i = 0; i < this.objs.length; ++i) {
-			this.objs[i].draw(ctx, sx-this.ox, sy-this.oy, sw, sh);
+			this.objs[i].draw(ctx);
 		}
 		ctx.restore();
 	}
@@ -589,8 +589,8 @@ mdj.Model.prototype = {
 	},
 	getBoundingBox: function() {
 	    return {
-	        x: getRelatX(),
-	        y: getRelatY(),
+	        x: this.getRelatX(),
+	        y: this.getRelatY(),
 	        w: this.getWidth(),
 	        h: this.getHeight()
 	    };
@@ -614,12 +614,12 @@ mdj.Model.prototype = {
 	    return this.oy;
 	},
 	getX: function() {
-	    if(this.parent) return this.parent.getX() + this.ox;
-	    else return this.ox;
+	    if(this.parent) return this.parent.getX() + this.getRelatX();
+	    else return this.getRelatX();
 	},
 	getY: function() {
-	    if(this.parent) return this.parent.getY() + this.oy;
-	    else return this.oy;
+	    if(this.parent) return this.parent.getY() + this.getRelatY();
+	    else return this.getRelatY();
 	},
 	getWidth: function() {
 	    return 0;
@@ -691,11 +691,11 @@ $.extend(mdj.Box2DModel.prototype, {
         return this.body.GetAngle();
     },
     getRelatX: function() {
-        return this.body.GetDefinition().position.x * this.sceneW;
+        return this.body.GetPosition().x * 30 - this.width/2;
     },
     getRelatY: function() {
-        return this.body.GetDefinition().position.y * this.sceneH;
-    }    
+        return this.body.GetPosition().y * 30 - this.height/2;
+    }
 });
 
 
