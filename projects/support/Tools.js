@@ -358,5 +358,16 @@ ObjectPool.prototype = {
             var id = this.activeList.indexOf(obj);
             if(id != -1) this.activeList.splice(id, 1);
         }
+    },
+    clear: function() {
+        for(var i in this.pool) {
+            if(this.pool[i]._refCount >= 0)
+                // Reset the reference count to 0
+                this.pool[i]._refCount = 0;
+        }
+        if(this.activeList) {
+            // Clear active objects list
+            this.activeList.splice(0, this.activeList.length);
+        }
     }
 };

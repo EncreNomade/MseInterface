@@ -1614,15 +1614,20 @@ extend(mse.ArticleLayer, mse.Layer);
 
 
 // Image object
+// Src accept image src name(in srcMgr) or a canvas object
 mse.Image = function(parent, param, src) {
 	// Super constructor
 	mse.UIObject.call(this, parent, param);
 	
-	this.img = src;
+	if(typeof src == 'string') {
+	    this.img = src;
+	    mse.src.waitSrc(this.img, new mse.Callback(this.init, this));
+	}
+	else this.cache = src;
+	
     //Integraion d'effets
 	this.currentEffect = null;
 	this.firstShow = false;
-	mse.src.waitSrc(this.img, new mse.Callback(this.init, this));
 };
 extend(mse.Image, mse.UIObject);
 $.extend(mse.Image.prototype, {
