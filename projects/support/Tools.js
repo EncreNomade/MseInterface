@@ -21,6 +21,14 @@ function angleFor2Point(p1, p2) {
 	return Math.round(180 * angle/(Math.PI));
 };
 
+function ptRotated(x, y, ox, oy, a) {
+    var dx = x-ox, dy = y-oy;
+    var sina = Math.sin(a), cosa = Math.cos(a);
+    var xp = dx*cosa + dy*sina;
+    var yp = -dx*sina + dy*cosa;
+    return {x:ox+xp, y:oy+yp};
+};
+
 function distance2Pts(x1,y1,x2,y2) {
     return Math.sqrt(Math.pow(x2-x1, 2)+Math.pow(y2-y1, 2));
 };
@@ -288,4 +296,78 @@ var Base64 = {
 		}
 		return ar;
 	}
+};
+
+
+
+
+// Object Pool
+var ObjectPool = function(constructor, capacity, activeList){
+    this.capacity = capacity;
+    this.objCons = constructor;
+    if(activeList) this.activeList = activeList;
+    this.pool = [];
+    
+    this.NewObjCons = function(args) {
+        var instance = constructor.apply(this, args);
+        // Init the reference count to 1
+        this._refCount = 1;
+        return instance;
+    }
+    this.NewObjCons.prototype = constructor.prototype;
+};
+ObjectPool.prototype = {
+    constructor: ObjectPool,
+    initInstance: function() {
+        var args = Array.prototype.slice.call(arguments);
+        // Find a totally released (reference count equals to 0) to reinitialize with the arguments
+        for(var i in this.pool) {
+            if(this.pool[i]._refCount === 0) {
+                this.objCons.apply(this.pool[i], args);
+                // Reset the reference count to 1
+                this.pool[i]._refCount = 1;
+                // Add a reference to active objects list
+                if(this.activeList) this.activeList.push(this.pool[i]);
+                return this.pool[i];
+            }
+        }
+        // No available instance, push one into the object pool
+        var instance = new this.NewObjCons(args);
+        this.pool.push(instance);
+        // Add a reference to active objects list
+        if(this.activeList) this.activeList.push(instance);
+        return instance;
+    },
+    retain: function(obj) {
+        // Ignore obj out of the pool
+        var id = this.pool.indexOf(obj);
+        if(id == -1) return;
+        // Increase the reference count by 1
+        if(isNaN(obj._refCount)) obj._refCount = 1;
+        else obj._refCount++;
+    },
+    release: function(obj) {
+        // Ignore obj out of the pool
+        var id = this.pool.indexOf(obj);
+        if(id == -1) return;
+        // Reduce the referece count by 1, if it's bigger than 0
+        if(isNaN(obj._refCount)) obj._refCount = 0;
+        else if(obj._refCount > 0) obj._refCount--;
+        // Remove from the active objects list
+        if(obj._refCount == 0 && this.activeList) {
+            var id = this.activeList.indexOf(obj);
+            if(id != -1) this.activeList.splice(id, 1);
+        }
+    },
+    clear: function() {
+        for(var i in this.pool) {
+            if(this.pool[i]._refCount >= 0)
+                // Reset the reference count to 0
+                this.pool[i]._refCount = 0;
+        }
+        if(this.activeList) {
+            // Clear active objects list
+            this.activeList.splice(0, this.activeList.length);
+        }
+    }
 };
