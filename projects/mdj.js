@@ -551,6 +551,8 @@ mdj.AnimationSprite.prototype = {
 mdj.Model = function(ox, oy, rotation) {
 	this.ox = isNaN(ox) ? 0 : ox;
 	this.oy = isNaN(oy) ? 0 : oy;
+	this.width = 0;
+	this.height = 0;
 	this.rotation = isNaN(rotation) ? 0 : rotation;
 	this.opacity = 1;
 	this.prevOx = this.ox;
@@ -629,6 +631,18 @@ mdj.Model.prototype = {
 	},
 	getOrientation: function() {
 	    return this.rotation;
+	},
+	getZoneVisible: function(x, y, w, h) {
+	    if(x >= 0) var sx = 0;
+	    else var sx = -x;
+	    if(y >= 0) var sy = 0;
+	    else var sy = -y;
+	    
+	    if(x + this.width > w) var sw = (x >= 0 ? w - x : w);
+	    else var sw = (x >= 0 ? this.width : this.width - sx);
+	    if(y + this.height > h) var sh = (y >= 0 ? h - y : h);
+	    else var sh = (y >= 0 ? this.height : this.height - sy);
+	    return {'sx':sx, 'sy':sy, 'sw':sw, 'sh':sh};
 	},
 	logic: function() {}
 };
