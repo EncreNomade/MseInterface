@@ -665,8 +665,6 @@ $.extend(mdj.BoxModel.prototype, {
 mdj.Box2DModel = function(ox, oy, rotation, worldObj, width, height, fixDefParam) {
     this.sceneW = worldObj.data.sceneW;
     this.sceneH = worldObj.data.sceneH;
-    this.width = width;
-    this.height = height;
     
     var RATIO = 30;
     
@@ -692,6 +690,9 @@ mdj.Box2DModel = function(ox, oy, rotation, worldObj, width, height, fixDefParam
     this.body.CreateFixture(fixDef);
     
     mdj.Model.call(this, ox, oy, rotation);
+    
+    this.width = width;
+    this.height = height;
 };
 extend(mdj.Box2DModel, mdj.Model);
 $.extend(mdj.Box2DModel.prototype, {
