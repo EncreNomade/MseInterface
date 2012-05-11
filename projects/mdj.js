@@ -599,8 +599,8 @@ mdj.Model.prototype = {
 	},
 	getBoundingBox: function() {
 	    return {
-	        x: this.ox,
-	        y: this.oy,
+	        x: this.getX(),
+	        y: this.getY(),
 	        w: this.getWidth(),
 	        h: this.getHeight()
 	    };
@@ -652,33 +652,30 @@ $.extend(mdj.BoxModel.prototype, {
     }
 });
 
-// TODO: Define the parameters of initialization (un box2d body or other information necessary)
 mdj.Box2DModel = function(ox, oy, rotation, worldObj, width, height, fixDefParam) {
-/* TODO: Find all information needed for parent initialization: 
- *  - Position of origin in the scene
- *  - The orientation initial of the objet
- *  - Save other information if necessary
- */    
     this.sceneW = worldObj.data.sceneW;
     this.sceneH = worldObj.data.sceneH;
     this.width = width;
     this.height = height;
     
+    var RATIO = 30;
+    
     var fixDef = new Box2D.Dynamics.b2FixtureDef;
-    fixDef.shape = new Box2D.Collision.Shapes.b2PolygonShape;
-    fixDef.shape.SetAsBox(
-       (width/2)/this.sceneW  //half width
-    ,  (height/2)/this.sceneH //half height
-    );
     if(typeof fixDefParam != 'object') fixDefParam = {};    
-    fixDef.density = (typeof fixDefParam.density == 'number')? fixDefParam.density : 1;
-    fixDef.friction = (typeof fixDefParam.friction == 'number')? fixDefParam.friction : 0.3;
-    fixDef.restitution = (typeof fixDefParam.restitution == 'number')? fixDefParam.restitution : 0.2;
+    fixDef.density = isNaN(fixDefParam.density)? 1 : fixDefParam.density;
+    fixDef.friction = isNaN(fixDefParam.friction)? 0.3 : fixDefParam.friction;
+    fixDef.restitution = isNaN(fixDefParam.restitution)? 0.2 : fixDefParam.restitution;
+    this.boxW = width / 2;
+    this.boxH = width / 2;
+    
+    fixDef.shape = new Box2D.Collision.Shapes.b2PolygonShape;
+    fixDef.shape.SetAsBox(this.boxW / RATIO,  this.boxH / RATIO);
+    
     
     var bodyDef = new Box2D.Dynamics.b2BodyDef;
     bodyDef.type = Box2D.Dynamics.b2Body.b2_dynamicBody;
-    bodyDef.position.x = ox / this.sceneW;
-    bodyDef.position.y = oy / this.sceneH;
+    bodyDef.position.x = ox / RATIO;
+    bodyDef.position.y = oy / RATIO;
     bodyDef.angle = rotation;
     
     this.body = worldObj.CreateBody(bodyDef);
@@ -698,10 +695,10 @@ $.extend(mdj.Box2DModel.prototype, {
         return this.body.GetAngle();
     },
     getX: function() {
-        return this.body.GetDefinition().position.x * this.sceneW;
+        return this.body.GetPosition().x * 30 - this.width/2      
     },
     getY: function() {
-        return this.body.GetDefinition().position.y * this.sceneH;
+        return this.body.GetPosition().y * 30 - this.height/2   
     }    
 });
 
