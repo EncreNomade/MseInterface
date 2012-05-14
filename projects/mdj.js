@@ -710,6 +710,11 @@ $.extend(mdj.Box2DModel.prototype, {
     },
     getRelatY: function() {
         return this.body.GetPosition().y * 30 - this.height/2;
+    },
+    setPos: function(x,y){
+        var rX = (x+this.width/2) / 30;
+        var rY = (x+this.height/2) / 30;
+        this.body.SetPosition(new Box2D.Common.Math.b2Vec2(rX, rY));
     }
 });
 
