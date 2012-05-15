@@ -17,6 +17,19 @@ mdj.setGame = function(game) {
     mdj.currGame = game;
 };
 
+mdj.getZoneVisible = function(width, height, x, y, w, h) {
+    if(x >= 0) var sx = 0;
+    else var sx = -x;
+    if(y >= 0) var sy = 0;
+    else var sy = -y;
+    
+    if(x + width > w) var sw = (x >= 0 ? w - x : w);
+    else var sw = (x >= 0 ? width : width - sx);
+    if(y + height > h) var sh = (y >= 0 ? h - y : h);
+    else var sh = (y >= 0 ? height : height - sy);
+    return {'sx':sx, 'sy':sy, 'sw':sw, 'sh':sh};
+};
+
 
 mdj.Scene = function(game, w, h) {
     if(game instanceof mse.Game) this.game = game;
@@ -241,12 +254,12 @@ mdj.Tileset.prototype = {
 
 /********************************************* PARTIE LAYER ***********************************************/
 
-mdj.Layer = function(name, parent, zid, ox, oy){
+mdj.Layer = function(name, parent, zid){
     this.name = name;
 	this.parent = (parent instanceof mdj.Scene) ? parent : null;
 	this.zid = isNaN(zid) ? 0 : zid;
-	this.ox = isNaN(ox) ? 0 : ox;
-	this.oy = isNaN(oy) ? 0 : oy;
+	this.ox = 0;
+	this.oy = 0;
 	if(this.parent) {
 	    this.parent.addLayer(this);
 	    this.width = this.parent.width;
@@ -258,17 +271,11 @@ mdj.Layer = function(name, parent, zid, ox, oy){
 	}
 };
 mdj.Layer.prototype = {
-    setOrigin: function(ox, oy) {
-        this.ox = isNaN(ox) ? 0 : ox;
-        this.oy = isNaN(oy) ? 0 : oy;
-    },
     getX: function() {
-        if(this.parent) return this.parent.getX() + this.ox;
-        else return this.ox;
+        return 0;
     },
     getY: function() {
-        if(this.parent) return this.parent.getY() + this.oy;
-        else return this.oy;
+        return 0;
     },
     getScene: function() {
         return this.parent;
@@ -340,12 +347,26 @@ $.extend(mdj.TileLayer.prototype, {
 });
 
 
-mdj.ObjLayer = function(name, parent, zid, ox, oy){
-    mdj.Layer.call(this, name, parent, zid, ox, oy);
+mdj.ObjLayer = function(name, parent, zid, cachable){
+    mdj.Layer.call(this, name, parent, zid);
 	this.objs = [];
+	this.firstDraw = false;
+	this.cachable = cachable===true ? true : false;
 };
 extend(mdj.ObjLayer, mdj.Layer);
 $.extend(mdj.ObjLayer.prototype, {
+    init: function() {
+        if(!this.cache) this.cache = document.createElement("canvas");
+        this.cacheCtx = this.cache.getContext("2d");
+        this.cache.width = this.parent.width;
+        this.cache.style.width = this.parent.width;
+        this.cache.height = this.parent.height;
+        this.cache.style.height = this.parent.height;
+        
+        for(var i = 0; i < this.objs.length; ++i) {
+        	this.objs[i].draw(this.cacheCtx);
+        }
+    },
 	addObj: function(obj){
 		if(obj instanceof mdj.View) {
 		    this.objs.push(obj);
@@ -355,6 +376,9 @@ $.extend(mdj.ObjLayer.prototype, {
 		    this.objs.push(obj);
 		    obj.parent = null;
 		}
+		else return;
+		
+		if(this.firstDraw && this.cachable) this.init();
 	},
 	logic: function(delta) {
 	    for(var i = 0; i < this.objs.length; ++i) {
@@ -363,12 +387,15 @@ $.extend(mdj.ObjLayer.prototype, {
 	    }
 	},
 	draw: function(ctx, sx, sy, sw, sh){
-	    ctx.save();
-	    ctx.translate(this.ox, this.oy);
-		for(var i = 0; i < this.objs.length; ++i) {
-			this.objs[i].draw(ctx);
-		}
-		ctx.restore();
+	    if(!this.firstDraw) {
+	        this.firstDraw = true;
+	        if(this.cachable) this.init();
+	    }
+	    if(!this.cache || isNaN(sx) || isNaN(sy) || isNaN(sw) || isNaN(sh)) {
+	        for(var i = 0; i < this.objs.length; ++i)
+	            this.objs[i].draw(ctx);
+	    }
+	    else ctx.drawImage(this.cache, sx, sy, sw, sh, sx, sy, sw, sh);
 	}
 });
 
@@ -632,18 +659,6 @@ mdj.Model.prototype = {
 	getOrientation: function() {
 	    return this.rotation;
 	},
-	getZoneVisible: function(x, y, w, h) {
-	    if(x >= 0) var sx = 0;
-	    else var sx = -x;
-	    if(y >= 0) var sy = 0;
-	    else var sy = -y;
-	    
-	    if(x + this.width > w) var sw = (x >= 0 ? w - x : w);
-	    else var sw = (x >= 0 ? this.width : this.width - sx);
-	    if(y + this.height > h) var sh = (y >= 0 ? h - y : h);
-	    else var sh = (y >= 0 ? this.height : this.height - sy);
-	    return {'sx':sx, 'sy':sy, 'sw':sw, 'sh':sh};
-	},
 	logic: function() {}
 };
 
@@ -895,14 +910,11 @@ mdj.Camera.prototype = {
 	        this.ox = Math.round(this.target.getX() - (this.width/2 - this.tarOffx));
 	        this.oy = Math.round(this.target.getY() - (this.height/2 - this.tarOffy));
 	        
-	        // Clip masque
-	        ctx.beginPath();
-	        ctx.moveTo(0, 0);
-	        ctx.lineTo(this.width, 0);
-	        ctx.lineTo(this.width, this.height);
-	        ctx.lineTo(0,this.height);
-	        ctx.closePath();
-	        ctx.clip();
+	        // Calibration when the camera is at the border of the scene
+	        if(this.ox < 0) this.ox = 0;
+	        if(this.oy < 0) this.oy = 0;
+	        if(this.ox + this.width > this.scene.width) this.ox = this.scene.width - this.width;
+	        if(this.oy + this.height > this.scene.height) this.oy = this.scene.height - this.height;
 	        
 	        // Draw scene
 	        this.scene.drawInRect(ctx, -this.ox, -this.oy, this.width, this.height);

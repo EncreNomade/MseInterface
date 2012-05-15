@@ -158,7 +158,7 @@ var Donjon = function(){
         this.simonV.addAnime("runLEFT", new mdj.AnimationSprite(this.simonV, [15,14,13,12,13,14,15], 0, 4));
         this.simonV.addAnime("turn", new mdj.AnimationSprite(this.simonV, [15,4,8,0], 8, 2));
         
-        var persoLayer = new mdj.ObjLayer("perso", this.currScene, 4, 0, 0);
+        var persoLayer = new mdj.ObjLayer("perso", this.currScene, 4);
         persoLayer.addObj(this.simonV);
         
         // Ghost layer

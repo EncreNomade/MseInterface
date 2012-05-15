@@ -1959,13 +1959,12 @@ mse.GameShower = function() {
 	this.restart = function(e){
 	    if(this.passBn.inObj(e.offsetX, e.offsetY)) {
 	        this.currGame.end();
-	        this.evtDeleg.removeListener('click', cbrestart);
 	    }
 	    else if(this.restartBn.inObj(e.offsetX, e.offsetY)) {
 	        this.state = "START";
 	        this.currGame.init();
-	        this.evtDeleg.removeListener('click', cbrestart);
 	    }
+	    this.evtDeleg.removeListener('click', cbrestart);
 	};
 	var cbrestart = new mse.Callback(this.restart, this);
 	this.lose = function() {
@@ -2042,9 +2041,12 @@ mse.GameExpose = function(parent, param, game) {
     this.passBn = new mse.Button(this, {pos:[10,this.height-60],size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je ne joue pas', 'wikiBar');
     
     this.launchGame = function(e) {
-        this.getContainer().evtDeleg.removeListener('click', this.launchcb);
         if(this.passBn.inObj(e.offsetX, e.offsetY)) this.endGame();
-        else this.game.start();
+        else {
+            this.getContainer().evtDeleg.removeListener('click', this.launchcb);
+            this.game.start();
+        }
+        this.passBn = null;
     };
     this.launchcb = new mse.Callback(this.launchGame, this);
     
@@ -2103,7 +2105,7 @@ mse.GameExpose = function(parent, param, game) {
         
         ctx.restore();
         ctx.save();
-        this.passBn.draw(ctx);
+        if(this.passBn) this.passBn.draw(ctx);
         ctx.restore();
     };
 };

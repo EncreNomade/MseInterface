@@ -25,6 +25,7 @@ if($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('pj', $_GET)) {
 <html lang="en">
 <head>
 
+<meta charset="UTF-8" />
 <meta name="robots" content="noindex"/>
 <meta name="viewport" content="minimum-scale=1.0, maximum-scale=1.0, width=device-width, user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -45,7 +46,7 @@ addEventListener("load", function(){
 <script src="./support/jquery-latest.js"></script>
 <script src="./support/BrowserDetect.js"></script>
 <script src="./support/flarevideo/jquery.ui.slider.js" type="text/javascript"></script>
-<script src="./support/flarevideo/flarevideo.js" type="text/javascript"></script> 
+<script src="./support/flarevideo/flarevideo.js" type="text/javascript"></script>
 <script src="./support/Tools.js"></script>
 <script src="./support/Interaction.js"></script>
 <script src="./mse.js"></script>
