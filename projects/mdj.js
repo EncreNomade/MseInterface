@@ -629,8 +629,8 @@ mdj.Model.prototype = {
 	},
 	getCollisionBox: function() {
 	    if(this.colliBox) return {
-	            x: this.ox+this.colliBox.x,
-	            y: this.oy+this.colliBox.y,
+	            x: this.getRelatX()+this.colliBox.x,
+	            y: this.getRelatY()+this.colliBox.y,
 	            w: this.colliBox.w,
 	            h: this.colliBox.h
 	        };
