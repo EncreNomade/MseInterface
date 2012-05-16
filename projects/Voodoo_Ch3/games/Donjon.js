@@ -318,6 +318,7 @@ $.extend(Donjon.prototype, {
             ctx.globalAlpha = ctx.globalAlpha * 0.3;
             ctx.fillRoundRect(50,this.info.offy-30,this.width-100,this.info.height+60, 10);
             ctx.globalAlpha = 0.7;
+            ctx.shadowBlur = 0;
             this.info.draw(ctx);
         }
         

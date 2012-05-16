@@ -83,6 +83,17 @@ mse.src = function() {
 	    		else this.list[name].src = cfs.getSrcPath(file);
 	    		//this.list[name].load();
 	    		break;
+	    	case 'script':
+	    	    this.list[name] = {};
+	    	    this.list[name].complete = false;
+	    	    $.ajax({
+	    	        url: cfs.getSrcPath(file),
+	    	        dataType: "script",
+	    	        async: false,
+                    success: function(script){
+                        mse.src.list[name].complete = true;
+                    }
+	    	    });
 	    	default: return;
 	    	}
 	    	this.list[name].type = type;
