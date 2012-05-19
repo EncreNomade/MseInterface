@@ -204,6 +204,7 @@ function wrapText(text, ctx, width, font) {
 };
 function wrapTextWithWrapIndice(text, ctx, width, font) {
     var lines = text.split("\n");
+    if(lines.length == 1) lines = text.split("\\n");
     var res = new Array();
     for(var i in lines) {
         var append = wrapText(lines[i], ctx, width, font);

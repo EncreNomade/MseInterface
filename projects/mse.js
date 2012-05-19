@@ -141,10 +141,10 @@ mse.src = function() {
 	    	ctx.fillStyle = '#555555';
 	    	ctx.fillRoundRect((mse.root.width-280)/2, mse.root.height-100, (fini/total)*280, 10, 5);
 	    	var txt = this.loadInfo + fini + '/' + total;
-	    	var w = ctx.measureText(txt).width;
 	    	ctx.font = '20px '+cfs.font;
 	    	ctx.fillStyle = '#000000';
-	    	ctx.fillText(txt, (mse.root.width-w)/2, mse.root.height-60);
+	    	ctx.textAlign = 'center';
+	    	ctx.fillText(txt, mse.root.width/2, mse.root.height-60);
 	    	ctx.restore();
 	    }
 	};

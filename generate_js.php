@@ -164,7 +164,7 @@ class ProjectGenerator {
                         $this->jstr .= "wikis.$name.addTextCard();";
                         foreach($card->sections as $section) {
                             $content = str_replace("\n", "\\n", str_replace("/", "\/", addslashes($section->content)));
-                            $title = str_replace("\n", "", $section->title);
+                            $title = str_replace("\n", "\\n", str_replace("/", "\/", addslashes($section->title)));
                             if($section->type == "link")
                                 $this->jstr .= "wikis.$name.textCard.addLink('$title', '$content');";
                             else if($section->type == "text")
@@ -172,7 +172,8 @@ class ProjectGenerator {
                         }
                     }
                     else if( $card->type == "img" ){
-                        $legend = str_replace("\n", "\\n", str_replace("/", "\/", addslashes($card->legend)));
+                        //echo $card->legend;
+                        $legend = str_replace("\n", "\\n", addslashes($card->legend));
                         $this->jstr .= "wikis.$name.addImage('".$card->image."', '".addslashes($legend)."');";
                     }
                 }
@@ -462,6 +463,8 @@ class ProjectGenerator {
                     break;
                 case "playVoice": 
                     $codeReact = "mse.src.getSrc('$tar').play();";break;
+                case "stopVoice": 
+                    $codeReact = "mse.src.getSrc('$tar').pause();";break;
                 case "addScript": 
                     $codeReact = "action.$tar.register(reaction.$tar);";break;
                 case "script": 

@@ -518,33 +518,69 @@ SourceManager.prototype = {
 		return expo;
 	},
 	delSource: function(id) {
-	    if(this.sources[id])
+	    var src = this.sources[id];
+	    if(src) {
+	        var t = src.type;
+	        // Delete all dependency to this source
+	        // Script dependency
+	        if(t != "wiki") {
+	            scriptMgr.delRelatedScripts(id);
+	        }
+	        // Text link dependency
+	        if(t == "wiki" || t == "audio") {
+	            $('span[link="'+id+'"]').each(function(){
+	                $(this).replaceWith($(this).text());
+	            });
+	        }
+	        // Other dependency for image src: DOMElement, animation, wiki image content
+	        if(t == "image") {
+	            // DOMElement
+	            $('img[name="'+id+'"]').each(function(){
+	                $(this).parent().remove();
+	            });
+	            // Animation & Wiki
+	            for(var srcid in this.sources) {
+	                var type = this.sources[srcid].type;
+	                if(type == "wiki" || type == "anime") {
+	                    this.sources[srcid].data.removeDependency(id);
+	                }
+	            }
+	        }
+	        // Other dependency for game src: DOMElement
+	        else if(t == "game") {
+	            $('div[name="'+id+'"]').each(function(){
+	                $(this).remove();
+	            });
+	        }
+	        
     		delete this.sources[id];
+    	}
 		delete this.expos[id];
 		this.uploaded = 0;
 	},
 	deleteSrc: function(src) {
 	    if(!src) return;
 	    var id = src.data('srcId');
+	    
 	    srcMgr.delSource(id);
 	    src.remove();
 	},
-        rename: function(id, newName) {
-            if(!this.sources[id] || this.sources[newName]) {
-                alert("Echec à changer de nom pour la source");
-                return;
-            }
-            this.expos[newName] = this.expos[id];
-            this.sources[newName] = this.sources[id];
-            this.expos[newName].data('srcId', newName);
-            this.delSource(id);
-            if(this.sources[newName].type == 'image') this.expos[newName].children('img').attr('name',newName);
-            else {
-                    var chaine = srcMgr.expos[newName].children("p").html().split(/: /);
-                    chaine = chaine[0]+ ": "+ this.expos[newName].data("srcId");
-                    this.expos[newName].children('p').replaceWith("<p>"+chaine+"</p>");
-            }
-        },
+    rename: function(id, newName) {
+        if(!this.sources[id] || this.sources[newName]) {
+            alert("Echec à changer de nom pour la source");
+            return;
+        }
+        this.expos[newName] = this.expos[id];
+        this.sources[newName] = this.sources[id];
+        this.expos[newName].data('srcId', newName);
+        this.delSource(id);
+        if(this.sources[newName].type == 'image') this.expos[newName].children('img').attr('name',newName);
+        else {
+                var chaine = srcMgr.expos[newName].children("p").html().split(/: /);
+                chaine = chaine[0]+ ": "+ this.expos[newName].data("srcId");
+                this.expos[newName].children('p').replaceWith("<p>"+chaine+"</p>");
+        }
+    },
 	renameDialog: function(src) {
 	    var id = src.data('srcId');
 	    dialog.showPopup('Renomer source', 300, 150, 'Confirmer');
@@ -929,6 +965,13 @@ Wiki.prototype = {
                 }
             }
         }
+    },
+    removeDependency: function(id) {
+        for(var i = 0; i < this.cards.length; ++i) {
+            var card = this.cards[i];
+            if(card.type == 'img' && card.image == id)
+                this.cards.splice(i, 1);
+        }
     }
 };
 
@@ -946,6 +989,15 @@ var Animation = function(name, repeat, block, statiq) {
 };
 Animation.prototype = {
     constructor: Animation,
+    removeDependency: function(id) {
+        if(this.objs[id]) {
+            for(var i = 0; i < this.frames.length; ++i) {
+                var frame = this.frames[i];
+                delete frame.objs[id];
+            }
+            delete this.objs[id];
+        }
+    },
     createAnimation: function(frames) {
         var statiq = this.statiq;
         var objs = {};
@@ -1157,6 +1209,7 @@ var scriptMgr = function() {
             playAnime: "anime",
             changeCursor: "cursor",//
             playVoice: "audio",
+            stopVoice: "audio",
             addScript: "script",//
             script: "code",//
             effet: "effetname",
@@ -1170,7 +1223,8 @@ var scriptMgr = function() {
             drawover: "Affichage d'un frame termine", disappear: "Disparition",
             pageTrans: "Transition entre deux pages", objTrans: "Transition entre deux images",
             playAnime: "Démarrer l'animation", changeCursor: "Changer le cursor de souris",
-            playVoice: "Lecture d'un son", addScript: "Ajout d'un script", script: "Ajout d'une suite de codes",
+            playVoice: "Lecture d'un son", stopVoice: "Arrêter un son",
+            addScript: "Ajout d'un script", script: "Ajout d'une suite de codes",
             effet: "Démarrer un effet", playDefi: "Démarrer la lecture", pauseDefi: "Pauser la lecture",
             loadGame: "Démarrer un jeu"
         },
@@ -1239,7 +1293,7 @@ var scriptMgr = function() {
         },
         delRelatedScripts: function(objId){
             for(var elem in this.scripts) {
-                if(this.scripts[elem].src == objId) // each related scripts
+                if(this.scripts[elem].src == objId || this.scripts[elem].target == objId)
                     delete this.scripts[elem];
             }
         },
