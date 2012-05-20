@@ -755,6 +755,9 @@ body{
 	font-size:16px;
 	float:left;
 }
+.popup_body h2.alert{
+	color: #fb4e4e;
+}
 .popup_body input, .popup_body select{
     float:left;
     font-size:12px;

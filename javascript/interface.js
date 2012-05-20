@@ -268,6 +268,10 @@ function createPageDialog() {
 	dialog.main.html('<p><label>Name: </label><input id="addPage" type="text"></p>');
 	dialog.confirm.click(function() {
 		var name = $('#addPage').val();
+		if(!name || !nameValidation(name) || pages[name]) {
+		    dialog.showAlert('Nom choisi invalid ou nom existe déjà');
+		    return;
+		}
 		var page = addPage(name);
 		// Add default step
 		var mgr = page.data('StepManager');
@@ -289,11 +293,10 @@ function createStepDialog() {
 		var params = {};
 		var name = $('#stepName').val();
 		
-		if(!name || name == "") {
-			$('#stepName').parent().css('color','RED');
+		if(!name || !nameValidation(name) || stepExist(name)) {
+			dialog.showAlert('Nom choisi invalid ou nom existe déjà');
 			return;
 		}
-		else $('#stepName').parent().css('color','BLACK');
 		
 		if(this == $('#normalStep').get(0)) {
 		    if(curr.page) curr.page.data('StepManager').addStep(name, params, true);
@@ -329,7 +332,8 @@ function articleStepDialog(name, params) {
 		var align = $('#articleAlign').val();
 		var content = $('#articleContent').val();
 		if(!content || content == "") {
-			$('#articleContent').parent().prev().css('color','RED');
+			$('#articleContent').animate({backgroundColor: "#fb4e4e"}, 800)
+			                    .animate({backgroundColor: "#fff"}, 800);
 			return;
 		}
 		
@@ -627,8 +631,8 @@ function validScript(e){
     var name = $('#script_name').val();
     var action = $('#script_action').val();
     var reaction = $('#script_reaction').val();
-    if(name == "" || action == "" || reaction == ""){
-        alert('Information incomplete');
+    if(!name || !nameValidation(name) || action == "" || reaction == ""){
+        alert('Information invalid');
         return;
     }
 

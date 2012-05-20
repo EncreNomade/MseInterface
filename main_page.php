@@ -33,6 +33,7 @@ else header("Location: index.php", true);
   <title>Interface d'édition</title>
 
 <script src="./javascript/support/jquery-latest.js"></script>
+<script src="./javascript/support/jquery.color.js"></script>
 <script src="./javascript/tools.js"></script>
 <script src="./javascript/interface.js"></script>
 

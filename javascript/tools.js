@@ -239,6 +239,12 @@ var TextUtil = function() {
 }();
 
 
+var _nameValidationRegExp = /^[A-z\_][\w\d\_\-]*$/;
+var nameValidation = function(name) {
+    return _nameValidationRegExp.test(name);
+}
+
+
 
 
 // Drop zone
@@ -565,20 +571,62 @@ SourceManager.prototype = {
 	    srcMgr.delSource(id);
 	    src.remove();
 	},
+	updateSource: function(id, newName) {
+	    if(!this.sources[id] || this.sources[newName]) {
+	        alert("Echec à changer de nom pour la source");
+	        return;
+	    }
+	    this.expos[newName] = this.expos[id];
+	    this.sources[newName] = this.sources[id];
+	    this.expos[newName].data('srcId', newName);
+	    
+	    var src = this.sources[id];
+	    if(src) {
+	        var t = src.type;
+	        // Update all dependency to this source
+	        // Script dependency
+	        if(t != "wiki") {
+	            scriptMgr.updateRelatedScripts(id, newName);
+	        }
+	        // Text link dependency
+	        if(t == "wiki" || t == "audio") {
+	            $('span[link="'+id+'"]').each(function(){
+	                $(this).attr('link', newName);
+	            });
+	        }
+	        // Other dependency for image src: DOMElement, animation, wiki image content
+	        if(t == "image") {
+	            // DOMElement
+	            $('img[name="'+id+'"]').each(function(){
+	                $(this).attr('name', newName);
+	            });
+	            // Animation & Wiki
+	            for(var srcid in this.sources) {
+	                var type = this.sources[srcid].type;
+	                if(type == "wiki" || type == "anime") {
+	                    this.sources[srcid].data.updateSource(id, newName);
+	                }
+	            }
+	        }
+	        // Other dependency for game src: DOMElement
+	        else if(t == "game") {
+	            $('div[name="'+id+'"]').each(function(){
+	                $(this).attr('name', newName);
+	            });
+	        }
+	        
+			delete this.sources[id];
+		}
+		delete this.expos[id];
+		this.uploaded = 0;
+	},
     rename: function(id, newName) {
-        if(!this.sources[id] || this.sources[newName]) {
-            alert("Echec à changer de nom pour la source");
-            return;
-        }
-        this.expos[newName] = this.expos[id];
-        this.sources[newName] = this.sources[id];
-        this.expos[newName].data('srcId', newName);
-        this.delSource(id);
+        this.updateSource(id, newName);
         if(this.sources[newName].type == 'image') this.expos[newName].children('img').attr('name',newName);
         else {
-                var chaine = srcMgr.expos[newName].children("p").html().split(/: /);
-                chaine = chaine[0]+ ": "+ this.expos[newName].data("srcId");
-                this.expos[newName].children('p').replaceWith("<p>"+chaine+"</p>");
+            var chaine = srcMgr.expos[newName].children("p").html().split(/: /);
+            chaine = chaine[0]+ ": "+ this.expos[newName].data("srcId");
+            this.expos[newName].children('p').replaceWith("<p>"+chaine+"</p>");
         }
     },
 	renameDialog: function(src) {
@@ -586,7 +634,17 @@ SourceManager.prototype = {
 	    dialog.showPopup('Renomer source', 300, 150, 'Confirmer');
 	    dialog.main.html('<p><label>Nouveau nom: </label><input id="rename" type="text"></p>');
 	    dialog.confirm.click(function() {
-	    	srcMgr.rename(id, $('#rename').val());
+	        var name = $('#rename').val();
+	        // Validation
+	        if(!name || !nameValidation(name)) {
+	            dialog.showAlert('Nom choisi invalid');
+	            return false;
+	        }
+	        else if(srcMgr.sources[name]) {
+	            dialog.showAlert('Nom choisi existe déjà');
+	            return false;
+	        }
+	    	srcMgr.rename(id, name);
 	    	dialog.close();
 	    });
 	},
@@ -651,6 +709,11 @@ SourceManager.prototype = {
 
 
 
+var stepExist = function(name) {
+    var layers = $('div.layer[id="'+name+'"]');
+    if(layers.length > 0) return true;
+    else return false;
+};
 // Step manager
 var StepManager = function(page) {
 	// Init
@@ -724,11 +787,19 @@ StepManager.prototype = {
 		return this.stepexpos[stepN];
 	},
 	renameStep: function(stepN, name) {
+	    if(!name || !nameValidation(name) || stepExist(name)) {
+	        var oldname = this.steps[stepN].prop('id');
+	        this.stepexpos[stepN].find('span').text(oldname)
+	                             .animate({'color': '#fb4e4e'}, 500)
+	                             .animate({'color': '#000'}, 500);
+	        return false;
+	    }
 	    this.stepexpos[stepN].data('name', name);
 	    this.steps[stepN].prop('id', name);
 	},
 	
 	addStepWithContent: function(name, step) {
+	    if(!name || !nameValidation(name) || stepExist(name)) return false;
 	    this.page.append(step);
 	    var stepN = parseInt(step.css('z-index'));
 	    this.steps[stepN] = step;
@@ -757,6 +828,7 @@ StepManager.prototype = {
 	    return step;
 	},
 	addStep: function(name, params, active) {
+	    if(!name || !nameValidation(name) || stepExist(name)) return false;
 		// Create step
 		var step = $('<div id="'+name+'" class="layer"></div>');
 		step.css({'z-index':this.currStepN});
@@ -972,6 +1044,13 @@ Wiki.prototype = {
             if(card.type == 'img' && card.image == id)
                 this.cards.splice(i, 1);
         }
+    },
+    updateSource: function(id, newName) {
+        for(var i = 0; i < this.cards.length; ++i) {
+            var card = this.cards[i];
+            if(card.type == 'img' && card.image == id)
+                card.image = newName;
+        }
     }
 };
 
@@ -995,6 +1074,17 @@ Animation.prototype = {
                 var frame = this.frames[i];
                 delete frame.objs[id];
             }
+            delete this.objs[id];
+        }
+    },
+    updateSource: function(id, newName) {
+        if(this.objs[id]) {
+            for(var i = 0; i < this.frames.length; ++i) {
+                var frame = this.frames[i];
+                frame.objs[newName] = frame.objs[id];
+                delete frame.objs[id];
+            }
+            this.objs[newName] = this.objs[id];
             delete this.objs[id];
         }
     },
@@ -1275,7 +1365,9 @@ var scriptMgr = function() {
             return select;
         },
         addScript: function(name, src, srcType, action, target, reaction, immediate, supp){
-            // If we are overhiding an existing script wich is relatad to another src
+            if(!name || !nameValidation(name))
+                return;
+            // If we are overwriting an existing script which is related to another src
             // we have to update the scripts number of this old src.
             if(this.scripts[name] && this.scripts[name].src != src) {
                 var oldSrc = this.scripts[name].src;
@@ -1295,6 +1387,14 @@ var scriptMgr = function() {
             for(var elem in this.scripts) {
                 if(this.scripts[elem].src == objId || this.scripts[elem].target == objId)
                     delete this.scripts[elem];
+            }
+        },
+        updateRelatedScripts: function(objId, newId){
+            for(var elem in this.scripts) {
+                if(this.scripts[elem].src == objId)
+                    this.scripts[elem].src = newId;
+                else if(this.scripts[elem].target == objId)
+                    this.scripts[elem].target = newId;
             }
         },
         saveLocal: function(){
@@ -1838,8 +1938,8 @@ var initWikiTool = function() {
         saveWiki: function(e) {
             var name = $('#wiki_name').val();
 				var editor = e.data.editor;
-            if(!name) {
-                alert('Échec à sauvegarder, indiquez le nom de wiki s\'il vous plaît');
+            if(!name || !nameValidation(name)) {
+                alert('Échec à sauvegarder, nom de wiki invalid');
                 return false;
             }
             // Trigger blur event to make legend valid
@@ -1913,25 +2013,33 @@ var initAnimeTool = function() {
         var repeat = $("#animeRepeat").val();
         var block = $("#animeBlock").val();
         var statiq = tool.editor.data('static') == 'false' ? false : true;
+        // Name validation
+        if(!name || !nameValidation(name)) {
+            alert('Échec à sauvegarder, nom d\'animation invalid');
+            return false;
+        }
+        
         var anime = new Animation(name, repeat, block, statiq);
         anime.createAnimation(tool.timeline.children('div'));
-		  var nomExiste = false;
-		  for (elem in srcMgr.sources) {
-		    if (srcMgr.sources[elem].type == 'anime' && elem == name) nomExiste = true;
-		  }
-		  if (nomExiste) {
-			 dialog.showPopup('Ce nom existe déja', 300, 150, 'Confirmer');
-			 dialog.main.append('<p><label>Nouveau nom : </label><input id="rename" type="text" value="'+name+'"></p>');
-			 dialog.main.append('<p><label>Ecraser : </label><input id="eraseName" type="checkbox"></p>');
-			 dialog.confirm.click(function(){
-			   if($('#rename').val() != name || $('#eraseName').get(0).checked) {
-				  srcMgr.addSource('anime', anime, $('#rename').val());
-				  dialog.close();
-				}
-			 });
-			 
-		  }
-        else srcMgr.addSource('anime', anime, name);
+        // Existance check
+		var nomExiste = false;
+		for(elem in srcMgr.sources) {
+		    if(srcMgr.sources[elem].type == 'anime' && elem == name) 
+		        nomExiste = true;
+		}
+		if(nomExiste) {
+			dialog.showPopup('Ce nom existe déja', 300, 150, 'Confirmer');
+			dialog.main.append('<p><label>Nouveau nom : </label><input id="rename" type="text" value="'+name+'"></p>');
+			dialog.main.append('<p><label>Ecraser : </label><input id="eraseName" type="checkbox"></p>');
+			dialog.confirm.click(function(){
+                if($('#rename').val() != name || $('#eraseName').get(0).checked) {
+                    srcMgr.addSource('anime', anime, $('#rename').val());
+				    dialog.close();
+			}
+			});
+		}
+        else
+            srcMgr.addSource('anime', anime, name);
     });
     
     var addAnimeObj = function(e, id, data) {
@@ -2436,7 +2544,15 @@ var initScriptTool = function() {
         saveScript: function() {
             var script = this.textArea.val();
             var name = this.scriptName.val();
-            if(name == "" || script == "") return;
+            if(!name || !nameValidation(name)) {
+                alert('Échec à sauvegarder, nom invalid');
+                return false;
+            }
+            if(script == "") {
+                this.textArea.animate({backgroundColor: "#fb4e4e"}, 800)
+                             .animate({backgroundColor: "#fff"}, 800);
+                return;
+            }
             srcMgr.addSource('code', script, name);
         },
         editScript: function(id, content) {
@@ -2510,6 +2626,18 @@ Popup.prototype = {
 		this.dialog.hide();
 		this.annuler.click(this.close);
 		this.inited = true;
+	},
+	
+	showAlert: function(msg) {
+	    var alert = this.main.children('h2.alert');
+	    if(alert.length > 0) alert.text(msg);
+	    else {
+	        alert = $('<h2 class="alert">'+msg+'</h2>');
+	        this.main.prepend(alert);
+	        this.dialog.css('height', this.dialog.height()+40);
+	    }
+	    alert.animate({color: "#fff"}, 500)
+	         .animate({color: "#fb4e4e"}, 500);
 	},
 	
 	showPopup: function(msg, width, height, msgConfirm, caller) {
