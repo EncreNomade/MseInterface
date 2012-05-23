@@ -2859,6 +2859,7 @@ mse.FrameAnimation.prototype = {
     	for(var i in mse.root.animations)
     		if(mse.root.animations[i] == this) return;
         mse.root.animations.push(this);
+        this.sprite.setFrame(this.seq[this.currFr]);
     },
     stop: function() {
     	this.currFr = 0;
