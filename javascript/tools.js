@@ -328,12 +328,6 @@ SourceManager.prototype = {
 		// Generate expo
 		var expo = $('<div class="icon_src" draggable="true"></div>');
 		expo.bind('dragstart', dragFromSrcs);
-		/*expo.deletable(function(e) {
-			e.preventDefault();e.stopPropagation();
-			var container = $(this).parents('.icon_src');
-			srcMgr.delSource(container.data('srcId'));
-			container.remove();
-		});*/
 		
 		switch(type) {
 		case 'image':
@@ -524,52 +518,95 @@ SourceManager.prototype = {
 		return expo;
 	},
 	delSource: function(id) {
-	    var src = this.sources[id];
+	    
+	},
+	deleteSrc: function(expo) {
+	    if(!expo) return;
+	    var id = expo.data('srcId');
+	    
+	    var src = srcMgr.sources[id];
 	    if(src) {
+	        var list = [];
 	        var t = src.type;
-	        // Delete all dependency to this source
+	        // Retrieve all dependency to this source
 	        // Script dependency
 	        if(t != "wiki") {
-	            scriptMgr.delRelatedScripts(id);
+	            list = list.concat(scriptMgr.getRelatedScriptsDesc(id));
 	        }
 	        // Text link dependency
 	        if(t == "wiki" || t == "audio") {
 	            $('span[link="'+id+'"]').each(function(){
-	                $(this).replaceWith($(this).text());
+	                list.push("Lien de "+(t=="audio"?"son":t)+" pour le texte: "+$(this).text());
 	            });
 	        }
 	        // Other dependency for image src: DOMElement, animation, wiki image content
 	        if(t == "image") {
 	            // DOMElement
-	            $('img[name="'+id+'"]').each(function(){
-	                $(this).parent().remove();
+	            $('.scene img[name="'+id+'"]').each(function(){
+	                list.push("Image utilisant cette ressource dans l'étape: "+$(this).parents('.layer').prop('id'));
 	            });
 	            // Animation & Wiki
-	            for(var srcid in this.sources) {
-	                var type = this.sources[srcid].type;
+	            for(var srcid in srcMgr.sources) {
+	                var type = srcMgr.sources[srcid].type;
 	                if(type == "wiki" || type == "anime") {
-	                    this.sources[srcid].data.removeDependency(id);
+	                    if(srcMgr.sources[srcid].data.getDependency(id)) 
+	                        list.push((type=="anime"?"L'animation":"Le wiki")+": "+srcid);
 	                }
 	            }
 	        }
 	        // Other dependency for game src: DOMElement
 	        else if(t == "game") {
 	            $('div[name="'+id+'"]').each(function(){
-	                $(this).remove();
+	                list.push("Le jeu dans l'étape: "+$(this).parents('.layer').prop('id'));
 	            });
 	        }
+	        dialog.showPopup('Renomer source', 300, 160+list.length*40, 'Confirmer');
+	        dialog.main.html('<h2>Les elements suivants seraient supprimés aussi, cliquer sur le croix pour annuler</h2>');
+	        for(var i = 0; i < list.length; ++i) {
+	            dialog.main.append('<p>'+(i+1)+'. '+list[i]+'</p>');
+	        }
+	        dialog.confirm.click(function() {
+	            // Delete all dependency to this source
+	            // Script dependency
+	            if(t != "wiki") {
+	                scriptMgr.delRelatedScripts(id);
+	            }
+	            // Text link dependency
+	            if(t == "wiki" || t == "audio") {
+	                $('span[link="'+id+'"]').each(function(){
+	                    $(this).replaceWith($(this).text());
+	                });
+	            }
+	            // Other dependency for image src: DOMElement, animation, wiki image content
+	            if(t == "image") {
+	                // DOMElement
+	                $('.scene img[name="'+id+'"]').each(function(){
+	                    $(this).parent().remove();
+	                });
+	                // Animation & Wiki
+	                for(var srcid in srcMgr.sources) {
+	                    var type = srcMgr.sources[srcid].type;
+	                    if(type == "wiki" || type == "anime") {
+	                        srcMgr.sources[srcid].data.removeDependency(id);
+	                    }
+	                }
+	            }
+	            // Other dependency for game src: DOMElement
+	            else if(t == "game") {
+	                $('div[name="'+id+'"]').each(function(){
+	                    $(this).remove();
+	                });
+	            }
+	            
+	            delete srcMgr.sources[id];
+	            delete srcMgr.expos[id];
+	            srcMgr.uploaded = 0;
+	            expo.remove();
+	            dialog.close();
+	        });
 	        
-    		delete this.sources[id];
-    	}
-		delete this.expos[id];
-		this.uploaded = 0;
-	},
-	deleteSrc: function(src) {
-	    if(!src) return;
-	    var id = src.data('srcId');
-	    
-	    srcMgr.delSource(id);
-	    src.remove();
+	        if(list.length == 0) dialog.confirm.click();
+	    }
 	},
 	updateSource: function(id, newName) {
 	    if(!this.sources[id] || this.sources[newName]) {
@@ -799,7 +836,7 @@ StepManager.prototype = {
 	},
 	
 	addStepWithContent: function(name, step) {
-	    if(!name || !nameValidation(name) || stepExist(name)) return false;
+	    //if(!name || !nameValidation(name) || stepExist(name)) return false;
 	    this.page.append(step);
 	    var stepN = parseInt(step.css('z-index'));
 	    this.steps[stepN] = step;
@@ -828,7 +865,7 @@ StepManager.prototype = {
 	    return step;
 	},
 	addStep: function(name, params, active) {
-	    if(!name || !nameValidation(name) || stepExist(name)) return false;
+	    //if(!name || !nameValidation(name) || stepExist(name)) return false;
 		// Create step
 		var step = $('<div id="'+name+'" class="layer"></div>');
 		step.css({'z-index':this.currStepN});
@@ -1038,6 +1075,14 @@ Wiki.prototype = {
             }
         }
     },
+    getDependency: function(id) {
+        for(var i = 0; i < this.cards.length; ++i) {
+            var card = this.cards[i];
+            if(card.type == 'img' && card.image == id)
+                return true;
+        }
+        return false;
+    },
     removeDependency: function(id) {
         for(var i = 0; i < this.cards.length; ++i) {
             var card = this.cards[i];
@@ -1076,6 +1121,11 @@ Animation.prototype = {
             }
             delete this.objs[id];
         }
+    },
+    getDependency: function(id) {
+        if(this.objs[id]) 
+            return true;
+        else return false;
     },
     updateSource: function(id, newName) {
         if(this.objs[id]) {
@@ -1385,9 +1435,17 @@ var scriptMgr = function() {
         },
         delRelatedScripts: function(objId){
             for(var elem in this.scripts) {
-                if(this.scripts[elem].src == objId || this.scripts[elem].target == objId)
+                if(this.scripts[elem].src == objId || this.scripts[elem].target == objId || this.scripts[elem].supp == objId)
                     delete this.scripts[elem];
             }
+        },
+        getRelatedScriptsDesc: function(objId) {
+            var list = [];
+            for(var elem in this.scripts) {
+                if(this.scripts[elem].src == objId || this.scripts[elem].target == objId || this.scripts[elem].supp == objId)
+                    list.push("Le script: "+elem);
+            }
+            return list;
         },
         updateRelatedScripts: function(objId, newId){
             for(var elem in this.scripts) {
@@ -1395,6 +1453,8 @@ var scriptMgr = function() {
                     this.scripts[elem].src = newId;
                 else if(this.scripts[elem].target == objId)
                     this.scripts[elem].target = newId;
+                else if(this.scripts[elem].supp == objId)
+                    this.scripts[elem].supp = newId;
             }
         },
         saveLocal: function(){
@@ -2653,6 +2713,8 @@ Popup.prototype = {
 		if(msgConfirm) {
 		    this.addButton(this.confirm);
 			this.confirm.val(msgConfirm);
+			this.confirm.focus();
+			// TODO: Add keyboard 'enter' listener
 		}
 		if(caller) this.caller = caller;
 		

@@ -13,6 +13,7 @@
 var mdj = function() {};
  
 (function(window, mse, mdj, $) {
+
 mdj.setGame = function(game) {
     mdj.currGame = game;
 };
@@ -40,6 +41,11 @@ mdj.Scene = function(game, w, h) {
     this.oy = 0;
     this.width = isNaN(w) ? this.game.width : w;
     this.height = isNaN(h) ? this.game.height : h;
+    
+    if(MseConfig.iOS) {
+        mse.src.addSource('vPadBase', './UI/button/padbase.png', 'img', true);
+        mse.src.addSource('vPadHandler', './UI/button/padhandler.png', 'img', true);
+    }
 };
 mdj.Scene.prototype = {
     constructor: mdj.Scene,
@@ -51,7 +57,7 @@ mdj.Scene.prototype = {
     	}
     },
     setUILayer: function(uilayer) {
-        if(uilayer instanceof mdj.UILayer)
+        if(uilayer instanceof mdj.Layer)
             this.uilayer = uilayer;
     },
     delLayer: function(name) {
@@ -391,7 +397,7 @@ $.extend(mdj.ObjLayer.prototype, {
 	        this.firstDraw = true;
 	        if(this.cachable) this.init();
 	    }
-	    if(!this.cache || isNaN(sx) || isNaN(sy) || isNaN(sw) || isNaN(sh)) {
+	    if(!this.cachable || isNaN(sx) || isNaN(sy) || isNaN(sw) || isNaN(sh)) {
 	        for(var i = 0; i < this.objs.length; ++i)
 	            this.objs[i].draw(ctx);
 	    }
@@ -743,8 +749,10 @@ mdj.DirectionalInput = function(game, target, tarProxy){
 	this.tarProxy = tarProxy;
 	this.game = game;
 	this.onmove = false;
+	this.dir = "LEFT";
 	this.prevDir = "NONE";
 	this.proxy = new mse.EventDelegateSystem();
+	this.enabled = false;
 	
 	// Add default step move function in target model
 	if(!this.target.stepMove && this.target.inputv == null) {
@@ -759,13 +767,25 @@ mdj.DirectionalInput = function(game, target, tarProxy){
 	this.disableCb = new mse.Callback(this.disable, this);
 	
 	// Add vitural pad
-	if(MseConfig.iOS && game.currScene.uiLayer) game.currScene.uiLayer.addObj(this.vituralPad());
+	if(MseConfig.iOS && mse && !this.vPadActive) {
+	    if(!game.currScene.uilayer)
+	        game.currScene.setUILayer(new mdj.ObjLayer('ui', null, 10));
+	    this.addVituralPadTo(game.currScene.uilayer);
+    }
+    // Add directionalInput callback to target logic, but not a good implementation
+    var directionalInput = this;
+    var logic = game.currScene.logic;
+    game.currScene.logic = function() {
+        logic.call(this);
+        directionalInput.frameMove();
+    }
 	
 	this.enable();
 	game.evtDeleg.addListener("end", this.disableCb);
 };
 mdj.DirectionalInput.prototype = {
     enable: function() {
+        if(!this.tarProxy || this.enabled) return;
         this.tarProxy.addListener('keydown', this.movecb);
         this.tarProxy.addListener('keyup', this.moveEndcb);
         if(MseConfig.iOS){
@@ -773,8 +793,10 @@ mdj.DirectionalInput.prototype = {
             this.tarProxy.addListener('gestureUpdate', this.touchMovecb);
             this.tarProxy.addListener('gestureEnd', this.moveEndcb);
         }
+        this.enabled = true;
     },
     disable: function() {
+        if(!this.tarProxy || !this.enabled) return;
         this.tarProxy.removeListener('keydown', this.movecb);
         this.tarProxy.removeListener('keyup', this.moveEndcb);
         if(MseConfig.iOS){
@@ -782,6 +804,12 @@ mdj.DirectionalInput.prototype = {
             this.tarProxy.removeListener('gestureUpdate', this.touchMovecb);
             this.tarProxy.removeListener('gestureEnd', this.moveEndcb);
         }
+        this.enabled = false;
+    },
+    setTarProxy: function(tarProxy) {
+        if(this.enabled) this.disable();
+        this.tarProxy = tarProxy;
+        if(this.enabled) this.enable();
     },
     stepMovefn: function(dir) {
         switch(dir) {
@@ -798,81 +826,94 @@ mdj.DirectionalInput.prototype = {
         this.move(disx*this.inputv, disy*this.inputv);
     },
     touchStart: function(e) {
-        this.startPt = {x:e.offsetX,y:e.offsetY};
+        if(inrect(e.offsetX, e.offsetY, this.touchZone)) this.touchValid = true;
         this.onmove = false;
     },
+    frameMove: function() {
+        if(this.target.stepMove && this.onmove) this.target.stepMove(this.dir);
+    },
     touchMove: function(e) {
-        var valid = true;
-        var end = {x:e.offsetX,y:e.offsetY};
-        
-        var a = angleFor2Point(this.startPt, end);
-        if((a >= 0 && a <= 15) || (a <= 0 && a >= -15)){
-            // Right
-            var disx = 4, disy = 0;
-            var dir = "RIGHT";
+        if(this.touchValid) {
+            var ox = this.touchZone[0]+40, oy = this.touchZone[1]+40;
+            var a = mseAngleForLine(ox, oy, e.offsetX, e.offsetY);
+            var dis = distance2Pts(ox, oy, e.offsetX, e.offsetY);
+            if(dis < 40) this.padHandler.setPos(e.offsetX-40, e.offsetY-40);
+            else this.padHandler.setPos(ox+40/dis*(e.offsetX-ox)-40, oy+40/dis*(e.offsetY-oy)-40);
+            if((a >= 0 && a <= 15) || (a <= 0 && a >= -15)){
+                // Right
+                var disx = 4, disy = 0;
+                this.dir = "RIGHT";
+            }
+            else if(a >= 75 && a <= 105) {
+                // Down
+                var disy = -4, disx = 0;
+                this.dir = "DOWN";
+            }
+            else if(a >= 165 || a <= -165) {
+                // Left
+                var disx = -4, disy = 0;
+                this.dir = "LEFT";
+            }
+            else if(a <= -75 && a >= -105) {
+                // Up
+                var disy = 4, disx = 0;
+                this.dir = "UP";
+            }
+            else return;
+            
+            // Direction change
+            if(this.prevDir != this.dir) {
+                this.proxy.eventNotif("dirChange", {'dir':this.dir});
+            }
+            
+            if(!this.onmove) {
+                this.onmove = true;
+                if(typeof this.target.startMove == "function") this.target.startMove(this.dir);
+            }
+            this.prevDir = this.dir;
         }
-        else if(a >= 75 && a <= 105) {
-            // Down
-            var disy = -4, disx = 0;
-            var dir = "DOWN";
-        }
-        else if(a >= 165 || a <= -165) {
-            // Left
-            var disx = -4, disy = 0;
-            var dir = "LEFT";
-        }
-        else if(a <= -75 && a >= -105) {
-            // Up
-            var disy = 4, disx = 0;
-            var dir = "UP";
-        }
-        else return;
-        if(this.target.stepMove) this.target.stepMove(dir);
-        
-        // Direction change
-        if(this.prevDir != dir) {
-            this.proxy.eventNotif("dirChange", {'dir':dir});
-        }
-        
-        if(!this.onmove) {
-            this.onmove = true;
-            if(typeof this.target.startMove == "function") this.target.startMove(dir);
-        }
-        this.prevDir = dir;
     },
 	move: function(e) {
 	    switch(e.keyCode) {
 	    case __KEY_LEFT:
-	        var dir = "LEFT";break;
+	        this.dir = "LEFT";break;
 	    case __KEY_RIGHT:
-	        var dir = "RIGHT";break;
+	        this.dir = "RIGHT";break;
 	    case __KEY_UP:
-	        var dir = "UP";break;
+	        this.dir = "UP";break;
 	    case __KEY_DOWN:
-	        var dir = "DOWN";break;
+	        this.dir = "DOWN";break;
 	    default : return;
 	    }
-	    if(this.target.stepMove) this.target.stepMove(dir);
 	    
 	    // Direction change
-	    if(this.prevDir != dir) {
-	        this.proxy.eventNotif("dirChange", {'dir':dir});
+	    if(this.prevDir != this.dir) {
+	        this.proxy.eventNotif("dirChange", {'dir':this.dir});
 	    }
 	    
 	    if(!this.onmove) {
 	        this.onmove = true;
-	        if(typeof this.target.startMove == "function") this.target.startMove(dir);
+	        if(typeof this.target.startMove == "function") this.target.startMove(this.dir);
 	    }
-	    this.prevDir = dir;
+	    this.prevDir = this.dir;
 	},
 	moveEnd: function(e) {
 	    this.onmove = false;
+	    this.touchValid = false;
 	    this.proxy.eventNotif("dirChange", {'prev':this.prevDir,'dir':'NONE'});
 	    this.prevDir = "NONE";
 	    if(typeof this.target.endMove == "function") superthis.target.endMove(dir);
+	    if(this.padHandler) this.padHandler.setPos(this.touchZone[0], this.touchZone[1]);
 	    this.startPt = null;
 	},
-	vituralPad: function() {
+	addVituralPadTo: function(layer) {
+	    if(!mse) return;
+	    this.padBase = new mse.Image(null, {pos:[46, this.game.height-103],size:[48,48],globalAlpha:0.6}, 'vPadBase');
+	    this.padHandler = new mse.Image(null, {pos:[30, this.game.height-119],size:[80,80],globalAlpha:0.6}, 'vPadHandler');
+	    layer.addObj(this.padBase);
+	    layer.addObj(this.padHandler);
+	    this.touchZone = [30, this.game.height-119, 80, 80];
+	    this.vPadActive = true;
 	}
 };
 

@@ -579,6 +579,7 @@ __KEY_SPACE = 32;
 		// Class singleton for all general configration
 		this.os = BrowserDetect.OS;
 		this.iPhone = (this.os == "Mobile/iOS/iPhone");
+		this.iPad = (this.os == "Mobile/iOS/iPad");
 		this.iOS = (this.os.indexOf("Mobile/iOS") != -1);
 		this.browser = BrowserDetect.browser; // Chrome/Safari/Firefox/Opera/Explorer
 		//this.version = BrowserDetect.version;
@@ -603,11 +604,13 @@ __KEY_SPACE = 32;
 		
 		if(this.iOS) $(window).bind('orientationchange', 
 						function(e){
-							MseConfig.update();
-							if(mse.root) mse.root.setCenteredViewport();
 							setTimeout(function(){
 								window.scrollTo(0, 1);
-							}, 0);
+								MseConfig.update();
+								if(mse.root) mse.root.setCenteredViewport();
+								if(MseConfig.iOS)
+								    mse.root.gamewindow.relocate();
+							}, 50);
 						});
 	}
 	

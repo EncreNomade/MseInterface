@@ -123,6 +123,25 @@ var Donjon = function(){
         this.simonM.setCollisionBox(2,20,13,17);
         this.simonM.orient = "DOWN";
         this.simonM.game = this;
+        // Interaction
+        this.input = new mdj.DirectionalInput(this, this.simonM, null);
+        this.input.proxy.addListener('dirChange', new mse.Callback(function(e){
+            switch(e.dir) {
+            case "DOWN": case "UP": case "LEFT": case "RIGHT": 
+                this.simonV.playAnime('run'+e.dir);
+                this.simonM.orient = e.dir;
+                break;
+            case "NONE":
+                this.simonV.stopAnime();
+                switch (e.prev) {
+                case "DOWN": this.simonV.setFrame(0);break;
+                case "UP": this.simonV.setFrame(4);break;
+                case "LEFT": this.simonV.setFrame(15);break;
+                case "RIGHT": this.simonV.setFrame(8);break;
+                }
+            }
+        }, this));
+        // Collision
         var colliDetector = new mdj.CollisionDetector(this.simonM);
         colliDetector.register('tilelayer', this.currScene.getLayer('colli'), this.simonM.cancelMove);
         // Collision with objs
@@ -180,7 +199,9 @@ var Donjon = function(){
         ctx.beginPath();
         ctx.rect(0,0,game.width,game.height);
         
-        ctx.translate(game.width/2, game.height/2);
+        var x = game.simonM.getX() - game.camera.ox;
+        var y = game.simonM.getY() - game.camera.oy;
+        ctx.translate(x+8, y+18);
         switch(game.simonM.orient) {
         case "DOWN": ctx.rotate(0.5*Math.PI);break;
         case "UP": ctx.rotate(-0.5*Math.PI);break;
@@ -211,25 +232,8 @@ extend(Donjon, mse.Game);
 $.extend(Donjon.prototype, {
     init: function() {
         this.currScene.init();
-        this.input = new mdj.DirectionalInput(this, this.simonM, this.getEvtProxy());
-        this.input.disable();
-        this.input.proxy.addListener('dirChange', new mse.Callback(function(e){
-            switch(e.dir) {
-            case "DOWN": case "UP": case "LEFT": case "RIGHT": 
-                this.simonV.playAnime('run'+e.dir);
-                this.simonM.orient = e.dir;
-                break;
-            case "NONE":
-                this.simonV.stopAnime();
-                switch (e.prev) {
-                case "DOWN": this.simonV.setFrame(0);break;
-                case "UP": this.simonV.setFrame(4);break;
-                case "LEFT": this.simonV.setFrame(15);break;
-                case "RIGHT": this.simonV.setFrame(8);break;
-                }
-            }
-        }, this));
-        this.simonM.inputv = 6;
+        this.input.setTarProxy(this.getEvtProxy());
+        this.simonM.inputv = 4;
         this.simonM.setPos(136, 96);
         // Orientation
         this.simonM.orient = "DOWN";

@@ -414,10 +414,10 @@ mse.EventDelegateSystem = function() {
 mse.EventDistributor = function(src, jqObj, deleg) {
 	this.distributor = function(e) {
 	    // Correction coordinates with root viewport
-	    if(mse.root.viewport && evt && !evt.corrected && !isNaN(evt.offsetX)) {
-	        evt.offsetX += mse.root.viewport.x;
-	        evt.offsetY += mse.root.viewport.y;
-	        evt.corrected = true;
+	    if(mse.root.viewport && e && !e.corrected && !isNaN(e.offsetX)) {
+	        e.offsetX += mse.root.viewport.x;
+	        e.offsetY += mse.root.viewport.y;
+	        e.corrected = true;
 	    }
 		this.rootEvt.eventNotif(e.type, e);
 		if(this.delegate) this.delegate.eventNotif(e.type, e);
@@ -1183,7 +1183,7 @@ $.extend(mse.Text.prototype, {
         
         // Audio auto play
         if(linkObj.type == 'audio')
-        	this.evtDeleg.addListener('firstShow', new mse.Callback(linkObj.link.play, linkObj.link));
+        	this.evtDeleg.addListener('firstShow', new mse.Callback(this.autoplay, this, linkObj.link));
         
         linkObj.owner = this;
         this.links.push(linkObj); 
@@ -1200,6 +1200,25 @@ $.extend(mse.Text.prototype, {
         var ox = this.getX(), oy = this.getY(), w = this.getWidth(), h = this.getHeight();
         if(x>ox-0.1*w && x<ox+1.1*w && y>oy-0.1*h && y<oy+1.1*h) return true;
         else return false;
+    },
+    autoplay: function(audio) {
+        /*
+        if(MseConfig.iOS) {
+            var div = $("<div id='audiodiv'/>");
+            div.attr('src', audio.src);
+            div.attr('width', '1px');
+            div.attr('height', '1px');
+            div.attr('scrolling', 'no');
+            div.css({'border': "0px", 'left': '-1px', 'top': '0px'});
+            if($('#audiodiv').length > 0)
+                $('#audiodiv').replaceWith(div);
+            else $('body').append(div);
+            div.click(function(){
+                audio.play();
+            }).click();
+        }
+        else */
+        audio.play();
     },
     clicked: function(e) {
         var x = e.offsetX - this.getX();
@@ -1835,10 +1854,16 @@ $.extend(mse.Sprite.prototype, {
 
 // Game object
 mse.Game = function(params) {
-    this.offx = 0;
-    this.offy = 0;
-    this.width = Math.round(0.6*mse.root.width);
-    this.height = Math.round(0.6*mse.root.height);
+    if(MseConfig.iPhone){
+        this.setPos(0, 0);
+        this.setSize(480, 270);
+    }
+    else {
+        this.offx = 0;
+        this.offy = 0;
+        this.width = Math.round(0.6*mse.root.width);
+        this.height = Math.round(0.6*mse.root.height);
+    }
     
     mse.UIObject.call(this, null, params);
     
@@ -1928,6 +1953,22 @@ mse.GameShower = function() {
 	         return true;
 	     else return false;
 	};
+	this.relocate = function() {
+	    if(this.state == "DESACTIVE") return;
+	    if(isNaN(this.currGame.canvasox))
+	        this.left = MseConfig.iPhone ? -1.5 : Math.round(MseConfig.pageWidth-this.width)/2;
+	    else this.left = mse.root.jqObj.offset().left - (mse.root.viewport?mse.root.viewport.x:0) + this.currGame.canvasox;
+	    if(isNaN(this.currGame.canvasoy))
+	        this.top = MseConfig.iPhone ? -1.5 : Math.round(MseConfig.pageHeight-this.height)/2;
+	    else this.top = mse.root.jqObj.offset().top - (mse.root.viewport?mse.root.viewport.y:0) + this.currGame.canvasoy;
+	    this.jqObj.css({
+	        'left': this.left,
+	        'top': this.top,
+	        'width': this.width,
+	        'height': this.height,
+	        'z-index': 11
+	    });
+	};
 	this.load = function(game) {
 	    if(!game || !(game instanceof mse.Game)) return;
 	    this.currGame = game;
@@ -1940,17 +1981,7 @@ mse.GameShower = function() {
 	    this.jqObj.get(0).height = this.currGame.height;
 	    this.width = this.currGame.width;
 	    this.height = this.currGame.height;
-	    if(isNaN(this.currGame.canvasox)) this.left = Math.round($(document).width()-this.width)/2;
-	    else this.left = mse.root.jqObj.offset().left + this.currGame.canvasox;
-	    if(isNaN(this.currGame.canvasoy)) this.top = Math.round($(document).height()-this.height)/2;
-	    else this.top = mse.root.jqObj.offset().top + this.currGame.canvasoy;
-	    this.jqObj.css({
-	        'left': this.left,
-	        'top': this.top,
-	        'width': this.width,
-	        'height': this.height,
-	        'z-index': 11
-	    });
+	    this.relocate();
 	    this.loseimg.setSize(this.width-5, this.height-5);
 	    this.losetext.setPos(this.width/2, this.height/2);
 	    this.restartBn.setPos(this.width-115, this.height-50);
@@ -1975,6 +2006,7 @@ mse.GameShower = function() {
 	        this.state = "START";
 	        this.currGame.init();
 	    }
+	    else return;
 	    this.evtDeleg.removeListener('click', cbrestart);
 	};
 	var cbrestart = new mse.Callback(this.restart, this);
@@ -2016,8 +2048,6 @@ mse.GameShower = function() {
 	            if(this.currGame.type == "INDEP") {
 	                this.evtDeleg.eventNotif("firstShow");
 	                if(MseConfig.iPhone){
-	                    this.currGame.setPos(0, 0);
-	                    this.currGame.setSize(480, 270);
 	                    this.currGame.mobileLazyInit();
 	                }
 	            }
