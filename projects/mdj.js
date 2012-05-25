@@ -925,7 +925,7 @@ mdj.DirectionalInput.prototype = {
 mdj.Camera = function(width, height, scene, target, tarOffx, tarOffy){
 	this.height = isNaN(height) ? 0 : height;
 	this.width = isNaN(width) ? 0 : width;
-	this.moveCb = new mse.Callback(this.move, this);
+	//this.moveCb = new mse.Callback(this.move, this);
 	this.setTarget(scene, target, tarOffx, tarOffy);
 };
 mdj.Camera.prototype = {
@@ -939,6 +939,12 @@ mdj.Camera.prototype = {
 		this.scene = scene;
 		this.tarOffx = isNaN(tarOffx) ? 0 : tarOffx;
 		this.tarOffy = isNaN(tarOffy) ? 0 : tarOffy;
+		// Already positioned
+		if(!isNaN(this.ox)) {
+		    this.movecount = 15;
+		    this.prevox = this.ox;
+		    this.prevoy = this.oy;
+		}
 		// Reposition the camera
 		this.ox = target.getX() - (this.width/2 - this.tarOffx);
 		this.oy = target.getY() - (this.height/2 - this.tarOffy);
@@ -954,6 +960,14 @@ mdj.Camera.prototype = {
 	        if(this.oy < 0) this.oy = 0;
 	        if(this.ox + this.width > this.scene.width) this.ox = this.scene.width - this.width;
 	        if(this.oy + this.height > this.scene.height) this.oy = this.scene.height - this.height;
+	        
+	        // Transition of camera
+	        if(this.movecount > 0) {
+	            var ratio = (15 - this.movecount)/15;
+	            this.ox = this.prevox + Math.round((this.ox - this.prevox)*ratio);
+	            this.oy = this.prevoy + Math.round((this.oy - this.prevoy)*ratio);
+	            this.movecount--;
+	        }
 	        
 	        // Draw scene
 	        this.scene.drawInRect(ctx, -this.ox, -this.oy, this.width, this.height);
