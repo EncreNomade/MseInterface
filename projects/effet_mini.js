@@ -324,11 +324,13 @@ mse.EIColorFilter = function(subject, config, multi) {
     	duration : Number.POSITIVE_INFINITY,
     	rMulti: 1,
     	gMulti: 1,
-    	bMulti: 1
+    	bMulti: 1,
+    	alpha: 1
     };
     if(config.rMulti > 1 || config.rMulti < 0) delete config.rMulti;
     if(config.gMulti > 1 || config.gMulti < 0) delete config.gMulti;
     if(config.bMulti > 1 || config.bMulti < 0) delete config.bMulti;
+    if(config.alpha > 1 || config.alpha < 0) delete config.alpha;
     mse.EffectImage.call(this, subject, config, multi);
     
     this.canvas = document.createElement("canvas");
@@ -362,7 +364,7 @@ $.extend(mse.EIColorFilter.prototype, {
     	var r = (1 - this.config.rMulti) * 255;
     	var g = (1 - this.config.gMulti) * 255;
     	var b = (1 - this.config.bMulti) * 255;
-    	ctx.fillStyle = "rgb("+r.toFixed(0)+","+g.toFixed(0)+","+b.toFixed(0)+")";
+    	ctx.fillStyle = "rgba("+r.toFixed(0)+","+g.toFixed(0)+","+b.toFixed(0)+","+this.config.alpha+")";
     	ctx.fillRect(0, 0, cache.width, cache.height);
     	ctx.restore();
     },
