@@ -36,6 +36,7 @@ else header("Location: index.php", true);
 <script src="./javascript/support/jquery.color.js"></script>
 <script src="./javascript/tools.js"></script>
 <script src="./javascript/interface.js"></script>
+<script src="./javascript/command.js"></script>
 
 <link rel="stylesheet" type="text/css" href="./stylesheets/menu.css" />
 <link rel="stylesheet" type="text/css" href="./stylesheets/interface.css" />
@@ -212,46 +213,12 @@ function retrieveLocalInfo(pjsave) {
     var pageseri = pjsave.pageSeri;
     for(var pname in pageseri) {
         var page = addPage(pname);
-        scriptMgr.countScripts($(page).attr('id'),"page");
+        scriptMgr.countScripts(page.attr('id'),"page");
         var steps = 0;
         for(var sname in pageseri[pname]) {
             steps++;
             var step = $(pageseri[pname][sname]);
             page.data('StepManager').addStepWithContent(sname, step);
-            step.children().each(function(){
-                obj = $(this);
-                // Article
-                if(obj.hasClass('article')) {
-                    obj.deletable().configurable();
-                    obj.children('div').each(function(){
-                        if($(this).hasClass('illu')) $(this)
-                        $(this).deletable(null, true)
-                               .selectable(selectP)
-                               .staticButton('./images/UI/insertbelow.png', insertElemDialog)
-                               .staticButton('./images/UI/config.png', staticConfig)
-                               .staticButton('./images/tools/anime.png', animeTool.animateObj)
-                               .staticButton('./images/UI/addscript.jpg', addScriptForObj)
-                               .css({'z-index':'0','background':'none'});
-                        scriptMgr.countScripts($(this).attr('id'),'obj');
-                        $(this).children('.del_container').css({
-                        	'position': 'relative',
-                        	'top': ($(this).children('p').length == 0) ? '0%' : '-100%',
-                        	'display':'none'});
-                    });
-                    id = parseInt(obj.prop('id').substring(3));
-                    if(id > maxid) maxid = id;
-                }
-                // Other obj
-                else {
-                    obj.selectable(null).deletable().configurable().resizable().moveable()
-                       .hoverButton('./images/tools/anime.png', animeTool.animateObj)
-                       .hoverButton('./images/UI/addscript.jpg', addScriptForObj)
-                       .canGoDown();
-                    scriptMgr.countScripts(obj.attr('id'),'obj');
-                    id = parseInt(obj.prop('id').substring(3));
-                    if(id > maxid) maxid = id;
-                }
-            });
         }
         if(steps == 0) page.data('StepManager').addStep(pname+'default', null, true);
     }
@@ -269,7 +236,7 @@ function retrieveLocalInfo(pjsave) {
     }
     if(!isNaN(pjsave.srcCurrId)) srcMgr.currId = pjsave.srcCurrId;
     if(!isNaN(pjsave.objCurrId)) curr.objId = pjsave.objCurrId;
-    else if(!isNaN(maxid)) curr.objId = maxid+1;
+    //else if(!isNaN(maxid)) curr.objId = maxid+1;
     if(isNaN(pjsave.lastModif)) curr.lastModif = lastModServer;
     else curr.lastModif = pjsave.lastModif;
 }

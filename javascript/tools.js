@@ -766,6 +766,12 @@ var StepManager = function(page) {
 };
 StepManager.prototype = {
 	constructor: StepManager,
+	remove: function() {
+	    this.manager.remove();
+	    this.steps = null;
+	    this.stepexpos = null;
+	    delete managers[this.page.prop('id')];
+	},
 	deleteFunc: function(e) {
 		e.preventDefault();e.stopPropagation();
 		curr.page.data('StepManager').removeStep($(this).parents('.layer_expo').data('stepN'));
@@ -836,7 +842,7 @@ StepManager.prototype = {
 	},
 	
 	addStepWithContent: function(name, step) {
-	    //if(!name || !nameValidation(name) || stepExist(name)) return false;
+	    if(!name || !nameValidation(name) || stepExist(name)) return false;
 	    this.page.append(step);
 	    var stepN = parseInt(step.css('z-index'));
 	    this.steps[stepN] = step;
@@ -860,12 +866,43 @@ StepManager.prototype = {
 	    // DnD listenerts to step expo
 	    expo.bind('dragover', dragOverExpo).bind('dragleave', dragLeaveExpo).bind('drop', dropToExpo);
 	    
+	    // Step content processing
+	    step.children().each(function(){
+	        obj = $(this);
+	        // Article
+	        if(obj.hasClass('article')) {
+	            obj.deletable().configurable();
+	            obj.children('div').each(function(){
+	                $(this).deletable(null, true)
+	                       .selectable(selectP)
+	                       .staticButton('./images/UI/insertbelow.png', insertElemDialog)
+	                       .staticButton('./images/UI/config.png', staticConfig)
+	                       .staticButton('./images/tools/anime.png', animeTool.animateObj)
+	                       .staticButton('./images/UI/addscript.jpg', addScriptForObj)
+	                       .css({'z-index':'0','background':'none'});
+	                scriptMgr.countScripts($(this).attr('id'),'obj');
+	                $(this).children('.del_container').css({
+	                	'position': 'relative',
+	                	'top': ($(this).children('p').length == 0) ? '0%' : '-100%',
+	                	'display':'none'});
+	            });
+	        }
+	        // Other obj
+	        else {
+	            obj.selectable(null).deletable().configurable().resizable().moveable()
+	               .hoverButton('./images/tools/anime.png', animeTool.animateObj)
+	               .hoverButton('./images/UI/addscript.jpg', addScriptForObj)
+	               .canGoDown();
+	            scriptMgr.countScripts(obj.attr('id'),'obj');
+	        }
+	    });
+	    
 	    this.activeStep(stepN);
 	    
 	    return step;
 	},
 	addStep: function(name, params, active) {
-	    //if(!name || !nameValidation(name) || stepExist(name)) return false;
+	    if(!name || !nameValidation(name) || stepExist(name)) return false;
 		// Create step
 		var step = $('<div id="'+name+'" class="layer"></div>');
 		step.css({'z-index':this.currStepN});

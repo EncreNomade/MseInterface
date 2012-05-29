@@ -226,8 +226,14 @@ var Fourchelangue = function() {
         this.checkSuccess();
     };
     this.clicked = function(e) {
-        var x = e.offsetX;
-        var y = e.offsetY;
+        if(MseConfig.iPhone) {
+            var x = e.offsetX/0.8;
+            var y = e.offsetY/0.62;
+        }
+        else {
+            var x = e.offsetX;
+            var y = e.offsetY;
+        }
         if(this.state == "INIT") {
             mse.setCursor("default");
             this.state = "START";
@@ -344,6 +350,9 @@ var Fourchelangue = function() {
     
     this.draw = function(ctx) {
         ctx.save();
+        if(MseConfig.iPhone) {
+            ctx.scale(0.8, 0.62);
+        }
         back.draw(ctx);
         for(var i in this.bases) {
             this.bases[i].draw(ctx);

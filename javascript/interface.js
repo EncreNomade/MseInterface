@@ -847,6 +847,18 @@ function addPage(name) {
 	mgr.active();
 	return page;
 };
+function delPage(name) {
+    // Delete in labelbar
+    $('#pageBar li:contains("'+name+'")').remove();
+    // Delete step manager in dom
+    pages[name].data("StepManager").remove();
+    // Delete in dom
+    pages[name].removeData("StepManager").remove();
+    // Delete in pages
+    delete pages[name];
+    // Active another page
+    $('#pageBar li:first-child').click();
+};
 function delCurrentPage() {
     // Check number of the pages
     if($('.scene').length <= 1 || curr.page == null) {
@@ -855,17 +867,7 @@ function delCurrentPage() {
     }
     
     var name = curr.page.prop('id');
-    // Delete in labelbar
-    $('#pageBar .active').remove();
-    // Delete step manager in dom
-    curr.page.data('StepManager').manager.remove();
-    // Delete in dom
-    curr.page.remove();
-    // Delete in pages
-    delete pages[name];
-    delete managers[name];
-    // Active another page
-    $('#pageBar li:first-child').click();
+    delPage(name);
 };
 
 function staticConfig(e){e.preventDefault();e.stopPropagation();showParameter($(this).parent().parent());}
