@@ -37,6 +37,14 @@ Command.prototype = {
     }
 };
 
+
+/* Page Commands
+ *
+ * 1. Add Page Command
+ * 2. Delete Page Command
+ *
+ */
+
 var AddPageCmd = function(name) {
     if(!name || !nameValidation(name)) {
         this.state = "INVALID";
@@ -119,3 +127,41 @@ $.extend(DelPageCmd.prototype, {
         }
     }
 });
+
+
+
+
+/* Step Commands
+ *
+ * 1. Add Step Command
+ * 2. Delete Step Command
+ * 3. Up Action Command
+ * 4. Down Action Command
+ *
+ */
+ 
+ var AddStepCmd = function(name) {
+     if(!name || !nameValidation(name)) {
+         this.state = "INVALID";
+         return;
+     }
+     this.name = name;
+     this.state = "WAITING";
+ };
+ extend(AddStepCmd, Command);
+ $.extend(AddStepCmd.prototype, {
+     execute: function() {
+         if($('.layer[id="'+this.name+'"]').length > 0) {
+             this.state = "FAILEXE";
+             return false;
+         }
+         var step = addStep(this.name, {}, true);
+         // Add default step
+         var mgr = page.data('StepManager');
+         mgr.addStep(this.name+'default', null, true);
+         this.state = "SUCCESS";
+         return step;
+     },
+     undo: function() {
+     }
+ });

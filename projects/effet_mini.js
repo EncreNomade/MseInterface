@@ -359,14 +359,10 @@ $.extend(mse.EIColorFilter.prototype, {
     	ctx.drawImage(cache, 0,0, cache.width, cache.height);
     	ctx.globalCompositeOperation = "source-atop";
     	
-    	ctx.fillStyle = "#f00";
-    	ctx.globalAlpha = 1 - this.config.rMulti;
-    	ctx.fillRect(0, 0, cache.width, cache.height);
-    	ctx.fillStyle = "#0f0";
-    	ctx.globalAlpha = 1 - this.config.gMulti;
-    	ctx.fillRect(0, 0, cache.width, cache.height);
-    	ctx.fillStyle = "#00f";
-    	ctx.globalAlpha = 1 - this.config.bMulti;
+    	var r = (1 - this.config.rMulti) * 255;
+    	var g = (1 - this.config.gMulti) * 255;
+    	var b = (1 - this.config.bMulti) * 255;
+    	ctx.fillStyle = "rgb("+r+","+g+","+b+")";
     	ctx.fillRect(0, 0, cache.width, cache.height);
     	ctx.restore();
     },
