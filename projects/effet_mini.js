@@ -362,7 +362,7 @@ $.extend(mse.EIColorFilter.prototype, {
     	var r = (1 - this.config.rMulti) * 255;
     	var g = (1 - this.config.gMulti) * 255;
     	var b = (1 - this.config.bMulti) * 255;
-    	ctx.fillStyle = "rgb("+r+","+g+","+b+")";
+    	ctx.fillStyle = "rgb("+r.toFixed(0)+","+g.toFixed(0)+","+b.toFixed(0)+")";
     	ctx.fillRect(0, 0, cache.width, cache.height);
     	ctx.restore();
     },
