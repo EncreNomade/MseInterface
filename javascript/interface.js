@@ -272,7 +272,7 @@ function createPageDialog() {
 		    dialog.showAlert('Nom choisi invalid ou nom existe déjà');
 		    return;
 		}
-		var page = addPage(name);
+		var page = CommandMgr.executeCmd(new AddPageCmd(name));
 		// Add default step
 		var mgr = page.data('StepManager');
 		mgr.addStep(name+'default', null, true);
@@ -299,7 +299,8 @@ function createStepDialog() {
 		}
 		
 		if(this == $('#normalStep').get(0)) {
-		    if(curr.page) curr.page.data('StepManager').addStep(name, params, true);
+		    if(curr.page)
+		        CommandMgr.executeCmd(new AddStepCmd(curr.page.data('StepManager'), name, params));
 			dialog.close();
 		}
 		else if(this == $('#article').get(0)) {
@@ -359,7 +360,7 @@ function articleStepDialog(name, params) {
 		if(isColor(color)) params.color = color;
 		params.align = align;
 		
-		addArticle(curr.page.data('StepManager'), name, params, content);
+		CommandMgr.executeCmd(new AddArticleCmd(curr.page.data('StepManager'), name, params, content));
 		dialog.close();
 	});
 }
@@ -867,7 +868,7 @@ function delCurrentPage() {
     }
     
     var name = curr.page.prop('id');
-    delPage(name);
+    CommandMgr.executeCmd(new DelPageCmd(name));
 };
 
 function staticConfig(e){e.preventDefault();e.stopPropagation();showParameter($(this).parent().parent());}

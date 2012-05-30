@@ -46,7 +46,7 @@ Command.prototype = {
 var CommandMgr = (function(capacity) {
     var undoStack = new Stack(capacity);
     var reverseStack = new Stack(capacity);
-    var reversable = false, undoable = false,
+    var reversable = false, undoable = false;
     return {
         executeCmd: function(command) {
             var result = command.execute();
@@ -77,7 +77,7 @@ var CommandMgr = (function(capacity) {
             // Fail to execute command
             if(command.state != "CANCEL") return false;
             
-            this.reverseStack.push(command);
+            reverseStack.push(command);
             if(!reversable) {
                 reversable = true;
             }
@@ -94,7 +94,7 @@ var CommandMgr = (function(capacity) {
             // Fail to execute
             if(command.state != "SUCCESS") return false;
             
-            this.undoStack.push(command);
+            undoStack.push(command);
             if(!undoable) {
                 undoable = true;
             }
@@ -102,6 +102,18 @@ var CommandMgr = (function(capacity) {
         }
     }
 })(30);
+(function(document, CommandMgr){
+    var isCtrl = false;
+    $(document).keyup(function (e) {
+    	if(e.which == 17) isCtrl=false;
+    }).keydown(function (e) {
+    	if(e.which == 17) isCtrl=true;
+    	if(e.which == 90 && isCtrl == true) {
+    		//run code for CTRL+z
+    		CommandMgr.undoCmd();
+    	}
+    });
+})(document, CommandMgr);
 
 
 /* Page Commands

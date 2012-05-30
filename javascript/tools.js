@@ -774,15 +774,18 @@ StepManager.prototype = {
 	},
 	deleteFunc: function(e) {
 		e.preventDefault();e.stopPropagation();
-		curr.page.data('StepManager').removeStep($(this).parents('.layer_expo').data('stepN'));
+		var stepN = $(this).parents('.layer_expo').data('stepN');
+		CommandMgr.executeCmd(new DelStepCmd(curr.page.data('StepManager'), stepN));
 	},
 	upFunc: function(e) {
 		e.preventDefault();e.stopPropagation();
-		curr.page.data('StepManager').stepUp($(this).parents('.layer_expo').data('stepN'));
+		var stepN = $(this).parents('.layer_expo').data('stepN');
+		CommandMgr.executeCmd(new StepUpCmd(curr.page.data('StepManager'), stepN));
 	},
 	downFunc: function(e) {
 		e.preventDefault();e.stopPropagation();
-		curr.page.data('StepManager').stepDown($(this).parents('.layer_expo').data('stepN'));
+		var stepN = $(this).parents('.layer_expo').data('stepN');
+		CommandMgr.executeCmd(new StepDownCmd(curr.page.data('StepManager'), stepN));
 	},
 	
 	active: function() {
