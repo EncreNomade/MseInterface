@@ -976,8 +976,8 @@ StepManager.prototype = {
 		// Insert
 		this.stepexpos[stepN].insertBefore(this.stepexpos[stepN+1]);
 		// Change stepN in data
-		this.step[stepN].data('stepN', stepN+1);
-		this.step[stepN+1].data('stepN', stepN);
+		this.steps[stepN].data('stepN', stepN+1);
+		this.steps[stepN+1].data('stepN', stepN);
 		this.stepexpos[stepN].data('stepN', stepN+1);
 		this.stepexpos[stepN+1].data('stepN', stepN);
 		temp.remove();
@@ -1008,8 +1008,8 @@ StepManager.prototype = {
 		// Insert
 		this.stepexpos[stepN].insertAfter(this.stepexpos[stepN-1]);
 		// Change stepN in data
-		this.step[stepN].data('stepN', stepN-1);
-		this.step[stepN-1].data('stepN', stepN);
+		this.steps[stepN].data('stepN', stepN-1);
+		this.steps[stepN-1].data('stepN', stepN);
 		this.stepexpos[stepN].data('stepN', stepN-1);
 		this.stepexpos[stepN-1].data('stepN', stepN);
 		temp.remove();

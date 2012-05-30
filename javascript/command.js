@@ -20,6 +20,12 @@ var Stack = function(capacity) {
     this.pop = function() {
         return arr.pop();
     };
+    this.clear = function() {
+        arr.splice(0, arr.length);
+    };
+    this.count = function() {
+        return arr.count;
+    };
 };
 
 var Command = function() {
@@ -36,6 +42,66 @@ Command.prototype = {
         this.state = "CANCEL";
     }
 };
+
+var CommandMgr = (function(capacity) {
+    var undoStack = new Stack(capacity);
+    var reverseStack = new Stack(capacity);
+    var reversable = false, undoable = false,
+    return {
+        executeCmd: function(command) {
+            var result = command.execute();
+            // Fail to execute command
+            if(command.state != "SUCCESS") return false;
+            
+            // Clean reverse stack
+            reverseStack.clear();
+            if(reversable) {
+                reversable = false;
+            }
+            // Push to undo stack
+            undoStack.push(command);
+            if(!undoable) {
+                undoable = true;
+            }
+            
+            return result;
+        },
+        undoCmd: function() {
+            var command = undoStack.pop();
+            if(undoStack.count() == 0 && undoable) {
+                undoable = false;
+            }
+            // No command
+            if(!command) return false;
+            command.undo();
+            // Fail to execute command
+            if(command.state != "CANCEL") return false;
+            
+            this.reverseStack.push(command);
+            if(!reversable) {
+                reversable = true;
+            }
+            return true;
+        },
+        reverseCmd: function() {
+            var command = reverseStack.pop();
+            if(reverseStack.count() == 0 && reversable) {
+                reversable = false;
+            }
+            // No command
+            if(!command) return false;
+            var result = command.execute();
+            // Fail to execute
+            if(command.state != "SUCCESS") return false;
+            
+            this.undoStack.push(command);
+            if(!undoable) {
+                undoable = true;
+            }
+            return result;
+        }
+    }
+})(30);
 
 
 /* Page Commands
@@ -292,12 +358,46 @@ $.extend(DelStepCmd.prototype, {
     }    
 });
 
-var StepUpCmd = function(stepN) {
+var StepUpCmd = function(mgr, stepN) {
+    if(!stepN || !(mgr instanceof StepManager)) {
+        this.state = "INVALID";
+        return;
+    }
+    this.manager = mgr;
+    this.stepN = stepN;
+    this.state = "WAITING";
 };
 extend(StepUpCmd, Command);
 $.extend(StepUpCmd.prototype, {
     execute: function() {
+        this.manager.stepUp(this.stepN);
+        this.state = "SUCCESS";
     },
     undo: function() {
+        if(this.state != "SUCCESS") return;
+        this.manager.stepUp(this.stepN);
+        this.state = "CANCEL";
     }
 });
+var StepDownCmd = function(mgr, stepN) {
+    if(!stepN || !(mgr instanceof StepManager)) {
+        this.state = "INVALID";
+        return;
+    }
+    this.manager = mgr;
+    this.stepN = stepN;
+    this.state = "WAITING";
+};
+extend(StepDownCmd, Command);
+$.extend(StepDownCmd.prototype, {
+    execute: function() {
+        this.manager.stepDown(this.stepN);
+        this.state = "SUCCESS";
+    },
+    undo: function() {
+        if(this.state != "SUCCESS") return;
+        this.manager.stepDown(this.stepN);
+        this.state = "CANCEL";
+    }
+});
+
