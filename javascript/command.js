@@ -129,7 +129,66 @@ $.extend(DelPageCmd.prototype, {
     }
 });
 
+/* Scripts Commands
+ *
+ * 1. Add Script Command
+ * 2. Del Script Command
+ *
+ */
+var AddScriptCmd = function(name, src, srcType, action, target, reaction, immediate, supp){
+    this.name = name;
+    this.src = src;
+    this.srcType = srcType;
+    this.action = action;
+    this.target = target;
+    this.reaction = reaction;
+    this.immediate = immediate;
+    this.supp = supp;
+    
+    this.state = "WAITING";
+};
+extend(AddScriptCmd, Command);
+$.extend(AddScriptCmd.prototype, {
+    execute: function(){
+        scriptMgr.addScript(this.name,this.src,this.srcType,this.action,this.target,this.reaction,this.immediate,this.supp);
+        this.state = "SUCCESS";
+    },
+    undo: function(){
+        if(typeof scriptMgr.scripts[this.name] == 'undefined'){
+            this.state = "FAILUNDO";
+            return;
+        }
+        scriptMgr.delScript(this.name);
+        this.state = "CANCEL";
+    }
+});
 
+var DelScriptCmd = function(name){
+    this.name = name;
+    this.src        = scriptMgr.scripts[name].src;
+    this.srcType    = scriptMgr.scripts[name].srcType;
+    this.action     = scriptMgr.scripts[name].action;
+    this.target     = scriptMgr.scripts[name].target;
+    this.reaction   = scriptMgr.scripts[name].reaction;
+    this.immediate  = scriptMgr.scripts[name].immediate;
+    this.supp       = scriptMgr.scripts[name].supp;
+    this.state = 'WAITING';
+};
+extend(DelScriptCmd, Command);
+$.extend(DelScriptCmd.prototype, {
+    execute: function(){
+        if(typeof scriptMgr.scripts[this.name] == 'undefined'){
+            this.state = "FAILEXE";
+            return;
+        }
+        scriptMgr.delScript(this.name);
+        this.state = "SUCCESS";
+    },
+    undo: function(){
+        scriptMgr.addScript(this.name,this.src,this.srcType,this.action,this.target,this.reaction,this.immediate,this.supp);
+        this.state = "CANCEL";
+    }
+});
 
 
 /* Step Commands
