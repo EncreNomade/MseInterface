@@ -125,6 +125,7 @@ $.extend(DelPageCmd.prototype, {
             var step = $(this.deletedPage[sname]);
             page.data('StepManager').addStepWithContent(sname, step);
         }
+        this.state = "CANCEL";
     }
 });
 
@@ -140,28 +141,104 @@ $.extend(DelPageCmd.prototype, {
  *
  */
  
- var AddStepCmd = function(name) {
-     if(!name || !nameValidation(name)) {
-         this.state = "INVALID";
-         return;
-     }
-     this.name = name;
-     this.state = "WAITING";
- };
- extend(AddStepCmd, Command);
- $.extend(AddStepCmd.prototype, {
-     execute: function() {
-         if($('.layer[id="'+this.name+'"]').length > 0) {
-             this.state = "FAILEXE";
-             return false;
-         }
-         var step = addStep(this.name, {}, true);
-         // Add default step
-         var mgr = page.data('StepManager');
-         mgr.addStep(this.name+'default', null, true);
-         this.state = "SUCCESS";
-         return step;
-     },
-     undo: function() {
-     }
- });
+var AddStepCmd = function(mgr, name, params) {
+    if(!name || !nameValidation(name) || !(mgr instanceof StepManager)) {
+        this.state = "INVALID";
+        return;
+    }
+    this.name = name;
+    this.manager = mgr;
+    this.params = params ? params : {};
+    this.state = "WAITING";
+};
+extend(AddStepCmd, Command);
+$.extend(AddStepCmd.prototype, {
+    execute: function() {
+        if($('.layer[id="'+this.name+'"]').length > 0) {
+            this.state = "FAILEXE";
+            return false;
+        }
+        this.step = this.manager.addStep(this.name, this.params, true);
+        this.state = "SUCCESS";
+        return this.step;
+    },
+    undo: function() {
+        if(this.state != "SUCCESS") return;
+        
+        this.manager.removeStep(this.step.data('stepN'));
+        this.state = "CANCEL";
+    }
+});
+
+var AddArticleCmd = function(mgr, name, params, content) {
+    if(!name || !nameValidation(name) || !(mgr instanceof StepManager)) {
+        this.state = "INVALID";
+        return;
+    }
+    this.name = name;
+    this.manager = mgr;
+    this.content = content;
+    this.params = params ? params : {};
+    this.state = "WAITING";
+};
+extend(AddArticleCmd, Command);
+$.extend(AddArticleCmd.prototype, {
+    execute: function() {
+        if($('.layer[id="'+this.name+'"]').length > 0) {
+            this.state = "FAILEXE";
+            return false;
+        }
+        addArticle(this.manager, this.name, this.params, this.content);
+        this.state = "SUCCESS";
+        return this.step;
+    },
+    undo: function() {
+        if(this.state != "SUCCESS") return;
+        
+        this.manager.removeStep($('#'+this.name).data('stepN'));
+        this.state = "CANCEL";
+    }
+});
+
+var DelStepCmd = function(mgr, stepN) {
+    if(!stepN || !(mgr instanceof StepManager)) {
+        this.state = "INVALID";
+        return;
+    }
+    this.stepN = stepN;
+    this.step = mgr.getStep(stepN).clone();
+    this.step.find('.del_container, .ctrl_pt').remove();
+    this.name = this.step.prop('id');
+    this.manager = mgr;
+    this.state = "WAITING";
+};
+extend(DelStepCmd, Command);
+$.extend(DelStepCmd.prototype, {
+    execute: function() {
+        var serializer = new XMLSerializer();
+        // Replace img src with relative Path on server
+        var imgids = srcMgr.getImgSrcIDs();
+        for(var i in imgids) {
+            this.step.find("img[name='"+imgids[i]+"']").attr('src', srcMgr.getSource(imgids[i]));
+        }
+        
+        this.manager.removeStep(this.stepN);
+        this.state = "SUCCESS";
+    },
+    undo: function() {
+        if(this.state != "SUCCESS") return;
+        
+        this.manager.addStepWithContent(this.name, this.step);
+        this.state = "CANCEL";
+    }    
+});
+
+var StepUpCmd = function(stepN) {
+};
+extend(StepUpCmd, Command);
+$.extend(StepUpCmd.prototype, {
+    execute: function() {
+    },
+    undo: function() {
+    }
+});

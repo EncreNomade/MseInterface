@@ -843,10 +843,27 @@ StepManager.prototype = {
 	
 	addStepWithContent: function(name, step) {
 	    if(!name || !nameValidation(name) || stepExist(name)) return false;
-	    this.page.append(step);
 	    var stepN = parseInt(step.css('z-index'));
+	    
+	    // Insert stepin the right place
+	    for(var i = this.currStepN-1; i >= stepN; --i) {
+	        this.steps[i].css('z-index', i+1);
+	        this.stepexpos[i].children('h1').replaceWith('<h1>Étape '+(i+1)+'</h1>');
+	        // Change stepN in data
+	        this.steps[i].data('stepN', i+1);
+	        this.stepexpos[i].data('stepN', i+1);
+	        // Replace the step
+	        this.steps[i+1] = this.steps[i];
+	        this.stepexpos[i+1] = this.stepexpos[i];
+	    }
+	    this.currStepN++;
 	    this.steps[stepN] = step;
-	    if(stepN >= this.currStepN) this.currStepN = stepN+1;
+	    step.data('stepN', stepN);
+	    
+	    // Add step to page
+	    if(this.steps[stepN-1]) this.steps[stepN-1].after(step);
+	    else if(this.steps[stepN+1]) this.steps[stepN+1].before(step);
+	    else this.page.append(step);
 	    
 	    // Add a Step expo
 	    var expo = $('<div class="layer_expo"><h1>Étape '+stepN+'</h1><h5>Name: <span>'+name+'</span></h5></div>');
@@ -861,8 +878,10 @@ StepManager.prototype = {
 	    // Del step button and Up down button
 	    expo.deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc).circleMenu({'addscript':['./images/UI/addscript.jpg',addScriptDialog]});
 	    // Append expo to manager
-	    this.manager.prepend(expo);
 	    this.stepexpos[stepN] = expo;
+	    if(this.stepexpos[stepN-1]) this.stepexpos[stepN-1].before(expo);
+	    else if(this.stepexpos[stepN+1]) this.stepexpos[stepN+1].after(expo);
+	    else this.manager.append(expo);
 	    // DnD listenerts to step expo
 	    expo.bind('dragover', dragOverExpo).bind('dragleave', dragLeaveExpo).bind('drop', dropToExpo);
 	    
@@ -908,6 +927,7 @@ StepManager.prototype = {
 		step.css({'z-index':this.currStepN});
 		if(!params || !params.type) step.attr('type','Layer');
 		else step.attr('type',params.type);
+		step.data('stepN', this.currStepN);
 		step.attr('defile', (params&&params.defile)?true:false);
 		this.page.append(step);
 		// Indexing the Step
@@ -956,6 +976,8 @@ StepManager.prototype = {
 		// Insert
 		this.stepexpos[stepN].insertBefore(this.stepexpos[stepN+1]);
 		// Change stepN in data
+		this.step[stepN].data('stepN', stepN+1);
+		this.step[stepN+1].data('stepN', stepN);
 		this.stepexpos[stepN].data('stepN', stepN+1);
 		this.stepexpos[stepN+1].data('stepN', stepN);
 		temp.remove();
@@ -986,6 +1008,8 @@ StepManager.prototype = {
 		// Insert
 		this.stepexpos[stepN].insertAfter(this.stepexpos[stepN-1]);
 		// Change stepN in data
+		this.step[stepN].data('stepN', stepN-1);
+		this.step[stepN-1].data('stepN', stepN);
 		this.stepexpos[stepN].data('stepN', stepN-1);
 		this.stepexpos[stepN-1].data('stepN', stepN);
 		temp.remove();

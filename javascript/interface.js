@@ -359,7 +359,7 @@ function articleStepDialog(name, params) {
 		if(isColor(color)) params.color = color;
 		params.align = align;
 		
-		addArticle(name, params, content);
+		addArticle(curr.page.data('StepManager'), name, params, content);
 		dialog.close();
 	});
 }
@@ -908,11 +908,10 @@ function generateLines(content, font, width, lineHeight){
 	});
 	return res;
 }
-function addArticle(name, params, content) {
-    if(!curr.page) return;
+function addArticle(manager, name, params, content) {
     if(!params) params = {};
     params.type = 'ArticleLayer';
-	var step = curr.page.data('StepManager').addStep(name, params, true);
+	var step = manager.addStep(name, params, true);
 	var article = $('<div class="article" defile="'+(params.defile?params.defile:"false")+'"></div>');
 	var lh = config.sceneY(params.lh);
 	article.css({'left':config.sceneX(params.x)+'px', 'top':config.sceneY(params.y)+'px', 
