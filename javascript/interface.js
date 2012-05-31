@@ -848,8 +848,6 @@ function addPage(name) {
 	curr.page = page;
 	
 	var mgr = page.data('StepManager');
-	// Active page
-	mgr.active();
 	return page;
 };
 function delPage(name) {
@@ -858,7 +856,7 @@ function delPage(name) {
     // Delete step manager in dom
     pages[name].data("StepManager").remove();
     // Delete in dom
-    pages[name].removeData("StepManager").remove();
+    pages[name].remove();
     // Delete in pages
     delete pages[name];
     // Active another page

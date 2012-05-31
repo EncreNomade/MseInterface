@@ -761,16 +761,32 @@ var StepManager = function(page) {
 	this.currStepN = 1;
 	
 	managers[page.prop('id')] = this;
+	page.data('StepManager', this);
 	// Append to right panel
 	$('#right_panel').append(this.manager);
+	this.active();
 };
 StepManager.prototype = {
 	constructor: StepManager,
 	remove: function() {
+	    this.page.removeData("StepManager");
 	    this.manager.remove();
 	    this.steps = null;
 	    this.stepexpos = null;
 	    delete managers[this.page.prop('id')];
+	},
+	reinitForPage: function(page) {
+	    this.page = page;
+	    this.manager = $('<div class="expos"></div>');
+	    this.steps = {};
+	    this.stepexpos = {};
+	    this.currStepN = 1;
+	    
+	    managers[page.prop('id')] = this;
+	    page.data('StepManager', this);
+	    // Append to right panel
+	    $('#right_panel').append(this.manager);
+	    this.active();
 	},
 	deleteFunc: function(e) {
 		e.preventDefault();e.stopPropagation();
@@ -3188,7 +3204,7 @@ $.fn.selectable = function(f) {
 // Support step managerment
 $.fn.addStepManager = function() {
 	if(this.hasClass('scene')) // Check if it's a page
-		this.data("StepManager", new StepManager(this));
+		new StepManager(this);
 	return this;
 }
 

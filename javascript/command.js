@@ -189,6 +189,7 @@ $.extend(DelPageCmd.prototype, {
             struct[step.prop('id')] = serializer.serializeToString(step.get(0));
         }
         this.deletedPage = struct;
+        this.deletedMgr = managers[this.name];
         
         delPage(this.name);
         this.state = "SUCCESS";        
@@ -198,6 +199,8 @@ $.extend(DelPageCmd.prototype, {
         if(this.state != "SUCCESS") return;
         
         var page = addPage(this.name);
+        page.data('StepManager').remove();
+        this.deletedMgr.reinitForPage(page);
         scriptMgr.countScripts(page.attr('id'), "page");
         for(var sname in this.deletedPage) {
             var step = $(this.deletedPage[sname]);
