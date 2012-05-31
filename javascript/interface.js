@@ -852,7 +852,12 @@ function addPage(name) {
 };
 function delPage(name) {
     // Delete in labelbar
-    $('#pageBar li:contains("'+name+'")').remove();
+    $('#pageBar li').each(function() {
+        if($(this).text() == name) {
+            $(this).remove();
+            return;
+        }
+    });
     // Delete step manager in dom
     pages[name].data("StepManager").remove();
     // Delete in dom
