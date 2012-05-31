@@ -486,3 +486,73 @@ $.extend(StepDownCmd.prototype, {
     }
 });
 
+
+/* Ressources Management Commands
+ *
+ * 1. Add Source Command
+ * 2. Modify Source Command
+ *
+ */
+ 
+var AddSrcCmd = function(type, data, id) {
+    if(!type || !data) {
+        this.state = "INVALID";
+        return;
+    }
+    this.type = type;
+    this.data = data;
+    this.id = id;
+    this.state = "WAITING";
+};
+extend(AddSrcCmd, Command);
+$.extend(AddSrcCmd.prototype, {
+    execute: function() {
+        var id = srcMgr.addSource(this.type, this.data, this.id);
+        if(!id) {
+            this.state = "FAILEXE";
+            return;
+        }
+        else this.id = id;
+        this.state = "SUCCESS";
+    },
+    undo: function() {
+        if(this.state != "SUCCESS") return;
+        
+        srcMgr.delSource(this.id);
+        
+        this.state = "CANCEL";
+    }
+});
+var ModSrcCmd = function(type, data, id) {
+    if(!type || !data) {
+        this.state = "INVALID";
+        return;
+    }
+    this.type = type;
+    this.data = data;
+    this.id = id;
+    this.state = "WAITING";
+};
+extend(ModSrcCmd, Command);
+$.extend(ModSrcCmd.prototype, {
+    execute: function() {
+        if(srcMgr.sources[this.id]) {
+            this.oldtype = srcMgr.sources[this.id].type;
+            this.olddata = srcMgr.sources[this.id].data;
+        }
+        var id = srcMgr.addSource(this.type, this.data, this.id);
+        if(!id) {
+            this.state = "FAILEXE";
+            return;
+        }
+        else this.id = id;
+        this.state = "SUCCESS";
+    },
+    undo: function() {
+        if(this.state != "SUCCESS") return;
+        
+        srcMgr.addSource(this.oldtype, this.olddata, this.id);
+        
+        this.state = "CANCEL";
+    }
+});

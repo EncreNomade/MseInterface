@@ -202,11 +202,11 @@ function uploadfile() {
         var imgpattern = /(\.png|\.jpeg|\.jpg|\.gif|\.bmp)$/;
         var audpattern = /(\.mp3|\.ogg|\.wav)$/;
         if(link.search(imgpattern) != -1) {
-            srcMgr.addSource('image', link);
+            CommandMgr.executeCmd(new AddSrcCmd('image', link));
             dialog.close();
         }
         else if(link.search(audpattern) != -1) {
-            srcMgr.addSource('audio', link);
+            CommandMgr.executeCmd(new AddSrcCmd('audio', link));
             dialog.close();
         }
         else {
@@ -770,10 +770,10 @@ function dropToTargetZone(e) {
 // Source management====================================
 
 function addImgSrc(evt) {
-	srcMgr.addSource('image', evt.target.result);
+	CommandMgr.executeCmd(new AddSrcCmd('image', evt.target.result));
 };
 function addAudioSrc(evt) {
-    srcMgr.addSource('audio', evt.target.result);
+    CommandMgr.executeCmd(new AddSrcCmd('audio', evt.target.result));
 };
 function addJsSrc(evt) {
     // No game class name, can't add a game
@@ -782,7 +782,7 @@ function addJsSrc(evt) {
     var name = curr.gamename;
     var exp = "/"+name+"\\s*=\\s*function/";
     if(content.search(eval(exp)) >= 0) {
-        srcMgr.addSource('game', content, name);
+        CommandMgr.executeCmd(new AddSrcCmd('game', content, name));
     }
     else alert("Échec d'ajouter le jeu car il n'est pas trouvé dans le fichier.");
 };
