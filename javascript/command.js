@@ -214,6 +214,19 @@ $.extend(DelPageCmd.prototype, {
  *
  */
 var AddScriptCmd = function(name, src, srcType, action, target, reaction, immediate, supp){
+    if( typeof name == 'string' &&
+        typeof src == 'string' &&
+        typeof srcType == 'string' &&
+        typeof action == 'string' &&
+        typeof target == 'string' &&
+        typeof reaction == 'string' &&
+        typeof immediate == 'boolean' &&
+        (typeof supp == 'string' || typeof supp == 'undefined')) 
+    {
+        this.state = 'INVALID';
+        return;
+    }
+    
     this.name = name;
     this.src = src;
     this.srcType = srcType;
@@ -227,11 +240,16 @@ var AddScriptCmd = function(name, src, srcType, action, target, reaction, immedi
 };
 extend(AddScriptCmd, Command);
 $.extend(AddScriptCmd.prototype, {
-    execute: function(){
+    execute: function(){        
+        if(this.state == 'INVALID') 
+            return;
+        
         scriptMgr.addScript(this.name,this.src,this.srcType,this.action,this.target,this.reaction,this.immediate,this.supp);
         this.state = "SUCCESS";
     },
     undo: function(){
+        if(this.state != "SUCCESS") 
+            return;
         if(typeof scriptMgr.scripts[this.name] == 'undefined'){
             this.state = "FAILUNDO";
             return;
@@ -255,7 +273,7 @@ var DelScriptCmd = function(name){
 extend(DelScriptCmd, Command);
 $.extend(DelScriptCmd.prototype, {
     execute: function(){
-        if(typeof scriptMgr.scripts[this.name] == 'undefined'){
+        if(typeof scriptMgr.scripts[this.name] != 'string'){
             this.state = "FAILEXE";
             return;
         }
@@ -263,6 +281,8 @@ $.extend(DelScriptCmd.prototype, {
         this.state = "SUCCESS";
     },
     undo: function(){
+        if(this.state != "SUCCESS") return;
+        
         scriptMgr.addScript(this.name,this.src,this.srcType,this.action,this.target,this.reaction,this.immediate,this.supp);
         this.state = "CANCEL";
     }
