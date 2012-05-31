@@ -19,8 +19,8 @@ function init() {
 	$('#menu_mask').hide();
 	$('.central_tools').hide();
 	$('#editor').hide();
-	initShapeTool();
-	initTextTool();
+	window.shapeTool = initShapeTool();
+	window.textTool = initTextTool();
 	window.wikiTool = initWikiTool();
 	window.animeTool = initAnimeTool();
 	window.scriptTool = initScriptTool();
@@ -601,7 +601,6 @@ function modifyScriptDialog(scriptsList, defaultScript) {
                 case "anime": src = srcMgr.expos[scriptMgr.scripts[$('#script_name').val()].src];
                     break;
             }
-//            scriptMgr.delScript(scriptName);
             CommandMgr.executeCmd(new DelScriptCmd(scriptName));
             addScriptDialog(src, srcType);            
         }

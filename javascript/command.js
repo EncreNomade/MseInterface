@@ -211,7 +211,7 @@ $.extend(DelPageCmd.prototype, {
  *
  * 1. Add Script Command
  * 2. Del Script Command
- *
+ * 3. Modify Script Command
  */
 var AddScriptCmd = function(name, src, srcType, action, target, reaction, immediate, supp){
     if( typeof name != 'string' &&
@@ -483,3 +483,32 @@ $.extend(StepDownCmd.prototype, {
     }
 });
 
+/*
+ * Tools Command
+ * 1. TextTool AddToScene
+ * 
+ */
+var AddTextToSceneCmd = function(elems, tar){
+    this.elems = elems;
+    this.tar = tar;
+    
+    this.state = 'WAITING';
+};
+extend(AddTextToSceneCmd, Command);
+$.extend(AddTextToSceneCmd.prototype, {
+    execute: function(){
+        if(this.state != 'WAITING') return;
+        this.objId = parseInt(curr.objId);
+        textTool.finishEdit(this.elems, this.tar);
+        this.state = 'SUCCESS';
+    },
+    undo: function(){
+        if(this.state != 'SUCCESS') return;
+        for (var i = 0; i < this.elems.length; i++){
+            var id = this.objId+i;
+            $('#obj'+id).remove();
+        }
+        this.state = 'CANCEL';
+    }
+    
+});
