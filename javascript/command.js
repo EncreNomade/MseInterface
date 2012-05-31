@@ -214,14 +214,14 @@ $.extend(DelPageCmd.prototype, {
  *
  */
 var AddScriptCmd = function(name, src, srcType, action, target, reaction, immediate, supp){
-    if( typeof name == 'string' &&
-        typeof src == 'string' &&
-        typeof srcType == 'string' &&
-        typeof action == 'string' &&
-        typeof target == 'string' &&
-        typeof reaction == 'string' &&
-        typeof immediate == 'boolean' &&
-        (typeof supp == 'string' || typeof supp == 'undefined')) 
+    if( typeof name != 'string' &&
+        typeof src != 'string' &&
+        typeof srcType != 'string' &&
+        typeof action != 'string' &&
+        typeof target != 'string' &&
+        typeof reaction != 'string' &&
+        typeof immediate != 'boolean' &&
+        (typeof supp != 'string' || typeof supp != 'undefined')) 
     {
         this.state = 'INVALID';
         return;
@@ -273,7 +273,7 @@ var DelScriptCmd = function(name){
 extend(DelScriptCmd, Command);
 $.extend(DelScriptCmd.prototype, {
     execute: function(){
-        if(typeof scriptMgr.scripts[this.name] != 'string'){
+        if(typeof scriptMgr.scripts[this.name] == 'undefined'){
             this.state = "FAILEXE";
             return;
         }
@@ -284,6 +284,56 @@ $.extend(DelScriptCmd.prototype, {
         if(this.state != "SUCCESS") return;
         
         scriptMgr.addScript(this.name,this.src,this.srcType,this.action,this.target,this.reaction,this.immediate,this.supp);
+        this.state = "CANCEL";
+    }
+});
+
+var ModifyScriptCmd = function(name, src, srcType, action, target, reaction, immediate, supp){
+    if( typeof name != 'string' &&
+        typeof src != 'string' &&
+        typeof srcType != 'string' &&
+        typeof action != 'string' &&
+        typeof target != 'string' &&
+        typeof reaction != 'string' &&
+        typeof immediate != 'boolean' &&
+        (typeof supp != 'string' || typeof supp != 'undefined')
+        || typeof scriptMgr.scripts[name] == 'undefined') 
+    {
+        this.state = 'INVALID';
+        return;
+    }
+    
+    this.name = name;
+    this.src = src;
+    this.srcType = srcType;
+    this.action = action;
+    this.target = target;
+    this.reaction = reaction;
+    this.immediate = immediate;
+    this.supp = supp;
+    
+    this.oldSrc        = scriptMgr.scripts[name].src;
+    this.oldSrcType    = scriptMgr.scripts[name].srcType;
+    this.oldAction     = scriptMgr.scripts[name].action;
+    this.oldTarget     = scriptMgr.scripts[name].target;
+    this.oldReaction   = scriptMgr.scripts[name].reaction;
+    this.oldImmediate  = scriptMgr.scripts[name].immediate;
+    this.oldSupp       = scriptMgr.scripts[name].supp;
+    
+    this.state = 'WAITING';
+};
+extend(ModifyScriptCmd, Command);
+$.extend(ModifyScriptCmd.prototype, {
+    execute: function(){
+        if(this.state == 'INVALID') return;
+        
+        scriptMgr.addScript(this.name,this.src,this.srcType,this.action,this.target,this.reaction,this.immediate,this.supp);
+        this.state = "SUCCESS";
+    },
+    undo: function(){
+        if(this.state != 'SUCCESS') return;
+        
+        scriptMgr.addScript(this.name,this.oldSrc,this.oldSrcType,this.oldAction,this.oldTarget,this.oldReaction,this.oldImmediate,this.oldSupp);
         this.state = "CANCEL";
     }
 });

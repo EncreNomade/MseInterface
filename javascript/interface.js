@@ -601,7 +601,8 @@ function modifyScriptDialog(scriptsList, defaultScript) {
                 case "anime": src = srcMgr.expos[scriptMgr.scripts[$('#script_name').val()].src];
                     break;
             }
-            scriptMgr.delScript(scriptName);
+//            scriptMgr.delScript(scriptName);
+            CommandMgr.executeCmd(new DelScriptCmd(scriptName));
             addScriptDialog(src, srcType);            
         }
     });
@@ -660,8 +661,11 @@ function validScript(e){
         alert('Information incomplete');return;
     }
     
-    if (scriptMgr.scripts[name] && !confirm('Vous allez remplacer le script "'+name+'".')) return;
-    scriptMgr.addScript(name, srcid, srcType, action, tar, reaction, ajoutAuto, supp);
+    if (scriptMgr.scripts[name]) {
+        if(!confirm('Vous allez remplacer le script "'+name+'".')) return;
+        CommandMgr.executeCmd(new ModifyScriptCmd(name, srcid, srcType, action, tar, reaction, ajoutAuto, supp));
+    }
+    else CommandMgr.executeCmd(new AddScriptCmd(name, srcid, srcType, action, tar, reaction, ajoutAuto, supp));
     closeBottom();
     dialog.close();
 }
