@@ -848,15 +848,16 @@ StepManager.prototype = {
 	getStepExpo: function(stepN) {
 		return this.stepexpos[stepN];
 	},
-	renameStep: function(stepN, name) {
+	renameStep: function(expo, name) {
+	    var stepN = expo.data('stepN');
 	    if(!name || !nameValidation(name) || stepExist(name)) {
 	        var oldname = this.steps[stepN].prop('id');
-	        this.stepexpos[stepN].find('span').text(oldname)
-	                             .animate({'color': '#fb4e4e'}, 500)
-	                             .animate({'color': '#000'}, 500);
+	        expo.find('span').text(oldname)
+	                         .animate({'color': '#fb4e4e'}, 500)
+	                         .animate({'color': '#000'}, 500);
 	        return false;
 	    }
-	    this.stepexpos[stepN].data('name', name);
+	    expo.data('name', name);
 	    this.steps[stepN].prop('id', name);
 	},
 	
@@ -886,9 +887,9 @@ StepManager.prototype = {
 	    
 	    // Add a Step expo
 	    var expo = $('<div class="layer_expo"><h1>Étape '+stepN+'</h1><h5>Name: <span>'+name+'</span></h5></div>');
-	    expo.find('span').editable(new Callback(this.renameStep, this, stepN));
 	    expo.data('name', name);
 	    expo.data('stepN', stepN);
+	    expo.find('span').editable(new Callback(this.renameStep, this, expo));
 	    // Step chooser function
 	    expo.click(function(e) {
 	    	e.preventDefault();e.stopPropagation();
@@ -954,9 +955,9 @@ StepManager.prototype = {
 		
 		// Add a Step expo
 		var expo = $('<div class="layer_expo"><h1>Étape '+this.currStepN+'</h1><h5>Name: <span>'+name+'</span></h5></div>');
-		expo.find('span').editable(new Callback(this.renameStep, this, this.currStepN));
 		expo.data('name', name);
 		expo.data('stepN', this.currStepN);
+		expo.find('span').editable(new Callback(this.renameStep, this, expo));
 		// Step chooser function
 		expo.click(function(e) {
 			e.preventDefault();e.stopPropagation();
@@ -986,12 +987,6 @@ StepManager.prototype = {
 		// Switch the expos: switch the order of expos, change the title of expos
 		this.stepexpos[stepN].children('h1').replaceWith('<h1>Étape '+(stepN+1)+'</h1>');
 		this.stepexpos[stepN+1].children('h1').replaceWith('<h1>Étape '+stepN+'</h1>');
-		var temp = this.stepexpos[stepN];
-		// Remove all hover buttons and clone the expo
-		this.stepexpos[stepN] = this.stepexpos[stepN].clone(true);
-		this.stepexpos[stepN].children('.del_container').remove();
-		// Add hover buttons to expo's clone: Del step button and Up down button
-		this.stepexpos[stepN].deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc);
 		// Insert
 		this.stepexpos[stepN].insertBefore(this.stepexpos[stepN+1]);
 		// Change stepN in data
@@ -999,9 +994,8 @@ StepManager.prototype = {
 		this.steps[stepN+1].data('stepN', stepN);
 		this.stepexpos[stepN].data('stepN', stepN+1);
 		this.stepexpos[stepN+1].data('stepN', stepN);
-		temp.remove();
 		// Switch in two arrays
-		temp = this.steps[stepN];
+		var temp = this.steps[stepN];
 		this.steps[stepN] = this.steps[stepN+1];
 		this.steps[stepN+1] = temp;
 		temp = this.stepexpos[stepN];
@@ -1018,12 +1012,6 @@ StepManager.prototype = {
 		// Switch the expos: switch the order of expos, change the title of expos
 		this.stepexpos[stepN].children('h1').replaceWith('<h1>Étape '+(stepN-1)+'</h1>');
 		this.stepexpos[stepN-1].children('h1').replaceWith('<h1>Étape '+stepN+'</h1>');
-		var temp = this.stepexpos[stepN];
-		// Remove all hover buttons and clone the expo
-		this.stepexpos[stepN] = this.stepexpos[stepN].clone(true);
-		this.stepexpos[stepN].children('.del_container').remove();
-		// Add hover buttons to expo's clone: Del step button and Up down button
-		this.stepexpos[stepN].deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc);
 		// Insert
 		this.stepexpos[stepN].insertAfter(this.stepexpos[stepN-1]);
 		// Change stepN in data
@@ -1031,9 +1019,8 @@ StepManager.prototype = {
 		this.steps[stepN-1].data('stepN', stepN);
 		this.stepexpos[stepN].data('stepN', stepN-1);
 		this.stepexpos[stepN-1].data('stepN', stepN);
-		temp.remove();
 		// Switch in two arrays
-		temp = this.steps[stepN];
+		var temp = this.steps[stepN];
 		this.steps[stepN] = this.steps[stepN-1];
 		this.steps[stepN-1] = temp;
 		temp = this.stepexpos[stepN];
