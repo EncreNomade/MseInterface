@@ -314,14 +314,14 @@ SourceManager.prototype = {
 	    return ($.inArray(id, Object.keys(this.sources)) != -1);
 	},
 	addSource: function(type, data, id) {
-		if($.inArray(type, this.acceptType) == -1) return;
+		if($.inArray(type, this.acceptType) == -1) return false;
 		if(!id) {
 		    id = 'src'+this.currId;
 		    this.currId++;
 		}
 		else if(this.sources[id] != null && type != "wiki" && type != "anime" && type != "code") {
 		    alert("Le nom de source exist déjà...");
-		    return;
+		    return false;
 		}
 		// Source structure
 		var src = {'type':type, 'data':null};
@@ -346,7 +346,7 @@ SourceManager.prototype = {
 			
 			expo.append(img);
 			expo.circleMenu({'rename':['./images/UI/rename.jpg',this.renameDialog],
-			                 'delete':['./images/UI/del.png',this.deleteSrc]});
+			                 'delete':['./images/UI/del.png',this.prepareDelSource]});
 			break;
 		case 'audio':
 		    // Add audio source
@@ -355,7 +355,7 @@ SourceManager.prototype = {
 		    expo.append('<img class="srcicon_back" src="./images/UI/audio.png">');
 		    expo.append('<p>Son: '+id+'</p>');
 		    expo.circleMenu({'rename':['./images/UI/rename.jpg',this.renameDialog],
-		                     'delete':['./images/UI/del.png',this.deleteSrc]});
+		                     'delete':['./images/UI/del.png',this.prepareDelSource]});
 		    break;
 		case 'game':
 		    // Add game source
@@ -367,45 +367,15 @@ SourceManager.prototype = {
 		    this.sources[id] = src;
 		    expo.append('<img class="srcicon_back" src="./images/UI/HTML5game.png">');
 		    expo.append('<p>Jeu: '+id+'</p>');
-		    expo.circleMenu({'delete':['./images/UI/del.png',this.deleteSrc]});
+		    expo.circleMenu({'delete':['./images/UI/del.png',this.prepareDelSource]});
 		    break;
-		/*case 'text': 
-			var height = data.children('p').length * data.css('line-height') + 50;
-		case 'obj':
-			var height = data.height();
-			// Add source
-			this.sources[id] = data.clone();
-			this.sources[id].removeClass('rect');
-			this.sources[id].children('.del_container, .ctrl_pt').remove();
-			this.sources[id].resizable(false).moveable(false).deletable();
-			this.sources[id].css({'position':'relative','left':'auto','top':'auto','width':'100%', 'height':height+'px', 'padding-top':'25px', 'padding-bottom':'25px', 'margin-left':'auto', 'margin-right':'auto'});
-			if(type != 'obj')
-				this.sources[id].children('.del_container').css({
-					'position': 'relative',
-					'top': 2-height+'px'});
-			// Expo
-			var content = data.clone();
-			// Remove all interaction
-			content.children('.del_container, .ctrl_pt').remove();
-			content.resizable(false).moveable(false);
-			// Resize
-			if(type!='text') {
-				var ratiox = 0.9*40 / content.width();
-				var ratioy = 0.9*40 / content.height();
-				var ratio = (ratiox < ratioy ? ratiox : ratioy);
-				var w = ratio * content.width(), h = ratio * content.height();
-			}
-			else var w = 36, h = 36;
-			content.css({'top':(38-h)/2+'px','left':(38-w)/2+'px','width':w+'px','height':h+'px', 'font-size':'8px'});
-			expo.append(content);
-			break;*/
 		case 'wiki':
 		    // Already exist
 		    if(this.sources[id]) {
 		        delete this.sources[id];
 		        src.data = data;
 		        this.sources[id] = src;
-		        return;
+		        return id;
 		    }
 		    src.data = data;
 		    this.sources[id] = src;
@@ -413,19 +383,19 @@ SourceManager.prototype = {
 		    expo.click(function(){
 		        srcMgr.editWiki($(this).data('srcId'));
 		    });
-		    expo.circleMenu({'delete':['./images/UI/del.png',this.deleteSrc]});
+		    expo.circleMenu({'delete':['./images/UI/del.png',this.prepareDelSource]});
 		    break;
 		case 'anime':
 		    if(this.sources[id]) {
 		        delete this.sources[id];
 		        src.data = data;
 		        this.sources[id] = src;
-		        return;
+		        return id;
 		    }
 		    src.data = data;
 		    this.sources[id] = src;
 		    expo.append('<p>Anime: '+id+'</p>');
-		    expo.circleMenu({'delete':['./images/UI/del.png',this.deleteSrc],'addscript':['./images/UI/addscript.jpg',addScriptDialog]});
+		    expo.circleMenu({'delete':['./images/UI/del.png',this.prepareDelSource],'addscript':['./images/UI/addscript.jpg',addScriptDialog]});
 		    expo.click(function(){
 		        srcMgr.getSource($(this).data('srcId')).showAnimeOnEditor();
 		    });
@@ -435,13 +405,13 @@ SourceManager.prototype = {
 		        delete this.sources[id];
 		        src.data = data;
 		        this.sources[id] = src;
-		        return;
+		        return id;
 		    }
 		    src.data = data;
 		    this.sources[id] = src;
 		    expo.append('<img class="srcicon_back" src="./images/UI/addscript.jpg">');
 		    expo.append('<p>Code: '+id+'</p>');
-		    expo.circleMenu({'delete':['./images/UI/del.png',this.deleteSrc]});
+		    expo.circleMenu({'delete':['./images/UI/del.png',this.prepareDelSource]});
 		    expo.click(function(){
 		        var name = $(this).data('srcId');
 		        scriptTool.editScript(name, srcMgr.getSource(name));
@@ -454,6 +424,7 @@ SourceManager.prototype = {
 		expo.data('srcId', id);
 		this.expos[id] = expo;
 		this.uploaded = 0;
+		return id;
 	},
 	getSource: function(id) {
 	    if(this.sources[id])
@@ -518,9 +489,46 @@ SourceManager.prototype = {
 		return expo;
 	},
 	delSource: function(id) {
+	    var src = srcMgr.sources[id];
+	    var t = src.type;
+	    // Delete all dependency to this source
+	    // Script dependency
+	    if(t != "wiki") {
+	        scriptMgr.delRelatedScripts(id);
+	    }
+	    // Text link dependency
+	    if(t == "wiki" || t == "audio") {
+	        $('span[link="'+id+'"]').each(function(){
+	            $(this).replaceWith($(this).text());
+	        });
+	    }
+	    // Other dependency for image src: DOMElement, animation, wiki image content
+	    if(t == "image") {
+	        // DOMElement
+	        $('.scene img[name="'+id+'"]').each(function(){
+	            $(this).parent().remove();
+	        });
+	        // Animation & Wiki
+	        for(var srcid in srcMgr.sources) {
+	            var type = srcMgr.sources[srcid].type;
+	            if(type == "wiki" || type == "anime") {
+	                srcMgr.sources[srcid].data.removeDependency(id);
+	            }
+	        }
+	    }
+	    // Other dependency for game src: DOMElement
+	    else if(t == "game") {
+	        $('div[name="'+id+'"]').each(function(){
+	            $(this).remove();
+	        });
+	    }
 	    
+	    srcMgr.expos[id].remove();
+	    delete srcMgr.sources[id];
+	    delete srcMgr.expos[id];
+	    srcMgr.uploaded = 0;
 	},
-	deleteSrc: function(expo) {
+	prepareDelSource: function(expo) {
 	    if(!expo) return;
 	    var id = expo.data('srcId');
 	    
@@ -566,42 +574,7 @@ SourceManager.prototype = {
 	            dialog.main.append('<p>'+(i+1)+'. '+list[i]+'</p>');
 	        }
 	        dialog.confirm.click(function() {
-	            // Delete all dependency to this source
-	            // Script dependency
-	            if(t != "wiki") {
-	                scriptMgr.delRelatedScripts(id);
-	            }
-	            // Text link dependency
-	            if(t == "wiki" || t == "audio") {
-	                $('span[link="'+id+'"]').each(function(){
-	                    $(this).replaceWith($(this).text());
-	                });
-	            }
-	            // Other dependency for image src: DOMElement, animation, wiki image content
-	            if(t == "image") {
-	                // DOMElement
-	                $('.scene img[name="'+id+'"]').each(function(){
-	                    $(this).parent().remove();
-	                });
-	                // Animation & Wiki
-	                for(var srcid in srcMgr.sources) {
-	                    var type = srcMgr.sources[srcid].type;
-	                    if(type == "wiki" || type == "anime") {
-	                        srcMgr.sources[srcid].data.removeDependency(id);
-	                    }
-	                }
-	            }
-	            // Other dependency for game src: DOMElement
-	            else if(t == "game") {
-	                $('div[name="'+id+'"]').each(function(){
-	                    $(this).remove();
-	                });
-	            }
-	            
-	            delete srcMgr.sources[id];
-	            delete srcMgr.expos[id];
-	            srcMgr.uploaded = 0;
-	            expo.remove();
+	            srcMgr.delSource(id);
 	            dialog.close();
 	        });
 	        
@@ -761,16 +734,32 @@ var StepManager = function(page) {
 	this.currStepN = 1;
 	
 	managers[page.prop('id')] = this;
+	page.data('StepManager', this);
 	// Append to right panel
 	$('#right_panel').append(this.manager);
+	this.active();
 };
 StepManager.prototype = {
 	constructor: StepManager,
 	remove: function() {
+	    this.page.removeData("StepManager");
 	    this.manager.remove();
 	    this.steps = null;
 	    this.stepexpos = null;
 	    delete managers[this.page.prop('id')];
+	},
+	reinitForPage: function(page) {
+	    this.page = page;
+	    this.manager = $('<div class="expos"></div>');
+	    this.steps = {};
+	    this.stepexpos = {};
+	    this.currStepN = 1;
+	    
+	    managers[page.prop('id')] = this;
+	    page.data('StepManager', this);
+	    // Append to right panel
+	    $('#right_panel').append(this.manager);
+	    this.active();
 	},
 	deleteFunc: function(e) {
 		e.preventDefault();e.stopPropagation();
@@ -832,15 +821,16 @@ StepManager.prototype = {
 	getStepExpo: function(stepN) {
 		return this.stepexpos[stepN];
 	},
-	renameStep: function(stepN, name) {
+	renameStep: function(expo, name) {
+	    var stepN = expo.data('stepN');
 	    if(!name || !nameValidation(name) || stepExist(name)) {
 	        var oldname = this.steps[stepN].prop('id');
-	        this.stepexpos[stepN].find('span').text(oldname)
-	                             .animate({'color': '#fb4e4e'}, 500)
-	                             .animate({'color': '#000'}, 500);
+	        expo.find('span').text(oldname)
+	                         .animate({'color': '#fb4e4e'}, 500)
+	                         .animate({'color': '#000'}, 500);
 	        return false;
 	    }
-	    this.stepexpos[stepN].data('name', name);
+	    expo.data('name', name);
 	    this.steps[stepN].prop('id', name);
 	},
 	
@@ -870,9 +860,9 @@ StepManager.prototype = {
 	    
 	    // Add a Step expo
 	    var expo = $('<div class="layer_expo"><h1>Étape '+stepN+'</h1><h5>Name: <span>'+name+'</span></h5></div>');
-	    expo.find('span').editable(new Callback(this.renameStep, this, stepN));
 	    expo.data('name', name);
 	    expo.data('stepN', stepN);
+	    expo.find('span').editable(new Callback(this.renameStep, this, expo));
 	    // Step chooser function
 	    expo.click(function(e) {
 	    	e.preventDefault();e.stopPropagation();
@@ -938,9 +928,9 @@ StepManager.prototype = {
 		
 		// Add a Step expo
 		var expo = $('<div class="layer_expo"><h1>Étape '+this.currStepN+'</h1><h5>Name: <span>'+name+'</span></h5></div>');
-		expo.find('span').editable(new Callback(this.renameStep, this, this.currStepN));
 		expo.data('name', name);
 		expo.data('stepN', this.currStepN);
+		expo.find('span').editable(new Callback(this.renameStep, this, expo));
 		// Step chooser function
 		expo.click(function(e) {
 			e.preventDefault();e.stopPropagation();
@@ -970,12 +960,6 @@ StepManager.prototype = {
 		// Switch the expos: switch the order of expos, change the title of expos
 		this.stepexpos[stepN].children('h1').replaceWith('<h1>Étape '+(stepN+1)+'</h1>');
 		this.stepexpos[stepN+1].children('h1').replaceWith('<h1>Étape '+stepN+'</h1>');
-		var temp = this.stepexpos[stepN];
-		// Remove all hover buttons and clone the expo
-		this.stepexpos[stepN] = this.stepexpos[stepN].clone(true);
-		this.stepexpos[stepN].children('.del_container').remove();
-		// Add hover buttons to expo's clone: Del step button and Up down button
-		this.stepexpos[stepN].deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc);
 		// Insert
 		this.stepexpos[stepN].insertBefore(this.stepexpos[stepN+1]);
 		// Change stepN in data
@@ -983,9 +967,8 @@ StepManager.prototype = {
 		this.steps[stepN+1].data('stepN', stepN);
 		this.stepexpos[stepN].data('stepN', stepN+1);
 		this.stepexpos[stepN+1].data('stepN', stepN);
-		temp.remove();
 		// Switch in two arrays
-		temp = this.steps[stepN];
+		var temp = this.steps[stepN];
 		this.steps[stepN] = this.steps[stepN+1];
 		this.steps[stepN+1] = temp;
 		temp = this.stepexpos[stepN];
@@ -1002,12 +985,6 @@ StepManager.prototype = {
 		// Switch the expos: switch the order of expos, change the title of expos
 		this.stepexpos[stepN].children('h1').replaceWith('<h1>Étape '+(stepN-1)+'</h1>');
 		this.stepexpos[stepN-1].children('h1').replaceWith('<h1>Étape '+stepN+'</h1>');
-		var temp = this.stepexpos[stepN];
-		// Remove all hover buttons and clone the expo
-		this.stepexpos[stepN] = this.stepexpos[stepN].clone(true);
-		this.stepexpos[stepN].children('.del_container').remove();
-		// Add hover buttons to expo's clone: Del step button and Up down button
-		this.stepexpos[stepN].deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc);
 		// Insert
 		this.stepexpos[stepN].insertAfter(this.stepexpos[stepN-1]);
 		// Change stepN in data
@@ -1015,9 +992,8 @@ StepManager.prototype = {
 		this.steps[stepN-1].data('stepN', stepN);
 		this.stepexpos[stepN].data('stepN', stepN-1);
 		this.stepexpos[stepN-1].data('stepN', stepN);
-		temp.remove();
 		// Switch in two arrays
-		temp = this.steps[stepN];
+		var temp = this.steps[stepN];
 		this.steps[stepN] = this.steps[stepN-1];
 		this.steps[stepN-1] = temp;
 		temp = this.stepexpos[stepN];
@@ -2086,12 +2062,12 @@ var initWikiTool = function() {
                 dialog.main.append('<p><label>Ecraser : </label><input id="eraseName" type="checkbox"></p>');
                 dialog.confirm.click(function(){
                     if($('#rename').val() != name || $('#eraseName').get(0).checked) {
-                        srcMgr.addSource('wiki', wiki, $('#rename').val());
+                        CommandMgr.executeCmd(new ModSrcCmd('wiki', wiki, $('#rename').val()));
                         dialog.close();
                     }
                 });				 
             }
-            else srcMgr.addSource('wiki', wiki, name);
+            else CommandMgr.executeCmd(new AddSrcCmd('wiki', wiki, name));
             return true;
         },
         dropImgToWikiCard: function(e) {
@@ -2160,13 +2136,13 @@ var initAnimeTool = function() {
 			dialog.main.append('<p><label>Ecraser : </label><input id="eraseName" type="checkbox"></p>');
 			dialog.confirm.click(function(){
                 if($('#rename').val() != name || $('#eraseName').get(0).checked) {
-                    srcMgr.addSource('anime', anime, $('#rename').val());
+                    CommandMgr.executeCmd(new ModSrcCmd('anime', anime, $('#rename').val()));
 				    dialog.close();
-			}
+			    }
 			});
 		}
         else
-            srcMgr.addSource('anime', anime, name);
+            CommandMgr.executeCmd(new AddSrcCmd('anime', anime, name));
     });
     
     var addAnimeObj = function(e, id, data) {
@@ -2680,7 +2656,19 @@ var initScriptTool = function() {
                              .animate({backgroundColor: "#fff"}, 800);
                 return;
             }
-            srcMgr.addSource('code', script, name);
+            if(srcMgr.sources[name]) {
+            	dialog.showPopup('Ce nom existe déja', 300, 150, 'Confirmer');
+            	dialog.main.append('<p><label>Nouveau nom : </label><input id="rename" type="text" value="'+name+'"></p>');
+            	dialog.main.append('<p><label>Ecraser : </label><input id="eraseName" type="checkbox"></p>');
+            	dialog.confirm.click(function(){
+                    if($('#rename').val() != name || $('#eraseName').get(0).checked) {
+                        CommandMgr.executeCmd(new ModSrcCmd('code', script, $('#rename').val()));
+            		    dialog.close();
+            	    }
+            	});
+            }
+            else
+                CommandMgr.executeCmd(new AddSrcCmd('code', script, name));
         },
         editScript: function(id, content) {
             this.active();
@@ -3191,7 +3179,7 @@ $.fn.selectable = function(f) {
 // Support step managerment
 $.fn.addStepManager = function() {
 	if(this.hasClass('scene')) // Check if it's a page
-		this.data("StepManager", new StepManager(this));
+		new StepManager(this);
 	return this;
 }
 
