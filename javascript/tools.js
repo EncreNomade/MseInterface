@@ -2921,6 +2921,7 @@ function goDown(e) {
 		var temp = objInf.css('z-index');
 		objInf.css('z-index', currObj.css('z-index'));
 		currObj.css('z-index', temp);
+                CommandMgr.executeCmd( new GoDownCmd(currObj, objInf));
 	}
 }
 

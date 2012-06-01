@@ -529,6 +529,7 @@ $.extend(AddToSceneCmd.prototype, {
  * 2. Delete obj
  * 3. Move obj
  * 4. Resize obj
+ * 5. goDown obj
  */
 var ConfigObjCmd = function(target, newRes){
     this.target = target;
@@ -682,6 +683,30 @@ $.extend(ResizeObjCmd.prototype, {
         this.state = 'CANCEL';
     }
 });
+
+var GoDownCmd = function(upperElem, lowerElem){
+    this.upper = upperElem;
+    this.lower = lowerElem;
+    this.state = 'WAITING';
+};
+extend(GoDownCmd, Command);
+$.extend(GoDownCmd.prototype, {
+    execute: function(){
+        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
+        
+        this.state = 'SUCCESS';
+    },
+    undo: function(){
+        if(this.state != 'SUCCESS') return;
+        
+        var tempZ = this.lower.css('z-index');
+        this.lower.css('z-index', this.upper.css('z-index'));
+        this.upper.css('z-index', tempZ);
+        
+        this.state = 'CANCEL';
+    }
+});
+
 /* Ressources Management Commands
  *
  * 1. Add Source Command
