@@ -510,7 +510,7 @@ SourceManager.prototype = {
 	    if(t == "image") {
 	        // DOMElement
 	        $('.scene img[name="'+id+'"]').each(function(){
-	            $(this).parent().remove();
+	            $(this).parent().detach();
 	        });
 	        // Animation & Wiki
 	        for(var srcid in srcMgr.sources) {
@@ -523,7 +523,7 @@ SourceManager.prototype = {
 	    // Other dependency for game src: DOMElement
 	    else if(t == "game") {
 	        $('div[name="'+id+'"]').each(function(){
-	            $(this).remove();
+	            $(this).detach();
 	        });
 	    }
 	    
@@ -578,7 +578,7 @@ SourceManager.prototype = {
 	            dialog.main.append('<p>'+(i+1)+'. '+list[i]+'</p>');
 	        }
 	        dialog.confirm.click(function() {
-	            srcMgr.delSource(id);
+	            CommandMgr.executeCmd(new DelSrcCmd(id));
 	            dialog.close();
 	        });
 	        
@@ -1483,9 +1483,19 @@ var scriptMgr = function() {
         },
         delRelatedScripts: function(objId){
             for(var elem in this.scripts) {
-                if(this.scripts[elem].src == objId || this.scripts[elem].target == objId || this.scripts[elem].supp == objId)
-                    delete this.scripts[elem];
+                if(this.scripts[elem].src == objId || this.scripts[elem].target == objId || this.scripts[elem].supp == objId) {
+                    this.delScript(elem);
+                }
             }
+        },
+        getRelatedScripts: function(objId) {
+            var list = [];
+            for(var elemid in this.scripts) {
+                var elem = this.scripts[elemid];
+                if(elem.src == objId || elem.target == objId || elem.supp == objId)
+                    list.push({'id':elemid, 'elem':elem});
+            }
+            return list;
         },
         getRelatedScriptsDesc: function(objId) {
             var list = [];
