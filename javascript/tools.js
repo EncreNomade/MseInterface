@@ -1641,10 +1641,8 @@ EditableTool.prototype = {
     },
     finishEdit: function(elems, tar) {},
     close: function() {
-        if(this == textTool)
-            CommandMgr.executeCmd(new AddTextToSceneCmd(this.editor.children(), this.getTarget()));
-        else
-            this.finishEdit(this.editor.children(), this.getTarget());
+        CommandMgr.executeCmd(new AddToSceneCmd(this, this.editor.children(), this.getTarget()));
+
         this.editor.children().remove();
         this.editor.detach();
         this.toolsPanel.hide();

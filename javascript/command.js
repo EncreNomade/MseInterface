@@ -487,22 +487,23 @@ $.extend(StepDownCmd.prototype, {
 });
 
 /*
- * Tools Command
- * 1. TextTool AddToScene
+ * Editable Tools Command
+ * 1.  AddToScene
  * 
  */
-var AddTextToSceneCmd = function(elems, tar){
+var AddToSceneCmd = function(tool, elems, tar){
+    this.tool = tool;
     this.elems = elems;
     this.tar = tar;
     
     this.state = 'WAITING';
 };
-extend(AddTextToSceneCmd, Command);
-$.extend(AddTextToSceneCmd.prototype, {
+extend(AddToSceneCmd, Command);
+$.extend(AddToSceneCmd.prototype, {
     execute: function(){
         if(this.state != 'WAITING') return;
         this.objId = parseInt(curr.objId);
-        textTool.finishEdit(this.elems, this.tar);
+        this.tool.finishEdit(this.elems, this.tar);
         this.state = 'SUCCESS';
     },
     undo: function(){
