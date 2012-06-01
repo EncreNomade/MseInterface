@@ -3002,7 +3002,6 @@ function startMove(e) {
 	prevState.y = e.clientY;
         
         moveCmd = new MoveObjCmd(this);
-//        CommandMgr.executeMgr(new MoveObjCmd(prevState));
 }
 function cancelMove(e) {
     if(tag.movestarted) {
@@ -3106,6 +3105,7 @@ function chooseElemWithCtrlPts(e) {
 }
 
 // Resize events
+var resizeCmd = {};
 function startResize(e) {
 	e.preventDefault();
 	e.stopPropagation();
@@ -3113,6 +3113,8 @@ function startResize(e) {
 	prevState.x = e.clientX;
 	prevState.y = e.clientY;
 	curr.ctrlPt = $(this);
+        
+        resizeCmd = new ResizeObjCmd($(this).parent(), curr);
 }
 function cancelResize(e) {
 	if(tag.resizestarted) {
@@ -3120,6 +3122,7 @@ function cancelResize(e) {
 		e.stopPropagation();
 		tag.resizestarted = false;
 		curr.ctrlPt = null;
+                CommandMgr.executeCmd(resizeCmd);
 	}
 }
 function resizeElem(e) {

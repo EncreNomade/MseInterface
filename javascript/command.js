@@ -525,9 +525,10 @@ $.extend(AddToSceneCmd.prototype, {
 });
 
 /* Central Panel Commands
- * 1. Configuration Command
- * 2. Delete Command
- * 
+ * 1. Configuration obj
+ * 2. Delete obj
+ * 3. Move obj
+ * 4. Resize obj
  */
 var ConfigObjCmd = function(target, newRes){
     this.target = target;
@@ -625,7 +626,7 @@ var MoveObjCmd = function(elem){
 extend(MoveObjCmd, Command);
 $.extend(MoveObjCmd.prototype, {
     execute: function(){
-        if(this.state != 'WAITING' || this.state != 'CANCEL') return;
+        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
         
 //        this.ex = this.obj.position().left;
 //        this.ey = this.obj.position().top;
@@ -637,6 +638,46 @@ $.extend(MoveObjCmd.prototype, {
         
         this.obj.css('left', this.sx+'px');
         this.obj.css('top', this.sy+'px');
+        
+        this.state = 'CANCEL';
+    }
+});
+
+var ResizeObjCmd = function(elem, curr){
+    this.obj = elem;
+    this.curr = curr;
+    
+    this.initialCtrlPt = {
+        rt: curr.rt.css('top'),
+        lb: curr.lb.css('left'),
+        rb:{left: curr.rb.css('left'), top: curr.rb.css('top')}
+    };
+    
+    this.sx = this.obj.css('left');
+    this.sy = this.obj.css('top');
+    this.sw = this.obj.css('width');
+    this.sh = this.obj.css('height');
+    
+    this.state = 'WAITING';
+};
+extend(ResizeObjCmd, Command);
+$.extend(ResizeObjCmd.prototype, {
+    execute: function(){
+        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
+        
+        this.state = 'SUCCESS';
+    },
+    undo: function(){
+        if(this.state != 'SUCCESS') return;
+        
+        this.obj.css('left', this.sx);
+        this.obj.css('top', this.sy);
+        this.obj.css('width', this.sw);
+        this.obj.css('height', this.sh);
+        
+        this.curr.rt.css('top', this.initialCtrlPt.rt);
+        this.curr.lb.css('left', this.initialCtrlPt.lb);
+        this.curr.rb.css({'left': this.initialCtrlPt.rb.left,'top': this.initialCtrlPt.rb.top});
         
         this.state = 'CANCEL';
     }
