@@ -383,7 +383,8 @@ SourceManager.prototype = {
 		    expo.click(function(){
 		        srcMgr.editWiki($(this).data('srcId'));
 		    });
-		    expo.circleMenu({'delete':['./images/UI/del.png',this.prepareDelSource]});
+		    expo.circleMenu({'rename':['./images/UI/rename.jpg',this.renameDialog],
+		                     'delete':['./images/UI/del.png',this.prepareDelSource]});
 		    break;
 		case 'anime':
 		    if(this.sources[id]) {
@@ -395,7 +396,9 @@ SourceManager.prototype = {
 		    src.data = data;
 		    this.sources[id] = src;
 		    expo.append('<p>Anime: '+id+'</p>');
-		    expo.circleMenu({'delete':['./images/UI/del.png',this.prepareDelSource],'addscript':['./images/UI/addscript.jpg',addScriptDialog]});
+		    expo.circleMenu({'addscript':['./images/UI/addscript.jpg',addScriptDialog],
+		                     'rename':['./images/UI/rename.jpg',this.renameDialog],
+		                     'delete':['./images/UI/del.png',this.prepareDelSource]});
 		    expo.click(function(){
 		        srcMgr.getSource($(this).data('srcId')).showAnimeOnEditor();
 		    });
@@ -411,7 +414,8 @@ SourceManager.prototype = {
 		    this.sources[id] = src;
 		    expo.append('<img class="srcicon_back" src="./images/UI/addscript.jpg">');
 		    expo.append('<p>Code: '+id+'</p>');
-		    expo.circleMenu({'delete':['./images/UI/del.png',this.prepareDelSource]});
+		    expo.circleMenu({'rename':['./images/UI/rename.jpg',this.renameDialog],
+		                     'delete':['./images/UI/del.png',this.prepareDelSource]});
 		    expo.click(function(){
 		        var name = $(this).data('srcId');
 		        scriptTool.editScript(name, srcMgr.getSource(name));
@@ -632,8 +636,12 @@ SourceManager.prototype = {
 	},
     rename: function(id, newName) {
         this.updateSource(id, newName);
-        if(this.sources[newName].type == 'image') this.expos[newName].children('img').attr('name',newName);
+        var t = this.sources[newName].type;
+        if(t == 'image') this.expos[newName].children('img').attr('name',newName);
         else {
+            if(t == "wiki" || t == "anime") {
+                this.sources[newName].data.name = newName;
+            }
             var chaine = srcMgr.expos[newName].children("p").html().split(/: /);
             chaine = chaine[0]+ ": "+ this.expos[newName].data("srcId");
             this.expos[newName].children('p').replaceWith("<p>"+chaine+"</p>");
@@ -654,7 +662,7 @@ SourceManager.prototype = {
 	            dialog.showAlert('Nom choisi existe déjà');
 	            return false;
 	        }
-	    	srcMgr.rename(id, name);
+	    	CommandMgr.executeCmd(new RenameSrcCmd(id, name));
 	    	dialog.close();
 	    });
 	},

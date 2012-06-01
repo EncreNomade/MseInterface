@@ -618,7 +618,9 @@ $.extend(DeleteObjCmd.prototype, {
 /* Ressources Management Commands
  *
  * 1. Add Source Command
- * 2. Modify Source Command
+ * 2. Modify Source Command: Modify the data of one source
+ * 3. Rename Source Command: Update the name of one source
+ * 4. Delete Source Command
  *
  */
  
@@ -681,6 +683,35 @@ $.extend(ModSrcCmd.prototype, {
         
         srcMgr.addSource(this.oldtype, this.olddata, this.id);
         
+        this.state = "CANCEL";
+    }
+});
+
+var RenameSrcCmd = function(oldname, newname) {
+    if(!typeof oldname == "string" || !typeof newname == "string") {
+        this.state = "INVALID";
+        return;
+    }
+    this.oldname = oldname;
+    this.newname = newname;
+    this.state = "WAITING";
+}
+extend(RenameSrcCmd, Command);
+$.extend(RenameSrcCmd.prototype, {
+    execute: function() {
+        if(!srcMgr.sources[this.oldname] || srcMgr.sources[this.newname]) {
+            this.state = "FAILEXE";
+            return;
+        }
+        srcMgr.rename(this.oldname, this.newname);
+        this.state = "SUCCESS";
+    },
+    undo: function() {
+        if(!srcMgr.sources[this.newname] || srcMgr.sources[this.oldname]) {
+            this.state = "FAILUNDO";
+            return;
+        }
+        srcMgr.rename(this.newname, this.oldname);
         this.state = "CANCEL";
     }
 });
