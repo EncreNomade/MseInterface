@@ -109,6 +109,10 @@ var CommandMgr = (function(capacity) {
     }).keydown(function (e) {
     	if(e.which == 17) isCtrl=true;
     	if(e.which == 90 && isCtrl == true) {
+    	    var focusing = $(document.activeElement).prop('tagName');
+    	    if(focusing == "INPUT" || focusing == "TEXTAREA") {
+    	        return;
+    	    }
     		//run code for CTRL+z
     		CommandMgr.undoCmd();
     	}
