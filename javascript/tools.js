@@ -2992,20 +2992,29 @@ $.fn.canGoDown = function(f, statiq) {
 	return this;
 };
 
-// Move events
+// Move event
+var moveCmd = {};
 function startMove(e) {
 	e.preventDefault();
 	e.stopPropagation();
 	tag.movestarted = true;
 	prevState.x = e.clientX;
 	prevState.y = e.clientY;
+        
+        moveCmd = new MoveObjCmd(this);
+//        CommandMgr.executeMgr(new MoveObjCmd(prevState));
 }
 function cancelMove(e) {
-	if(tag.movestarted) {
-		e.preventDefault();
-		e.stopPropagation();
-		tag.movestarted = false;
-	}
+    if(tag.movestarted) {
+        var elem = $(this);
+	var dx = e.clientX - prevState.x;
+	var dy = e.clientY - prevState.y;
+	var x = elem.position().left + dx, y = elem.position().top + dy;
+        e.preventDefault();
+        e.stopPropagation();
+        CommandMgr.executeCmd(moveCmd);
+        tag.movestarted = false;
+    }
 }
 function moveElem(e) {
 	if(!tag.movestarted) return;

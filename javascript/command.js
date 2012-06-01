@@ -615,6 +615,32 @@ $.extend(DeleteObjCmd.prototype, {
         this.state = 'CANCEL';
     }
 });
+var MoveObjCmd = function(elem){
+    this.obj = $(elem);
+    this.sx = this.obj.position().left;
+    this.sy = this.obj.position().top;
+    
+    this.state = 'WAITING';
+};
+extend(MoveObjCmd, Command);
+$.extend(MoveObjCmd.prototype, {
+    execute: function(){
+        if(this.state != 'WAITING' || this.state != 'CANCEL') return;
+        
+//        this.ex = this.obj.position().left;
+//        this.ey = this.obj.position().top;
+        
+        this.state = 'SUCCESS';
+    },
+    undo: function(){
+        if(this.state != 'SUCCESS') return;
+        
+        this.obj.css('left', this.sx+'px');
+        this.obj.css('top', this.sy+'px');
+        
+        this.state = 'CANCEL';
+    }
+});
 /* Ressources Management Commands
  *
  * 1. Add Source Command
