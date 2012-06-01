@@ -496,6 +496,10 @@ $.extend(StepDownCmd.prototype, {
  * 
  */
 var AddToSceneCmd = function(tool, elems, tar){
+    if(!tool instanceof EditableTool){
+        this.state = 'INVALID';
+        return;
+    }
     this.tool = tool;
     this.elems = elems;
     this.tar = tar;
@@ -520,6 +524,97 @@ $.extend(AddToSceneCmd.prototype, {
     }
 });
 
+/* Central Panel Commands
+ * 1. Configuration Command
+ * 2. Delete Command
+ * 
+ */
+var ConfigObjCmd = function(target, newRes){
+    this.target = target;
+    this.newRes = newRes;
+    this.oldRes = {
+       'left': target.css('left'),
+       'top': target.css('top'),
+       'width': target.css('width'),
+       'height': target.css('height'),
+       'font-family': target.css('font-family'),
+       'font-size': target.css('font-size'),
+       'font-weight': target.css('font-weight'),
+       'text-align': target.css('text-align'),
+       'opacity': target.css('opacity'),
+       'background-color': target.css('background-color'),
+       'color': target.css('color'),
+       'border-color': target.css('border-color')
+    };
+    
+    this.state = 'WAITING';
+};
+extend(ConfigObjCmd, Command);
+$.extend(ConfigObjCmd.prototype, {
+    execute: function(){
+        if(this.state != 'WAITING') return;
+        this.target.css(this.newRes);
+        this.state = 'SUCCESS';
+    },
+    undo: function(){
+        if(this.state != 'SUCCESS') return;
+        this.target.css(this.oldRes);
+        this.state = 'CANCEL';
+    }
+});
+
+var DeleteObjCmd = function(target){
+    this.target = target;
+    this.parent = target.parent();
+    this.relatedScripts = [];
+    for(var elem in scriptMgr.scripts) {
+        if(scriptMgr.scripts[elem].src == target.attr('id') || scriptMgr.scripts[elem].target == target.attr('id') || scriptMgr.scripts[elem].supp == target.attr('id')){
+            var info = {
+                name       : elem,
+                src        : scriptMgr.scripts[elem].src,
+                srcType    : scriptMgr.scripts[elem].srcType,
+                action     : scriptMgr.scripts[elem].action,
+                target     : scriptMgr.scripts[elem].target,
+                reaction   : scriptMgr.scripts[elem].reaction,
+                immediate  : scriptMgr.scripts[elem].immediate,
+                supp       : scriptMgr.scripts[elem].supp           
+            };
+            this.relatedScripts.push(info);
+        }
+    }
+    
+    this.state = 'WAITING';
+};
+extend(DeleteObjCmd, Command);
+$.extend(DeleteObjCmd.prototype, {
+    execute: function(){
+        if(this.state != 'WAITING') return;
+        
+        scriptMgr.delRelatedScripts(this.target.attr('id'));
+        this.target.detach();
+        
+        this.state = 'SUCCESS';
+    },
+    undo: function(){
+        if(this.state != 'SUCCESS') return;
+        
+        for(var i in this.relatedScripts){
+            var name      = this.relatedScripts[i].name,
+                src       = this.relatedScripts[i].src,
+                srcType   = this.relatedScripts[i].srcType,
+                action    = this.relatedScripts[i].action,
+                target    = this.relatedScripts[i].target,
+                reaction  = this.relatedScripts[i].reaction,
+                immediate = this.relatedScripts[i].immediate,
+                supp      = this.relatedScripts[i].supp;
+            scriptMgr.addScript(name,src,srcType,action,target,reaction,immediate,supp);
+        }
+        
+        this.parent.append(this.target);
+        
+        this.state = 'CANCEL';
+    }
+});
 /* Ressources Management Commands
  *
  * 1. Add Source Command

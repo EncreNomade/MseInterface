@@ -421,7 +421,7 @@ function showParameter(obj, conf) {
 		res['background-color'] = $('#pm_back').val();
 		res.color = $('#pm_color').val();
 		res['border-color'] = $('#pm_stroke').val();
-		obj.css(res);
+                CommandMgr.executeCmd(new ConfigObjCmd(obj, res));
 		dialog.close();
 	});
 }

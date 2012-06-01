@@ -2892,8 +2892,7 @@ var staticIcon = function(elem, func, img, data) {
 	
 function delParent(e) {
     e.preventDefault();e.stopPropagation();
-    scriptMgr.delRelatedScripts($(this).parent().parent().attr('id'));
-    $(this).parent().parent().remove();
+    CommandMgr.executeCmd( new DeleteObjCmd($(this).parent().parent()) );
 }
 function hideParent(e) {e.preventDefault();e.stopPropagation();$(this).parent().parent().hide();}
 function configParent(e) {e.preventDefault();e.stopPropagation();showParameter($(this).parent().parent(), e.data.list);}
