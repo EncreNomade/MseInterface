@@ -529,7 +529,8 @@ $.extend(AddToSceneCmd.prototype, {
  * 2. Delete obj
  * 3. Move obj
  * 4. Resize obj
- * 5. goDown obj
+ * 5. GoDown obj
+ * 6. Add elts in scene;
  */
 var ConfigObjCmd = function(target, newRes){
     this.target = target;
@@ -707,6 +708,29 @@ $.extend(GoDownCmd.prototype, {
     }
 });
 
+var CreateElemCmd = function(step, container){
+    this.step = step;
+    this.container = container;
+    
+    this.state = 'WAITING';
+};
+extend(CreateElemCmd, Command);
+$.extend(CreateElemCmd.prototype, {
+    execute: function(){
+        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
+        
+        this.step.append(this.container);
+        
+        this.state = 'SUCCESS';
+    },
+    undo: function(){
+        if(this.state != 'SUCCESS') return;
+        
+        this.container.detach();
+        
+        this.state = 'CANCEL';
+    }
+});
 /* Ressources Management Commands
  *
  * 1. Add Source Command

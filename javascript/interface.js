@@ -787,38 +787,39 @@ function addJsSrc(evt) {
 };
 
 function addImageElem(id, data, page, step) {
-	var img = $('<img name="'+ id +'">');
-	img.attr('src', data);
-	img.css({'width':'100%','height':'100%'});
-	
-	var src = srcMgr.getSource(id);
+    var img = $('<img name="'+ id +'">');
+    img.attr('src', data);
+    img.css({'width':'100%','height':'100%'});
+
+    var src = srcMgr.getSource(id);
     if(src.width && src.height) var w = src.width, h = src.height;
     else var w = img.prop('width'), h = img.prop('height');
     var cw = page.width(), ch = page.height();
     if(!w || !h) return;
     
     var container = $('<div id="obj'+(curr.objId++)+'">');
-	container.append(img);
-	container.deletable();
-	
-	
-	
-	// Resize
-	var ratiox = cw/w;
-	var ratioy = ch/h;
-	var ratio = (ratiox > ratioy ? ratioy : ratiox);
-	if(ratio < 1) {w = w*ratio; h = h*ratio;};
-	container.css({'position':'absolute', 'top':'0px', 'left':'0px'});
-	container.css({'width':w+'px', 'height':h+'px', 'border-style':'solid', 'border-color':'#4d4d4d', 'border-width':'0px'});
-	
-	defineZ(step, container);
-	
-	// Listener to manipulate
-	// Choose Resize Move
-	container.resizable().moveable().configurable({text:true,stroke:true}).hoverButton('./images/UI/addscript.jpg', addScriptForObj);
-	container.canGoDown();
+    container.append(img);
+    container.deletable();
 
-	step.append(container);
+
+
+    // Resize
+    var ratiox = cw/w;
+    var ratioy = ch/h;
+    var ratio = (ratiox > ratioy ? ratioy : ratiox);
+    if(ratio < 1) {w = w*ratio; h = h*ratio;};
+    container.css({'position':'absolute', 'top':'0px', 'left':'0px'});
+    container.css({'width':w+'px', 'height':h+'px', 'border-style':'solid', 'border-color':'#4d4d4d', 'border-width':'0px'});
+
+    defineZ(step, container);
+
+    // Listener to manipulate
+    // Choose Resize Move
+    container.resizable().moveable().configurable({text:true,stroke:true}).hoverButton('./images/UI/addscript.jpg', addScriptForObj);
+    container.canGoDown();
+
+//    step.append(container);
+    CommandMgr.executeCmd(new CreateElemCmd(step, container));
 }
 
 function addPage(name) {
