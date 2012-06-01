@@ -7,6 +7,16 @@ function extend(Child, Parent) {
     Child.uber = Parent.prototype;
 };
 
+// Clone a obj
+function clone(obj) {
+    if (null == obj || "object" != typeof obj) return obj;
+    var copy = new obj.constructor();
+    for (var attr in obj) {
+        if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
+    }
+    return copy;
+}
+
 var Stack = function(capacity) {
     var arr = [];
     if(!isNaN(capacity) && capacity > 0) this.capacity = capacity;
@@ -138,6 +148,7 @@ var AddPageCmd = function(name) {
 extend(AddPageCmd, Command);
 $.extend(AddPageCmd.prototype, {
     execute: function() {
+        if(this.state != "WAITING") return;
         if(pages[this.name]) {
             this.state = "FAILEXE";
             return false;
@@ -173,6 +184,7 @@ var DelPageCmd = function(name) {
 extend(DelPageCmd, Command);
 $.extend(DelPageCmd.prototype, {
     execute: function() {
+        if(this.state != "WAITING") return;
         if(!pages[this.name]) {
             this.state = "FAILEXE";
             return false;
@@ -368,6 +380,7 @@ var AddStepCmd = function(mgr, name, params) {
 extend(AddStepCmd, Command);
 $.extend(AddStepCmd.prototype, {
     execute: function() {
+        if(this.state != "WAITING") return;
         if($('.layer[id="'+this.name+'"]').length > 0) {
             this.state = "FAILEXE";
             return false;
@@ -398,6 +411,7 @@ var AddArticleCmd = function(mgr, name, params, content) {
 extend(AddArticleCmd, Command);
 $.extend(AddArticleCmd.prototype, {
     execute: function() {
+        if(this.state != "WAITING") return;
         if($('.layer[id="'+this.name+'"]').length > 0) {
             this.state = "FAILEXE";
             return false;
@@ -429,6 +443,7 @@ var DelStepCmd = function(mgr, stepN) {
 extend(DelStepCmd, Command);
 $.extend(DelStepCmd.prototype, {
     execute: function() {
+        if(this.state != "WAITING") return;
         var serializer = new XMLSerializer();
         // Replace img src with relative Path on server
         var imgids = srcMgr.getImgSrcIDs();
@@ -459,6 +474,7 @@ var StepUpCmd = function(mgr, stepN) {
 extend(StepUpCmd, Command);
 $.extend(StepUpCmd.prototype, {
     execute: function() {
+        if(this.state != "WAITING") return;
         this.manager.stepUp(this.stepN);
         this.state = "SUCCESS";
     },
@@ -480,6 +496,7 @@ var StepDownCmd = function(mgr, stepN) {
 extend(StepDownCmd, Command);
 $.extend(StepDownCmd.prototype, {
     execute: function() {
+        if(this.state != "WAITING") return;
         this.manager.stepDown(this.stepN);
         this.state = "SUCCESS";
     },
@@ -753,6 +770,7 @@ var AddSrcCmd = function(type, data, id) {
 extend(AddSrcCmd, Command);
 $.extend(AddSrcCmd.prototype, {
     execute: function() {
+        if(this.state != "WAITING") return;
         var id = srcMgr.addSource(this.type, this.data, this.id);
         if(!id) {
             this.state = "FAILEXE";
@@ -782,6 +800,7 @@ var ModSrcCmd = function(type, data, id) {
 extend(ModSrcCmd, Command);
 $.extend(ModSrcCmd.prototype, {
     execute: function() {
+        if(this.state != "WAITING") return;
         if(srcMgr.sources[this.id]) {
             this.oldtype = srcMgr.sources[this.id].type;
             this.olddata = srcMgr.sources[this.id].data;
@@ -815,6 +834,7 @@ var RenameSrcCmd = function(oldname, newname) {
 extend(RenameSrcCmd, Command);
 $.extend(RenameSrcCmd.prototype, {
     execute: function() {
+        if(this.state != "WAITING") return;
         if(!srcMgr.sources[this.oldname] || srcMgr.sources[this.newname]) {
             this.state = "FAILEXE";
             return;
@@ -829,5 +849,137 @@ $.extend(RenameSrcCmd.prototype, {
         }
         srcMgr.rename(this.newname, this.oldname);
         this.state = "CANCEL";
+    }
+});
+
+var DelSrcCmd = function(id) {
+    if(!typeof id == "string") {
+        this.state = "INVALID";
+        return;
+    }
+    
+    var src = srcMgr.sources[id];
+    this.id = id;
+    this.type = src.type;
+    this.data = src.data;
+    // All dependencies
+    var scripts = [];
+    var links = [];
+    var doms = [];
+    var wikianimes = [];
+    
+    var t = src.type;
+    // Save all dependencies to this source
+    // Script dependency
+    if(t != "wiki") {
+        scripts = scriptMgr.getRelatedScripts(id);
+    }
+    // Text link dependency
+    if(t == "wiki" || t == "audio") {
+        $('span[link="'+id+'"]').each(function(){
+            links.push({'target':$(this).parent(),
+                        'type':(t=="wiki"?"wikilink":"audiolink"),
+                        'text':$(this).text()});
+        });
+    }
+    // Other dependency for image src: DOMElement, animation, wiki image content
+    if(t == "image") {
+        // DOMElement
+        $('.scene img[name="'+id+'"]').each(function(){
+            var container = $(this).parent();
+            if(container.prev().length > 0) {
+                var related = container.prev();
+                var relation = 'prev';
+            }
+            else if(container.next().length > 0) {
+                var related = container.next();
+                var relation = 'next';
+            }
+            else if(container.siblings().length == 0) {
+                var related = container.parent();
+                var relation = 'parent';
+            }
+            doms.push({'obj':container, 'related':related, 'relation':relation});
+        });
+        // Animation & Wiki
+        for(var srcid in srcMgr.sources) {
+            var type = srcMgr.sources[srcid].type;
+            if( (type == "wiki" || type == "anime") && srcMgr.sources[srcid].data.getDependency(id) ) {
+                wikianimes.push({'src':srcid, 'data':clone(srcMgr.sources[srcid].data)});
+            }
+        }
+    }
+    // Other dependency for game src: DOMElement
+    else if(t == "game") {
+        $('div[name="'+id+'"]').each(function(){
+            var game = $(this);
+            if(game.prev().length > 0) {
+                var related = game.prev();
+                var relation = 'prev';
+            }
+            else if(game.next().length > 0) {
+                var related = game.next();
+                var relation = 'next';
+            }
+            else if(game.siblings().length == 0) {
+                var related = game.parent();
+                var relation = 'parent';
+            }
+            doms.push({'obj':game, 'related':related, 'relation':relation});
+        });
+    }
+    
+    this.scripts = scripts;
+    this.links = links;
+    this.doms = doms;
+    this.wikianimes = wikianimes;
+    this.state = "WAITING";
+};
+extend(DelSrcCmd, Command);
+$.extend(DelSrcCmd.prototype, {
+    execute: function() {
+        if(this.state != "WAITING") return;
+        if(!srcMgr.sources[this.id]) {
+            this.state = "FAILEXE";
+            return;
+        }
+        srcMgr.delSource(this.id);
+        this.state = "SUCCESS";
+    },
+    undo: function() {
+        if(this.state != "SUCCESS") return;
+        if(srcMgr.sources[this.id]) {
+            this.state = "FAILUNDO";
+            return;
+        }
+        
+        srcMgr.addSource(this.type, this.data, this.id);
+        // Add all dependencies
+        for(var i = 0; i < this.scripts.length; ++i) {
+            var script = this.scripts[i];
+            if(scriptMgr.scripts[script.id]) continue;
+            scriptMgr.scripts[script.id] = script.elem;
+            scriptMgr.countScripts(script.elem.src, script.elem.srcType);
+        }
+        for(var i = 0; i < this.links.length; ++i) {
+            var link = this.links[i];
+            var linkspan = '<span class="'+link.type+'" link="'+this.id+'">'+link.text+'</span>';
+            link.target.html(link.target.html().replace(link.text, linkspan));
+        }
+        for(var i = 0; i < this.doms.length; ++i) {
+            var dom = this.doms[i];
+            if(dom.relation == "prev")
+                dom.related.after(dom.obj);
+            else if(dom.relation == "next")
+                dom.related.before(dom.obj);
+            else if(dom.relation == "parent")
+                dom.related.append(dom.obj);
+        }
+        for(var i = 0; i < this.wikianimes.length; ++i) {
+            var obj = this.wikianimes[i];
+            srcMgr.sources[obj.src].data = obj.data;
+        }
+        
+        this.state = "CANCEL"
     }
 });
