@@ -119,7 +119,8 @@ function init() {
 	            if(link && link.toLowerCase().match(/[\w\W]*www\.facebook\.com\/[\w\W]*/)) 
 	                linkedStr = '<span class="fblink" link="'+link+'">'+selStr+'</span>';break;
 	        }
-	        if(linkedStr) curr.selectNode.html(nodeHtml.replace(selStr, linkedStr));
+	        if(linkedStr) 
+                    CommandMgr.executeCmd(new AddTextLinkCmd(nodeHtml, selStr, linkedStr));
 	    }
 	    hideLinkSetter();
 	});

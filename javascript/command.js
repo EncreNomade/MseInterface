@@ -983,3 +983,28 @@ $.extend(DelSrcCmd.prototype, {
         this.state = "CANCEL"
     }
 });
+var AddTextLinkCmd = function(nodeHtml, selStr, linkedStr) {
+    this.nodeHtml = nodeHtml;
+    this.selStr = selStr;
+    this.linkedStr = linkedStr;
+    this.selectNode = curr.selectNode;
+    
+    this.state = "WAITING";
+};
+extend(AddTextLinkCmd, Command);
+$.extend(AddTextLinkCmd.prototype, {
+    execute: function() {
+        if(this.state != "WAITING") return;
+        
+        curr.selectNode.html(this.nodeHtml.replace(this.selStr, this.linkedStr));
+        
+        this.state = "SUCCESS";
+    },
+    undo: function() {
+        if(this.state != "SUCCESS") return;
+        
+        this.selectNode.html(this.nodeHtml.replace(this.linkedStr, this.selStr));
+
+        this.state = "CANCEL";
+    }
+});
