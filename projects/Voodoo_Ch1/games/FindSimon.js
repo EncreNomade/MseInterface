@@ -1,3 +1,167 @@
+function angleFor2Point(p1, p2) {
+	var angle = 0;
+	var dx = p2.x - p1.x;
+	var dy = p2.y - p1.y;
+	angle = Math.atan2(dy, dx);
+	return Math.round(180 * angle/(Math.PI));
+};
+
+function distance2Pts(x1,y1,x2,y2) {
+    return Math.sqrt(Math.pow(x2-x1, 2)+Math.pow(y2-y1, 2));
+};
+
+function inrect(x, y, rect) {
+    if(x >= rect[0] && x <= rect[0]+rect[2] && y >= rect[1] && y <= rect[1]+rect[3]) return true;
+    else return false;
+};
+function xRelatRect(x, rect) {
+    if(x < rect[0]) return -1;
+    else if(x >= rect[0] && x <= rect[0]+rect[2]) return 0;
+    else return 1;
+};
+function yRelatRect(y, rect) {
+    if(y < rect[1]) return -1;
+    else if(y >= rect[1] && y <= rect[1]+rect[3]) return 0;
+    else return 1;
+};
+
+var NPC = function(sprite, course, dir) {
+    if(course.length < 2) {mseLog('Array Error', 'Array \'course\' demande minimum 2 elements');}
+    if(course.length != dir.length) {mseLog('Array Error', 'Array \'course\' have to be the same size of array \'dir\'');}
+    this.sprite = sprite;
+    this.animes = new Array();
+    // Animations
+    this.animes['run'] = new mse.FrameAnimation(sprite, [0,1,2,3,4,5], 0, 5);
+    this.animes['stand'] = new mse.FrameAnimation(sprite, [6], 0, 1000);
+    // Velocity
+    this.v = 6;
+    // Vision
+    this.visiond = 180;
+    this.visiona = 40;
+    // Start and end angle of view
+    this.startAngle = this.visiona*Math.PI/180;
+    this.endAngle = -this.startAngle;
+    this.startP = crePoint2(Math.cos(this.startAngle)*this.visiond, Math.sin(this.startAngle)*this.visiond);
+    // Course predefined
+    this.course = course;
+    // Direction of view
+    this.dir = dir;
+    // Position
+    this.pos = new mse.Point2(course[0].x, course[0].y);
+    this.currStep = 0;
+    this.nextStep = 1;
+    // Orientation
+    this.direction = angleFor2Point(this.course[0], this.course[1]);
+    if(dir[this.currStep].length != 0) {
+        this.currDir = 0;
+        this.tarDir = this.dir[this.currStep][this.currDir];
+        this.state = 1;
+        this.animes['run'].stop();
+        this.animes['stand'].start();
+    }
+    else {
+        this.tarDir = this.direction;
+        this.state = 0;
+        this.animes['run'].start();
+        this.animes['stand'].stop();
+    }
+    
+    this.logic = function(delta) {
+        switch(this.state) {
+        case 0:// Run
+            // Direction not right
+            //if(this.direction != this.tarDir) {
+              //  this.state = 1;
+              //  return;
+            //}
+            
+            var dx = this.course[this.nextStep].x - this.pos.x;
+            var dy = this.course[this.nextStep].y - this.pos.y;
+            if(dx == 0) {
+                // Movement vertical
+                if(dy < -this.v) {this.pos.y -= this.v;return;}
+                else if(dy > this.v) {this.pos.y += this.v;return;}
+            }
+            else {
+                // Movement horizontal
+                if(dx < -this.v) {this.pos.x -= this.v;return;}
+                else if(dx > this.v) {this.pos.x += this.v;return;}
+            }
+            // Movement over
+            this.pos = new mse.Point2(this.course[this.nextStep].x, this.course[this.nextStep].y);
+            if(this.currStep < this.nextStep) {
+                this.currStep = this.nextStep;
+                this.nextStep = (this.nextStep == this.course.length-1) ? this.nextStep-1 : this.nextStep+1;
+            }
+            else {
+                this.currStep = this.nextStep;
+                this.nextStep = (this.nextStep == 0) ? 1 : this.nextStep-1;
+            }
+            // Change to turn state
+            this.state = 1;
+            this.animes['run'].stop();
+            this.animes['stand'].start();
+            if(this.dir[this.currStep].length != 0) this.tarDir = this.dir[this.currStep][this.currDir];
+            else {
+                this.currDir = -1;
+                this.tarDir = angleFor2Point(this.course[this.currStep], this.course[this.nextStep]);
+            }
+        break;
+        case 1:// Turn
+            var dis = this.tarDir - this.direction;
+            // Turning
+            if(dis < -2) this.direction -= 2;
+            else if(dis > 2) this.direction += 2;
+            else {
+            // Turn over
+                this.direction = this.tarDir;
+                // CurrDir is marked, start to run
+                if(this.currDir == -1) {
+                    this.state = 0;
+                    this.currDir = 0;
+                    this.animes['run'].start();
+                    this.animes['stand'].stop();
+                    return;
+                }
+                // Found next turn target
+                if(this.currDir < this.dir[this.currStep].length-1) {
+                    this.currDir++;
+                    this.tarDir = this.dir[this.currStep][this.currDir];
+                }
+                // No more turn target, turn to the run direction
+                else {
+                    this.tarDir = angleFor2Point(this.course[this.currStep], this.course[this.nextStep]);
+                    // Mark the currDir to ignore the verification
+                    this.currDir = -1;
+                }
+            }
+        break;
+        case 2:// Notice
+        break;
+        case 3:// Stand
+        break;
+        }
+    };
+    this.draw = function(ctx, x, y) {
+        ctx.save();
+        // To center point
+        ctx.translate(x + this.pos.x,  y + this.pos.y);
+        ctx.rotate(this.direction*Math.PI/180);
+        // Draw view
+        ctx.fillStyle = 'rgba(200,0,0,0.5)';
+        ctx.beginPath();
+        ctx.lineTo(this.startP.x, this.startP.y);
+        ctx.arc(0,0, this.visiond, this.startAngle,this.endAngle, true);
+        ctx.lineTo(0, 0);
+        ctx.fill();
+        // Draw sprite
+        ctx.translate(-20,-18);
+        this.sprite.draw(ctx);
+        ctx.restore();
+    };
+};
+
+
 var FindSimon = function() {
     mse.Game.call(this, {fillback:true});
     this.msg = {
