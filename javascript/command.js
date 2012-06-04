@@ -9,12 +9,32 @@ function extend(Child, Parent) {
 
 // Clone a obj
 function clone(obj) {
+    // Handle the 3 simple types, and null or undefined
     if (null == obj || "object" != typeof obj) return obj;
-    var copy = new obj.constructor();
-    for (var attr in obj) {
-        if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
+
+    // Handle Date
+    if (obj instanceof Date) {
+        var copy = new Date();
+        copy.setTime(obj.getTime());
+        return copy;
     }
-    return copy;
+    // Handle Array
+    else if (obj instanceof Array) {
+        var copy = [];
+        for (var i = 0, len = obj.length; i < len; ++i) {
+            copy[i] = clone(obj[i]);
+        }
+        return copy;
+    }
+    // Handle Object
+    else if (obj instanceof Object) {
+        var copy = new obj.constructor();;
+        for (var attr in obj) {
+            if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
+        }
+        return copy;
+    }
+    else return copy;
 }
 
 var Stack = function(capacity) {
