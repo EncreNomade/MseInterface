@@ -76,29 +76,34 @@ function init() {
 	    
 	    // Modify a exist link
 	    if(curr.selectNode.get(0).nodeName.toLowerCase() == "span") {
+                var linkType = false, target = false;
 	        switch(type) {
 	        case "audio":
 	            var link = $('#audiolinkInput').attr('link');
 	            if(link && srcMgr.isExist(link)) {
-	                curr.selectNode.attr('class', 'audiolink');
-	                curr.selectNode.attr('link', link);
+                        linkType = 'audiolink';
+//	                curr.selectNode.attr('class', 'audiolink');
+//	                curr.selectNode.attr('link', link);
 	            }
 	            break;
 	        case "wiki":
 	            var link = $('#wikilinkInput').attr('link');
 	            if(link && srcMgr.isExist(link)) {
-	                curr.selectNode.attr('class', 'wikilink');
-	                curr.selectNode.attr('link', link);
+                        linkType = 'wikilink';
+//	                curr.selectNode.attr('class', 'wikilink');
+//	                curr.selectNode.attr('link', link);
 	            }
 	            break;
 	        case "fb":
 	            var link = $('#fblinkInput').val();
 	            if(link && link.toLowerCase().match(/[\w\W]*www\.facebook\.com\/[\w\W]*/)) {
-	                curr.selectNode.attr('class', 'fblink');
-	                curr.selectNode.attr('link', link);
+                        linkType = 'wikilink';
+//	                curr.selectNode.attr('class', 'fblink');
+//	                curr.selectNode.attr('link', link);
 	            }
 	            break;
 	        }
+                if(linkType) CommandMgr.executeCmd(new ModifyLinkCmd(linkType, link));
 	    }
 	    // Add a link
 	    else {
