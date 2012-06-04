@@ -838,8 +838,7 @@ StepManager.prototype = {
 	                         .animate({'color': '#000'}, 500);
 	        return false;
 	    }
-	    expo.data('name', name);
-	    this.steps[stepN].prop('id', name);
+	    CommandMgr.executeCmd(new RenameStepCmd(this, stepN, name));
 	},
 	
 	addStepWithContent: function(name, step) {
@@ -3218,8 +3217,8 @@ $.fn.editable = function(callback) {
 	// Don't support
 	if( $.inArray(tagName.toUpperCase(), editSupportTag) == -1 ) return;
 	
-	var content = $(this).html();
 	$(this).click(function() {
+	    var content = $(this).html();
 	    // Get infos
 	    var color = $(this).css('color');
 	    var fsize = parseInt($(this).css('font-size'));

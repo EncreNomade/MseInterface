@@ -482,6 +482,43 @@ $.extend(DelStepCmd.prototype, {
     }    
 });
 
+var RenameStepCmd = function(mgr, stepN, newName) {
+    if(!stepN || !nameValidation(newName) || !(mgr instanceof StepManager)) {
+        this.state = "INVALID";
+        return;
+    }
+    this.stepN = stepN;
+    this.manager = mgr;
+    this.newName = newName;
+    this.state = "WAITING";
+};
+extend(RenameStepCmd, Command);
+$.extend(RenameStepCmd.prototype, {
+    execute: function() {
+        if(this.state != "WAITING") return false;
+        if(stepExist(this.newName) || !this.manager.steps[this.stepN]) {
+            this.state = "FAILEXE";
+            return false;
+        }
+        this.oldName = this.manager.steps[this.stepN].prop('id');
+        this.manager.stepexpos[this.stepN].data('name', this.newName);
+        //this.manager.stepexpos[this.stepN].find('span').text(this.newName);
+        this.manager.steps[this.stepN].prop('id', this.newName);
+        this.state = "SUCCESS";
+    },
+    undo: function() {
+        if(this.state != "SUCCESS") return false;
+        if(stepExist(this.oldName) || !this.manager.steps[this.stepN]) {
+            this.state = "FAILUNDO";
+            return false;
+        }
+        this.manager.stepexpos[this.stepN].data('name', this.oldName);
+        this.manager.stepexpos[this.stepN].find('span').text(this.oldName);
+        this.manager.steps[this.stepN].prop('id', this.oldName);
+        this.state = "CANCEL";
+    }
+});
+
 var StepUpCmd = function(mgr, stepN) {
     if(!stepN || !(mgr instanceof StepManager)) {
         this.state = "INVALID";
