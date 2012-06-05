@@ -107,23 +107,23 @@ class ProjectGenerator {
         $this->pjHeight = intval($this->pj->getHeight());
         $this->jstr = "";
         // Initiale Mse system
-        $this->jstr .= "initMseConfig();";
-        $this->jstr .= "mse.init();";
+        $this->jstr .= "\ninitMseConfig();";
+        $this->jstr .= "\nmse.init();";
         // Pages, Layers, Objects
-        $this->jstr .= "var pages={};";
-        $this->jstr .= "var layers={};";
-        $this->jstr .= "var objs={};";
-        $this->jstr .= "var animes={};";
-        $this->jstr .= "var games={};";
-        $this->jstr .= "var wikis={};";
+        $this->jstr .= "\nvar pages={};";
+        $this->jstr .= "\nvar layers={};";
+        $this->jstr .= "\nvar objs={};";
+        $this->jstr .= "\nvar animes={};";
+        $this->jstr .= "\nvar games={};";
+        $this->jstr .= "\nvar wikis={};";
         
-        $this->jstr .= "function createbook(){";
-        $this->jstr .= "mse.configs.srcPath='./".$this->pj->getName()."/';";
+        $this->jstr .= "\nfunction createbook(){";
+        $this->jstr .= "\n\tmse.configs.srcPath='./".$this->pj->getName()."/';";
         // Initiale root
-        $this->jstr .= "window.root = new mse.Root('".$this->pj->getName()."',".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight).",'".$this->pj->getOrientation()."');";
+        $this->jstr .= "\n\twindow.root = new mse.Root('".$this->pj->getName()."',".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight).",'".$this->pj->getOrientation()."');";
         $this->autoid = 0;
         $startPageSet = false;
-        $this->jstr .= "var temp = {};";
+        $this->jstr .= "\n\tvar temp = {};";
         
         // Add all ressources to xml structure
         $srcs = $this->pj->getAllSrcs();
@@ -145,11 +145,11 @@ class ProjectGenerator {
                     // Change path with relative in folder of project
                     $src = preg_replace("/[\.\/\S]+(audios\/)/", '$1', $src, 1);
                 }
-                $this->jstr .= "mse.src.addSource('$name','$src','$t',$preload);";
+                $this->jstr .= "\n\tmse.src.addSource('$name','$src','$t',$preload);";
                 break;
                 
             case "game":
-                $this->jstr .= "games.$name = new $name();";
+                $this->jstr .= "\n\tgames.$name = new $name();";
                 array_push($this->scriptExt, $src);
                 break;
                 
@@ -158,23 +158,23 @@ class ProjectGenerator {
                 break;
                 
             case "wiki":
-                $this->jstr .= "wikis.$name=new mse.WikiLayer();";
+                $this->jstr .= "\n\twikis.$name=new mse.WikiLayer();";
                 foreach( $src->cards as $card ){
                     if( $card->type == "text" ) {
-                        $this->jstr .= "wikis.$name.addTextCard();";
+                        $this->jstr .= "\n\twikis.$name.addTextCard();";
                         foreach($card->sections as $section) {
                             $content = str_replace("\n", "\\n", str_replace("/", "\/", addslashes($section->content)));
                             $title = str_replace("\n", "\\n", str_replace("/", "\/", addslashes($section->title)));
                             if($section->type == "link")
-                                $this->jstr .= "wikis.$name.textCard.addLink('$title', '$content');";
+                                $this->jstr .= "\n\twikis.$name.textCard.addLink('$title', '$content');";
                             else if($section->type == "text")
-                                $this->jstr .= "wikis.$name.textCard.addSection('$title', '$content');";
+                                $this->jstr .= "\n\twikis.$name.textCard.addSection('$title', '$content');";
                         }
                     }
                     else if( $card->type == "img" ){
                         //echo $card->legend;
                         $legend = str_replace("\n", "\\n", addslashes($card->legend));
-                        $this->jstr .= "wikis.$name.addImage('".$card->image."', '".addslashes($legend)."');";
+                        $this->jstr .= "\n\twikis.$name.addImage('".$card->image."', '".addslashes($legend)."');";
                     }
                 }
                 break;
@@ -205,8 +205,8 @@ class ProjectGenerator {
             }
             array_push($frames, $duration);
             // Initialisation of animation
-            $this->jstr .= "animes.$name=new mse.Animation($duration,$repeat,".($static===false?"false":"true").");";
-            if($block) $this->jstr .= "animes.$name.block=true;";
+            $this->jstr .= "\n\tanimes.$name=new mse.Animation($duration,$repeat,".($static===false?"false":"true").");";
+            if($block) $this->jstr .= "\n\tanimes.$name.block=true;";
             // Obj list
             $objlist = array();
             $nbFr = count($animeFrs);
@@ -250,32 +250,32 @@ class ProjectGenerator {
                         if($static) {
                             switch($t) {
                             case "image":
-                                $this->jstr .= "temp.obj=new mse.Image(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar]},'$key');";
+                                $this->jstr .= "\n\ttemp.obj=new mse.Image(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar]},'$key');";
                                 break;
                             case "sprite":
                                 $frw = $animeObjs[$key]->frw;
                                 $frh = $animeObjs[$key]->frh;
                                 $originWidth = $animeObjs[$key]->col * $frw;
                                 $originHeight = $animeObjs[$key]->row * $frh;
-                                $this->jstr .= "temp.obj=new mse.Sprite(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar]},'$key',$frw,$frh, 0,0,$originWidth,$originHeight);";
+                                $this->jstr .= "\n\ttemp.obj=new mse.Sprite(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar]},'$key',$frw,$frh, 0,0,$originWidth,$originHeight);";
                                 break;
                             case "spriteRecut":
-                                $this->jstr .= "temp.obj=new mse.Sprite(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar]},'$key',[[$sx,$sy,$sw,$sh]]);";
+                                $this->jstr .= "\n\ttemp.obj=new mse.Sprite(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar]},'$key',[[$sx,$sy,$sw,$sh]]);";
                                 $spriteFrCount = 0;
                                 break;
                             case "rect":
-                                $this->jstr .= "temp.obj=new mse.Mask(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar],'fillStyle':'$params->color'});";
+                                $this->jstr .= "\n\ttemp.obj=new mse.Mask(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar],'fillStyle':'$params->color'});";
                                 break;
                             case "text":
                                 $content = $animeObjs[$key]->content;
                                 $align = $animeObjs[$key]->align;
-                                $this->jstr .= "temp.obj=new mse.Text(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar],'fillStyle':'$params->color','textBaseline':'top','font':'$fontw '+$fontsvar+'px $font','textAlign':'$align'},'$content',true);";
+                                $this->jstr .= "\n\ttemp.obj=new mse.Text(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar],'fillStyle':'$params->color','textBaseline':'top','font':'$fontw '+$fontsvar+'px $font','textAlign':'$align'},'$content',true);";
                                 break;
                             }
-                            $this->jstr .= "animes.$name.addObj('$key',temp.obj);";
+                            $this->jstr .= "\n\tanimes.$name.addObj('$key',temp.obj);";
                         }
                         else {
-                            $this->jstr .= "animes.$name.addObj('$key',objs.$key);";
+                            $this->jstr .= "\n\tanimes.$name.addObj('$key',objs.$key);";
                         }
                         $objlist[$key] = array("params"=>array(),"animes"=>array());
                         if($t == "sprite") {
@@ -298,7 +298,7 @@ class ProjectGenerator {
                             $prevsw = $objlist[$key]["params"]['sw']; $prevsh = $objlist[$key]["params"]['sh'];
                             
                             if($prevsx!=$sx || $prevsy!=$sy || $prevsw!=$sw || $prevsh!=$sh){
-                                $this->jstr .= "temp.obj.appendFrame([$sx,$sy,$sw,$sh]);";
+                                $this->jstr .= "\n\ttemp.obj.appendFrame([$sx,$sy,$sw,$sh]);";
                                 // spriteSeq
                                 if(!array_key_exists('spriteSeq', $animes)) $animes['spriteSeq']=array();
                                 // Fill the table of animation of spriteSeq before the current frame
@@ -387,7 +387,7 @@ class ProjectGenerator {
             
             // Generate animation
             foreach($objlist as $key=>$obj) {
-                $this->jstr .= "animes.$name.addAnimation('$key',{'frame':JSON.parse('".json_encode($frames)."')";
+                $this->jstr .= "\n\tanimes.$name.addAnimation('$key',{'frame':JSON.parse('".json_encode($frames)."')";
                 // All animations for this obj
                 $animes = $obj['animes'];
                 foreach($animes as $p=>$seq) {
@@ -420,8 +420,8 @@ class ProjectGenerator {
             }
         }
         
-        $this->jstr .= "var action={};";
-        $this->jstr .= "var reaction={};";
+        $this->jstr .= "\n\tvar action={};";
+        $this->jstr .= "\n\tvar reaction={};";
         $scripts = $this->pj->getAllScripts();
         if( isset($scripts) ) {
             $oldCds = array();
@@ -489,21 +489,21 @@ class ProjectGenerator {
                     }
                 }
                 
-                $this->jstr .= "\n$actionInit";
-                $this->jstr .= "\nreaction.$name=function(){ $codeReact };";
-                if($immediate) $this->jstr .= "\naction.$name.register(reaction.$name);";
+                $this->jstr .= "\n\t$actionInit";
+                $this->jstr .= "\n\treaction.$name=function(){ \n\t\t$codeReact \n\t};";
+                if($immediate) $this->jstr .= "\n\taction.$name.register(reaction.$name);";
                 if(!$found) $oldCds[$name] = array("src"=>$src, "action"=>$action);
             }
         }
         
         // Start the book
-        $this->jstr .= "mse.currTimeline.start();};";
+        $this->jstr .= "\n\tmse.currTimeline.start();};";
         // Lazy init the book
-        $this->jstr .= "mse.autoFitToWindow(createbook);";
+        $this->jstr .= "\nmse.autoFitToWindow(createbook);";
         //$this->jstr .= "createbook();";
         
         // Join the coords array in the beginning
-        $this->jstr = "mse.coords = JSON.parse('".json_encode($this->coords)."');".$this->jstr;
+        $this->jstr = "\nmse.coords = JSON.parse('".json_encode($this->coords)."');".$this->jstr;
         
         return $this->jstr;
     }
@@ -513,7 +513,7 @@ class ProjectGenerator {
         else $parent = "null";
         // Init page
         $page = "pages.$id";
-        $this->jstr .= $page."=new mse.BaseContainer($parent,{size:[".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight)."]});";
+        $this->jstr .= "\n\t".$page."=new mse.BaseContainer($parent,{size:[".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight)."]});";
         
         // Layers
         foreach( $pagenode as $layer ) {
@@ -548,7 +548,7 @@ class ProjectGenerator {
         }
         
         if($type == 'Layer') {
-            $this->jstr .= "$layer=new mse.Layer($page,$depth,".$params[1].");";
+            $this->jstr .= "\n\t$layer=new mse.Layer($page,$depth,".$params[1].");";
             // Obj
             $objs = $layernode->children();
             foreach( $objs as $objnode ) {
@@ -556,7 +556,7 @@ class ProjectGenerator {
             }
         }
         else if($type == 'ArticleLayer') {
-            $this->jstr .= "$layer=new mse.ArticleLayer($page,$depth,".$params[1].",null);";
+            $this->jstr .= "\n\t$layer=new mse.ArticleLayer($page,$depth,".$params[1].",null);";
             
             if(array_key_exists('size', $params[0])) $width = $params[0]['size'][0];
             else $width = $this->pj->sceneCoor($this->pjWidth);
@@ -569,12 +569,12 @@ class ProjectGenerator {
                 $index++;
             }
             if($layernode['defile'] == "true") {
-                $this->jstr .= "$layer.setDefile(1300);";
-                $this->jstr .= "temp.layerDefile=$layer;";
+                $this->jstr .= "\n\t$layer.setDefile(1300);";
+                $this->jstr .= "\n\ttemp.layerDefile=$layer;";
             }
         }
         
-        $this->jstr .= "$page.addLayer('$id',$layer);";
+        $this->jstr .= "\n\t$page.addLayer('$id',$layer);";
     }
     
     function addObject($objnode, $layer) {
@@ -602,20 +602,20 @@ class ProjectGenerator {
         switch($type) {
         case "img":
             // Src name can be found in image name attribute
-            $this->jstr .= "$obj=new mse.Image($layer,".$params[1].",'".$objnode->img[0]['name']."');";
+            $this->jstr .= "\n\t$obj=new mse.Image($layer,".$params[1].",'".$objnode->img[0]['name']."');";
             break;
         case "mask":
-            $this->jstr .= "$obj=new mse.Mask($layer,".$params[1].");";
+            $this->jstr .= "\n\t$obj=new mse.Mask($layer,".$params[1].");";
             break;
         case "txt":
             // Text content
-            $this->jstr .= "$obj=new mse.Text($layer,".$params[1].",'".addslashes($objnode->p[0])."',true);";
+            $this->jstr .= "\n\t$obj=new mse.Text($layer,".$params[1].",'".addslashes($objnode->p[0])."',true);";
             break;
         default:
-            $this->jstr .= "$obj=new mse.UIObject($layer,".$params[1].");";break;
+            $this->jstr .= "\n\t$obj=new mse.UIObject($layer,".$params[1].");";break;
         }
         
-        $this->jstr .= "$layer.addObject($obj);";
+        $this->jstr .= " $layer.addObject($obj);";
     }
     function addArticleObject($objnode, $layer, $width, $lineHeight, $index) {
         $id = is_null($objnode['id']) ? 'temp' : $objnode['id'];
@@ -628,19 +628,19 @@ class ProjectGenerator {
         if($class == 'illu') {
             $type = "img";
             $params = $this->formatParams($objnode->img[0]['style'], $type);
-            $this->jstr .= "$obj=new mse.Image($layer,".$params[1].",'".$objnode->img[0]['name']."');";
+            $this->jstr .= "\n\t$obj=new mse.Image($layer,".$params[1].",'".$objnode->img[0]['name']."');";
         }
         else if($class == 'game') {
             $type = "game";
             $classname = $objnode['name'];
-            $this->jstr .= "$obj=new $classname();";
+            $this->jstr .= "\n\t$obj=new $classname();";
         }
         else if(count($objnode->children()) == 0) {
             // Rectangle obj
             $type = "obj";
             $objnode['style'] .= "width: ".$width."px; height: ".$lineHeight."px;";
             $params = $this->formatParams($objnode['style'], $type);
-            $this->jstr .= "$obj=new mse.UIObject($layer,".$params[1].");";
+            $this->jstr .= "\n\t$obj=new mse.UIObject($layer,".$params[1].");";
         }
         else if(count($objnode->p) > 0) {
             // Text obj
@@ -654,18 +654,18 @@ class ProjectGenerator {
             if(count($p->span) > 0){
                 //preg_match_all(self::$patterns['linkFinder'], $p[0]->asXML(), $matches);
                 $content = preg_replace(self::$patterns['tagReplace'], '', $p[0]->asXML());
-                $this->jstr .= "$obj=new mse.Text($layer,".$params[1].",'".addslashes($content)."',true);";
+                $this->jstr .= "\n\t$obj=new mse.Text($layer,".$params[1].",'".addslashes($content)."',true);";
                 foreach($p->span as $link)
                     $this->addLink($link, $obj, $index);
             }
             else {
                 $content = $p;
-                $this->jstr .= "$obj=new mse.Text($layer,".$params[1].",'$content',true);";
+                $this->jstr .= "\n\t$obj=new mse.Text($layer,".$params[1].",'$content',true);";
             }
         }
         
-        if($type == "game") $this->jstr .= "$layer.addGame($obj);";
-        else $this->jstr .= "$layer.addObject($obj);";
+        if($type == "game") $this->jstr .= " $layer.addGame($obj);";
+        else $this->jstr .= " $layer.addObject($obj);";
     }
     function addLink($linknode, $obj, $index) {
         $src = $linknode;
@@ -684,7 +684,7 @@ class ProjectGenerator {
             if($linknode['link']) $link = "'".$linknode['link']."'";
             break;
         }
-        $this->jstr .= "$obj.addLink(new mse.Link('$src',$index,'$type',$link));";
+        $this->jstr .= "\n\t$obj.addLink(new mse.Link('$src',$index,'$type',$link));";
     }
     
     function getDoc() {
