@@ -93,7 +93,7 @@ var methods = {
 			// Unbind listeners
 			$(this).unbind('.mseInteraction');
 			$.removeData( $(this).get(0), 'mselisteners' );
-			if(MseConfig.iOS) {
+			if(MseConfig.mobile) {
 				$(this).get(0).removeEventListener('touchstart', analyse, false);
 				$(this).get(0).removeEventListener('touchend', analyse, false);
 				$(this).get(0).removeEventListener('touchmove', analyse, false);
@@ -115,7 +115,7 @@ var methods = {
 		
 		// Events corresponds
 		var evts;
-		if(MseConfig.iOS) evts = eventsMobile;
+		if(MseConfig.mobile) evts = eventsMobile;
 		else evts = eventsWeb;
 		
 		if( evts[type] != null ) {
@@ -130,7 +130,7 @@ var methods = {
 			
 			// Bind event to delegate function 'analyse'
 			// No need for spercial bind
-			if( !MseConfig.iOS || (MseConfig.iOS && type !== 'move' && type !== 'swipe' && type !== 'gestureSingle') ) 
+			if( !MseConfig.mobile || (MseConfig.mobile && type !== 'move' && type !== 'swipe' && type !== 'gestureSingle') ) 
 				$(this).bind(evts[type]+'.mseInteraction', analyse);
 			else {
 			// Special bind for iOS touch event which is not supported by jQuery
@@ -151,7 +151,7 @@ var methods = {
 	    if(!cb instanceof Callback) return;
 		// Events corresponds
 		var evts;
-		if(MseConfig.iOS) evts = eventsMobile;
+		if(MseConfig.mobile) evts = eventsMobile;
 		else evts = eventsWeb;
 		
 		var listeners = $.data( $(this).get(0), 'mselisteners' );
@@ -161,7 +161,7 @@ var methods = {
 		for(var type in evts)
 			listeners[type] = cb;
 		// Bind all events
-		if(MseConfig.iOS) {
+		if(MseConfig.mobile) {
 			$(this).bind('click dblclick taphold swipeleft swiperight.mseInteraction', analyse);
 			$(this).get(0).addEventListener('touchstart', analyse, false);
 			$(this).get(0).addEventListener('touchmove', analyse, false);
@@ -224,7 +224,7 @@ function analyse(e) {
 			_listeners['click'].invoke( event );
 		if( _listeners['doubleClick'] instanceof Callback ) {
 			// Detect the double click on mobile
-			if(MseConfig.iOS) {
+			if(MseConfig.mobile) {
 				// Already clicked
 				if( _clicked ) {
 					event.type = 'doubleClick';
@@ -347,7 +347,7 @@ function gestureStart(e) {
 	
 	if( _listeners['longPress'] instanceof Callback )
 		_pressTimer = setTimeout( pressTimeout, pressTime );
-	if( MseConfig.iOS && _listeners['click'] instanceof Callback ) {
+	if( MseConfig.mobile && _listeners['click'] instanceof Callback ) {
 		_clickDown = true;
 		setTimeout( clickTimeout, clickTime );
 	}
@@ -386,7 +386,7 @@ function gestureEnd(e) {
 		
 	// Swipe left right
 	if( _listeners['swipe'] instanceof Callback ) {
-		if(!MseConfig.iOS) {
+		if(!MseConfig.mobile) {
 			// Init
 			var maxY = _currentEvt.listY[0];
 			var minY = _currentEvt.listY[0];
@@ -484,10 +484,11 @@ function _addPoint(e) {
 		_currentEvt.listY.push(offY);
 	}
 	else {
-		// iOS interaction with touch
+        // iOS interaction with touch
 		var touch = e.targetTouches[0]; // Get the information for finger #1
 		_currentEvt.listX.push(touch.pageX - $(e.target).position().left);
 		_currentEvt.listY.push(touch.pageY - $(e.target).position().top);
+        
 	}
 	_currentEvt.offsetX = _currentEvt.listX[_currentEvt.listX.length-1];
 	_currentEvt.offsetY = _currentEvt.listY[_currentEvt.listY.length-1];
@@ -578,9 +579,11 @@ __KEY_SPACE = 32;
 	MseConfigrationSingleton = function() {
 		// Class singleton for all general configration
 		this.os = BrowserDetect.OS;
+        this.mobile = (this.os.indexOf("Mobile") != -1);
 		this.iPhone = (this.os == "Mobile/iOS/iPhone");
 		this.iPad = (this.os == "Mobile/iOS/iPad");
 		this.iOS = (this.os.indexOf("Mobile/iOS") != -1);
+        this.android = (this.os == "Mobile/Android");
 		this.browser = BrowserDetect.browser; // Chrome/Safari/Firefox/Opera/Explorer
 		//this.version = BrowserDetect.version;
 		
