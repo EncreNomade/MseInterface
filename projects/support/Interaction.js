@@ -605,7 +605,7 @@ __KEY_SPACE = 32;
 
 		this.update();
 		
-		if(this.iOS) $(window).bind('orientationchange', 
+		if(this.mobile) $(window).bind('orientationchange', 
 						function(e){
 							setTimeout(function(){
 								window.scrollTo(0, 1);
