@@ -215,11 +215,6 @@ var FindSimon = function() {
         [[0],[180],[],[90,-90]]
     ];
     
-    // Init NPCs
-    this.npc = new Array();
-    for(var i = 0; i < 4; i++) {
-        this.npc[i] = new NPC(mechants[i], courses[i], dirs[i]);
-    }
     // Init Simon
     this.simon = new mse.Sprite(null, {}, 'perso_parc', 40,37, 0,0,280,37);
     this.simonrun = new mse.FrameAnimation(this.simon, [0,1,2,3,4,5], 0, 7);
@@ -237,6 +232,11 @@ var FindSimon = function() {
     }
     
     this.init = function() {
+        // Init NPCs
+        this.npc = new Array();
+        for(var i = 0; i < 4; i++) {
+            this.npc[i] = new NPC(mechants[i], courses[i], dirs[i]);
+        }
         this.npc[3].v = 3;
         
         this.simondir = 0;

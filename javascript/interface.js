@@ -76,7 +76,7 @@ function init() {
 	    
 	    // Modify a exist link
 	    if(curr.selectNode.get(0).nodeName.toLowerCase() == "span") {
-                var linkType = false, target = false;
+            var linkType = false, target = false;
 	        switch(type) {
 	        case "audio":
 	            var link = $('#audiolinkInput').attr('link');
@@ -97,7 +97,7 @@ function init() {
 	            }
 	            break;
 	        }
-                if(linkType) CommandMgr.executeCmd(new ModifyLinkCmd(linkType, link));
+            if(linkType) CommandMgr.executeCmd(new ModifyLinkCmd(linkType, link));
 	    }
 	    // Add a link
 	    else {
@@ -119,7 +119,7 @@ function init() {
 	                linkedStr = '<span class="fblink" link="'+link+'">'+selStr+'</span>';break;
 	        }
 	        if(linkedStr) 
-                    CommandMgr.executeCmd(new AddTextLinkCmd(nodeHtml, selStr, linkedStr));
+                CommandMgr.executeCmd(new AddTextLinkCmd(nodeHtml, selStr, linkedStr));
 	    }
 	    hideLinkSetter();
 	});
