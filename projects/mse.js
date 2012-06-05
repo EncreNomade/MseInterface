@@ -846,7 +846,7 @@ mse.BaseContainer = function(root, param, orientation) {
 	this.count = 0;
 	this.firstShow = false;
 	
-	if(MseConfig.iPhone) {
+	if(MseConfig.iPhone||MseConfig.android) {
 		// Initialization for orientation
 		this.orientation = MseConfig.orientation;
 		this.normal = true;
@@ -862,7 +862,7 @@ extend(mse.BaseContainer, mse.UIObject);
 $.extend(mse.BaseContainer.prototype, {
     // Orientation management
     setOrientation: function(orien) {
-    	if(!MseConfig.iPhone || (orien != 'landscape' && orien != 'portrait')) return;
+    	if(!(MseConfig.iPhone||MseConfig.android) || (orien != 'landscape' && orien != 'portrait')) return;
     	
     	this.orientation = orien;
     },
@@ -927,7 +927,7 @@ $.extend(mse.BaseContainer.prototype, {
     			this._layers[i].evtDeleg.eventNotif('show');
     	}
     	
-    	if(MseConfig.iPhone) {
+    	if(MseConfig.iPhone||MseConfig.android) {
     		if(this.normal && MseConfig.orientation!=this.orientation)
     			this.orientChange(MseConfig.orientation);
     		else if(!this.normal && MseConfig.orientation==this.orientation)
@@ -1852,6 +1852,10 @@ mse.Game = function(params) {
         this.setPos(0, 0);
         this.setSize(480, 270);
     }
+    else if(MseConfig.android) {
+        this.setPos(0, 0);
+        this.setSize(480, 270);
+    }
     else {
         this.offx = 0;
         this.offy = 0;
@@ -1949,17 +1953,17 @@ mse.GameShower = function() {
 mse.GameShower.prototype = {
 	contructor : mse.GameShower,
 	isFullScreen : function() {
-	     if(MseConfig.iPhone && this.state == "START" && this.currGame && this.currGame.type == "INDEP")
+	     if((MseConfig.iPhone||MseConfig.android) && this.state == "START" && this.currGame && this.currGame.type == "INDEP")
 	         return true;
 	     else return false;
 	},
 	relocate : function() {
 	    if(this.state == "DESACTIVE") return;
 	    if(isNaN(this.currGame.canvasox))
-	        this.left = MseConfig.iPhone ? -1.5 : Math.round(MseConfig.pageWidth-this.width)/2;
+	        this.left = (MseConfig.iPhone||MseConfig.android) ? -1.5 : Math.round(MseConfig.pageWidth-this.width)/2;
 	    else this.left = mse.root.jqObj.offset().left - (mse.root.viewport?mse.root.viewport.x:0) + this.currGame.canvasox;
 	    if(isNaN(this.currGame.canvasoy))
-	        this.top = MseConfig.iPhone ? -1.5 : Math.round(MseConfig.pageHeight-this.height)/2;
+	        this.top = (MseConfig.iPhone||MseConfig.android) ? -1.5 : Math.round(MseConfig.pageHeight-this.height)/2;
 	    else this.top = mse.root.jqObj.offset().top - (mse.root.viewport?mse.root.viewport.y:0) + this.currGame.canvasoy;
 	    this.jqObj.css({
 	        'left': this.left,
@@ -2025,7 +2029,7 @@ mse.GameShower.prototype = {
 	    if(this.state == "LOSE") this.losetext.logic();
 	    if(this.state != "START" && this.state != "LOAD") return false;
 	    // Mobile orientation fault
-	    else if(MseConfig.iPhone && MseConfig.orientation != "landscape") return true;
+	    else if((MseConfig.iPhone||MseConfig.android) && MseConfig.orientation != "landscape") return true;
 	    else this.currGame.logic(delta);
 	    return true;
 	},
@@ -2036,7 +2040,7 @@ mse.GameShower.prototype = {
 	        this.ctx.fillRect(0, 0, this.width, this.height);
 	    }
 	    
-	    if(this.currGame.type == "INDEP" && MseConfig.iPhone && MseConfig.orientation != "landscape") {
+	    if(this.currGame.type == "INDEP" && (MseConfig.android||MseConfig.iPhone) && MseConfig.orientation != "landscape") {
 	        // Draw orientation change notification page
 	        this.ctx.drawImage(mse.src.getSrc('imgNotif'), (this.width-50)/2, (this.height-80)/2, 50, 80);
 	    }
@@ -2045,7 +2049,7 @@ mse.GameShower.prototype = {
 	            this.firstShow = true;
 	            if(this.currGame.type == "INDEP") {
 	                this.evtDeleg.eventNotif("firstShow");
-	                if(MseConfig.iPhone){
+	                if(MseConfig.iPhone || MseConfig.android){
 	                    this.currGame.mobileLazyInit();
 	                }
 	            }
@@ -2486,6 +2490,7 @@ $.extend(mse.ImageCard.prototype, {
         ctx.shadowColor ="black";
         ctx.shadowBlur = 7;
         ctx.drawImage(mse.src.getSrc(this.img), this.ix, this.iy, this.iw, this.ih);
+        ctx.shadowBlur = 0;
         ctx.font = "italic 12px Verdana";
         ctx.textBaseline = "top";
         ctx.textAlign = "center";
