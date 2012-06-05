@@ -237,7 +237,6 @@ var FindSimon = function() {
 	    for(var i = 0; i < 4; i++) {
 	        this.npc[i] = new NPC(mechants[i], courses[i], dirs[i]);
 	    }
-	
         this.npc[3].v = 3;
         
         this.simondir = 0;

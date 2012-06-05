@@ -76,29 +76,28 @@ function init() {
 	    
 	    // Modify a exist link
 	    if(curr.selectNode.get(0).nodeName.toLowerCase() == "span") {
+            var linkType = false, target = false;
 	        switch(type) {
 	        case "audio":
 	            var link = $('#audiolinkInput').attr('link');
 	            if(link && srcMgr.isExist(link)) {
-	                curr.selectNode.attr('class', 'audiolink');
-	                curr.selectNode.attr('link', link);
+                        linkType = 'audiolink';
 	            }
 	            break;
 	        case "wiki":
 	            var link = $('#wikilinkInput').attr('link');
 	            if(link && srcMgr.isExist(link)) {
-	                curr.selectNode.attr('class', 'wikilink');
-	                curr.selectNode.attr('link', link);
+                        linkType = 'wikilink';
 	            }
 	            break;
 	        case "fb":
 	            var link = $('#fblinkInput').val();
 	            if(link && link.toLowerCase().match(/[\w\W]*www\.facebook\.com\/[\w\W]*/)) {
-	                curr.selectNode.attr('class', 'fblink');
-	                curr.selectNode.attr('link', link);
+                        linkType = 'wikilink';
 	            }
 	            break;
 	        }
+            if(linkType) CommandMgr.executeCmd(new ModifyLinkCmd(linkType, link));
 	    }
 	    // Add a link
 	    else {
@@ -120,7 +119,7 @@ function init() {
 	                linkedStr = '<span class="fblink" link="'+link+'">'+selStr+'</span>';break;
 	        }
 	        if(linkedStr) 
-                    CommandMgr.executeCmd(new AddTextLinkCmd(nodeHtml, selStr, linkedStr));
+                CommandMgr.executeCmd(new AddTextLinkCmd(nodeHtml, selStr, linkedStr));
 	    }
 	    hideLinkSetter();
 	});
