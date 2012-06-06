@@ -588,7 +588,7 @@ __KEY_SPACE = 32;
 		//this.version = BrowserDetect.version;
 		
 		this.update = function() {
-			if(this.os == "Mobile/iOS/iPhone") {
+			if(this.iPhone || this.android) {
 				this.orientation = window.innerWidth > 320 ? 'landscape' : 'portrait';
 				this.pageWidth = window.innerWidth > 320 ? 480 : 320;
 				this.pageHeight = window.innerWidth > 320 ? 268 : 416;
@@ -611,7 +611,7 @@ __KEY_SPACE = 32;
 								window.scrollTo(0, 1);
 								MseConfig.update();
 								if(mse.root) mse.root.setCenteredViewport();
-								if(MseConfig.iOS)
+								if(MseConfig.mobile)
 								    mse.root.gamewindow.relocate();
 							}, 50);
 						});

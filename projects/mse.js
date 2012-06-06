@@ -586,7 +586,7 @@ mse.UIObject.prototype = {
 		}
 		else var ox = this.getX(), oy = this.getY(), w = this.getWidth(), h = this.getHeight();
 		
-		if(x>ox-0.1*w && x<ox+1.1*w && y>oy-0.1*h && y<oy+1.1*h) return true;
+		if(x>ox-0.1*w && x<ox+1.2*w && y>oy-0.1*h && y<oy+1.2*h) return true;
 		else return false;
 	},
 	
@@ -801,7 +801,7 @@ mse.Root = function(id, width, height, orientation) {
 	this.interval = 40;
 	this.ctx = this.jqObj.get(0).getContext("2d");
 	
-	if(MseConfig.iOS) this.setCenteredViewport();
+	if(MseConfig.mobile) this.setCenteredViewport();
 	
 	this.evtDistributor = new mse.EventDistributor(this, this.jqObj);
 	
@@ -1785,6 +1785,7 @@ $.extend(mse.Sprite.prototype, {
         this.setFrame(this.curr);
     },
     setFrame: function(fr) {
+        if(!this.cache) return;
         this.curr = fr;
         var img = mse.src.getSrc(this.img);
         var ctx = this.cache.getContext("2d");
@@ -1947,7 +1948,7 @@ mse.GameShower = function() {
 	this.firstShow = false;
 	
 	// used by lose()
-	var cbrestart = new mse.Callback(this.restart, this);
+	this.cbrestart = new mse.Callback(this.restart, this);
 	
 };
 mse.GameShower.prototype = {
@@ -1986,10 +1987,18 @@ mse.GameShower.prototype = {
 	    this.width = this.currGame.width;
 	    this.height = this.currGame.height;
 	    this.relocate();
-	    this.loseimg.setSize(this.width-5, this.height-5);
-	    this.losetext.setPos(this.width/2, this.height/2);
-	    this.restartBn.setPos(this.width-115, this.height-50);
-	    this.passBn.setPos(10, this.height-50);
+	    if(MseConfig.iPhone || MseConfig.android) {
+	        this.loseimg.setSize(480, 270);
+	        this.losetext.setPos(480/2, 270/2);
+	        this.restartBn.setPos(480-115, 270-50);
+	        this.passBn.setPos(10, 270-50);
+	    }
+	    else {
+            this.loseimg.setSize(this.width-5, this.height-5);
+            this.losetext.setPos(this.width/2, this.height/2);
+            this.restartBn.setPos(this.width-115, this.height-50);
+            this.passBn.setPos(10, this.height-50);
+	    }
 	    this.jqObj.show();
 	},
 	start : function() {
@@ -2011,14 +2020,14 @@ mse.GameShower.prototype = {
 	        this.currGame.init();
 	    }
 	    else return;
-	    this.evtDeleg.removeListener('click', cbrestart);
+	    this.evtDeleg.removeListener('click', this.cbrestart);
 	},
 	lose : function() {
 	    this.state = "LOSE";
 	    //mse.fadein(this.loseimg, 5);
 	    this.evtDeleg.removeListener('click');
 	    this.losetext.evtDeleg.eventNotif('show');
-	    this.evtDeleg.addListener('click', cbrestart);
+	    this.evtDeleg.addListener('click', this.cbrestart);
 	},
 	end : function() {
 	    this.jqObj.hide(1000);
@@ -2256,7 +2265,7 @@ mse.Slider = function(target, param, orientation, offset, parent) {
 	this.cbScroll = new mse.Callback(this.scroll, this);
 	this.cbGest = new mse.Callback(this.gestUpdate, this);
 	this.getContainer().evtDeleg.addListener('gestureUpdate', this.cbGest, false, this.tar);
-	if(!MseConfig.iOS)
+	if(!MseConfig.mobile)
 		this.getContainer().evtDeleg.addListener('mousewheel', this.cbScroll, false, this.tar);
 };
 extend(mse.Slider, mse.UIObject);
@@ -2413,6 +2422,9 @@ $.extend(mse.Card.prototype, {
     delLayer: mse.BaseContainer.prototype.delLayer,
     getLayer: mse.BaseContainer.prototype.getLayer,
     sortLayer: mse.BaseContainer.prototype.sortLayer,
+    getContainer: function(){
+        return this;
+    },
     
     draw: function(ctx){
         if(!this.ui)
@@ -2436,11 +2448,6 @@ $.extend(mse.Card.prototype, {
         var xp = dx*cosa + dy*sina;
         var yp = -dx*sina + dy*cosa;
         return [ox+xp, oy+yp];
-    },
-    inObj: function(x, y) {
-        var pt = this.ptRotate(x, y);
-        if(mse.UIObject.prototype.inObj.call(this, pt[0], pt[1])) return true;
-        else return false;
     }
 });
 
@@ -2452,6 +2459,8 @@ mse.ImageCard = function(parent, param, ui, img, legend) {
         this.legend = legend;
     }
     mse.src.waitSrc(this.img, new mse.Callback(this.init, this));
+    
+    this.test = new mse.Button(this, {pos:[15,15],size:[20,20],fillStyle:'#FFF'}, 'Lien', 'wikiBar', "http://pandamicro.co.cc", 'url');
 };
 extend(mse.ImageCard, mse.Card);
 $.extend(mse.ImageCard.prototype, {
@@ -2486,6 +2495,8 @@ $.extend(mse.ImageCard.prototype, {
         // Default UI
         if(!this.ui) this.drawDefaultUI(ctx, 0, 0);
         if(!this.img) return;
+        
+        this.test.draw(ctx, 15, 15);
         
         ctx.shadowColor ="black";
         ctx.shadowBlur = 7;
@@ -2569,9 +2580,6 @@ mse.TextCard = function(parent, param, ui) {
 };
 extend(mse.TextCard, mse.Card);
 $.extend(mse.TextCard.prototype, {
-    getContainer: function() {
-        return this;
-    },
     addSection: function(title, text) {
         this.content.addSection('text', title, text);
     },
@@ -2656,9 +2664,13 @@ $.extend(mse.WikiLayer.prototype, {
     },
     dragStart: function(e){
         for(var i = this.objList.length-1; i >= 0; i--) {
-            if(this.objList[i].inObj(e.offsetX, e.offsetY)) {
-                if( !this.objList[i].evtDeleg.eventNotif('click', e) )
-                    this.currCard = this.objList[i];
+            var card = this.objList[i];
+            var pt = card.ptRotate(e.offsetX, e.offsetY);
+            if(card.inObj(pt[0], pt[1])) {
+                e.offsetX = pt[0];
+                e.offsetY = pt[1];
+                if( !card.evtDeleg.eventNotif('click', e) )
+                    this.currCard = card;
                 return;
             }
         }
@@ -2676,139 +2688,6 @@ $.extend(mse.WikiLayer.prototype, {
 });
 
 
-
-// Page Wiki, Title + Galery Photo + Wiki Content
-mse.PageWiki = function(parent, z, param, title, photos, content) {
-	// Super constructor
-	mse.Layer.call(this, parent, z, param);
-	parent.addLayer('content', this);
-	// Define the size of title
-	var ctx = mse.root.ctx;
-	ctx.font = '22px '+cfs.font;
-	var w = ctx.measureText(title).width * 1.2;
-	// Title wiki
-	// Problem of offset X of mask and title
-	this.title = new mse.Button(this, {pos:[(this.width-w)/2,15],size:[w,35],font:'22px '+cfs.font,fillStyle:'#FFF'}, title, 'wikiBar');
-	// Quit button
-	var text = "Revenir à l'histoire";
-	ctx.font = 'bold 14px Arial Narrow';
-	w = ctx.measureText(text).width * 1.2;
-	this.quit = new mse.Button(this, {pos:[this.width-w-30,this.height-30],size:[w,25],font:'bold 14px Arial Narrow',fillStyle:'#FFF'}, text, 'wikiBar');
-	// Photo list
-	this.photos = photos;
-	this.phOff = this.width/2; // Photos offset
-	this.espace = this.width/10;
-	// Mask for title and photos
-	this.mask = new mse.Mask(this, {
-		pos:[0,0],
-		size:[this.width,185],
-		fillStyle:'#434343'
-		});
-	
-	// Define the content of wiki
-	param.pos = [this.offx+30,this.offy+210];
-	param.size = [this.width-60,this.height-165];
-	this.content = new mse.ArticleLayer(parent, z, param, content);
-	this.content.setSlider();
-	
-	this.v = 0;
-	
-	this.setQuitTarget = function(tar) {
-	    this.getContainer().evtDeleg.addListener(
-	    	'click', 
-	    	new mse.Callback(mse.root.transition, mse.root, tar), 
-	    	true,
-	    	this.quit);
-	};
-	
-	this.addPhoto = function(img) {
-		this.photos.push(img);
-	};
-	
-	this.logic = function(delta) {
-		if(this.v != 0 && this.photos != null) {
-			// Movement of photos
-			this.phOff += this.v;
-			// Adjustment
-			// The photos width
-			var phWidth = -this.espace*3, src;
-			for(var i in this.photos) {
-				src = mse.src.getSrc(this.photos[i]);
-				phWidth += 100*src.width/src.height+this.espace;
-			}
-			if(this.phOff > this.width/2) this.phOff = this.width/2;
-			if(this.phOff+phWidth < this.width/2) this.phOff = this.width/2-phWidth;
-		}
-
-		this.content.logic(delta);
-	};
-	
-	this.draw = function(ctx) {	
-		// Content
-		this.content.draw(ctx);
-		
-		this.mask.draw(ctx);		
-		this.title.draw(ctx);
-		this.quit.draw(ctx);
-		
-		// Galery photos
-		ctx.save();
-		ctx.globalAlpha = 1;
-		ctx.strokeStyle = '#FFF';
-		ctx.fillStyle = '#727272';
-		ctx.translate(this.getX(), this.getY()+65);
-		ctx.fillRect(0,1,this.width,118);
-		ctx.beginPath();
-		ctx.moveTo(0,0);
-		ctx.lineTo(this.width,0);
-		ctx.moveTo(0,120);
-		ctx.lineTo(this.width,120);
-		ctx.stroke();
-		
-		// No Photos
-		if(this.photos == null) {
-		    ctx.restore();
-		    return;
-		}
-		
-		if(this.photos.length > 0) var x = this.phOff-50;
-		var w, src;
-		for(var i in this.photos) {
-			src = mse.src.getSrc(this.photos[i]);
-			w = 100*src.width/src.height;
-			if(x < 0) {
-				if(x+w > 0) {// A part of photo to draw
-					var sx = -x*src.width/w;
-					ctx.drawImage(src, sx,0, src.width-sx,src.height, 0, 10, w+x, 100);
-				}
-			}
-			else if(x+w > this.width) {
-				if(x < this.width) {// A part of photo to draw
-					var sw = (this.width-x)*src.width/w;
-					ctx.drawImage(src, 0,0, sw,src.height, x, 10, this.width-x, 100);
-				}
-			}
-			else ctx.drawImage(src, x, 10, w, 100);
-			x += w + this.espace;
-		}
-		ctx.restore();
-	};
-	
-	this.onMove = function(e) {
-		var x = e.offsetX - this.getX();
-		var y = e.offsetY - this.getY();
-		// Out the region of galery photo
-		if(y <= 65 || y >= 185) {this.v = 0; return;}
-		// Distance from the center
-		var dis = x - this.width/2;
-		if(Math.abs(dis) > 30)
-			this.v = dis/20;
-		else this.v = 0;
-	};
-	this.getContainer().evtDeleg.addListener('move', new mse.Callback(this.onMove, this), true);
-};
-mse.PageWiki.prototype = new mse.Layer();
-mse.PageWiki.prototype.constructor = mse.PageWiki;
 
 
 // Video element

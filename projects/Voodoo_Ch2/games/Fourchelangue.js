@@ -226,7 +226,7 @@ var Fourchelangue = function() {
         this.checkSuccess();
     };
     this.clicked = function(e) {
-        if(MseConfig.iPhone) {
+        if(MseConfig.mobile) {
             var x = e.offsetX/0.8;
             var y = e.offsetY/0.62;
         }
