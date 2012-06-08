@@ -2788,16 +2788,13 @@ mse.ImageShower = function(target){
 		'height': '100%'
 	});
     
-    var closeButton = $(mse.src.getSrc('closeBn')).prop('id', 'closeBn').css({
+    this.closeButton = $(mse.src.getSrc('closeBn')).prop('id', 'closeBn').css({
         'position': 'absolute',
         'top'     : '-20px',
         'right'   : '-20px'
     });
 
-    $('<div></div>').css({'position': 'absolute','z-index': '13',})
-                    .append(this.img)
-                    .append(closeButton)
-                    .appendTo(this.container);
+
    
     this.container.bind('click',{showerObj: this},function(e){
         // close the image on click in div
@@ -2811,15 +2808,12 @@ mse.ImageShower = function(target){
         });
         $(this).fadeOut(500, function(){
             $(this).detach();
+            $(this).children('div').remove();
             var parent = e.data.showerObj.target.parent;
             if(parent.play)
                 parent.play();
         });
-    });
-    closeButton.click(function(){
-        $('#imgShower').click();
-    });
-    this.img.click(function(e){e.preventDefault();e.stopPropagation();}); // no close on click in image
+    }); // no close on click in image
 };
 mse.ImageShower.prototype = {
     getOriginalPos: function(){
@@ -2845,13 +2839,20 @@ mse.ImageShower.prototype = {
     },
     show: function(){
         var pos = this.getOriginalPos();
-        this.container.children('div').css({ // place at original position
+        $('<div></div>').css({
+            'position': 'absolute',
+            'z-index': '13',
             'width'  : pos.w+'px',
             'height' : pos.h+'px',
             'top'    : pos.y+'px',
             'left'   : pos.x+'px',
             'opacity': '0'
-        });
+        }).append(this.img)
+          .append(this.closeButton)
+          .appendTo(this.container);
+
+        this.closeButton.click(function(){$('#imgShower').click();});
+        this.img.click(function(e){e.preventDefault();e.stopPropagation();});
         
         var ratio = pos.w/pos.h;
         var finalH = 0.8 * MseConfig.pageHeight;
