@@ -213,6 +213,7 @@ mse.init = function(configs) {
 	mse.src.addSource('playBn', './UI/button/play.png', 'img', true);
 	mse.src.addSource('pauseBn', './UI/button/pause.png', 'img', true);
 	mse.src.addSource('zoomIcon', './UI/button/zoom.png', 'img', true);
+	mse.src.addSource('closeBn', './UI/button/close.png', 'img', true);
 };
 
 
@@ -2765,23 +2766,15 @@ mse.ImageShower = function(target){
         console.error('The target obj is not an instance of mse.Image or mse.ImageCard');
         return;
     }
-    
     this.target = target;
     
-    this.img = $(mse.src.getSrc(target.img));
-	this.img.css({
-		'position': 'absolute',
-		'z-index': '13',
-	});
-	
 	$('body').css({
-		position: 'absolute',
-		width: '100%',
-		height: '100%',
+		'position': 'absolute',
+		'width'   : '100%',
+		'height'  : '100%'
 	});
-	
-	this.container = $('<div id="imgShower"></div>');
-	this.container.css({
+    
+    this.container = $('<div id="imgShower"></div>').css({
 		'position'  : 'absolute',
 		'z-index'   : '12',
 		'width'     : '100%',
@@ -2789,14 +2782,31 @@ mse.ImageShower = function(target){
 		'background': 'rgba(0, 0, 0, 0.6)',
         'text-align': 'center'
 	});
-    this.container.append(this.img);
+    
+    this.img = $(mse.src.getSrc(target.img)).css({
+		'width' : '100%',
+		'height': '100%'
+	});
+    
+    var closeButton = $(mse.src.getSrc('closeBn')).prop('id', 'closeBn').css({
+        'position': 'absolute',
+        'top'     : '-20px',
+        'right'   : '-20px'
+    });
+
+    $('<div></div>').css({'position': 'absolute','z-index': '13',})
+                    .append(this.img)
+                    .append(closeButton)
+                    .appendTo(this.container);
+   
     this.container.bind('click',{showerObj: this},function(e){
-        // close the image in click
+        // close the image on click in div
         var pos = e.data.showerObj.getOriginalPos();
-        $(this).children('img').animate({
-            'height': pos.h+'px',
-            'top': pos.y+'px',
-            'left': pos.x+'px',
+        $(this).children('div').animate({
+            'height' : pos.h+'px',
+            'width'  : pos.w+'px',
+            'top'    : pos.y+'px',
+            'left'   : pos.x+'px',
             'opacity': '0'
         });
         $(this).fadeOut(500, function(){
@@ -2806,6 +2816,10 @@ mse.ImageShower = function(target){
                 parent.play();
         });
     });
+    closeButton.click(function(){
+        $('#imgShower').click();
+    });
+    this.img.click(function(e){e.preventDefault();e.stopPropagation();}); // no close on click in image
 };
 mse.ImageShower.prototype = {
     getOriginalPos: function(){
@@ -2831,11 +2845,11 @@ mse.ImageShower.prototype = {
     },
     show: function(){
         var pos = this.getOriginalPos();
-        this.img.css({ // place at original position
-            // 'width': pos.w+'px',
-            'height': pos.h+'px',
-            'top': pos.y+'px',
-            'left': pos.x+'px',
+        this.container.children('div').css({ // place at original position
+            'width'  : pos.w+'px',
+            'height' : pos.h+'px',
+            'top'    : pos.y+'px',
+            'left'   : pos.x+'px',
             'opacity': '0'
         });
         
@@ -2843,12 +2857,13 @@ mse.ImageShower.prototype = {
         var finalH = 0.8 * MseConfig.pageHeight;
         var finalW = finalH * ratio;
         var imgX = MseConfig.pageWidth/2 - finalW/2;
-        this.img.animate({ // animate to set image size at 80% of window size
-            'height': finalH+'px',
-            'top': '0px',
+        this.container.children('div').animate({ // animate image size to 80% of window size
+            'height'    : finalH+'px',
+            'width'     : finalW+'px',
+            'top'       : '0px',
             'margin-top': '10%',
-            'left': imgX + 'px',
-            'opacity': '1'
+            'left'      : imgX + 'px',
+            'opacity'   : '1'
         });
         this.container.fadeIn(500);
         
