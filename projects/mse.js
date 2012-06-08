@@ -12,6 +12,32 @@ var __currContextOwner__;
 
 (function( window, $ ) {
 
+(function() {
+    var lastTime = 0;
+    var vendors = ['ms', 'moz', 'webkit', 'o'];
+    for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+        window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+        window.cancelAnimationFrame = 
+          window[vendors[x]+'CancelAnimationFrame'] || window[vendors[x]+'CancelRequestAnimationFrame'];
+    }
+ 
+    if (!window.requestAnimationFrame)
+        window.requestAnimationFrame = function(callback, element) {
+            var currTime = new Date().getTime();
+            // 33 means 33ms, which will do the loop in 30fps
+            var timeToCall = Math.max(0, 33 - (currTime - lastTime));
+            var id = window.setTimeout(function() { callback(currTime + timeToCall); }, 
+              timeToCall);
+            lastTime = currTime + timeToCall;
+            return id;
+        };
+ 
+    if (!window.cancelAnimationFrame)
+        window.cancelAnimationFrame = function(id) {
+            clearTimeout(id);
+        };
+}());
+
 var mse = function() {};
 
 mse.configs = {
@@ -2886,7 +2912,7 @@ mse.Timeline = function(src, interval, timeprog, length) {
 	this.src = src;
 	if(interval > 0) {
 		this.tsFixed = true;
-		this.interval = interval;
+		this.interval = 33;
 		this.length = length != null ? length : 0;
 	}
 	else {
@@ -2896,9 +2922,14 @@ mse.Timeline = function(src, interval, timeprog, length) {
 		this.length = timeprog.length;
 	}
 	this.src.initTimeline(this);
-	};
+	// For reduce the fps to 30
+	this.switch = false;
+};
 mse.Timeline.prototype = {
 	constructor : mse.Timeline ,
+	frameFn : function() {
+	    mse.currTimeline.run();
+	},
 	start : function() {
 		// Parameters
 		this.currTimestamp = 0;
@@ -2912,14 +2943,14 @@ mse.Timeline.prototype = {
 		// Start timer
 		mse.currTimeline = this;
 		if(this.tsFixed)
-			this.timer = setInterval("mse.currTimeline.run()", this.interval);
-		else this.timer = setTimeout("mse.currTimeline.run()", this.timeprog[this.currIndex]);
+			this.timer = requestAnimationFrame(this.frameFn);
+		else this.timer = setTimeout(this.frameFn, this.timeprog[this.currIndex]);
 	},
 	run : function() {
 		if(this.end) {
 			if(this.tsFixed)
 				clearInterval(this.timer);
-			else clearTimeout(this.timer);
+			else cancelAnimationFrame(this.timer);
 			return;
 		}
 		if(this.inPause)
@@ -2931,10 +2962,14 @@ mse.Timeline.prototype = {
 		if(this.length == 0 || this.currIndex < length) {	
 			// Interval no fixed
 			if(!this.tsFixed) {
-				this.timer = setTimeout("mse.currTimeline.run()", this.timeprog[this.currIndex]);
+				this.timer = setTimeout(this.frameFn, this.timeprog[this.currIndex]);
 				this.src.runTimeline(this.timeprog[this.currIndex-1]);
 			}
-			else this.src.runTimeline(this.interval);
+			else {
+			    this.timer = requestAnimationFrame(this.frameFn);
+			    if(this.switch) this.src.runTimeline(this.interval);
+			    this.switch = !this.switch;
+			}
 		}
 		// END
 		else {
@@ -2946,21 +2981,22 @@ mse.Timeline.prototype = {
 		this.inPause = !this.inPause;
 		if(!this.inPause) {
 			if(mse.currTimeline != this) mse.currTimeline = this;
-			this.timer = setTimeout("mse.currTimeline.run()", 1200);
+			if(this.tsFixed) this.timer = requestAnimationFrame(this.frameFn);
+			else this.timer = setTimeout(this.frameFn, 1200);
 		}
 	},
 	play : function() {
 		if(this.end) return;
 		this.inPause = false;
 		if(mse.currTimeline != this) mse.currTimeline = this;
-		this.timer = setTimeout("mse.currTimeline.run()", 1200);
+		if(this.tsFixed) this.timer = requestAnimationFrame(this.frameFn);
+		else this.timer = setTimeout(this.frameFn, 1200);
 	},
 	pause : function() {
 		if(this.end) return;
 		this.inPause = true;
 	}
 };
-
 
 
 // Frame Animation

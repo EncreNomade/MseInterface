@@ -706,7 +706,6 @@ $.extend(MoveObjCmd.prototype, {
         
 //        this.ex = this.obj.position().left;
 //        this.ey = this.obj.position().top;
-        
         this.state = 'SUCCESS';
     },
     undo: function(){
@@ -718,6 +717,8 @@ $.extend(MoveObjCmd.prototype, {
         this.state = 'CANCEL';
     }
 });
+
+
 
 var ResizeObjCmd = function(elem, curr){
     this.obj = elem;

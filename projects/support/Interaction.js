@@ -32,6 +32,133 @@ var Callback = function(func, caller) {
 
 (function( $ ){
 
+// Multi touch support
+var Path = function(p) {
+    this.pts = [];
+    this.add(p);
+}
+Path.prototype = {
+    constructor: Path,
+    add: function(p) {
+        if(isNaN(p.x) || isNaN(p.y)) return;
+        this.pts.push({'x':p.x, 'y':p.y});
+    },
+    origin: function() {
+        return this.pts[0];
+    },
+    last: function() {
+        return this.pts[this.pts.length-1];
+    },
+    toString: function() {
+    	return "[object Path]";
+    }
+}
+
+
+var GestureAnalyser = function(listeners){
+    this.blobs = {};
+    this.count = 0;
+    this.listeners = listeners;
+    
+    // Tags
+    this.tapwait = false;
+    this.tapid = 0;
+}
+GestureAnalyser.prototype = {
+    constructor: GestureAnalyser,
+    // Blob management
+    addBlob: function(e) {
+        for(var i in e.touches) {
+            this.blobs[i] = null;
+            this.blobs[i] = new Path(e.touches[i]);
+            this.count++;
+            this.analyseAdd(i);
+        }
+    },
+    updateBlob: function(e) {
+        for(var i in e.touches) {
+            if(!this.blobs[i]) continue;
+            this.blobs[i].add(e.touches[i]);
+            this.analyseUpdate(i);
+        }
+    },
+    removeBlob: function(e) {
+        for(var i in e.touches) {
+            this.analyseRemove(i);
+            this.count--;
+            delete this.blobs[i];
+        }
+    },
+    
+    // Analyse functions
+    analyseAdd: function(id) {
+        if(this.count == 1){
+			// One finger translate begin
+			
+			// Timeout for tap event
+			var analyser = this;
+			this.tapwait = true;
+			this.tapid = id;
+			setTimeout(function() {
+			    analyser.tapwait = false;
+			}, 500);
+		}
+		else if(this.count == 2){
+			// Two finger scale begin
+			
+		}
+    },
+    analyseUpdate: function(id) {
+        if(this.count == 1){
+    		// One finger translate
+    		var begin = this.blobs[id].origin();
+    		var end = this.blobs[id].last();
+    		var e = {'dx': end.x-begin.x, 'dy': end.y-begin.y, 'type':'translation'};
+    		if(this.listeners['translate'] instanceof Callback)
+    		    this.listeners['translate'].invoke( e );
+    	}
+    	else if(this.count == 2){
+    		// Two finger scale
+    		// Collect two finger info
+    		var begin = [];
+    		var end = [];
+    		for(var id in this.blobs) {
+    		    begin.push(this.blobs[id].origin());
+    		    end.push(this.blobs[id].last());
+    		}
+    		var disBegin = [begin[1].x - begin[0].x, begin[1].y - begin[0].y];
+    		var disEnd = [end[1].x - end[0].x, end[1].y - end[0].y];
+    		var lbegin = Math.sqrt(disBegin[0]*disBegin[0] + disBegin[1]*disBegin[1]);
+    		var lend = Math.sqrt(disEnd[0]*disEnd[0] + disEnd[1]*disEnd[1]);
+    		var e = {'scale': lend/lbegin, 'type':'scale'};
+    		if(this.listeners['scale'] instanceof Callback)
+    		    this.listeners['scale'].invoke( e );
+    	}
+    },
+    analyseRemove: function(id) {
+        if(this.count == 1){
+    		// One finger translate end or tapped
+    		if(this.tapwait && this.tapid == id) {
+    		    var touch = this.blobs[id].last();
+    		    var e = {'offsetX': touch.x, 'offsetY': touch.y, 'type':'click'};
+    		    if(this.listeners['click'] instanceof Callback)
+    		        this.listeners['click'].invoke( e );
+    		}
+    	}
+    	else if(this.count == 2){
+    		// Two finger scale end
+    		
+    	}
+    },
+    
+    // Math part
+    computeTranslation: function() {
+    }
+}
+
+
+// Variable private
+
 var _pressTimer;
 var dblClickTimeOut = 400;
 var pressTime = 1000;
@@ -42,12 +169,14 @@ var swipeWSeuil = 30;
 var _currentEvt;
 var _listeners;
 var _src;
+var _analyser;
 
 var _clicked = false;
 var _clickDown = false;
 
 var _prevLoc = [0,0];
 
+// Event list
 var eventsWeb = {
 
 	click			: 'click',
@@ -71,7 +200,10 @@ var eventsMobile = {
 	swipe			: 'touchstart touchmove touchend',
 	swipeleft		: 'swipeleft',
 	swiperight		: 'swiperight',
-	gestureSingle	: 'touchstart touchmove touchend'
+	gestureSingle	: 'touchstart touchmove touchend',
+	gestureMulti    : 'touchstart touchmove touchend',
+	translate       : 'touchstart touchmove touchend',
+	scale           : 'touchstart touchmove touchend'
 };
 
 var methods = {
@@ -80,6 +212,8 @@ var methods = {
 		if( !$.data($(this), 'mselisteners') ) {
 			var lis = {};
 			$.data( $(this).get(0), 'mselisteners', lis );
+			_analyser = new GestureAnalyser(lis);
+			$.data( $(this).get(0), 'mseAnalyser', _analyser );
 			if(src)
 				$.data($(this).get(0), 'mseSrc', src);
 		}
@@ -130,10 +264,10 @@ var methods = {
 			
 			// Bind event to delegate function 'analyse'
 			// No need for spercial bind
-			if( !MseConfig.mobile || (MseConfig.mobile && type !== 'move' && type !== 'swipe' && type !== 'gestureSingle') ) 
+			if( !MseConfig.mobile ) 
 				$(this).bind(evts[type]+'.mseInteraction', analyse);
 			else {
-			// Special bind for iOS touch event which is not supported by jQuery
+			// Special bind for mobile touch event which is not supported by jQuery
 				var arr = evts[type].split(' ');
 				for( var i=0; i < arr.length; i++ ) {
 					$(this).get(0).addEventListener(arr[i], analyse, false);
@@ -177,6 +311,12 @@ var methods = {
 			listeners['keyup'] = cb;
 			listeners['keypress'] = cb;
 		}
+	},
+	setMultiAnalyser : function(analyser) {
+	    if(analyser instanceof GestureAnalyser) {
+	        _analyser = null;
+	        _analyser = analyser;
+	    }
 	}
 
 };
@@ -209,6 +349,7 @@ function analyse(e) {
 	
 	// Get listener list
 	_listeners = $.data( $(this).get(0), 'mselisteners' );
+	_analyser = $.data( $(this).get(0), 'mseAnalyser' );
 	_src = $.data( $(this).get(0), 'mseSrc' );
 	_src = (!_src) ? $(this) : _src;
 	if(!_listeners) return;
@@ -221,7 +362,7 @@ function analyse(e) {
 	
 	case 'click' :
 		if( _listeners['click'] instanceof Callback )
-			_listeners['click'].invoke( event );
+			;//_listeners['click'].invoke( event );
 		if( _listeners['doubleClick'] instanceof Callback ) {
 			// Detect the double click on mobile
 			if(MseConfig.mobile) {
@@ -287,24 +428,46 @@ function analyse(e) {
 		break;
 		
 	case 'touchstart' :
-		gestureStart(e);
+		if( e.touches.length === 1 ) gestureStart(e);
+		// Multi touch predefined events
+		var evt = new MultiGestEvt(e, "multiGestAdd");
+		_analyser.addBlob(evt);
+		// Support multi touch custom events
+		if( _listeners['gestureMulti'] instanceof Callback ) {
+		    _listeners['gestureMulti'].invoke( evt );
+		}
 		break;
 	
 	case 'touchmove' :
-		if(_currentEvt != null)
+		if( e.touches.length === 1 ) {
 			gestureUpdate(e);
 	
-		if( e.touches.length === 1 && _listeners['move'] instanceof Callback ) {
-			event.type = 'move';
-			event.prev = _prevLoc;
-			_listeners['move'].invoke( event );
-			_prevLoc = [event.offsetX, event.offsetY];
+		    if( _listeners['move'] instanceof Callback ) {
+		    	event.type = 'move';
+		    	event.prev = _prevLoc;
+		    	_listeners['move'].invoke( event );
+		    	_prevLoc = [event.offsetX, event.offsetY];
+		    }
+		}
+		// Multi touch predefined events
+		var evt = new MultiGestEvt(e, "multiGestUpdate");
+		_analyser.updateBlob(evt);
+		// Support multi touch custom events
+		if( _listeners['gestureMulti'] instanceof Callback ) {
+		    _listeners['gestureMulti'].invoke( evt );
 		}
 		break;
 	
 	case 'touchend' : 
-		if( e.touches.length === 0 && _currentEvt != null )
+		if( e.touches.length === 0 )
 			gestureEnd(e);
+		// Multi touch predefined events
+		var evt = new MultiGestEvt(e, "multiGestRemove");
+		_analyser.removeBlob(evt);
+		// Support multi touch custom events
+		if( _listeners['gestureMulti'] instanceof Callback ) {
+		    _listeners['gestureMulti'].invoke( evt );
+		}
 		break;
 		
 
@@ -358,6 +521,7 @@ function gestureStart(e) {
 }
 
 function gestureUpdate(e) {
+    if(!_currentEvt) return;
 	_addPoint(e);
 	
 	if( _listeners['longPress'] instanceof Callback )
@@ -369,6 +533,7 @@ function gestureUpdate(e) {
 }
 
 function gestureEnd(e) {
+    if(!_currentEvt) return;
 	_currentEvt.offsetX = _currentEvt.listX[_currentEvt.listX.length-1];
 	_currentEvt.offsetY = _currentEvt.listY[_currentEvt.listY.length-1];
 	// Temporary tag correction modification, normally, it must be setted in mse.js( for supporting the correction with viewport in Gesture events )
@@ -377,7 +542,7 @@ function gestureEnd(e) {
 	// Click
 	if(_clickDown) {
 		_currentEvt.type = 'click';
-		_listeners['click'].invoke( _currentEvt );
+		//_listeners['click'].invoke( _currentEvt );
 		_clickDown = false;
 	}
 	// Long Press
@@ -497,7 +662,6 @@ function _addPoint(e) {
 }
 
 
-
 function MseGestEvt( e, forAnalyse ) {
 	this.target = e.target;
 	
@@ -561,6 +725,23 @@ function MseGestEvt( e, forAnalyse ) {
 }
 
 
+
+function MultiGestEvt( e, type ) {
+    this.target = e.target;
+    this.type = type;
+    // Get the information for every touch
+    this.touches = {};
+    var tarPos = $(e.target).position();
+    for(var i = 0; i < e.changedTouches.length; ++i) {
+        var touch = e.changedTouches[i];
+        if(!touch.identifier) continue;
+        var x = touch.pageX - tarPos.left;
+        var y = touch.pageY - tarPos.top;
+        this.touches[touch.identifier] = {'x':x, 'y':y, 'evt':type};
+    }
+}
+
+
 })( jQuery );
 
 
@@ -610,9 +791,11 @@ __KEY_SPACE = 32;
 							setTimeout(function(){
 								window.scrollTo(0, 1);
 								MseConfig.update();
-								if(mse.root) mse.root.setCenteredViewport();
-								if(MseConfig.mobile)
-								    mse.root.gamewindow.relocate();
+								if(mse.root) {
+								    mse.root.setCenteredViewport();
+								    if(MseConfig.mobile)
+								        mse.root.gamewindow.relocate();
+								}
 							}, 50);
 						});
 	}

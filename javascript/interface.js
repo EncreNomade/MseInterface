@@ -26,7 +26,8 @@ function init() {
 	window.scriptTool = initScriptTool();
 	
 	// Mouse event handler for the resize behavior
-	$('body').supportResize(); 
+	$('body').supportResize();
+	$('body').supportMove(); 
 	
 	$('#bottom_panel .add').click(function(){
 	    var bottom = $('#bottom_panel');
@@ -484,6 +485,7 @@ function insertElemDialog(e) {
 		dialog.close();
 	});
 };
+
 
 
 // Set link popup dialog
