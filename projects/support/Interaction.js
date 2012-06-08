@@ -362,7 +362,7 @@ function analyse(e) {
 	
 	case 'click' :
 		if( _listeners['click'] instanceof Callback )
-			;//_listeners['click'].invoke( event );
+			_listeners['click'].invoke( event );
 		if( _listeners['doubleClick'] instanceof Callback ) {
 			// Detect the double click on mobile
 			if(MseConfig.mobile) {
@@ -542,7 +542,7 @@ function gestureEnd(e) {
 	// Click
 	if(_clickDown) {
 		_currentEvt.type = 'click';
-		//_listeners['click'].invoke( _currentEvt );
+		_listeners['click'].invoke( _currentEvt );
 		_clickDown = false;
 	}
 	// Long Press
