@@ -1,0 +1,83 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+
+<script id="DC_baseScript">if(navigator.userAgent.indexOf('AppleWebKit/') == -1) document.write('<base href="' + location.protocol + '//' + location.host + location.pathname.replace(/\/[^\/]*$/, '/mobile/') + '"/>')</script>
+
+<meta charset="utf-8"/>
+<meta name="robots" content="noindex"/>
+<meta name="viewport" content="minimum-scale=1.0, maximum-scale=1, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+
+<title>Test</title>
+
+<script type="text/javascript" src="../javascript/support/jquery-latest.js"></script>
+<script type="text/javascript" src="../projects/support/BrowserDetect.js"></script>
+<script type="text/javascript" src="../projects/support/Interaction.js"></script>
+<script type="text/javascript" src="magictouch.js"></script>
+
+</head>
+
+<body>
+<h1 id="title" hidden>Test Interaction</h1>
+
+<div align="center">
+
+<p>Result of detection will show here: <input type="text" id="textid"></input></p>
+
+<p><canvas id="canvasElem" style='border:solid' width="480" height="480"></canvas></p>
+
+</div>
+
+<object id="tuio" type="application/x-tuio" style="width: 0px; height: 0px;">
+  Touch input plugin failed to load!
+</object>
+
+<script type="text/javascript">
+
+initMseConfig();
+
+var touches = {};
+var canvas = $('#canvasElem').get(0);
+var g2d = canvas.getContext('2d');
+
+function multiEvtHandler(e) {
+    for(var i in e.touches) {
+        var touch = e.touches[i];
+        touches[i] = touch;
+    }
+    
+    g2d.clearRect(0,0,480,480);
+    g2d.strokeStyle = "#000";
+    g2d.fillStyle = "#f00";
+    g2d.font = "12px Arial";
+    
+    for(var i in touches) {
+        var touch = touches[i];
+        
+        g2d.beginPath();
+        g2d.arc(touch.x, touch.y, 20, 0, Math.PI*2, false);
+        g2d.stroke();
+        g2d.fillText("#"+i+": "+touch.evt, touch.x-20, touch.y+30);
+    }
+}
+function clicked(e) {
+    $('#textid').val('Clicked: '+e.offsetX+','+e.offsetY);
+}
+function translate(e) {
+    $('#textid').val('Translate: '+e.dx+','+e.dy);
+}
+function scale(e) {
+    $('#textid').val('Scale: '+e.scale);
+}
+
+	$('#canvasElem').mseInteraction();
+	$('#canvasElem').mseInteraction('addListener', 'gestureMulti', new Callback(multiEvtHandler, window), true);
+	$('#canvasElem').mseInteraction('addListener', 'click', new Callback(clicked, window));
+	$('#canvasElem').mseInteraction('addListener', 'translate', new Callback(translate, window));
+	$('#canvasElem').mseInteraction('addListener', 'scale', new Callback(scale, window));
+</script>
+
+</body>
+</html>

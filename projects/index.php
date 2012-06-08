@@ -27,7 +27,7 @@ if($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('pj', $_GET)) {
 
 <meta charset="UTF-8" />
 <meta name="robots" content="noindex"/>
-<meta name="viewport" content="minimum-scale=1.0, maximum-scale=1.0, width=device-width, user-scalable=no"/>
+<meta name="viewport" content="minimum-scale=1.0, maximum-scale=1.0, initial-scale=1.0, width=device-width, user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 
