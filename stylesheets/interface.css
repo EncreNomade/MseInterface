@@ -963,3 +963,16 @@ div.big_button {
     font-weight: bold;
     position: absolute;
 }
+
+/* guide for the magnetisme  ( using svg ) */
+svg line.guide {
+	fill:none;
+	stroke:blue;
+	stroke-width:1px;
+	/*stroke-dasharray:18 10;*/
+}
+svg rect.guide {
+	fill:none;
+	stroke:green;
+	stroke-width:1px;
+}

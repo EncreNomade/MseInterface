@@ -2864,7 +2864,174 @@ function objChoosed(e){
     curr.chooser = null;
 }
 
+/*
+todo
 
+- fusionner fonction glue
+- afficher rectangle dans le svg
+- gerer les milieux ( de milieu a milieu )
+
+
+
+
+*/
+
+
+// magnetisme
+var Magnetisme = function(){
+this.visibleItem = [];
+// in pixel,  if the distance is <tolerance> pixel or less ,  the element is glued with the other
+this.tolerance = 5;
+this.guide = {x:{c:-1  },y:{c:-1  } };
+}
+Magnetisme.prototype = {
+	contructor : Magnetisme,
+	updateVisibleElement : function( exept ){
+		this.visibleItem = this.getVisibleElement( exept );
+	},
+	getVisibleElement : function( exept ){
+		var element = [];
+		var steps = curr.page.children();
+		for( var i = 0 ; i < steps.length ; i ++ ){
+			var step = $( steps[ i ] );
+			if( step.css('display') != "none" ){
+				var objs = step.children();
+				for( var j = 0 ; j < objs.length ; j ++ ){
+					var obj = $( objs[ j ] );
+					if( exept.attr('id') != obj.attr('id') )
+						element.push( {
+							obj : obj,
+							x : obj.position().left,
+							y : obj.position().top,
+							width : obj.width(),
+							height : obj.height()
+						} );
+						
+				}
+			}
+		}
+		// do not forget to add the scene frame
+		var obj = curr.page;
+		element.push( {
+						obj : obj,
+						x : 0,
+						y : 0,
+						width : obj.width(),
+						height : obj.height()
+		} );
+		
+		return element;
+	},
+	
+	// search for an item close enought to <obj> to glue it up
+	// typ* define the position of the anchor which will be glued : 0 for the left, 1 for the right , 0.5 for the middle
+	// coor is either "x" or "y" 
+	// if typT is omited, the search will occur with both left and right and middle to middle
+	gluePartiel : function( obj , typO , coor , typT ){
+		var vI = this.visibleItem;
+		var adjacent = { x : {  d : this.tolerance } , y : {  d : this.tolerance } };
+		var coorL =  coor == 'x'  ? 'width' : 'height' ;
+		if( typT )
+			for( var i=0 ; i < this.visibleItem.length ; i ++ )
+				factor( typT , typO , coor , coorL  );
+		else
+			for( var i=0 ; i < this.visibleItem.length ; i ++ ){
+				for( var typT = 0 ; typT <= 1 ; typT += 1 )
+					factor( typT , typO , coor , coorL  );	
+				factor( 0.5 , 0.5 , coor , coorL  );
+			}
+		if( !adjacent.x.obj ) adjacent.x = null;
+		if( !adjacent.y.obj ) adjacent.y = null;
+		return adjacent;
+		
+		// factorize this code portion
+		function factor( typT , typO , coor , coorL  ){
+			var d;
+			if( ( d = Math.abs( vI[ i ][ coor ] + vI[ i ][ coorL ] * typT - ( obj[ coor ] + obj[ coorL ] * typO  ) ) ) < adjacent[coor].d )
+				adjacent[coor] = {
+					d     : d,
+					c     : vI[ i ][ coor ] + vI[ i ][ coorL ] * typT,
+					obj   : vI[ i ],
+					typO  : typO,
+					typT  : typT,
+					coorC : vI[ i ][ coor ] + vI[ i ][ coorL ] * typT - obj[ coorL ] * typO
+				};
+		}
+	},
+	
+	// search for an item close enought to <obj> to glue it up
+	// search with both left , right , top and bottom border of the moving object, and glue it up with both left , right , top and bottom of the inert object 
+	// search also from middle to middle on both object
+	glue : function( obj ){
+		var adjacent = { };
+		for( var typO = 0 ; typO <= 1 ; typO += 1 ){ 
+			adjacent = reduction( adjacent , this.gluePartiel( obj , typO , "x" )  ); 
+			adjacent = reduction( adjacent , this.gluePartiel( obj , typO , "y" )  ); 
+		}
+		adjacent = reduction( adjacent , this.gluePartiel( obj , 0.5 , "x" , 0.5 )  );
+		adjacent = reduction( adjacent , this.gluePartiel( obj , 0.5 , "y" , 0.5 )  );
+		return adjacent;	
+		function reduction( adj1 , adj2 ){
+			adj1.x = adj1.x && adj2.x && adj1.x.d <  adj2.x.d  || !adj2.x ? adj1.x : adj2.x;
+			adj1.y = adj1.y && adj2.y && adj1.y.d <  adj2.y.d  || !adj2.y ? adj1.y : adj2.y;
+			return adj1;
+		}
+	},
+	
+	
+	// graphism ---------------------------------------------------------
+	initGuide : function(){
+		this.delGuide();
+		this.guide.x.svg = $( '<svg width="'+curr.page.width()+'px" height="'+curr.page.height()+'px" style="z-index:'+(curr.page.children().length+1)+';position:absolute;"><rect x="25px" y="25px" width="100" height="50" class="guide" /><line x1="40" x2="0" y1="20" y2="'+curr.page.height()+'" class="guide" /></svg>' );
+		curr.page.append( this.guide.x.svg );	
+		this.guide.x.svg.hide();
+		
+		this.guide.y.svg = $( '<svg width="'+curr.page.width()+'px" height="'+curr.page.height()+'px" style="z-index:'+(curr.page.children().length+1)+';position:absolute;"><rect x="25px" y="25px" width="100" height="50" class="guide" /><line y1="40" y2="0" x1="0" x2="'+curr.page.width()+'" class="guide" /></svg>' );
+		curr.page.append( this.guide.y.svg );	
+		this.guide.y.svg.hide();
+	},
+	delGuide : function(){
+		if( this.guide.x.svg )
+			this.guide.x.svg.remove();
+		if( this.guide.y.svg )
+			this.guide.y.svg.remove();
+		
+		this.guide.x.c = -1;
+		this.guide.y.c = -1;
+		this.guide.x.id = null;
+		this.guide.y.id = null;
+	},
+	showGuide : function( obj , param , axe ){	
+		if( !axe ){
+			this.showGuide( obj, param, "x" );
+			this.showGuide( obj, param, "y" );
+			return;
+		}
+		if( param[axe] ){
+			if( this.guide[ axe ].c != param[ axe ].c ){
+				var line = this.guide[ axe ].svg.children( "line" );
+				line.attr( axe+"1" , param[ axe ].c );
+				line.attr( axe+"2" , param[ axe ].c );
+				this.guide[ axe ].c = param[ axe ].c;
+				this.guide[ axe ].svg.show();
+			}
+			if( this.guide[ axe ].id != ( this.guide[ axe ].id = param[ axe ].obj.obj.prop( "id" ) ) ){
+				var rect = this.guide[ axe ].svg.children( "rect" );
+				rect.attr( "x" , param[ axe ].obj.x );
+				rect.attr( "y" , param[ axe ].obj.y );
+				rect.attr( "width"  , param[ axe ].obj.width  );
+				rect.attr( "height" , param[ axe ].obj.height );
+			}
+		}else
+			if( this.guide[ axe ].c > 0 ){
+				this.guide[ axe ].svg.hide();
+				this.guide[ axe ].c = -1;
+				this.guide[ axe ].id = null;
+			}	
+	},
+	
+};
+var magnetisme = new Magnetisme();				
 
 // JQuery Plugin
 
@@ -2877,7 +3044,9 @@ var tag = {
 	noborder: false
 };
 var prevState = {};
+var anchor = {};
 var curr = {};
+var currentSelected = null;
 var editSupportTag = ['SPAN', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'DIV'];
 
 
@@ -2892,7 +3061,7 @@ var hoverIcon = function(elem, func, img, data) {
 	var icon = $('<img src="'+img+'", style="top:'+top+'px;"></img>');
 	icons.append(icon);
 	icon.hide().bind('click', data, func);
-	elem.hover(function(){icon.show();}, function(){icon.hide();});
+	elem.hover(function(){ if( !tag.resizestarted && !tag.movestarted )icon.show();}, function(){icon.hide();});
 };
 // Icon always show up
 var staticIcon = function(elem, func, img, data) {
@@ -3008,31 +3177,34 @@ function startMove(e) {
 	e.preventDefault();
 	e.stopPropagation();
 	tag.movestarted = true;
-	prevState.x = e.clientX;
-	prevState.y = e.clientY;
-        
-        moveCmd = new MoveObjCmd(this);
+	moveCmd = new MoveObjCmd(this);
+	currentSelected = $( this );
+	// trigger the event, as we have modified the resizestart flag
+	//currentSelected.mouseout();
+	anchor.x = e.clientX - currentSelected.position().left ;
+	anchor.y = e.clientY - currentSelected.position().top ;
+	magnetisme.updateVisibleElement( currentSelected );
+	magnetisme.initGuide();
 }
 function cancelMove(e) {
     if(tag.movestarted) {
-        var elem = $(this);
-	var dx = e.clientX - prevState.x;
-	var dy = e.clientY - prevState.y;
-	var x = elem.position().left + dx, y = elem.position().top + dy;
-        e.preventDefault();
+		e.preventDefault();
         e.stopPropagation();
         CommandMgr.executeCmd(moveCmd);
         tag.movestarted = false;
+		// trigger the event, as we have modified the resizestart flag
+		currentSelected.mouseover();
+		currentSelected = null;
+		magnetisme.delGuide();
     }
 }
 function moveElem(e) {
 	if(!tag.movestarted) return;
 	e.preventDefault();
 	e.stopPropagation();
-	var elem = $(this);
-	var dx = e.clientX - prevState.x;
-	var dy = e.clientY - prevState.y;
-	var x = elem.position().left + dx, y = elem.position().top + dy;
+	var elem = currentSelected;
+	var x = e.clientX - anchor.x;
+	var y = e.clientY - anchor.y;
 	// Adjustement
 	//var w = elem.width(), h = elem.height();
 	//var scene = elem.parents('.scene');
@@ -3041,17 +3213,22 @@ function moveElem(e) {
 	//if(x < 0) x = 0; if(y < 0) y = 0;
 	//if(x+w > cw) x = cw-w; if(y+h > ch) y = ch-h;
 	
+	var adj = magnetisme.glue( {x:x , y:y , width:elem.width() , height:elem.height() } );
+	if( adj.x  )
+		x = adj.x.coorC;
+	if( adj.y  )
+		y = adj.y.coorC;
+	magnetisme.showGuide(elem, adj);
 	elem.css({'top':y+'px', 'left':x+'px'});
-	prevState.x = e.clientX;
-	prevState.y = e.clientY;
 }
 
 $.fn.moveable = function(supp) {
 	this.unbind('mousedown', startMove);
 	this.unbind('mouseup', cancelMove);
-	this.unbind('mouseout', cancelMove);
-	this.unbind('mousemove', moveElem);
-	if(supp !== false) this.mousedown(startMove).mouseup(cancelMove).mouseout(cancelMove).mousemove(moveElem);
+	if(supp !== false)
+		this.mousedown(startMove).mouseup(cancelMove);
+		
+	
 	return this;
 }
 
@@ -3120,11 +3297,14 @@ function startResize(e) {
 	e.preventDefault();
 	e.stopPropagation();
 	tag.resizestarted = true;
-	prevState.x = e.clientX;
-	prevState.y = e.clientY;
 	curr.ctrlPt = $(this);
-        
-        resizeCmd = new ResizeObjCmd($(this).parent(), curr);
+    resizeCmd = new ResizeObjCmd($(this).parent(), curr);
+	// trigger the event, as we have modified the resizestart flag
+	curr.ctrlPt.parent().mouseout();
+	anchor.x = e.clientX - curr.ctrlPt.parent().offset().left ;
+	anchor.y = e.clientY - curr.ctrlPt.parent().offset().top ;
+	magnetisme.updateVisibleElement( curr.ctrlPt.parent() );
+	magnetisme.initGuide();
 }
 function cancelResize(e) {
 	if(tag.resizestarted) {
@@ -3132,44 +3312,77 @@ function cancelResize(e) {
 		e.stopPropagation();
 		tag.resizestarted = false;
 		curr.ctrlPt = null;
-                CommandMgr.executeCmd(resizeCmd);
+        CommandMgr.executeCmd(resizeCmd);
+		magnetisme.delGuide();
 	}
 }
 function resizeElem(e) {
 	if(!tag.resizestarted || !curr.ctrlPt) return;
 	e.preventDefault();
 	e.stopPropagation();
-	var dx = e.clientX - prevState.x;
-	var dy = e.clientY - prevState.y;
 	var top = curr.ctrlPt.position().top, left = curr.ctrlPt.position().left;
 	var elem = curr.ctrlPt.parent();
-	var x = elem.position().left, y = elem.position().top;
-	var w = elem.width(), h = elem.height();
+	var pos = { x : elem.position().left, y : elem.position().top };
+	var w = { x: elem.width(), y: elem.height() };
+	var d = { x: e.clientX - elem.offset().left - anchor.x , y : e.clientY - elem.offset().top - anchor.y };
+	var adj;
+	// minimal size
+	var limit = { x : 20 , y : 20 };
+	function factor( leftOrRight , coor ){
+		if( leftOrRight ){ // left ( or top ) side is expanded
+			pos[ coor ] += d[ coor ];
+			w[ coor ]   -= d[ coor ];
+			// magnetisme
+			adj = magnetisme.gluePartiel( {x:pos.x , y:pos.y , width:w.x, height:w.y } , 0 , coor );
+			if( adj[ coor ] ){
+				if( adj[ coor ].typO == 0.5 ){
+					// middle case
+					var l_fix = Math.abs( ( pos[ coor ] + w[ coor ] ) - adj[ coor ].c ) * 2;
+					pos[ coor ] = pos[ coor ] + w[ coor ] - l_fix;
+					w[ coor ] = l_fix;
+				} else {
+					w[ coor ] += pos[ coor ] - adj[ coor ].coorC;
+					pos[ coor ] = adj[ coor ].coorC;
+				}
+			}
+			// size min
+			if( w[ coor ] < limit[ coor ] ){
+				pos[ coor ] += w[ coor ] - limit[ coor ];
+				w[ coor ] = limit[ coor ];
+			}
+		} else { // right ( or bottom ) side is expanded
+			w[ coor ] += d[ coor ];
+			anchor[ coor ] += d[ coor ];
+			// magnetisme
+			adj = magnetisme.gluePartiel( {x:pos.x , y:pos.y , width:w.x, height:w.y } , 1 , coor );
+			if( adj[ coor ] ){
+				if( adj[ coor ].typO == 0.5 ){
+					// middle case
+					var l_fix = Math.abs(  pos[ coor ]  - adj[ coor ].c ) * 2;
+					anchor[ coor ] -= w[ coor ] - l_fix;
+					w[ coor ] = l_fix;
+				} else {
+					w[ coor ] -= pos[ coor ] - adj[ coor ].coorC;
+					anchor[ coor ] -= pos[ coor ] - adj[ coor ].coorC;
+				}
+			}
+			// size min
+			if( w[ coor ] < limit[ coor ] ){
+				anchor[ coor ] -= w[ coor ] - limit[ coor ];
+				w[ coor ] = limit[ coor ];
+			}
+		}
+		magnetisme.showGuide( elem, adj, coor );
+	}
+	factor( left<0 , "x" );
+	factor( top<0 , "y" );
 	
-	if(top<0 && left<0) {// Left Top corner
-		x += dx; y += dy;
-		w -= dx; h -= dy;
-	}
-	else if(top<0 && left>0) {// Right Top corner
-		y += dy;
-		w += dx; h -= dy;
-	}
-	else if(top>0 && left<0) {// Left Bottom corner
-		x += dx;
-		w -= dx; h += dy;
-	}
-	else {// Right Bottom corner
-		w += dx; h += dy;
-	}
-	elem.css({'top':y+'px', 'left':x+'px', 'width':w+'px', 'height':h+'px'});
+	elem.css({'top':pos.y+'px', 'left':pos.x+'px', 'width':w.x+'px', 'height':w.y+'px'});
 	// Control pts update
-	var ctrlw = (w-6.5)+'px', ctrlh = (h-6.5)+'px';
+	var ctrlw = (w.x-6.5)+'px', ctrlh = (w.y-6.5)+'px';
 	curr.rt.css('top',ctrlh);
 	curr.lb.css('left',ctrlw);
 	curr.rb.css({'left':ctrlw, 'top':ctrlh});
-	
-	prevState.x = e.clientX;
-	prevState.y = e.clientY;
 }
 
 $.fn.supportResize = function() {
@@ -3178,6 +3391,10 @@ $.fn.supportResize = function() {
 	this.on('mousemove', resizeElem);
 	this.on('mouseup', cancelResize);
 	return this;
+}
+$.fn.supportMove = function(){
+	this.on( "mousemove" , ".scene", moveElem );
+	this.mouseup(cancelMove);
 }
 $.fn.resizable = function(supp) {
 	this.unbind('click', chooseElemWithCtrlPts);
