@@ -10,6 +10,8 @@
 
 var __currContextOwner__;
 
+(function( window, $ ) {
+
 (function() {
     var lastTime = 0;
     var vendors = ['ms', 'moz', 'webkit', 'o'];
@@ -35,8 +37,6 @@ var __currContextOwner__;
             clearTimeout(id);
         };
 }());
-
-(function( window, $ ) {
 
 var mse = function() {};
 
@@ -238,6 +238,8 @@ mse.init = function(configs) {
 	mse.src.addSource('downBn', './UI/button/descend.png', 'img', true);
 	mse.src.addSource('playBn', './UI/button/play.png', 'img', true);
 	mse.src.addSource('pauseBn', './UI/button/pause.png', 'img', true);
+	mse.src.addSource('zoomIcon', './UI/button/zoom.png', 'img', true);
+	mse.src.addSource('closeBn', './UI/button/close.png', 'img', true);
 };
 
 
@@ -1485,6 +1487,7 @@ $.extend( mse.ArticleLayer.prototype , {
 		else obj.setY(0);
 		this.length += obj.height;
 		this.endId = this.objList.length-1;
+        
 		return mse.Layer.prototype.addObject.call(this, obj);
 	},
 	addGame : function(game) {
@@ -1674,6 +1677,8 @@ mse.Image = function(parent, param, src) {
 	    mse.src.waitSrc(this.img, new mse.Callback(this.init, this));
 	}
 	else this.cache = src;
+    
+    this.zoomable = false;
 	
     //Integraion d'effets
 	this.currentEffect = null;
@@ -1694,6 +1699,21 @@ $.extend(mse.Image.prototype, {
         this.cache.height = this.height;
         this.cache.style.height = this.height;
         ctx.drawImage(img, 0, 0, this.width, this.height);
+        
+        if(this.zoomable) 
+            this.activateZoom();
+    },
+    activateZoom: function() {
+        this.zoomable = true;
+        if(!this.width) return;
+        this.zoomIcon = new mse.Image(this, {pos:[this.width-20, 0]}, 'zoomIcon');
+        var cb = new mse.Callback(function(){
+            if(!(this.imgShower instanceof mse.ImageShower))
+                this.imgShower = new mse.ImageShower(this);
+            this.imgShower.show();
+            // console.log('zoom');
+        }, this);
+        this.getContainer().evtDeleg.addListener('click', cb, true, this.zoomIcon);
     },
     startEffect: function (effet) {
     	if(!this.currentEffect && effet instanceof mse.EffectImage && effet.subject == this) { 
@@ -1719,7 +1739,11 @@ $.extend(mse.Image.prototype, {
     	
     	if(this.currentEffect != null && this.currentEffect.draw) 
     	    this.currentEffect.draw(ctx, img, x,y, this.width, this.height);
-    	else ctx.drawImage(img, x, y, this.width, this.height);
+    	else 
+            ctx.drawImage(img, x, y, this.width, this.height);
+        
+        if (this.zoomable) 
+            this.zoomIcon.draw(ctx);
     },
     toString: function() {
     	return "[object mse.Image]";
@@ -2486,7 +2510,6 @@ mse.ImageCard = function(parent, param, ui, img, legend) {
     }
     mse.src.waitSrc(this.img, new mse.Callback(this.init, this));
     
-    this.test = new mse.Button(this, {pos:[15,15],size:[20,20],fillStyle:'#FFF'}, 'Lien', 'wikiBar', "http://pandamicro.co.cc", 'url');
 };
 extend(mse.ImageCard, mse.Card);
 $.extend(mse.ImageCard.prototype, {
@@ -2507,6 +2530,15 @@ $.extend(mse.ImageCard.prototype, {
         this.ih = src.height * r;
         this.ix = this.margin[3] + (iw-this.iw)/2;
         this.iy = this.margin[0] + (ih-this.ih)/2;
+        
+        this.zoomIcon = new mse.Image(this,{pos:[this.ix+this.iw-24-5, this.iy+5]}, 'zoomIcon');
+        var cb = new mse.Callback(function(){
+            if(!(this.imgShower instanceof mse.ImageShower))
+                this.imgShower = new mse.ImageShower(this);
+            this.imgShower.show();
+            // console.log('zoom');
+        }, this);
+        this.getContainer().evtDeleg.addListener('click', cb, true, this.zoomIcon);
     },
     draw: function(ctx){
         ctx.save();
@@ -2522,11 +2554,10 @@ $.extend(mse.ImageCard.prototype, {
         if(!this.ui) this.drawDefaultUI(ctx, 0, 0);
         if(!this.img) return;
         
-        this.test.draw(ctx, 15, 15);
-        
         ctx.shadowColor ="black";
         ctx.shadowBlur = 7;
         ctx.drawImage(mse.src.getSrc(this.img), this.ix, this.iy, this.iw, this.ih);
+		this.zoomIcon.draw(ctx,this.ix+this.iw-24-5, this.iy+5);
         ctx.shadowBlur = 0;
         ctx.font = "italic 12px Verdana";
         ctx.textBaseline = "top";
@@ -2750,7 +2781,125 @@ $.extend( mse.Video.prototype , {
 	}
 });
 
+/*           ImageShower
+*  display the target img in fullscreen
+*  Usage : call the show method to an event
+*  See mse.Image.prototype.init() 
+*  & mse.ImageCard.init() (association with an icon)
+*/ 
+mse.ImageShower = function(target){
+    if(!(target instanceof mse.Image) && !(target instanceof mse.ImageCard)) {
+        console.error('The target obj is not an instance of mse.Image or mse.ImageCard');
+        return;
+    }
+    this.target = target;
+    
+	$('body').css({
+		'position': 'absolute',
+		'width'   : '100%',
+		'height'  : '100%'
+	});
+    
+    this.container = $('<div id="imgShower"></div>').css({
+		'position'  : 'absolute',
+		'z-index'   : '12',
+		'width'     : '100%',
+		'height'    : '100%',
+		'background': 'rgba(0, 0, 0, 0.6)',
+        'text-align': 'center'
+	});
+    
+    this.img = $(mse.src.getSrc(target.img)).css({
+		'width' : '100%',
+		'height': '100%'
+	});
+    
+    var closeButton = $(mse.src.getSrc('closeBn')).prop('id', 'closeBn').css({
+        'position': 'absolute',
+        'top'     : '-20px',
+        'right'   : '-20px'
+    });
 
+    $('<div></div>').css({'position': 'absolute','z-index': '13',})
+                    .append(this.img)
+                    .append(closeButton)
+                    .appendTo(this.container);
+   
+    this.container.bind('click',{showerObj: this},function(e){
+        // close the image on click in div
+        var pos = e.data.showerObj.getOriginalPos();
+        $(this).children('div').animate({
+            'height' : pos.h+'px',
+            'width'  : pos.w+'px',
+            'top'    : pos.y+'px',
+            'left'   : pos.x+'px',
+            'opacity': '0'
+        });
+        $(this).fadeOut(500, function(){
+            $(this).detach();
+            var parent = e.data.showerObj.target.parent;
+            if(parent.play)
+                parent.play();
+        });
+    });
+    closeButton.click(function(){
+        $('#imgShower').click();
+    });
+    this.img.click(function(e){e.preventDefault();e.stopPropagation();}); // no close on click in image
+};
+mse.ImageShower.prototype = {
+    getOriginalPos: function(){
+        if(this.target instanceof mse.Image){ // Illu
+            var pos = {
+                x: mse.root.jqObj.position().left + this.target.getX(),
+                y: mse.root.jqObj.position().top + this.target.getY(),
+                w: this.target.getWidth(),
+                h: this.target.getHeight(),
+                angle: 'rotate(0deg)'
+            };
+        }
+        else { // Wiki
+            var pos = {
+                x: mse.root.jqObj.position().left + this.target.getX() + this.target.ix,
+                y: mse.root.jqObj.position().top + this.target.getY() + this.target.iy,
+                w: this.target.iw,
+                h: this.target.ih,
+                angle: 'rotate('+this.target.angle+'deg)'
+            };
+        }
+        return pos;
+    },
+    show: function(){
+        var pos = this.getOriginalPos();
+        this.container.children('div').css({ // place at original position
+            'width'  : pos.w+'px',
+            'height' : pos.h+'px',
+            'top'    : pos.y+'px',
+            'left'   : pos.x+'px',
+            'opacity': '0'
+        });
+        
+        var ratio = pos.w/pos.h;
+        var finalH = 0.8 * MseConfig.pageHeight;
+        var finalW = finalH * ratio;
+        var imgX = MseConfig.pageWidth/2 - finalW/2;
+        this.container.children('div').animate({ // animate image size to 80% of window size
+            'height'    : finalH+'px',
+            'width'     : finalW+'px',
+            'top'       : '0px',
+            'margin-top': '10%',
+            'left'      : imgX + 'px',
+            'opacity'   : '1'
+        });
+        this.container.fadeIn(500);
+        
+        $('body').append(this.container);
+        
+        var parent = this.target.parent;
+        if (parent.interrupt)
+            parent.interrupt();
+    }
+};
 
 
 // Time line
@@ -2847,7 +2996,6 @@ mse.Timeline.prototype = {
 		this.inPause = true;
 	}
 };
-
 
 
 // Frame Animation
