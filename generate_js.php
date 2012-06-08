@@ -629,6 +629,7 @@ class ProjectGenerator {
             $type = "img";
             $params = $this->formatParams($objnode->img[0]['style'], $type);
             $this->jstr .= "\n\t$obj=new mse.Image($layer,".$params[1].",'".$objnode->img[0]['name']."');";
+            $this->jstr .= "\n\t$obj.activateZoom();";
         }
         else if($class == 'game') {
             $type = "game";
