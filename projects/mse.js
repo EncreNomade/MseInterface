@@ -1,9 +1,9 @@
 /*!
- * Mse Canvas JavaScript Library v0.85
- * MseEdition
+ * Encre Nomade Canvas JavaScript Library v0.85
+ * Encre Nomade
  *
  * Author: LING Huabin - lphuabin@gmail.com
- * Copyright 2011, MseEdition
+ * Copyright 2011, Encre Nomade
  *
  * Date: 21/03/2011
  */

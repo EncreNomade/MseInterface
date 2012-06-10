@@ -30,7 +30,6 @@ var Callback = function(func, caller) {
 	};
 };
 
-(function( $ ){
 
 // Multi touch support
 var Path = function(p) {
@@ -52,7 +51,7 @@ Path.prototype = {
     toString: function() {
     	return "[object Path]";
     }
-}
+};
 
 
 var GestureAnalyser = function(listeners){
@@ -149,12 +148,11 @@ GestureAnalyser.prototype = {
     		// Two finger scale end
     		
     	}
-    },
-    
-    // Math part
-    computeTranslation: function() {
     }
-}
+};
+
+
+(function( $ ){
 
 
 // Variable private
@@ -304,9 +302,8 @@ var methods = {
 		else {
 			$(this).bind('click dblclick mousedown mousemove mouseup mousewheel DOMMouseScroll.mseInteraction', analyse);
 			
-			$(document).mseInteraction($.data( $(this).get(0), 'mseSrc' ));
-			$(document).bind('keypress keydown keyup.mseInteraction', analyse);
-			listeners = $.data( $(document).get(0), 'mselisteners' );
+			$(document).bind('keypress keydown keyup.mseInteraction', {'target': $(this)}, analyse);
+			listeners = $.data( $(this).get(0), 'mselisteners' );
 			listeners['keydown'] = cb;
 			listeners['keyup'] = cb;
 			listeners['keypress'] = cb;
@@ -347,10 +344,14 @@ function analyse(e) {
 		return;
 	}
 	
+	// Get target
+	if(e.data && e.data.target) var target = e.data.target.get(0);
+	else var target = $(this).get(0);
+	
 	// Get listener list
-	_listeners = $.data( $(this).get(0), 'mselisteners' );
-	_analyser = $.data( $(this).get(0), 'mseAnalyser' );
-	_src = $.data( $(this).get(0), 'mseSrc' );
+	_listeners = $.data( target, 'mselisteners' );
+	_analyser = $.data( target, 'mseAnalyser' );
+	_src = $.data( target, 'mseSrc' );
 	_src = (!_src) ? $(this) : _src;
 	if(!_listeners) return;
 	
