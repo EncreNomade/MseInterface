@@ -83,6 +83,7 @@ GestureAnalyser.prototype = {
     },
     removeBlob: function(e) {
         for(var i in e.touches) {
+            if(!this.blobs[i]) continue;
             this.analyseRemove(i);
             this.count--;
             delete this.blobs[i];

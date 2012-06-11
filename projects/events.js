@@ -14,6 +14,12 @@ window.mse = {};
 (function( window ) {
 var mse = window.mse;
 
+var nonLocationEvts = ['keydown', 'keypress', 'keyup'],
+var locationEvts = ['move', 'longPress', 'click', 'doubleClick', 'scroll',
+                    'gestureSingle', 'gestureStart', 'gestureUpdate', 'gestureEnd', 
+                    'gestureMulti', 'multiGestAdd', 'multiGestUpdate', 'multiGestRemove',
+                    'swipeleft', 'swiperight', 'swipe']
+
 // Event System
 
 mse.EventListener = function(evtName, callback, prevent, target) {
@@ -39,32 +45,101 @@ mse.EventListener = function(evtName, callback, prevent, target) {
 };
 
 
-// Event dispatcher for every container
+/* Event distributor
+ *
+ * This is the distributor owned by mse.root, normally there is only one instance in one book.
+ * It's using for sending the events to the current page of root.
+ * It has also one event delegate of his own for the events of mse.root object like 'showover'.
+ *
+ */
+mse.EventDistributor = function(src, jqObj, deleg) {
+	this.src = src;
+	this.dominate = null;
+	jqObj.mseInteraction(this);
+	jqObj.mseInteraction('setDelegate', new Callback(this.distributor, this));
+	
+	this.rootEvt = new mse.EventDelegateSystem();
+	
+	if(deleg) this.setDelegate(deleg);
+};
+mse.EventDistributor.prototype = {
+    constructor: mse.EventDistributor,
+    distributor: function(e) {
+        // Correction coordinates with root viewport
+        if(mse.root.viewport && e && !e.corrected && !isNaN(e.offsetX)) {
+            e.offsetX += mse.root.viewport.x;
+            e.offsetY += mse.root.viewport.y;
+            e.corrected = true;
+        }
+    	if(!this.dominate) this.rootEvt.eventNotif(e.type, e);
+    	if(this.delegate) this.delegate.eventNotif(e.type, e);
+    },
+    setDelegate: function(deleg) {
+    	this.delegate = deleg;
+    },
+    
+    setDominate: function(dominate) {
+        if(dominate != this.src) this.dominate = dominate;
+    	if(this.delegate) this.delegate.setDominate(dominate);
+    },
+    addListener: function(evtName, callback, pr, target) {
+    	this.rootEvt.addListener(evtName,callback,pr,target);
+    },
+    removeListeners: function(evtName) {
+    	this.rootEvt.removeListeners(evtName);
+    },
+    removeListener: function(evtName, callback) {
+    	this.rootEvt.removeListener(evtName, callback);
+    },
+};
+
+
+/* Event dispatcher for every container
+ *
+ * This class can analyse the structure of one container, and it can dispatch the events to the right objects.
+ * For doing this, it maintain a list of event names and the objects which observe the event.
+ * The objects will be organised in descendent of their z-depth to simulate the bubbling of location based events.
+ * Specially, for better supporting multitouch, it will conserve a list of bindings between the touches and the objects. One touch can only be attached to one object.
+ *
+ */
 mse.EventDispatcher = function(container) {
-    this.observers = [];
-    this.relations = {};
+    this.observers = {};
     this.parent = container;
-}
-extend(mse.EventDispatcher, GestureAnalyser);
-delete mse.EventDispatcher.prototype.analyseAdd;
-delete mse.EventDispatcher.prototype.analyseUpdate;
-delete mse.EventDispatcher.prototype.analyseRemove;
-$.extend(mse.EventDispatcher, {
-    // Blob management
-    addBlob: function(e) {
-        for(var i in e.touches) {
-            
-        }
+    this.domObj = null;
+};
+mse.EventDispatcher.prototype = {
+    constructor: mse.EventDispatcher,
+    observe: function(type, obj) {
+        if(typeof type != "string" || !obj || !obj.evtDeleg) return;
+    	// Listener array not until exist
+    	if( !this.observers[type] ) this.observers[type] = new Array();
+    	var arr = this.observers[type];
+    	// Register observer
+    	if($.inArray(obj, arr) == -1) arr.push(obj);
+    	
+    	// Reorganize the order in observer list
+    	//this.listeners[evtName].sort(this.zSort);
     },
-    updateBlob: function(e) {
-        for(var i in e.touches) {
-        }
+    setDominate: function(dom) {
+    	this.domObj = dom;
     },
-    removeBlob: function(e) {
-        for(var i in e.touches) {
+    dispatch: function(type, e) {
+        var success = false;
+        
+        var arr = this.observers[type];
+        if(!arr) return success;
+        
+        for(var val in arr) {
+        	if( (!this.domObj || this.domObj==arr[val] || this.domObj==arr[val].parent) ) {
+        		var prevent = arr[val].eventNotify(type, e);
+        		success = true;
+        		if(prevent) break;
+        	}
         }
+        return success;
     }
-});
+};
+
 
 
 // Event delegate
@@ -74,7 +149,6 @@ mse.EventDelegateSystem = function() {
 };
 mse.EventDelegateSystem.prototype = {
     constructor: mse.EventDelegateSystem,
-    nonLocationEvts: ['keydown', 'keypress', 'keyup'],
     
     // Sort function for sort the obj in z-index order
     zSort: function(la, lb) {
@@ -150,8 +224,8 @@ mse.EventDelegateSystem.prototype = {
 		var arr = this.listeners[evtName];
 		if(!arr) return success;
 		
-		// Non location based events (keyboard events)
-		if($.inArray(evtName, this.nonLocationEvts) != -1) {
+		// Non location based events (keyboard events or custom events)
+		if($.inArray(evtName, locationEvts) == -1) {
 		    for(var val in arr) {
 		    	var prevent = arr[val].preventBubbling;
 		    	arr[val].notify(evt);
@@ -159,6 +233,7 @@ mse.EventDelegateSystem.prototype = {
 		    	if(prevent) break;
 		    }
 		}
+		// Mouse and touch events
 		else {
 			for(var val in arr) {
 				if( (!this.domObj || this.domObj==arr[val].target || this.domObj==arr[val].target.parent) 
@@ -174,42 +249,5 @@ mse.EventDelegateSystem.prototype = {
 	}
 };
 
-// Event distributor
-mse.EventDistributor = function(src, jqObj, deleg) {
-	this.distributor = function(e) {
-	    // Correction coordinates with root viewport
-	    if(mse.root.viewport && e && !e.corrected && !isNaN(e.offsetX)) {
-	        e.offsetX += mse.root.viewport.x;
-	        e.offsetY += mse.root.viewport.y;
-	        e.corrected = true;
-	    }
-		this.rootEvt.eventNotif(e.type, e);
-		if(this.delegate) this.delegate.eventNotif(e.type, e);
-	};
-	this.setDelegate = function(deleg) {
-		this.delegate = deleg;
-	};
 
-	this.src = src;
-	jqObj.mseInteraction(this);
-	jqObj.mseInteraction('setDelegate', new Callback(this.distributor, this));
-	
-	this.rootEvt = new mse.EventDelegateSystem();
-	
-	if(deleg) this.setDelegate(deleg);
-	
-	this.setDominate = function(dom) {
-		this.rootEvt.setDominate(dom);
-		if(this.delegate) this.delegate.setDominate(dom);
-	}
-	this.addListener = function(evtName, callback, pr, target) {
-		this.rootEvt.addListener(evtName,callback,pr,target);
-	};
-	this.removeListeners = function(evtName) {
-		this.rootEvt.removeListeners(evtName);
-	};
-	this.removeListener = function(evtName, callback) {
-		this.rootEvt.removeListener(evtName, callback);
-	};
-};
 })(window);
