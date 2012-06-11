@@ -350,6 +350,11 @@ body{
 	padding:0px;
 	border:1px solid #000;
 }
+.selected {
+	-moz-box-shadow: 0 0 0px 2px #888;
+	-webkit-box-shadow: 0 0 0px 2px #888;
+	box-shadow: 0 0 0px 2px #888;
+}
 .text {
 	border:0px;
 	position:absolute;
@@ -969,10 +974,12 @@ svg line.guide {
 	fill:none;
 	stroke:blue;
 	stroke-width:1px;
+	shape-rendering:crispEdges;
 	/*stroke-dasharray:18 10;*/
 }
 svg rect.guide {
 	fill:none;
 	stroke:green;
-	stroke-width:1px;
+	stroke-width:3px;
+	shape-rendering:crispEdges;
 }

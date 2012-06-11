@@ -1213,6 +1213,7 @@ function saveProject() {
         for(var i in steps) {
             var step = steps[i].clone();
             step.find('.del_container, .ctrl_pt').remove();
+			step.children().removeClass('selected');
             struct[key][step.prop('id')] = serializer.serializeToString(step.get(0));
         }
     }

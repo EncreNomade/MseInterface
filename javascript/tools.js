@@ -2879,10 +2879,10 @@ todo
 
 // magnetisme
 var Magnetisme = function(){
-this.visibleItem = [];
-// in pixel,  if the distance is <tolerance> pixel or less ,  the element is glued with the other
-this.tolerance = 5;
-this.guide = {x:{c:-1  },y:{c:-1  } };
+	this.visibleItem = [];
+	// in pixel,  if the distance is <tolerance> pixel or less ,  the element is glued with the other
+	this.tolerance = 3;
+	this.guide = {x:{c:-1  },y:{c:-1  } };
 }
 Magnetisme.prototype = {
 	contructor : Magnetisme,
@@ -2903,8 +2903,8 @@ Magnetisme.prototype = {
 							obj : obj,
 							x : obj.position().left,
 							y : obj.position().top,
-							width : obj.width(),
-							height : obj.height()
+							width  : obj.outerWidth() ,
+							height : obj.outerHeight() 
 						} );
 						
 				}
@@ -2916,8 +2916,8 @@ Magnetisme.prototype = {
 						obj : obj,
 						x : 0,
 						y : 0,
-						width : obj.width(),
-						height : obj.height()
+						width  :  obj.width()  ,
+						height :  obj.height() 
 		} );
 		
 		return element;
@@ -2968,8 +2968,6 @@ Magnetisme.prototype = {
 			adjacent = reduction( adjacent , this.gluePartiel( obj , typO , "x" )  ); 
 			adjacent = reduction( adjacent , this.gluePartiel( obj , typO , "y" )  ); 
 		}
-		adjacent = reduction( adjacent , this.gluePartiel( obj , 0.5 , "x" , 0.5 )  );
-		adjacent = reduction( adjacent , this.gluePartiel( obj , 0.5 , "y" , 0.5 )  );
 		return adjacent;	
 		function reduction( adj1 , adj2 ){
 			adj1.x = adj1.x && adj2.x && adj1.x.d <  adj2.x.d  || !adj2.x ? adj1.x : adj2.x;
@@ -2979,14 +2977,17 @@ Magnetisme.prototype = {
 	},
 	
 	
+	
+	
+	
 	// graphism ---------------------------------------------------------
 	initGuide : function(){
 		this.delGuide();
-		this.guide.x.svg = $( '<svg width="'+curr.page.width()+'px" height="'+curr.page.height()+'px" style="z-index:'+(curr.page.children().length+1)+';position:absolute;"><rect x="25px" y="25px" width="100" height="50" class="guide" /><line x1="40" x2="0" y1="20" y2="'+curr.page.height()+'" class="guide" /></svg>' );
+		this.guide.x.svg = $( '<svg width="'+curr.page.width()+'px" height="'+curr.page.height()+'px" style="z-index:'+(curr.page.children().length+1)+';position:absolute;"><rect x="25px" y="25px" width="100" height="50" class="guide" /><line x1="0" x2="0" y1="0" y2="'+curr.page.height()+'" class="guide" /></svg>' );
 		curr.page.append( this.guide.x.svg );	
 		this.guide.x.svg.hide();
 		
-		this.guide.y.svg = $( '<svg width="'+curr.page.width()+'px" height="'+curr.page.height()+'px" style="z-index:'+(curr.page.children().length+1)+';position:absolute;"><rect x="25px" y="25px" width="100" height="50" class="guide" /><line y1="40" y2="0" x1="0" x2="'+curr.page.width()+'" class="guide" /></svg>' );
+		this.guide.y.svg = $( '<svg width="'+curr.page.width()+'px" height="'+curr.page.height()+'px" style="z-index:'+(curr.page.children().length+1)+';position:absolute;"><rect x="25px" y="25px" width="100" height="50" class="guide" /><line y1="0" y2="0" x1="0" x2="'+curr.page.width()+'" class="guide" /></svg>' );
 		curr.page.append( this.guide.y.svg );	
 		this.guide.y.svg.hide();
 	},
@@ -3041,13 +3042,24 @@ var tag = {
 	movestarted: false,
 	resizestarted: false,
 	drawstarted: false,
-	noborder: false
+	noborder: false,
 };
-var prevState = {};
+// position of the mouse relative to the element manipulated ( resized or translated )
 var anchor = {};
 var curr = {};
 var currentSelected = null;
 var editSupportTag = ['SPAN', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'DIV'];
+var originalRatio = 1;
+
+var isMajDown=false;
+var isCtrlDown=false;
+$(document).keyup(function (e) {
+	if(e.which == 17) isCtrlDown=false;
+	if(e.which == 16) isMajDown=false;
+}).keydown(function (e) {
+	if(e.which == 17) { isCtrlDown=true; magnetisme.showGuide( null , {}  ); }
+	if(e.which == 16) isMajDown=true;
+});
 
 
 // Add top right hover icon
@@ -3213,7 +3225,7 @@ function moveElem(e) {
 	//if(x < 0) x = 0; if(y < 0) y = 0;
 	//if(x+w > cw) x = cw-w; if(y+h > ch) y = ch-h;
 	
-	var adj = magnetisme.glue( {x:x , y:y , width:elem.width() , height:elem.height() } );
+	var adj = magnetisme.glue( {x:x , y:y , width:elem.outerWidth() , height:elem.outerHeight() } );
 	if( adj.x  )
 		x = adj.x.coorC;
 	if( adj.y  )
@@ -3246,34 +3258,27 @@ function unchoose(e) {
 function chooseElemWithBorder(e) {
 	e.preventDefault();
 	var elem = $(this);
-	if(curr.choosed && curr.choosed != elem) {
-		if(tag.noborder)
-			curr.choosed.css({'z-index':'0','border-top-width':'0px','border-bottom-width':'0px','border-left-width':'0px','border-right-width':'0px'});
-		tag.noborder = false;
-	}
+	if(curr.choosed && curr.choosed != elem) 
+		curr.choosed.removeClass( 'selected' );
+	
 	else if(curr.choosed == elem) return;
 	
-	tag.noborder = (elem.css('border-top-width') == '0px');
-	if(tag.noborder) {
-		elem.css({'z-index':'1','border-top-width':'1px','border-bottom-width':'1px','border-left-width':'1px','border-right-width':'1px'});
-	}
+	elem.addClass( 'selected' );
+	
 	curr.choosed = elem;
 }
 function chooseElemWithCtrlPts(e) {
 	e.preventDefault();
 	var elem = $(this);
 	if(curr.choosed && curr.choosed != elem) {
-		if(tag.noborder)
-			curr.choosed.css({'border-top-width':'0px','border-bottom-width':'0px','border-left-width':'0px','border-right-width':'0px'});
-		tag.noborder = false;
+		curr.choosed.removeClass( 'selected' );
+		
 		// Remove Control points
 		curr.choosed.children('.ctrl_pt').remove();
 	}
 	else if(curr.choosed == elem) return;
 	
-	tag.noborder = (elem.css('border-top-width') == '0px');
-	if(tag.noborder)
-		elem.css({'border-top-width':'1px','border-bottom-width':'1px','border-left-width':'1px','border-right-width':'1px'});
+	elem.addClass( 'selected' );
 	// Add Control points
 	var pts = [];
 	var r = 3, width = elem.width(), height = elem.height();
@@ -3305,6 +3310,7 @@ function startResize(e) {
 	anchor.y = e.clientY - curr.ctrlPt.parent().offset().top ;
 	magnetisme.updateVisibleElement( curr.ctrlPt.parent() );
 	magnetisme.initGuide();
+	originalRatio = curr.ctrlPt.parent().outerWidth() / curr.ctrlPt.parent().outerHeight();
 }
 function cancelResize(e) {
 	if(tag.resizestarted) {
@@ -3323,66 +3329,123 @@ function resizeElem(e) {
 	var top = curr.ctrlPt.position().top, left = curr.ctrlPt.position().left;
 	var elem = curr.ctrlPt.parent();
 	var pos = { x : elem.position().left, y : elem.position().top };
-	var w = { x: elem.width(), y: elem.height() };
-	var d = { x: e.clientX - elem.offset().left - anchor.x , y : e.clientY - elem.offset().top - anchor.y };
-	var adj;
-	// minimal size
+	var border = { x : cssCoordToNumber( elem.css( 'border-left-width' ) ) , y : cssCoordToNumber( elem.css( 'border-top-width' ) ) };
+	var w = { x: elem.width() + border.x*2, y: elem.height()+ border.x*2 };  // ~ outerWidth
 	var limit = { x : 20 , y : 20 };
-	function factor( leftOrRight , coor ){
-		if( leftOrRight ){ // left ( or top ) side is expanded
-			pos[ coor ] += d[ coor ];
-			w[ coor ]   -= d[ coor ];
-			// magnetisme
-			adj = magnetisme.gluePartiel( {x:pos.x , y:pos.y , width:w.x, height:w.y } , 0 , coor );
-			if( adj[ coor ] ){
-				if( adj[ coor ].typO == 0.5 ){
-					// middle case
-					var l_fix = Math.abs( ( pos[ coor ] + w[ coor ] ) - adj[ coor ].c ) * 2;
-					pos[ coor ] = pos[ coor ] + w[ coor ] - l_fix;
-					w[ coor ] = l_fix;
-				} else {
-					w[ coor ] += pos[ coor ] - adj[ coor ].coorC;
-					pos[ coor ] = adj[ coor ].coorC;
-				}
-			}
-			// size min
-			if( w[ coor ] < limit[ coor ] ){
-				pos[ coor ] += w[ coor ] - limit[ coor ];
-				w[ coor ] = limit[ coor ];
-			}
-		} else { // right ( or bottom ) side is expanded
-			w[ coor ] += d[ coor ];
-			anchor[ coor ] += d[ coor ];
-			// magnetisme
-			adj = magnetisme.gluePartiel( {x:pos.x , y:pos.y , width:w.x, height:w.y } , 1 , coor );
-			if( adj[ coor ] ){
-				if( adj[ coor ].typO == 0.5 ){
-					// middle case
-					var l_fix = Math.abs(  pos[ coor ]  - adj[ coor ].c ) * 2;
-					anchor[ coor ] -= w[ coor ] - l_fix;
-					w[ coor ] = l_fix;
-				} else {
-					w[ coor ] -= pos[ coor ] - adj[ coor ].coorC;
-					anchor[ coor ] -= pos[ coor ] - adj[ coor ].coorC;
-				}
-			}
-			// size min
-			if( w[ coor ] < limit[ coor ] ){
-				anchor[ coor ] -= w[ coor ] - limit[ coor ];
-				w[ coor ] = limit[ coor ];
-			}
-		}
-		magnetisme.showGuide( elem, adj, coor );
-	}
-	factor( left<0 , "x" );
-	factor( top<0 , "y" );
+	var sens = { x : left<0 , y:top<0 };
 	
-	elem.css({'top':pos.y+'px', 'left':pos.x+'px', 'width':w.x+'px', 'height':w.y+'px'});
+	enlarge();
+	if( isMajDown )
+		keepRatio();
+	if( !isCtrlDown )
+		useMagnetism( isMajDown );
+	minimalSize();
+	
+	elem.css({'top':pos.y+'px', 'left':pos.x+'px', 'width': ( w.x - border.x*2 ) + 'px', 'height': ( w.y - border.y*2 ) + 'px'});
 	// Control pts update
 	var ctrlw = (w.x-6.5)+'px', ctrlh = (w.y-6.5)+'px';
 	curr.rt.css('top',ctrlh);
 	curr.lb.css('left',ctrlw);
 	curr.rb.css({'left':ctrlw, 'top':ctrlh});
+	
+	// simply enlarge the rectangle, following the mouse cursor
+	function enlarge(  ){
+		var d = { x: e.clientX - elem.offset().left - anchor.x , y : e.clientY - elem.offset().top - anchor.y };
+		factor( "x" );
+		factor( "y" );
+		function factor( coor ){
+			if( sens[ coor ] ){
+				pos[ coor ] += d[ coor ];
+				w[ coor ]   -= d[ coor ];
+			}else{
+				w[ coor ] += d[ coor ];
+				anchor[ coor ] += d[ coor ];
+			}
+		}
+	}
+	
+	// adjust so the rectangle keep the ratio "originalRatio", if forcage is not omited, the axe defined by forcage is resized, else its the smaller axe
+	function keepRatio( forcage ){
+		var ratio = { x: originalRatio , y : 1/originalRatio };
+		if( forcage )
+			factor( forcage == "y" ? "x" : "y" , forcage );
+		else
+			if( w.x < w.y * ratio.x )
+				factor( "x" , "y" );
+			else
+				factor( "y" , "x" );
+		function factor(  coor , compl ){
+			var tmp = Math.round( w[ compl ] * ratio[ coor ] );
+			if( sens[ coor ] ){
+				pos[ coor ]  -= tmp - w[ coor ];
+				w[ coor ]    += tmp - w[ coor ];
+			} else {
+				anchor[ coor ] += tmp - w[ coor ];
+				w[ coor ]      += tmp - w[ coor ];
+			}
+		}
+	}
+	
+	// glue the element to others
+	function useMagnetism( lockRatio ){
+		factor( "x"  );
+		factor( "y"  );
+		function factor( coor  ){
+			var adj;
+			if( sens[ coor ] ){
+				adj = magnetisme.gluePartiel( {x:pos.x , y:pos.y , width:w.x, height:w.y } , 0 , coor );
+				if( adj[ coor ] ){
+					if( adj[ coor ].typO == 0.5 ){
+						// middle case
+						var l_fix = Math.abs( ( pos[ coor ] + w[ coor ] ) - adj[ coor ].c ) * 2;
+						pos[ coor ] = pos[ coor ] + w[ coor ] - l_fix;
+						w[ coor ] = l_fix;
+					} else {
+						w[ coor ] += pos[ coor ] - adj[ coor ].coorC;
+						pos[ coor ] = adj[ coor ].coorC;
+					}
+					// resize the other axe, in case of the ratio is fixed
+					if( lockRatio )
+						keepRatio( coor );
+				}
+			}else{
+				adj = magnetisme.gluePartiel( {x:pos.x , y:pos.y , width:w.x, height:w.y } , 1 , coor );
+				if( adj[ coor ] ){
+					if( adj[ coor ].typO == 0.5 ){
+						// middle case
+						var l_fix = Math.abs(  pos[ coor ]  - adj[ coor ].c ) * 2;
+						anchor[ coor ] -= w[ coor ] - l_fix;
+						w[ coor ] = l_fix;
+					} else {
+						w[ coor ] -= pos[ coor ] - adj[ coor ].coorC;
+						anchor[ coor ] -= pos[ coor ] - adj[ coor ].coorC;
+					}
+					// resize the other axe, in case of the ratio is fixed
+					if( lockRatio )
+						keepRatio( coor );
+				}
+			}
+			magnetisme.showGuide( elem, adj, coor );
+		}
+	}
+	
+	// adjust so the rectangle stay larger than limit
+	function minimalSize(){
+		factor( "x" );
+		factor( "y" );
+		function factor(  coor  ){
+			if( w[ coor ] < limit[ coor ] ){
+				var tmp = limit[ coor ];
+				if( sens[ coor ] ){
+					pos[ coor ]  -= tmp - w[ coor ];
+					w[ coor ]    += tmp - w[ coor ];
+				} else {
+					w[ coor ]      -= tmp - w[ coor ];
+					anchor[ coor ] -= tmp - w[ coor ];
+				}
+			}
+		}
+	}
 }
 
 $.fn.supportResize = function() {
