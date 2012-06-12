@@ -22,26 +22,16 @@ var locationEvts = ['move', 'longPress', 'click', 'doubleClick', 'scroll',
 
 // Event System
 
-mse.EventListener = function(evtName, callback, prevent, target) {
+mse.EventListener = function(evtName, callback, prevent) {
 	this.evtName = evtName;
 	this.callback = callback;
-	this.target = (target ? target : callback.caller);
 	this.preventBubbling = prevent ? prevent : false;
-	
-	this.inObj = function(x, y) {
-//??? Attention: x, y undefined means not in object???
-		if(x && y) {
-			if(!this.target.inObj) return true;
-			else if(this.target.inObj(x,y))
-				return true;
-			else return false;
-		}
-		else return true;
-	};
-	
-	this.notify = function(evt) {
-		this.callback.invoke(evt);
-	};
+};
+mse.EventListener.prototype = {
+    constructor: mse.EventListener,
+    notify: function(evt) {
+    	this.callback.invoke(evt);
+    }
 };
 
 
@@ -58,7 +48,7 @@ mse.EventDistributor = function(src, jqObj, deleg) {
 	jqObj.mseInteraction(this);
 	jqObj.mseInteraction('setDelegate', new Callback(this.distributor, this));
 	
-	this.rootEvt = new mse.EventDelegateSystem();
+	this.rootEvt = new mse.EventDelegateSystem(this.src);
 	
 	if(deleg) this.setDelegate(deleg);
 };
@@ -109,6 +99,18 @@ mse.EventDispatcher = function(container) {
 };
 mse.EventDispatcher.prototype = {
     constructor: mse.EventDispatcher,
+    // Sort function for sort the obj in z-index order
+    zSort: function(a, b) {
+//!!! Attention if a or b null
+		if(!a || !a.getZindex) return -1;
+		else if(!b || !b.getZindex) return 1;
+		
+		else if(a.getZindex() < b.getZindex()) 
+			return 1;
+		else if(a.getZindex() > b.getZindex())
+			return -1;
+		else return 0;
+	},
     observe: function(type, obj) {
         if(typeof type != "string" || !obj || !obj.evtDeleg) return;
     	// Listener array not until exist
@@ -117,8 +119,14 @@ mse.EventDispatcher.prototype = {
     	// Register observer
     	if($.inArray(obj, arr) == -1) arr.push(obj);
     	
-    	// Reorganize the order in observer list
-    	//this.listeners[evtName].sort(this.zSort);
+    	// Reorganize the order in observers' list
+    	this.observers[type].sort(this.zSort);
+    },
+    stopObserve: function(type, obj) {
+        var arr = this.observers[type];
+        if(!arr) return;
+        var index = $.inArray(obj, arr);
+        if(index != -1) arr.splice(index, 1);
     },
     setDominate: function(dom) {
     	this.domObj = dom;
@@ -131,7 +139,11 @@ mse.EventDispatcher.prototype = {
         
         for(var val in arr) {
         	if( (!this.domObj || this.domObj==arr[val] || this.domObj==arr[val].parent) ) {
-        		var prevent = arr[val].eventNotify(type, e);
+        	    // Non location based event, notify directly
+        	    if($.inArray(type, locationEvts) == -1) 
+        		    var prevent = arr[val].evtDeleg.eventNotify(type, e);
+        		// Location based event, event check in object
+        		else var prevent = arr[val].eventCheck(type, e);
         		success = true;
         		if(prevent) break;
         	}
@@ -142,55 +154,50 @@ mse.EventDispatcher.prototype = {
 
 
 
-// Event delegate
-mse.EventDelegateSystem = function() {
+/* Event delegate
+ *
+ * This class belongs to another object as its events management delegate.
+ * It will conserve a array of listeners for every event, and it can notify all the listeners when the event happens
+ *
+ */
+mse.EventDelegateSystem = function(obj) {
+    this.obj = obj;
 	this.listeners = {};
-	this.domObj = null;
 };
 mse.EventDelegateSystem.prototype = {
     constructor: mse.EventDelegateSystem,
-    
-    // Sort function for sort the obj in z-index order
-    zSort: function(la, lb) {
-		var a = la.target;
-		var b = lb.target;
-//!!! Attention if a or b null
-		if(!a || !a.getZindex) return -1;
-		else if(!b || !b.getZindex) return 1;
-		
-		else if(a.getZindex() < b.getZindex()) 
-			return 1;
-		else if(a.getZindex() > b.getZindex())
-			return -1;
-		else return 0;
-	},
-    
-    setDominate: function(dom) {
-		this.domObj = dom;
-	},
 
 	// Managerment of listeners
-	addListener: function(evtName, callback, prevent, target) {
-	    if(typeof evtName != "string" || !callback) return;
+	addListener: function(evtName, callback, prevent) {
+	    if(typeof evtName != "string" || !callback) return false;
 		// Listener array not until exist
-		if( !this.listeners[evtName] ) this.listeners[evtName] = new Array();
+		if( !this.listeners[evtName] ) {
+		    this.listeners[evtName] = new Array();
+		    this.listeners[evtName].push(listener);
+		    // Observe this event in the dispatcher of container
+		    if(this.obj && this.obj.getContainer) var container = this.obj.getContainer();
+		    if(container) container.dispatcher.observe(evtName, this.obj);
+		    return true;
+		}
 		var exist = false;
-		var listener = new mse.EventListener(evtName,callback,prevent,target);
+		var listener = new mse.EventListener(evtName,callback,prevent);
 		var arr = this.listeners[evtName];
 		for(var i in arr) {
-			if(arr[i].callback==callback && (!target || arr[i].target==target)) {
+			if(arr[i].callback == callback) {
 				exist = true;
-				// Replace in listener list
+				// Replace in listeners' list
 				arr.splice(i, 1, listener);
 			}
 		}
 		// Push to the listener list
 		if(!exist) this.listeners[evtName].push(listener);
-	
-		this.listeners[evtName].sort(this.zSort);
+		return true;
 	},
 	removeListeners: function(evtName) {
 		delete this.listeners[evtName];
+		// Stop observe the dispatcher of container
+		if(this.obj && this.obj.getContainer) var container = this.obj.getContainer();
+		if(container) container.dispatcher.stopObserve(evtName, this.obj);
 	},
 	removeListener: function(evtName, callback) {
 		var arr = this.listeners[evtName];
@@ -198,54 +205,29 @@ mse.EventDelegateSystem.prototype = {
 			for(var i = 0; i < arr.length; i++) {
 				if(arr[i].callback == callback){
 					// Delete listener
-					arr.splice(i,1); break;
+					arr.splice(i,1);
+					// No more listener for this event type, remove the array and stop observe the dispatcher
+					if(arr.length == 0) {
+					    this.removeListeners(evtName);
+					}
+					break;
 				}
 			}
 		}
 	},
+	// Notify a event, and return true if the listener will prevent bubbling, if not return false
 	eventNotif: function(evtName, evt) {
-	    var success = false;
-		switch(evtName) {
-		case 'move':
-			var ls = this.listeners['enter'];
-			if(ls) {
-				for(var i in ls) {
-					if( ls[i].target.inObj(evt.offsetX, evt.offsetY) 
-						&& !ls[i].target.inObj(evt.prev[0], evt.prev[1]) ) {
-						ls[i].notify(evt);
-						success = true;
-						break;
-					}
-				}
-			}
-		break;
-		}
+	    var prevent = false;
         
 		var arr = this.listeners[evtName];
-		if(!arr) return success;
+		if(!arr) return prevent;
 		
-		// Non location based events (keyboard events or custom events)
-		if($.inArray(evtName, locationEvts) == -1) {
-		    for(var val in arr) {
-		    	var prevent = arr[val].preventBubbling;
-		    	arr[val].notify(evt);
-		    	success = true;
-		    	if(prevent) break;
-		    }
+		for(var val in arr) {
+		    // If one listener want to prevent the bubbling, it will prevent it by transfering the prevent as true in return value, but it can't prevent other listeners for the same event in this delegate
+		    arr[val].notify(evt);
+		    if(arr[val].preventBubbling) prevent = true;
 		}
-		// Mouse and touch events
-		else {
-			for(var val in arr) {
-				if( (!this.domObj || this.domObj==arr[val].target || this.domObj==arr[val].target.parent) 
-					&& (!evt || arr[val].inObj(evt.offsetX, evt.offsetY)) ) {
-					var prevent = arr[val].preventBubbling;
-					arr[val].notify(evt);
-					success = true;
-				}
-				if(prevent) break;
-			}
-		}
-		return success;
+		return prevent;
 	}
 };
 

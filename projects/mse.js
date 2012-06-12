@@ -354,7 +354,7 @@ mse.UIObject = function(parent, param) {
     else this.parent = null;
     
     // Event handling
-    this.evtDeleg = new mse.EventDelegateSystem();
+    this.evtDeleg = new mse.EventDelegateSystem(this);
     
     // Parameters
     if(param) {
@@ -500,12 +500,21 @@ mse.UIObject.prototype = {
 		this.offy += dy;
 	},
 	
+	// Event management
+	eventCheck: function(type, e) {
+	    // In object, notify the event and get the return value that give the prevent bubbling value
+	    if(this.inObj(e.offsetX, e.offsetY))
+	        return this.evtDeleg.eventNotif(type, e);
+	    // Not in object, don't prevent bubbling
+	    else return false;
+	},
 	addListener: function() {
-		this.evtDeleg.addListener.apply(this.evtDeleg, arguments);
+		this.evtDeleg.addListener.apply(this.evtDeleg, Array.prototype.slice.call(arguments));
 	},
 	removeListener: function() {
-		this.evtDeleg.removeListener.apply(this.evtDeleg, arguments);
+		this.evtDeleg.removeListener.apply(this.evtDeleg, Array.prototype.slice.call(arguments));
 	},
+	
 	
 	// Config drawing context
 	configCtxFlex: function(ctx) {

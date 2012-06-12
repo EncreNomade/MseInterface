@@ -114,8 +114,7 @@ GestureAnalyser.prototype = {
     		var begin = this.blobs[id].origin();
     		var end = this.blobs[id].last();
     		var e = {'dx': end.x-begin.x, 'dy': end.y-begin.y, 'type':'translation'};
-    		if(this.listeners['translate'] instanceof Callback)
-    		    this.listeners['translate'].invoke( e );
+    		this.listeners.eventNotif('translate', e);
     	}
     	else if(this.count == 2){
     		// Two finger scale
@@ -131,8 +130,7 @@ GestureAnalyser.prototype = {
     		var lbegin = Math.sqrt(disBegin[0]*disBegin[0] + disBegin[1]*disBegin[1]);
     		var lend = Math.sqrt(disEnd[0]*disEnd[0] + disEnd[1]*disEnd[1]);
     		var e = {'scale': lend/lbegin, 'type':'scale'};
-    		if(this.listeners['scale'] instanceof Callback)
-    		    this.listeners['scale'].invoke( e );
+    		this.listeners.eventNotif('scale', e);
     	}
     },
     analyseRemove: function(id) {
@@ -141,8 +139,7 @@ GestureAnalyser.prototype = {
     		if(this.tapwait && this.tapid == id) {
     		    var touch = this.blobs[id].last();
     		    var e = {'offsetX': touch.x, 'offsetY': touch.y, 'type':'click'};
-    		    if(this.listeners['click'] instanceof Callback)
-    		        this.listeners['click'].invoke( e );
+    		    this.listeners.eventNotif('click', e);
     		}
     	}
     	else if(this.count == 2){
@@ -166,7 +163,7 @@ var swipeLSeuil = 40;
 var swipeWSeuil = 30;
 
 var _currentEvt;
-var _listeners;
+var _listenerMgr;
 var _src;
 var _analyser;
 
@@ -205,11 +202,36 @@ var eventsMobile = {
 	scale           : 'touchstart touchmove touchend'
 };
 
+
+// Event listener manager
+var EventMgr = function() {
+    this.listeners = {};
+};
+EventMgr.prototype = {
+    addListener: function(type, cb) {
+        if( typeof(type) != 'string' || !(cb instanceof Callback) )
+        	return;
+        
+        this.listeners[type] = cb;
+    },
+    removeListener: function(type, cb) {
+        delete this.listeners[type];
+    },
+    hasListener: function(type) {
+        return ( this.listeners[type] == null );
+    },
+    eventNotif: function(type, e) {
+        if( this.listeners[type] )
+        	this.listeners[type].invoke( e );
+    }
+};
+
+
 var methods = {
 
 	init : function( src ) {
 		if( !$.data($(this), 'mselisteners') ) {
-			var lis = {};
+			var lis = new EventMgr();
 			$.data( $(this).get(0), 'mselisteners', lis );
 			_analyser = new GestureAnalyser(lis);
 			$.data( $(this).get(0), 'mseAnalyser', _analyser );
@@ -252,14 +274,14 @@ var methods = {
 		else evts = eventsWeb;
 		
 		if( evts[type] != null ) {
-			var listeners = $.data( $(this).get(0), 'mselisteners' );
+			var listenerMgr = $.data( $(this).get(0), 'mselisteners' );
 			
 			// If not existe, define listeners
-			if( !listeners ) {
+			if( !listenerMgr ) {
 				var lis = {};
-				listeners = $.data( $(this).get(0), 'mselisteners', lis );
+				listenerMgr = $.data( $(this).get(0), 'mselisteners', lis );
 			}
-			listeners[type] = cb;
+			listenerMgr.addListener(type, cb);
 			
 			// Bind event to delegate function 'analyse'
 			// No need for spercial bind
@@ -270,14 +292,13 @@ var methods = {
 				var arr = evts[type].split(' ');
 				for( var i=0; i < arr.length; i++ ) {
 					$(this).get(0).addEventListener(arr[i], analyse, false);
-					//$(this).bind(arr[i], analyse);
 				}
 			}
 		}
 	},
 	removeListener : function(type) {
-	    var listeners = $.data( $(this).get(0), 'mselisteners' );
-	    if(listeners) delete listeners[type];
+	    var listenerMgr = $.data( $(this).get(0), 'mselisteners' );
+	    if(listenerMgr) listenerMgr.removeListener(type);
 	},
 	
 	setDelegate : function(cb) {
@@ -287,12 +308,12 @@ var methods = {
 		if(MseConfig.mobile) evts = eventsMobile;
 		else evts = eventsWeb;
 		
-		var listeners = $.data( $(this).get(0), 'mselisteners' );
+		var listenerMgr = $.data( $(this).get(0), 'mselisteners' );
 		
 		// If not existe, fail to set delegate
-		if( !listeners ) return;
+		if( !listenerMgr ) return;
 		for(var type in evts)
-			listeners[type] = cb;
+			listenerMgr.addListener(type, cb);
 		// Bind all events
 		if(MseConfig.mobile) {
 			$(this).bind('click dblclick taphold swipeleft swiperight.mseInteraction', analyse);
@@ -304,10 +325,10 @@ var methods = {
 			$(this).bind('click dblclick mousedown mousemove mouseup mousewheel DOMMouseScroll.mseInteraction', analyse);
 			
 			$(document).bind('keypress keydown keyup.mseInteraction', {'target': $(this)}, analyse);
-			listeners = $.data( $(this).get(0), 'mselisteners' );
-			listeners['keydown'] = cb;
-			listeners['keyup'] = cb;
-			listeners['keypress'] = cb;
+			listenerMgr = $.data( $(this).get(0), 'mselisteners' );
+			listenerMgr.addListener('keydown', cb);
+			listenerMgr.addListener('keyup', cb);
+			listenerMgr.addListener('keypress', cb);
 		}
 	},
 	setMultiAnalyser : function(analyser) {
@@ -350,11 +371,11 @@ function analyse(e) {
 	else var target = $(this).get(0);
 	
 	// Get listener list
-	_listeners = $.data( target, 'mselisteners' );
+	_listenerMgr = $.data( target, 'mselisteners' );
 	_analyser = $.data( target, 'mseAnalyser' );
 	_src = $.data( target, 'mseSrc' );
 	_src = (!_src) ? $(this) : _src;
-	if(!_listeners) return;
+	if(!_listenerMgr) return;
 	
 	var evt = (e.originalEvent ? e.originalEvent : e) || window.event;
 	evt.preventDefault();
@@ -363,15 +384,14 @@ function analyse(e) {
 	switch( event.type ) {
 	
 	case 'click' :
-		if( _listeners['click'] instanceof Callback )
-			_listeners['click'].invoke( event );
-		if( _listeners['doubleClick'] instanceof Callback ) {
+	    _listenerMgr.eventNotif('click', event);
+		if( _listenerMgr.hasListener('doubleClick') ) {
 			// Detect the double click on mobile
 			if(MseConfig.mobile) {
 				// Already clicked
 				if( _clicked ) {
 					event.type = 'doubleClick';
-					_listeners['doubleClick'].invoke( event );
+					_listenerMgr.eventNotif('doubleClick', event);
 					_clicked = false;
 				}
 				else {
@@ -386,9 +406,8 @@ function analyse(e) {
 		break;
 	
 	case 'dblclick' : 
-		if( _listeners['doubleClick'] instanceof Callback )
-			event.type = 'doubleClick';
-			_listeners['doubleClick'].invoke( event );
+	    event.type = 'doubleClick';
+	    _listenerMgr.eventNotif('doubleClick', event);
 		break;
 	
 // Mouse Events	
@@ -401,10 +420,10 @@ function analyse(e) {
 		if(_currentEvt != null)
 			gestureUpdate(e);
 
-		if( _listeners['move'] instanceof Callback ) {
+		if( _listenerMgr.hasListener('move') ) {
 			event.type = 'move';
 			event.prev = _prevLoc;
-			_listeners['move'].invoke( event );
+			_listenerMgr.eventNotif('move', event);
 			_prevLoc = [event.offsetX, event.offsetY];
 		}
 		break;
@@ -416,17 +435,14 @@ function analyse(e) {
 		break;
 		
 	case 'mousewheel' :
-		if( _listeners['scroll'] instanceof Callback )
-			_listeners['scroll'].invoke( event );
+	    _listenerMgr.eventNotif('scroll', event);
 		break;
 		
 	
 // Touch Events for iOS
 	case 'taphold' :
-		if( _listeners['longPress'] instanceof Callback ){
-			event.type = 'longPress';
-			_listeners['longPress'].invoke( event );
-		}
+	    event.type = 'longPress';
+	    _listenerMgr.eventNotif('longPress', event);
 		break;
 		
 	case 'touchstart' :
@@ -435,19 +451,17 @@ function analyse(e) {
 		var evt = new MultiGestEvt(e, "multiGestAdd");
 		_analyser.addBlob(evt);
 		// Support multi touch custom events
-		if( _listeners['gestureMulti'] instanceof Callback ) {
-		    _listeners['gestureMulti'].invoke( evt );
-		}
+		_listenerMgr.eventNotif('gestureMulti', evt);
 		break;
 	
 	case 'touchmove' :
 		if( e.touches.length === 1 ) {
 			gestureUpdate(e);
 	
-		    if( _listeners['move'] instanceof Callback ) {
+		    if( _listenerMgr.hasListener('move') ) {
 		    	event.type = 'move';
 		    	event.prev = _prevLoc;
-		    	_listeners['move'].invoke( event );
+		    	_listenerMgr.eventNotif('move', event);
 		    	_prevLoc = [event.offsetX, event.offsetY];
 		    }
 		}
@@ -455,9 +469,7 @@ function analyse(e) {
 		var evt = new MultiGestEvt(e, "multiGestUpdate");
 		_analyser.updateBlob(evt);
 		// Support multi touch custom events
-		if( _listeners['gestureMulti'] instanceof Callback ) {
-		    _listeners['gestureMulti'].invoke( evt );
-		}
+		_listenerMgr.eventNotif('gestureMulti', evt);
 		break;
 	
 	case 'touchend' : 
@@ -467,17 +479,14 @@ function analyse(e) {
 		var evt = new MultiGestEvt(e, "multiGestRemove");
 		_analyser.removeBlob(evt);
 		// Support multi touch custom events
-		if( _listeners['gestureMulti'] instanceof Callback ) {
-		    _listeners['gestureMulti'].invoke( evt );
-		}
+		_listenerMgr.eventNotif('gestureMulti', evt);
 		break;
 		
 
 // Swipe Event propose by jQuery Mobile
 	case 'swipeleft' :
 	case 'swiperight' :
-		if( _listeners[event.type] instanceof Callback )
-			_listeners[event.type].invoke( event );
+	    _listenerMgr.eventNotif(event.type, event);
 		break;
 		
 		
@@ -485,13 +494,9 @@ function analyse(e) {
 // Capable to handle normal key events and alt/shift pressed event(not implemented for ctrl)
 // In Firefox, key 'enter' doesn't function in keypress events
     case 'keypress' :
-    	if( _listeners[event.type] instanceof Callback )
-    		_listeners[event.type].invoke( event );
-    	break;
-	case 'keydown' :
-	case 'keyup' :
-		if( _listeners[event.type] instanceof Callback )
-			_listeners[event.type].invoke( event );
+    case 'keydown' :
+    case 'keyup' :
+		_listenerMgr.eventNotif(event.type, event);
 		break;
 		
 	}
@@ -500,7 +505,7 @@ function analyse(e) {
 function pressTimeout() {
 	if(_currentEvt) {
 		_currentEvt.type = 'longPress';
-		_listeners['longPress'].invoke( _currentEvt );
+		_listenerMgr.eventNotif('longPress', _currentEvt);
 	}
 }
 function clickTimeout() {_clickDown=false;}
@@ -510,15 +515,15 @@ function gestureStart(e) {
 	_currentEvt = new MseGestEvt(e, true);
 	_addPoint(e);
 	
-	if( _listeners['longPress'] instanceof Callback )
+	if( _listenerMgr.hasListener('longPress') )
 		_pressTimer = setTimeout( pressTimeout, pressTime );
-	if( MseConfig.mobile && _listeners['click'] instanceof Callback ) {
+	if( MseConfig.mobile && _listenerMgr.hasListener('click') ) {
 		_clickDown = true;
 		setTimeout( clickTimeout, clickTime );
 	}
-	if( _listeners['gestureSingle'] instanceof Callback ) {
+	if( _listenerMgr.hasListener('gestureSingle') ) {
 		_currentEvt.type = 'gestureStart';
-		_listeners['gestureSingle'].invoke( _currentEvt );
+		_listenerMgr.eventNotif('gestureSingle', _currentEvt);
 	}
 }
 
@@ -526,12 +531,10 @@ function gestureUpdate(e) {
     if(!_currentEvt) return;
 	_addPoint(e);
 	
-	if( _listeners['longPress'] instanceof Callback )
+	if( _listenerMgr.hasListener('longPress') )
 		clearTimeout(_pressTimer);
-	if( _listeners['gestureSingle'] instanceof Callback ) {
-		_currentEvt.type = 'gestureUpdate';
-		_listeners['gestureSingle'].invoke( _currentEvt );
-	}
+	_currentEvt.type = 'gestureUpdate';
+	_listenerMgr.eventNotif('gestureSingle', _currentEvt);
 }
 
 function gestureEnd(e) {
@@ -544,15 +547,15 @@ function gestureEnd(e) {
 	// Click
 	if(_clickDown) {
 		_currentEvt.type = 'click';
-		_listeners['click'].invoke( _currentEvt );
+		_listenerMgr.eventNotif('click', _currentEvt);
 		_clickDown = false;
 	}
 	// Long Press
-	if( _listeners['longPress'] instanceof Callback )
+	if( _listenerMgr.hasListener('longPress') )
 		clearTimeout(_pressTimer);
 		
 	// Swipe left right
-	if( _listeners['swipe'] instanceof Callback ) {
+	if( _listenerMgr.hasListener('swipe') ) {
 		if(!MseConfig.mobile) {
 			// Init
 			var maxY = _currentEvt.listY[0];
@@ -584,11 +587,11 @@ function gestureEnd(e) {
 			if(maxY-minY < swipeWSeuil && _currentEvt.distance > swipeLSeuil) {
 				if(validLeft) { // Swipe Left
 					_currentEvt.type = 'swipeleft';
-					_listeners['swipe'].invoke( _currentEvt );
+					_listenerMgr.eventNotif('swipe', _currentEvt);
 				}
 				else if(validRight) { // Swipe Left
 					_currentEvt.type = 'swiperight';
-					_listeners['swipe'].invoke( _currentEvt );
+					_listenerMgr.eventNotif('swipe', _currentEvt);
 				}
 			}
 		}
@@ -618,22 +621,19 @@ function gestureEnd(e) {
 		if(maxX-minX < swipeWSeuil && _currentEvt.distance > swipeLSeuil) {
 			if(validUp) {
 				_currentEvt.type = 'swipeup';
-				_listeners['swipe'].invoke( _currentEvt );
+				_listenerMgr.eventNotif('swipe', _currentEvt);
 			}
 			else if(validDown) {
 				_currentEvt.type = 'swipedown';
-				_listeners['swipe'].invoke( _currentEvt );
+				_listenerMgr.eventNotif('swipe', _currentEvt);
 			}
 		}
 	}
 	
 	// Gesture Single
-	if( _listeners['gestureSingle'] instanceof Callback ) {
-		_currentEvt.type = 'gestureEnd';
-		_listeners['gestureSingle'].invoke( _currentEvt );
-	}
-	
-	
+	_currentEvt.type = 'gestureEnd';
+	_listenerMgr.eventNotif('gestureSingle', _currentEvt);
+    
 	_currentEvt = null;
 }
 
