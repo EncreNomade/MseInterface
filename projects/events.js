@@ -42,7 +42,7 @@ mse.EventListener.prototype = {
  * It has also one event delegate of his own for the events of mse.root object like 'showover'.
  *
  */
-mse.EventDistributor = function(src, jqObj, deleg) {
+mse.EventDistributor = function(src, jqObj, dispatcher) {
 	this.src = src;
 	this.dominate = null;
 	jqObj.mseInteraction(this);
@@ -50,7 +50,13 @@ mse.EventDistributor = function(src, jqObj, deleg) {
 	
 	this.rootEvt = new mse.EventDelegateSystem(this.src);
 	
-	if(deleg) this.setDelegate(deleg);
+	// Mobile multi gesture support
+	this.rootAnalyser = new GestureAnalyser(this.rootEvt);
+	this.rootEvt.addListener('multiGestAdd', new Callback(this.rootAnalyser.addBlob, this.rootAnalyser));
+	this.rootEvt.addListener('multiGestUpdate', new Callback(this.rootAnalyser.updateBlob, this.rootAnalyser));
+	this.rootEvt.addListener('multiGestRemove', new Callback(this.rootAnalyser.removeBlob, this.rootAnalyser));
+	
+	if(dispatcher) this.setDispatcher(dispatcher);
 };
 mse.EventDistributor.prototype = {
     constructor: mse.EventDistributor,
@@ -62,15 +68,16 @@ mse.EventDistributor.prototype = {
             e.corrected = true;
         }
     	if(!this.dominate) this.rootEvt.eventNotif(e.type, e);
-    	if(this.delegate) this.delegate.eventNotif(e.type, e);
+    	if(this.dispatcher) this.dispatcher.eventNotif(e.type, e);
     },
-    setDelegate: function(deleg) {
-    	this.delegate = deleg;
+    setDelegate: function(dispatcher) {
+        if(dispatcher instanceof mse.EventDispatcher)
+        	this.dispatcher = dispatcher;
     },
     
     setDominate: function(dominate) {
         if(dominate != this.src) this.dominate = dominate;
-    	if(this.delegate) this.delegate.setDominate(dominate);
+    	if(this.dispatcher) this.dispatcher.setDominate(dominate);
     },
     addListener: function(evtName, callback, pr, target) {
     	this.rootEvt.addListener(evtName,callback,pr,target);

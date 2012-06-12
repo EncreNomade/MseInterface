@@ -595,7 +595,7 @@ mse.Root = function(id, width, height, orientation) {
 		if(this.container) this.container.firstShow = false;
 		container.root = this;
 		this.container = container;
-		this.evtDistributor.setDelegate(container.evtDeleg);
+		this.evtDistributor.setDelegate(container.dispatcher);
 		this.dest = null;
 		this.container.scale = this.scale;
 	};
@@ -720,6 +720,7 @@ mse.BaseContainer = function(root, param, orientation) {
 	this._layers = new Array();
 	this._changed = new Array();
 	this.deleg = null;
+	this.dispatcher = new mse.EventDispatcher(this);
 	
 	// Parametres
 	this.scale = 1.0;
@@ -1785,7 +1786,9 @@ $.extend(mse.Game.prototype, {
         return this.msg[this.state];
     },
     setEvtProxy: function(proxy) {
-        if(proxy instanceof mse.EventDistributor || proxy instanceof mse.EventDelegateSystem) {
+        if(proxy instanceof mse.EventDistributor || 
+           proxy instanceof mse.EventDispatcher || 
+           proxy instanceof mse.EventDelegateSystem) {
             this.proxy = proxy;
         }
     },
