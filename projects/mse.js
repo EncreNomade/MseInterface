@@ -463,7 +463,7 @@ mse.UIObject.prototype = {
 	
 	// Z-index
 	getZindex: function() {
-		return this.zid ? this.zid : (this.parent ? this.parent.zid : 0);
+		return this.zid ? this.zid : (this.parent ? this.parent.getZindex() : 0);
 	},
 	
 	// Container
@@ -595,7 +595,7 @@ mse.Root = function(id, width, height, orientation) {
 		if(this.container) this.container.firstShow = false;
 		container.root = this;
 		this.container = container;
-		this.evtDistributor.setDelegate(container.dispatcher);
+		this.evtDistributor.setDispatcher(container.dispatcher);
 		this.dest = null;
 		this.container.scale = this.scale;
 	};
@@ -1055,16 +1055,12 @@ $.extend(mse.Text.prototype, {
         if(!linkInit) return;
         
         if(this.links.length == 0) {
-            this.getContainer().evtDeleg.addListener(
-            	'click', 
-            	new mse.Callback(this.clicked, this), 
-            	false, 
-        		this);
+            this.addListener('click', new mse.Callback(this.clicked, this), false);
         }
         
         // Audio auto play
         if(linkObj.type == 'audio')
-        	this.evtDeleg.addListener('firstShow', new mse.Callback(this.autoplay, this, linkObj.link));
+        	this.addListener('firstShow', new mse.Callback(this.autoplay, this, linkObj.link));
         
         linkObj.owner = this;
         this.links.push(linkObj); 
@@ -1207,7 +1203,8 @@ $.extend( mse.ArticleLayer.prototype , {
 		this.endId = 0;
 		this.setSlider();
 		
-		this.ctrUI = new mse.Layer(null, this.zid+1, {pos:[this.getX()+(this.width-250)/2,mse.root.height-50], size:[250,50]});
+		this.ctrUI = new mse.Layer(this.parent, this.zid+1, {pos:[this.offx+(this.width-250)/2,this.offy+this.height-50], size:[250,50]});
+		this.parent.addLayer('CTRLUI', this.ctrUI);
 		this.ctrUI.accelere = new mse.Image(this.ctrUI, {pos:[220,10],size:[30,30]}, 'accelerBn');
 		this.ctrUI.ralenti = new mse.Image(this.ctrUI, {pos:[0,10],size:[30,30]}, 'ralentiBn');
 		this.ctrUI.up = new mse.Image(this.ctrUI, {pos:[170,10],size:[30,30]}, 'upBn');
@@ -1264,10 +1261,10 @@ $.extend( mse.ArticleLayer.prototype , {
 		};
 		
 		var cb = new mse.Callback(this.ctrUI.ctrEffect, this.ctrUI);
-		this.getContainer().evtDeleg.addListener('click', cb, true, this.ctrUI);
+		this.ctrUI.addListener('click', cb, true);
 		// Listener to scroll the layer with up down buttons
-		this.getContainer().evtDeleg.addListener('gestureStart', new mse.Callback(this.ctrUI.upDownStart, this.ctrUI), true, this.ctrUI);
-		this.getContainer().evtDeleg.addListener('gestureEnd', new mse.Callback(this.ctrUI.upDownEnd, this.ctrUI));
+		this.ctrUI.addListener('gestureStart', new mse.Callback(this.ctrUI.upDownStart, this.ctrUI), true);
+		this.ctrUI.addListener('gestureEnd', new mse.Callback(this.ctrUI.upDownEnd, this.ctrUI), true);
 		
 		// Key event for control of speed
 		this.speedCtr = function(e) {
@@ -1283,7 +1280,7 @@ $.extend( mse.ArticleLayer.prototype , {
 			}
 		};
 		cb = new mse.Callback(this.speedCtr, this);
-		this.getContainer().evtDeleg.addListener('keydown', cb);
+		this.addListener('keydown', cb);
 	},
 	setSlider : function() {
 		// Slider
@@ -1291,11 +1288,11 @@ $.extend( mse.ArticleLayer.prototype , {
 		this.updateListScreen();
 		
 		// Scroll event
-		this.slider.evtDeleg.addListener('rolling', new mse.Callback(function(){
+		this.slider.addListener('rolling', new mse.Callback(function(){
 		    //if(this.active && this.dominate instanceof mse.UIObject) return;
 		    this.pause = true;
 		}, this) );
-		this.slider.evtDeleg.addListener('hide', new mse.Callback(function(){
+		this.slider.addListener('hide', new mse.Callback(function(){
 		    var nb = this.complete ? this.objList.length : this.currIndex;
 		    if( nb==0 || this.objList[nb-1].getY() < mse.root.height*0.55 ) {
 		    	this.pause = false;
@@ -1328,8 +1325,8 @@ $.extend( mse.ArticleLayer.prototype , {
 		
 		for(var l in this.links) {
 			if(this.links[l].type == type) {
-				this.objList[this.links[l].index].evtDeleg.addListener('show', new mse.Callback(deleg.linkShowHandler, deleg, this.links[l]));
-				this.objList[this.links[l].index].evtDeleg.addListener('disapear', new mse.Callback(deleg.linkDisapearHandler, deleg, this.links[l]));
+				this.objList[this.links[l].index].addListener('show', new mse.Callback(deleg.linkShowHandler, deleg, this.links[l]));
+				this.objList[this.links[l].index].addListener('disapear', new mse.Callback(deleg.linkDisapearHandler, deleg, this.links[l]));
 			}
 		}
 	},
@@ -1351,7 +1348,7 @@ $.extend( mse.ArticleLayer.prototype , {
 	    }
 	    else {
 	        game.parent = this;
-	        game.evtDeleg.addListener('firstShow', new mse.Callback(game.start, game));
+	        game.addListener('firstShow', new mse.Callback(game.start, game));
 	        this.addObject(game);
 	    }
 	},
@@ -1378,7 +1375,7 @@ $.extend( mse.ArticleLayer.prototype , {
 	    }
 	    else {
 	        game.parent = this;
-	        game.evtDeleg.addListener('firstShow', new mse.Callback(game.start, game));
+	        game.addListener('firstShow', new mse.Callback(game.start, game));
 	        this.insertObject(game, index);
 	    }
 	},
@@ -1566,7 +1563,7 @@ $.extend(mse.Image.prototype, {
             this.imgShower.show();
             // console.log('zoom');
         }, this);
-        this.getContainer().evtDeleg.addListener('click', cb, true, this.zoomIcon);
+        this.zoomIcon.addListener('click', cb, true);
     },
     startEffect: function (effet) {
     	if(!this.currentEffect && effet instanceof mse.EffectImage && effet.subject == this) { 
@@ -1809,15 +1806,19 @@ $.extend(mse.Game.prototype, {
         layer.addObject(this);
     },
     start: function() {
-    	mse.root.container.evtDeleg.setDominate(this);
+    	mse.root.evtDistributor.setDominate(this);
         if(!this.directShow) mse.root.gamewindow.loadandstart(this);
         else this.init();
         this.evtDeleg.eventNotif("start");
     },
+    getContainer: function() {
+        if(!this.directShow) return mse.root.gamewindow;
+        else return this.parent.getContainer();
+    },
     draw: function(ctx) {},
     end: function() {
         this.evtDeleg.eventNotif("end");
-        mse.root.container.evtDeleg.setDominate(null);
+        mse.root.evtDistributor.setDominate(null);
         if(!this.directShow) mse.root.gamewindow.end();
         if(this.expo) this.expo.endGame();
     },
@@ -1836,18 +1837,15 @@ mse.GameShower = function() {
 	this.jqObj.css("display", "none");
 	this.ctx = this.jqObj.get(0).getContext('2d');
 	
-	this.evtDeleg = new mse.EventDelegateSystem();
-	this.jqObj.mseInteraction('init');
-	this.jqObj.mseInteraction('setDelegate', new Callback(function(e){
-	    this.evtDeleg.eventNotif(e.type, e);
-	}, this));
+	this.dispatcher = new mse.EventDispatcher(this);
+	this.distributor = new mse.EventDistributor(this, this.jqObj, this.dispatcher);
 	
 	this.currGame = null;
 	this.state = "DESACTIVE";
 	mse.src.addSource('gameover', './UI/gameover.jpg', 'img', true);
 	this.loseimg = new mse.Image(null, {pos:[0,0]}, 'gameover');
 	this.losetext = new mse.Text(null, {font:'Bold 36px '+mse.configs.font,fillStyle:'#FFF',textBaseline:'middle',textAlign:'center'}, 'Perdu ...', true);
-	this.losetext.evtDeleg.addListener('show', new mse.Callback(this.losetext.startEffect, this.losetext, {"typewriter":{speed:2}}));
+	this.losetext.addListener('show', new mse.Callback(this.losetext.startEffect, this.losetext, {"typewriter":{speed:2}}));
 	this.passBn = new mse.Button(null, {size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je ne joue plus', 'wikiBar');
 	this.restartBn = new mse.Button(null, {size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je rejoue', 'aideBar');
 	this.firstShow = false;
@@ -1882,7 +1880,7 @@ mse.GameShower.prototype = {
 	load : function(game) {
 	    if(!game || !(game instanceof mse.Game)) return;
 	    this.currGame = game;
-	    this.currGame.setEvtProxy(this.evtDeleg);
+	    this.currGame.setEvtProxy(this.distributor);
 	    this.firstShow = false;
 	    this.state = "LOAD";
 	    
@@ -1925,14 +1923,14 @@ mse.GameShower.prototype = {
 	        this.currGame.init();
 	    }
 	    else return;
-	    this.evtDeleg.removeListener('click', this.cbrestart);
+	    this.distributor.removeListener('click', this.cbrestart);
 	},
 	lose : function() {
 	    this.state = "LOSE";
 	    //mse.fadein(this.loseimg, 5);
-	    this.evtDeleg.removeListener('click');
+	    this.distributor.removeListeners('click');
 	    this.losetext.evtDeleg.eventNotif('show');
-	    this.evtDeleg.addListener('click', this.cbrestart);
+	    this.distributor.addListener('click', this.cbrestart);
 	},
 	end : function() {
 	    this.jqObj.hide(1000);
@@ -1993,89 +1991,21 @@ mse.GameExpose = function(parent, param, game) {
     this.msginlines = new Array();
     if(!this.font) this.font = "12px Verdana";
     this.lineHeight = Math.round( 1.2*checkFontSize(this.font) );
-    this.evtDeleg.addListener('firstShow', new mse.Callback(parent.interrupt, parent));
+    this.addListener('firstShow', new mse.Callback(parent.interrupt, parent));
     this.passBn = new mse.Button(this, {pos:[10,this.height-60],size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je ne joue pas', 'wikiBar');
-    
-    this.launchGame = function(e) {
-        if(this.passBn.inObj(e.offsetX, e.offsetY)) this.endGame();
-        else {
-            this.getContainer().evtDeleg.removeListener('click', this.launchcb);
-            this.game.start();
-        }
-        this.passBn = null;
-    };
+
     this.launchcb = new mse.Callback(this.launchGame, this);
-    
-    this.endGame = function() {
-        if(parent.play) parent.play();
-    };
-    
-    this.logic = function() {
-        if(!this.firstShow) {
-            this.firstShow = true;
-            this.evtDeleg.eventNotif('firstShow');
-            this.getContainer().evtDeleg.addListener('click',  this.launchcb, true);
-        }
-        // Message changed
-        if(this.msg != this.game.getMsg()) {
-            this.msg = this.game.getMsg();
-            this.msginlines.splice(0,this.msginlines.length);
-            this.bullWidth = this.width; this.bullHeight = 0;
-            
-            if(!this.msg || this.msg == '') {this.bullHeight = 0; return;}
-            var ctx = mse.root.ctx;
-            ctx.save();
-            ctx.font = this.font;
-            var maxM = Math.floor( (this.bullWidth-20)/ctx.measureText('A').width );
-            
-            for(var j = 0; j < this.msg.length;) {
-            	// Find the index of next line
-            	var next = checkNextLine(ctx, this.msg.substr(j), maxM, this.bullWidth-20);
-            	this.msginlines.push( this.msg.substr(j, next) );
-            	j += next;
-            }
-            ctx.restore();
-        }
-    };
-    
-    this.draw = function(ctx) {
-        ctx.save();
-        ctx.translate(this.getX(), this.getY()+15);
-        
-        ctx.fillStyle = "#000";
-        ctx.fillRect(0, 0, this.width, this.height-30);
-        // Border
-        ctx.strokeStyle = 'rgb(188,188,188)';
-        ctx.lineWidth = 5;
-        ctx.strokeRect(0, -2.5, this.width, this.height-30);
-        ctx.lineWidth = 1;
-        
-        // Msg
-        ctx.font = this.font;
-        ctx.textBaseline = "top";
-        ctx.fillStyle = "#FFF";
-        var top = (this.height-30 - this.msginlines.length * this.lineHeight)/2;
-        for(var i = 0; i < this.msginlines.length; i++) {
-            ctx.fillText(this.msginlines[i], 10, top+i*this.lineHeight);
-        }
-        
-        ctx.restore();
-        ctx.save();
-        if(this.passBn) this.passBn.draw(ctx);
-        ctx.restore();
-    };
 };
-extend( mse.GameExpose ,  mse.UIObject );
+extend( mse.GameExpose , mse.UIObject );
 $.extend( mse.GameExpose.prototype , {
 	launchGame : function(e) {
         if(this.passBn.inObj(e.offsetX, e.offsetY)) this.endGame();
         else {
-            this.getContainer().evtDeleg.removeListener('click', this.launchcb);
+            this.removeListener('click', this.launchcb);
             this.game.start();
         }
         this.passBn = null;
     },
-    launchcb : new mse.Callback(this.launchGame, this),
     endGame : function() {
         if(parent.play) parent.play();
     },
@@ -2083,7 +2013,7 @@ $.extend( mse.GameExpose.prototype , {
         if(!this.firstShow) {
             this.firstShow = true;
             this.evtDeleg.eventNotif('firstShow');
-            this.getContainer().evtDeleg.addListener('click',  this.launchcb, true);
+            this.addListener('click', this.launchcb, true);
         }
         // Message changed
         if(this.msg != this.game.getMsg()) {
@@ -2169,9 +2099,9 @@ mse.Slider = function(target, param, orientation, offset, parent) {
 	
 	this.cbScroll = new mse.Callback(this.scroll, this);
 	this.cbGest = new mse.Callback(this.gestUpdate, this);
-	this.getContainer().evtDeleg.addListener('gestureUpdate', this.cbGest, false, this.tar);
+	this.tar.addListener('gestureUpdate', this.cbGest, false);
 	if(!MseConfig.mobile)
-		this.getContainer().evtDeleg.addListener('mousewheel', this.cbScroll, false, this.tar);
+		this.tar.addListener('mousewheel', this.cbScroll, false);
 };
 extend(mse.Slider, mse.UIObject);
 $.extend(mse.Slider.prototype, {
@@ -2288,7 +2218,7 @@ $.extend(mse.Button.prototype, {
     setLink: function(link, type) {
         if(link) this.link = link;
         if(type == 'url') {
-            this.getContainer().evtDeleg.addListener('click', new mse.Callback(this.urlClicked, this), true, this);
+            this.addListener('click', new mse.Callback(this.urlClicked, this), true);
         }
     },
     draw: function(ctx, x, y) {
@@ -2393,7 +2323,7 @@ $.extend(mse.ImageCard.prototype, {
             this.imgShower.show();
             // console.log('zoom');
         }, this);
-        this.getContainer().evtDeleg.addListener('click', cb, true, this.zoomIcon);
+        this.zoomIcon.addListener('click', cb, true);
     },
     draw: function(ctx){
         ctx.save();
@@ -2528,11 +2458,11 @@ $.extend(mse.WikiLayer.prototype, {
     cardw: 250,
     cardh: 320,
     hide: function() {
-        var container = this.getContainer();
+        var container = this.parent;
         if(container) {
-            container.evtDeleg.removeListener('gestureStart', this.cbDragStart);
-            container.evtDeleg.removeListener('gestureUpdate', this.cbDragMove);
-            container.evtDeleg.removeListener('gestureEnd', this.cbDragEnd);
+            this.removeListener('gestureStart', this.cbDragStart);
+            this.removeListener('gestureUpdate', this.cbDragMove);
+            this.removeListener('gestureEnd', this.cbDragEnd);
         }
         
         this.parent.reactiveOthers();
@@ -2549,9 +2479,9 @@ $.extend(mse.WikiLayer.prototype, {
         for(var card in this.objList)
             this.objList[card].setPos(this.cardx, this.cardy);
         
-        container.evtDeleg.addListener('gestureStart', this.cbDragStart, true, this);
-        container.evtDeleg.addListener('gestureUpdate', this.cbDragMove, true, this);
-        container.evtDeleg.addListener('gestureEnd', this.cbDragEnd, true, this);
+        this.addListener('gestureStart', this.cbDragStart, true);
+        this.addListener('gestureUpdate', this.cbDragMove, true);
+        this.addListener('gestureEnd', this.cbDragEnd, true);
         
         container.addLayer('wiki', this);
         this.globalAlpha = 1;
@@ -2608,7 +2538,7 @@ mse.Video = function(parent, param, srcs) {
 	mse.UIObject.call(this, parent, param);
 	this.srcs = srcs;
 	
-	this.getContainer().evtDeleg.addListener('click', new mse.Callback(this.launch, this), true, this);
+	this.addListener('click', new mse.Callback(this.launch, this), true);
 };
 extend( mse.Video , mse.UIObject );
 $.extend( mse.Video.prototype , { 
@@ -3158,12 +3088,7 @@ $.extend(mse.Animation.prototype, {
 			this.expects[id] = cds[i].expect ? cds[i].expect : "everytime";
 			this.success[id] = false;
 			var src = cds[i].src;
-			if($.inArray(cds[i].type, defaultEvents)!=-1 && !(cds[i].src instanceof mse.BaseContainer)) {
-			    src = src.getContainer();
-			    src.evtDeleg.addListener(cds[i].type, new mse.Callback(this.conditionChanged, this, [id]), false, cds[i].src);
-			}
-			else 
-			    src.evtDeleg.addListener(cds[i].type, new mse.Callback(this.conditionChanged, this, [id]), false);
+			src.addListener(cds[i].type, new mse.Callback(this.conditionChanged, this, [id]), false);
 		}
 	};
 	mse.Script.prototype = {

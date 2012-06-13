@@ -14,11 +14,11 @@ window.mse = {};
 (function( window ) {
 var mse = window.mse;
 
-var nonLocationEvts = ['keydown', 'keypress', 'keyup'],
-var locationEvts = ['move', 'longPress', 'click', 'doubleClick', 'scroll',
+var nonLocationEvts = ['keydown', 'keypress', 'keyup'];
+var locationEvts = ['move', 'longPress', 'click', 'doubleClick', 'scroll', 'mousewheel', 
                     'gestureSingle', 'gestureStart', 'gestureUpdate', 'gestureEnd', 
                     'gestureMulti', 'multiGestAdd', 'multiGestUpdate', 'multiGestRemove',
-                    'swipeleft', 'swiperight', 'swipe']
+                    'swipeleft', 'swiperight', 'swipe'];
 
 // Event System
 
@@ -68,9 +68,9 @@ mse.EventDistributor.prototype = {
             e.corrected = true;
         }
     	if(!this.dominate) this.rootEvt.eventNotif(e.type, e);
-    	if(this.dispatcher) this.dispatcher.eventNotif(e.type, e);
+    	if(this.dispatcher) this.dispatcher.dispatch(e.type, e);
     },
-    setDelegate: function(dispatcher) {
+    setDispatcher: function(dispatcher) {
         if(dispatcher instanceof mse.EventDispatcher)
         	this.dispatcher = dispatcher;
     },
@@ -148,7 +148,7 @@ mse.EventDispatcher.prototype = {
         	if( (!this.domObj || this.domObj==arr[val] || this.domObj==arr[val].parent) ) {
         	    // Non location based event, notify directly
         	    if($.inArray(type, locationEvts) == -1) 
-        		    var prevent = arr[val].evtDeleg.eventNotify(type, e);
+        		    var prevent = arr[val].evtDeleg.eventNotif(type, e);
         		// Location based event, event check in object
         		else var prevent = arr[val].eventCheck(type, e);
         		success = true;
@@ -177,17 +177,21 @@ mse.EventDelegateSystem.prototype = {
 	// Managerment of listeners
 	addListener: function(evtName, callback, prevent) {
 	    if(typeof evtName != "string" || !callback) return false;
+	    // Construction of listener
+	    var listener = new mse.EventListener(evtName,callback,prevent);
 		// Listener array not until exist
 		if( !this.listeners[evtName] ) {
 		    this.listeners[evtName] = new Array();
 		    this.listeners[evtName].push(listener);
 		    // Observe this event in the dispatcher of container
-		    if(this.obj && this.obj.getContainer) var container = this.obj.getContainer();
-		    if(container) container.dispatcher.observe(evtName, this.obj);
+		    if(this.obj && this.obj.getContainer) {
+		        var container = this.obj.getContainer();
+		        if(container && container.dispatcher) 
+		            container.dispatcher.observe(evtName, this.obj);
+		    }
 		    return true;
 		}
 		var exist = false;
-		var listener = new mse.EventListener(evtName,callback,prevent);
 		var arr = this.listeners[evtName];
 		for(var i in arr) {
 			if(arr[i].callback == callback) {
@@ -229,10 +233,10 @@ mse.EventDelegateSystem.prototype = {
 		var arr = this.listeners[evtName];
 		if(!arr) return prevent;
 		
-		for(var val in arr) {
+		for(var i = 0; i < arr.length; ++i) {
 		    // If one listener want to prevent the bubbling, it will prevent it by transfering the prevent as true in return value, but it can't prevent other listeners for the same event in this delegate
-		    arr[val].notify(evt);
-		    if(arr[val].preventBubbling) prevent = true;
+		    if(arr[i].preventBubbling) prevent = true;
+		    arr[i].notify(evt);
 		}
 		return prevent;
 	}

@@ -218,7 +218,7 @@ EventMgr.prototype = {
         delete this.listeners[type];
     },
     hasListener: function(type) {
-        return ( this.listeners[type] == null );
+        return ( this.listeners[type] != null );
     },
     eventNotif: function(type, e) {
         if( this.listeners[type] )
