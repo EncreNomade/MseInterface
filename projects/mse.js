@@ -1984,74 +1984,8 @@ mse.GameExpose = function(parent, param, game) {
     this.evtDeleg.addListener('firstShow', new mse.Callback(parent.interrupt, parent));
     this.passBn = new mse.Button(this, {pos:[10,this.height-60],size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je ne joue pas', 'wikiBar');
     
-    this.launchGame = function(e) {
-        if(this.passBn.inObj(e.offsetX, e.offsetY)) this.endGame();
-        else {
-            this.getContainer().evtDeleg.removeListener('click', this.launchcb);
-            this.game.start();
-        }
-        this.passBn = null;
-    };
+    // a corriger
     this.launchcb = new mse.Callback(this.launchGame, this);
-    
-    this.endGame = function() {
-        if(parent.play) parent.play();
-    };
-    
-    this.logic = function() {
-        if(!this.firstShow) {
-            this.firstShow = true;
-            this.evtDeleg.eventNotif('firstShow');
-            this.getContainer().evtDeleg.addListener('click',  this.launchcb, true);
-        }
-        // Message changed
-        if(this.msg != this.game.getMsg()) {
-            this.msg = this.game.getMsg();
-            this.msginlines.splice(0,this.msginlines.length);
-            this.bullWidth = this.width; this.bullHeight = 0;
-            
-            if(!this.msg || this.msg == '') {this.bullHeight = 0; return;}
-            var ctx = mse.root.ctx;
-            ctx.save();
-            ctx.font = this.font;
-            var maxM = Math.floor( (this.bullWidth-20)/ctx.measureText('A').width );
-            
-            for(var j = 0; j < this.msg.length;) {
-            	// Find the index of next line
-            	var next = checkNextLine(ctx, this.msg.substr(j), maxM, this.bullWidth-20);
-            	this.msginlines.push( this.msg.substr(j, next) );
-            	j += next;
-            }
-            ctx.restore();
-        }
-    };
-    
-    this.draw = function(ctx) {
-        ctx.save();
-        ctx.translate(this.getX(), this.getY()+15);
-        
-        ctx.fillStyle = "#000";
-        ctx.fillRect(0, 0, this.width, this.height-30);
-        // Border
-        ctx.strokeStyle = 'rgb(188,188,188)';
-        ctx.lineWidth = 5;
-        ctx.strokeRect(0, -2.5, this.width, this.height-30);
-        ctx.lineWidth = 1;
-        
-        // Msg
-        ctx.font = this.font;
-        ctx.textBaseline = "top";
-        ctx.fillStyle = "#FFF";
-        var top = (this.height-30 - this.msginlines.length * this.lineHeight)/2;
-        for(var i = 0; i < this.msginlines.length; i++) {
-            ctx.fillText(this.msginlines[i], 10, top+i*this.lineHeight);
-        }
-        
-        ctx.restore();
-        ctx.save();
-        if(this.passBn) this.passBn.draw(ctx);
-        ctx.restore();
-    };
 };
 extend( mse.GameExpose ,  mse.UIObject );
 $.extend( mse.GameExpose.prototype , {
@@ -2063,7 +1997,6 @@ $.extend( mse.GameExpose.prototype , {
         }
         this.passBn = null;
     },
-    launchcb : new mse.Callback(this.launchGame, this),
     endGame : function() {
         if(parent.play) parent.play();
     },
