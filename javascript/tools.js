@@ -2882,7 +2882,7 @@ var Magnetisme = function(){
 	this.visibleItem = [];
 	// in pixel,  if the distance is <tolerance> pixel or less ,  the element is glued with the other
 	this.tolerance = 3;
-	this.guide = {x:{c:-1  },y:{c:-1  } };
+	this.guide = {x:{c:-100 },y:{c:-100  } };
 }
 Magnetisme.prototype = {
 	contructor : Magnetisme,
@@ -3002,8 +3002,8 @@ Magnetisme.prototype = {
 		if( this.guide.y.svg )
 			this.guide.y.svg.remove();
 		
-		this.guide.x.c = -1;
-		this.guide.y.c = -1;
+		this.guide.x.c = -100;
+		this.guide.y.c = -100;
 		this.guide.x.id = null;
 		this.guide.y.id = null;
 	},
@@ -3013,6 +3013,7 @@ Magnetisme.prototype = {
 			this.showGuide(  param, "y" );
 			return;
 		}
+		if( axe == "x" )console.log( this.guide );
 		if( param[axe] ){
 			if( this.guide[ axe ].c != param[ axe ].c ){
 				var line = this.guide[ axe ].svg.children( "line" );
@@ -3028,12 +3029,14 @@ Magnetisme.prototype = {
 				rect.attr( "width"  , param[ axe ].obj.width  );
 				rect.attr( "height" , param[ axe ].obj.height );
 			}
-		}else
-			if( this.guide[ axe ].c > 0 ){
+		}else{
+			if( axe == "x" )console.log( "off ");
+			if( this.guide[ axe ].c > -100 ){
 				this.guide[ axe ].svg.hide();
-				this.guide[ axe ].c = -1;
+				this.guide[ axe ].c = -100;
 				this.guide[ axe ].id = null;
 			}	
+		}
 	},
 	
 };
