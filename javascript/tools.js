@@ -3013,7 +3013,6 @@ Magnetisme.prototype = {
 			this.showGuide(  param, "y" );
 			return;
 		}
-		if( axe == "x" )console.log( this.guide );
 		if( param[axe] ){
 			if( this.guide[ axe ].c != param[ axe ].c ){
 				var line = this.guide[ axe ].svg.children( "line" );
@@ -3030,7 +3029,6 @@ Magnetisme.prototype = {
 				rect.attr( "height" , param[ axe ].obj.height );
 			}
 		}else{
-			if( axe == "x" )console.log( "off ");
 			if( this.guide[ axe ].c > -100 ){
 				this.guide[ axe ].svg.hide();
 				this.guide[ axe ].c = -100;
@@ -3055,7 +3053,6 @@ var tag = {
 // position of the mouse relative to the element manipulated ( resized or translated )
 var anchor = {};
 var curr = {};
-var currentSelected = null;
 var editSupportTag = ['SPAN', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'DIV'];
 var originalRatio = 1;
 var multiSelect = [];
@@ -3230,10 +3227,8 @@ function cancelMove(e) {
         e.stopPropagation();
         CommandMgr.executeCmd(moveCmd);
         tag.movestarted = false;
-		// trigger the event, as we have modified the resizestart flag
-		//currentSelected.mouseover();
-		//currentSelected = null;
 		magnetisme.delGuide();
+		// it should be a trigger of mouseenter on the element that have been moved ( for the right option panel to pop )
     }
 }
 function moveElem(e) {
