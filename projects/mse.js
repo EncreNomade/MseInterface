@@ -455,9 +455,19 @@ mse.UIObject.prototype = {
 		if(this.insideRec) {
 			var ox = this.getX()+this.insideRec[0], oy = this.getY()+this.insideRec[1], w = this.insideRec[2], h = this.insideRec[3];
 		}
-		else var ox = this.getX(), oy = this.getY(), w = this.getWidth(), h = this.getHeight();
+		else var ox = this.getX(), oy = this.getY(), w = this.width, h = this.height;
 		
-		if(x>ox-0.1*w && x<ox+1.2*w && y>oy-0.1*h && y<oy+1.2*h) return true;
+		// Margin of reaction zone for simplize the mouse or touch event
+		var marginx = 0;
+		if(w < 110) marginx = w * 0.5 * (1 - (w-10) / 100);
+		var marginy = 0;
+		if(h < 110) marginy = h * 0.5 * (1 - (h-10) / 100);
+		ox -= marginx;
+		w += 2*marginx;
+		oy -= marginy;
+		h += 2*marginy;
+		
+		if(x>ox && x<ox+w && y>oy && y<oy+h) return true;
 		else return false;
 	},
 	
@@ -506,7 +516,7 @@ mse.UIObject.prototype = {
 	    if(this.inObj(e.offsetX, e.offsetY))
 	        return this.evtDeleg.eventNotif(type, e);
 	    // Not in object, don't prevent bubbling
-	    else return false;
+	    else return {prevent:false,success:false};
 	},
 	addListener: function() {
 		this.evtDeleg.addListener.apply(this.evtDeleg, Array.prototype.slice.call(arguments));
@@ -1055,7 +1065,7 @@ $.extend(mse.Text.prototype, {
         if(!linkInit) return;
         
         if(this.links.length == 0) {
-            this.addListener('click', new mse.Callback(this.clicked, this), false);
+            this.addListener('gestureEnd', new mse.Callback(this.clicked, this), false);
         }
         
         // Audio auto play
@@ -1561,7 +1571,6 @@ $.extend(mse.Image.prototype, {
             if(!(this.imgShower instanceof mse.ImageShower))
                 this.imgShower = new mse.ImageShower(this);
             this.imgShower.show();
-            // console.log('zoom');
         }, this);
         this.zoomIcon.addListener('click', cb, true);
     },
@@ -1856,6 +1865,15 @@ mse.GameShower = function() {
 };
 mse.GameShower.prototype = {
 	contructor : mse.GameShower,
+	addListener: function() {
+	    this.distributor.rootEvt.addListener.apply(this.distributor.rootEvt, Array.prototype.slice.call(arguments));
+	},
+	removeListener: function() {
+	    this.distributor.rootEvt.removeListener.apply(this.distributor.rootEvt, Array.prototype.slice.call(arguments));
+	},
+	eventNotif: function() {
+	    this.distributor.rootEvt.eventNotif.apply(this.distributor.rootEvt, Array.prototype.slice.call(arguments));
+	},
 	isFullScreen : function() {
 	     if((MseConfig.iPhone||MseConfig.android) && this.state == "START" && this.currGame && this.currGame.type == "INDEP")
 	         return true;
@@ -1960,7 +1978,7 @@ mse.GameShower.prototype = {
 	        if(!this.firstShow){
 	            this.firstShow = true;
 	            if(this.currGame.type == "INDEP") {
-	                this.evtDeleg.eventNotif("firstShow");
+	                this.eventNotif("firstShow");
 	                if(MseConfig.iPhone || MseConfig.android){
 	                    this.currGame.mobileLazyInit();
 	                }
@@ -2007,7 +2025,7 @@ $.extend( mse.GameExpose.prototype , {
         this.passBn = null;
     },
     endGame : function() {
-        if(parent.play) parent.play();
+        if(this.parent.play) this.parent.play();
     },
 	logic : function() {
         if(!this.firstShow) {
@@ -2242,6 +2260,7 @@ $.extend(mse.Button.prototype, {
 mse.Card = function(parent, param, ui) {
     mse.UIObject.call(this, parent, param);
     this._layers = new Array();
+    this.dispatcher = new mse.EventDispatcher(this);
     
     this.ui = ui;
     if(ui) this.addLayer('ui', ui);
@@ -2251,16 +2270,14 @@ mse.Card = function(parent, param, ui) {
     this.lw = this.width - this.margin[1] - this.margin[3];
     this.lh = this.height - this.margin[0] - this.margin[2];
 };
-extend(mse.Card, mse.UIObject);
+extend(mse.Card, mse.BaseContainer);
+delete mse.Card.prototype.setOrientation;
+delete mse.Card.prototype.orientChange;
+delete mse.Card.prototype.logic;
+delete mse.Card.prototype.setLayerActivate;
+delete mse.Card.prototype.desactiveOthers;
+delete mse.Card.prototype.reactiveOthers;
 $.extend(mse.Card.prototype, {
-    addLayer: mse.BaseContainer.prototype.addLayer,
-    delLayer: mse.BaseContainer.prototype.delLayer,
-    getLayer: mse.BaseContainer.prototype.getLayer,
-    sortLayer: mse.BaseContainer.prototype.sortLayer,
-    getContainer: function(){
-        return this;
-    },
-    
     draw: function(ctx){
         if(!this.ui)
             this.drawDefaultUI(ctx, this.getX(), this.getY());
@@ -2316,7 +2333,7 @@ $.extend(mse.ImageCard.prototype, {
         this.ix = this.margin[3] + (iw-this.iw)/2;
         this.iy = this.margin[0] + (ih-this.ih)/2;
         
-        this.zoomIcon = new mse.Image(this,{pos:[this.ix+this.iw-24-5, this.iy+5]}, 'zoomIcon');
+        this.zoomIcon = new mse.Image(this,{pos:[this.ix+this.iw-24-5, this.iy+5],size:[20,20]}, 'zoomIcon');
         var cb = new mse.Callback(function(){
             if(!(this.imgShower instanceof mse.ImageShower))
                 this.imgShower = new mse.ImageShower(this);
@@ -2446,7 +2463,7 @@ $.extend(mse.TextCard.prototype, {
 });
 
 mse.WikiLayer = function() {
-    mse.Layer.call(this, null, 11, {});
+    mse.Layer.call(this, null, 15, {});
     
     this.currCard = null;
     this.cbDragStart = new mse.Callback(this.dragStart, this);
@@ -2511,7 +2528,7 @@ $.extend(mse.WikiLayer.prototype, {
             if(card.inObj(pt[0], pt[1])) {
                 e.offsetX = pt[0];
                 e.offsetY = pt[1];
-                if( !card.evtDeleg.eventNotif('click', e) )
+                if( !card.dispatcher.dispatch('click', e) )
                     this.currCard = card;
                 return;
             }
@@ -2708,7 +2725,7 @@ mse.Timeline = function(src, interval, timeprog, length) {
 	}
 	this.src.initTimeline(this);
 	// For reduce the fps to 30
-	this.switch = false;
+	this.switching = false;
 };
 mse.Timeline.prototype = {
 	constructor : mse.Timeline ,
@@ -2752,8 +2769,8 @@ mse.Timeline.prototype = {
 			}
 			else {
 			    this.timer = requestAnimationFrame(this.frameFn);
-			    if(this.switch) this.src.runTimeline(this.interval);
-			    this.switch = !this.switch;
+			    if(this.switching) this.src.runTimeline(this.interval);
+			    this.switching = !this.switching;
 			}
 		}
 		// END

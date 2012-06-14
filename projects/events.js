@@ -148,11 +148,11 @@ mse.EventDispatcher.prototype = {
         	if( (!this.domObj || this.domObj==arr[val] || this.domObj==arr[val].parent) ) {
         	    // Non location based event, notify directly
         	    if($.inArray(type, locationEvts) == -1) 
-        		    var prevent = arr[val].evtDeleg.eventNotif(type, e);
+        		    var res = arr[val].evtDeleg.eventNotif(type, e);
         		// Location based event, event check in object
-        		else var prevent = arr[val].eventCheck(type, e);
-        		success = true;
-        		if(prevent) break;
+        		else var res = arr[val].eventCheck(type, e);
+        		if(res.success) success = true;
+        		if(res.prevent) break;
         	}
         }
         return success;
@@ -228,17 +228,18 @@ mse.EventDelegateSystem.prototype = {
 	},
 	// Notify a event, and return true if the listener will prevent bubbling, if not return false
 	eventNotif: function(evtName, evt) {
-	    var prevent = false;
+	    var res = {prevent: false, success: false};
         
 		var arr = this.listeners[evtName];
-		if(!arr) return prevent;
+		if(!arr) return res;
 		
 		for(var i = 0; i < arr.length; ++i) {
+		    res.success = true;
 		    // If one listener want to prevent the bubbling, it will prevent it by transfering the prevent as true in return value, but it can't prevent other listeners for the same event in this delegate
-		    if(arr[i].preventBubbling) prevent = true;
+		    if(arr[i].preventBubbling) res.prevent = true;
 		    arr[i].notify(evt);
 		}
-		return prevent;
+		return res;
 	}
 };
 
