@@ -44,6 +44,10 @@ mse.configs = {
 	font 	: 'Verdana',
 	defaultFont : '18px Arial',
 	srcPath	: '',
+	zids: {
+	    text: 12,
+	    wiki: 15
+	},
 	getSrcPath : function(path) {
 	    // Path complete
 	    if(path[0] == '.') return path;
@@ -986,7 +990,7 @@ mse.Text = function(parent, param, text, styled) {
 	mse.UIObject.call(this, parent, param);
 	this.styled = styled ? true : false;
 	this.links = [];
-	this.zid = 12;
+	this.zid = cfs.zids.text;
 	
 	this.text = text;
 	// Check if text real width is longer than object width, if true, wrap the text
@@ -2463,7 +2467,7 @@ $.extend(mse.TextCard.prototype, {
 });
 
 mse.WikiLayer = function() {
-    mse.Layer.call(this, null, 15, {});
+    mse.Layer.call(this, null, cfs.zids.wiki, {});
     
     this.currCard = null;
     this.cbDragStart = new mse.Callback(this.dragStart, this);
