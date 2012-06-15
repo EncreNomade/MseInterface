@@ -645,30 +645,26 @@ class ProjectGenerator {
             $params = $this->formatParams($objnode['style'], $type);
             $this->jstr .= "\n\t$obj=new mse.UIObject($layer,".$params[1].");";
         }
-        else if(count($objnode->p) > 0) {
-            // Text obj
-            $type = "txt";
-            // Init attributes
-            $objnode['style'] .= "width: ".$width."px; height: ".$lineHeight."px;";
-            $params = $this->formatParams($objnode['style'], $type);
-            
-            // Detect link
-            $p = $objnode->p;
-            if(count($p->span) > 0){
-                //preg_match_all(self::$patterns['linkFinder'], $p[0]->asXML(), $matches);
-                $content = preg_replace(self::$patterns['tagReplace'], '', $p[0]->asXML());
-                $this->jstr .= "\n\t$obj=new mse.Text($layer,".$params[1].",'".addslashes($content)."',true);";
-                foreach($p->span as $link)
-                    $this->addLink($link, $obj, $index);
-            }
-            else {
-                $content = $p;
-                $this->jstr .= "\n\t$obj=new mse.Text($layer,".$params[1].",'$content',true);";
+        else if(count($objnode->p) > 0) { // its a text obj
+            $this->addTxtObj($layer, $objnode, $obj, $width, $lineHeight, $index);
+        }
+        else if ($class = 'speaker'){ // its a dialogue obj contains txt lines
+            $who = $objnode['data-who'];
+            $firstLine = $objnode->div[0];
+            $firstLine['style'] .= "width: ".$width."px; height: ".$lineHeight."px;";
+            $params = $this->formatParams($firstLine['style'], 'txt');
+            $this->jstr .= "\n\t$obj=new mse.Speaker($layer,".$params[1].", '$who');";
+            $this->jstr .= " $layer.addObject($obj);";
+            foreach($objnode->children() as $lineNode){
+                // TODO : need factor
+                $childObj = 'objs.' . $lineNode['id'];
+                $this->addTxtObj($layer, $lineNode, $childObj, $width, $lineHeight, $index);
+                $this->jstr .= "\n\t$obj.addObject($childObj);";
             }
         }
         
         if($type == "game") $this->jstr .= " $layer.addGame($obj);";
-        else $this->jstr .= " $layer.addObject($obj);";
+        else if($class != 'speaker') $this->jstr .= " $layer.addObject($obj);";
     }
     function addLink($linknode, $obj, $index) {
         $src = $linknode;
@@ -688,6 +684,27 @@ class ProjectGenerator {
             break;
         }
         $this->jstr .= "\n\t$obj.addLink(new mse.Link('$src',$index,'$type',$link));";
+    }
+    
+    function addTxtObj($layer, $node, $name, $width, $lineHeight, $index) {
+        $type = "txt";
+        // Init attributes
+        $node['style'] .= "width: ".$width."px; height: ".$lineHeight."px;";
+        $params = $this->formatParams($node['style'], $type);
+        
+        // Detect link
+        $p = $node->p;
+        if(count($p->span) > 0){
+            //preg_match_all(self::$patterns['linkFinder'], $p[0]->asXML(), $matches);
+            $content = preg_replace(self::$patterns['tagReplace'], '', $p[0]->asXML());
+            $this->jstr .= "\n\t$name=new mse.Text($layer,".$params[1].",'".addslashes($content)."',true);";
+            foreach($p->span as $link)
+                $this->addLink($link, $name, $index);
+        }
+        else {
+            $content = $p;
+            $this->jstr .= "\n\t$name=new mse.Text($layer,".$params[1].",'$content',true);";
+        }
     }
     
     function getDoc() {
