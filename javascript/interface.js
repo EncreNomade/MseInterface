@@ -480,7 +480,7 @@ function insertElemDialog(e) {
 		    var font = dialog.caller.css('font-weight');
 		    font += " "+dialog.caller.css('font-size');
 		    font += " "+dialog.caller.css('font-family');
-		    last.after(generateLines(text, font, dialog.caller.width(), dialog.caller.height()));
+		    last.after(generateSpeaks(text, font, dialog.caller.width(), dialog.caller.height()));
 		}
 		dialog.close();
 	});
@@ -983,16 +983,23 @@ function generateLines(content, font, width, lineHeight){
 	res = $(res);
 	res.each(function() {
 		$(this).height(lineHeight);
-		$(this).deletable(null, true)
-		       .selectable(selectP)
-		       .staticButton('./images/UI/insertbelow.png', insertElemDialog)
-		       .staticButton('./images/UI/config.png', staticConfig)
-		       .staticButton('./images/tools/anime.png', animeTool.animateObj)
-		       .staticButton('./images/UI/addscript.jpg', addScriptForObj);
-		$(this).children('.del_container').css({
-			'position': 'relative',
-			'top': ($(this).children('p').length == 0) ? '0%' : '-100%',
-			'display':'none'});
+        function setArticleObjProp (jqObj){
+            jqObj.deletable(null, true)
+                   .selectable(selectP)
+                   .staticButton('./images/UI/insertbelow.png', insertElemDialog)
+                   .staticButton('./images/UI/config.png', staticConfig)
+                   .staticButton('./images/tools/anime.png', animeTool.animateObj)
+                   .staticButton('./images/UI/addscript.jpg', addScriptForObj);
+            jqObj.children('.del_container').css({
+                'position': 'relative',
+                'top': (jqObj.children('p').length == 0) ? '0%' : '-100%',
+                'display':'none'});
+        }
+        if ($(this).hasClass('speaker')){
+            $(this).children().each(function(){setArticleObjProp($(this));});
+        }
+        else setArticleObjProp($(this))
+		
 	});
 	return res;
 }
