@@ -480,7 +480,7 @@ function insertElemDialog(e) {
 		    var font = dialog.caller.css('font-weight');
 		    font += " "+dialog.caller.css('font-size');
 		    font += " "+dialog.caller.css('font-family');
-		    last.after(generateLines(text, font, dialog.caller.width(), dialog.caller.height()));
+		    last.after(generateSpeaks(text, font, dialog.caller.width(), dialog.caller.height()));
 		}
 		dialog.close();
 	});
@@ -901,8 +901,12 @@ function generateSpeaks(content, font, width, lineHeight){
 			var alinea = rest.indexOf( "\n" );
 			if( alinea == -1 )
 				alinea = rest.length;
-			dialogueText = rest.substring( 0 , alinea );
-			rest = rest.substring( alinea );
+			if( nbalise && nbalise.start <  alinea ){
+				alinea = nbalise.start - 1;
+				dialogueText = rest.substring( 0 , nbalise.start );
+			} else
+				dialogueText = rest.substring( 0 , alinea );
+			rest = rest.substring( alinea+1 );
 			if( nbalise ){
 				nbalise.start -= alinea+1;
 				nbalise.close -= alinea+1;
@@ -932,6 +936,7 @@ function generateSpeaks(content, font, width, lineHeight){
 		
 		var first = generateLines( content , font, width - decalage , lineHeight );
 		first.css("left" , decalage+"px" );
+		first.css("width" , (width - decalage)+"px" );
 		first.css("position" , "relative" );
 		var rest = "";
 		first.children().slice( nline ).each( function( n , i ){ rest += $(i).text(); } );
@@ -944,7 +949,7 @@ function generateSpeaks(content, font, width, lineHeight){
 	function getNextBalise( rest ){
 		// match [ <string> : <string> ]
 		var regEx = /\[( *[a-z0-9]* *( *: *[a-z0-9]* *)?)\]/i;
-		var regExEnd = /(end|fin|\/.*)/;
+		var regExEnd = /^(end|fin|\/.*)$/;
 		var next = 0;
 		var id , param;
 		if( ( next = rest.search( regEx )  ) != -1 ){
@@ -1301,7 +1306,10 @@ function saveProject() {
 	$.post("save_project.php", {"pj":pjName, "struct":structStr, "objCurrId":curr.objId, "srcCurrId":srcMgr.currId}, function(msg){
 	       var modif = parseInt(msg);
 	       if(!isNaN(modif)) curr.lastModif = modif;
-	       else if(msg != "") alert(msg);
+	       else if(msg != ""){
+				console.log( msg );
+				alert(msg);
+			}
 	       
 	       // Save local storage
 	       if(!localStorage) return;
