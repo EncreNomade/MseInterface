@@ -881,6 +881,84 @@ function delCurrentPage() {
 };
 
 function staticConfig(e){e.preventDefault();e.stopPropagation();showParameter($(this).parent().parent());}
+function generateSpeaks(content, font, width, lineHeight){
+	
+	var res = $("<div/>");
+	var rest = content;
+	var balise ;
+	while( balise || ( balise=getNextBalise(rest) ) ){
+		
+		// everything after the balise is a dialogue, until  - an end balise , or a \n
+		var normalText = rest.substring( 0 , balise.start );
+		rest = rest.substring( balise.close );
+		var nbalise = getNextBalise( rest );
+		var dialogueText;
+		if( nbalise && nbalise.endBalise ){
+			dialogueText = rest.substring( 0 , nbalise.start );
+			rest = rest.substring( nbalise.close );
+			nbalise = null;
+		} else {
+			var alinea = rest.indexOf( "\n" );
+			if( alinea == -1 )
+				alinea = rest.length;
+			dialogueText = rest.substring( 0 , alinea );
+			rest = rest.substring( alinea );
+			if( nbalise ){
+				nbalise.start -= alinea+1;
+				nbalise.close -= alinea+1;
+			}
+		}
+		
+		
+		if( normalText.length > 0 )
+			res.append( generateLines(  normalText, font, width, lineHeight) );
+			
+		if( dialogueText.length > 0 )
+			res.append( $('<div id="obj'+(curr.objId++)+'" class="speaker" data-who="'+balise.id+'" data-mood="'+( balise.param  ? balise.param : "default" )+'" />').append( generateSpeakLines( dialogueText, font, width, lineHeight) ) );
+			
+		if( nbalise ) 
+			balise = nbalise;
+		else
+			balise = null;
+	}
+	if( rest.length > 0 )
+		res.append( generateLines( rest , font, width, lineHeight) );
+	return res.children();
+	
+	function generateSpeakLines( content, font, width, lineHeight ){
+		
+		var decalage = width * 0.33;
+		var nline = 3;
+		
+		var first = generateLines( content , font, width - decalage , lineHeight );
+		first.css("left" , decalage+"px" );
+		first.css("position" , "relative" );
+		var rest = "";
+		first.children().slice( nline ).each( function( n , i ){ rest += $(i).text(); } );
+		var last = generateLines( rest , font, width , lineHeight );
+		var res = $("<div>");
+		res.append( first.slice( 0 , nline ) );
+		res.append( last );
+		return res.children();
+	}
+	function getNextBalise( rest ){
+		// match [ <string> : <string> ]
+		var regEx = /\[( *[a-z0-9]* *( *: *[a-z0-9]* *)?)\]/i;
+		var regExEnd = /(end|fin|\/.*)/;
+		var next = 0;
+		var id , param;
+		if( ( next = rest.search( regEx )  ) != -1 ){
+			var close = rest.indexOf( "]" , next );
+			var separator = next+1;
+			for( ; separator < close && rest.charAt( separator ) != ":" ; separator ++ );
+			id = rest.substring( next+1 , separator ).replace( / */g , "" ).toLowerCase();
+			if( separator != close )
+			param = rest.substring( separator+1 , close ).replace( / */g , "" ).toLowerCase();
+			return { start : next  , close: close+1 , id:id, param:param , endBalise: regExEnd.test( id ) };
+		}
+		return null;
+	}
+}
 function generateLines(content, font, width, lineHeight){
     var res = '';
     // Content processing
@@ -943,7 +1021,7 @@ function addArticle(manager, name, params, content) {
 	if(params.color) article.css('color', params.color);
 	if(params.align) article.css('text-align', params.align);
 	
-	article.append(generateLines(content, font, params.lw, params.lh));
+	article.append(generateSpeaks(content, font, params.lw, params.lh));
 	// Listener to manipulate
 	article.deletable().configurable();
 	step.append(article);
