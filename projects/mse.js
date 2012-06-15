@@ -1,5 +1,5 @@
 /*!
- * Encre Nomade Canvas JavaScript Library v0.85
+ * Encre Nomade Canvas JavaScript Library v0.9
  * Encre Nomade
  *
  * Author: LING Huabin - lphuabin@gmail.com

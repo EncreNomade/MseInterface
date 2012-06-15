@@ -908,7 +908,7 @@ StepManager.prototype = {
 	        }
 	        // Other obj
 	        else {
-	            obj.selectable(null).deletable().configurable().resizable().moveable()
+	            obj.deletable().configurable().resizable().moveable()
 	               .hoverButton('./images/tools/anime.png', animeTool.animateObj)
 	               .hoverButton('./images/UI/addscript.jpg', addScriptForObj)
 	               .canGoDown();
@@ -1698,7 +1698,7 @@ var initTextTool = function() {
             	}
 					
             	// Append all in current step
-            	res.selectable(null).moveable().resizable().deletable().configurable().hoverButton('./images/UI/addscript.jpg', addScriptForObj).appendTo(tar);
+            	res.moveable().resizable().deletable().configurable().hoverButton('./images/UI/addscript.jpg', addScriptForObj).appendTo(tar);
                 res.canGoDown();
             });
         },
@@ -2879,10 +2879,10 @@ todo
 
 // magnetisme
 var Magnetisme = function(){
-this.visibleItem = [];
-// in pixel,  if the distance is <tolerance> pixel or less ,  the element is glued with the other
-this.tolerance = 5;
-this.guide = {x:{c:-1  },y:{c:-1  } };
+	this.visibleItem = [];
+	// in pixel,  if the distance is <tolerance> pixel or less ,  the element is glued with the other
+	this.tolerance = 3;
+	this.guide = {x:{c:-100 },y:{c:-100  } };
 }
 Magnetisme.prototype = {
 	contructor : Magnetisme,
@@ -2890,6 +2890,7 @@ Magnetisme.prototype = {
 		this.visibleItem = this.getVisibleElement( exept );
 	},
 	getVisibleElement : function( exept ){
+		if( !exept.length ) return [];
 		var element = [];
 		var steps = curr.page.children();
 		for( var i = 0 ; i < steps.length ; i ++ ){
@@ -2898,13 +2899,17 @@ Magnetisme.prototype = {
 				var objs = step.children();
 				for( var j = 0 ; j < objs.length ; j ++ ){
 					var obj = $( objs[ j ] );
-					if( exept.attr('id') != obj.attr('id') )
+					var j;
+					for( k = 0 ; k < exept.length ; k ++ )
+						if( $(exept[ k ]).attr('id') == obj.attr('id') )
+							break;		
+					if( k >= exept.length )
 						element.push( {
 							obj : obj,
 							x : obj.position().left,
 							y : obj.position().top,
-							width : obj.width(),
-							height : obj.height()
+							width  : obj.outerWidth() ,
+							height : obj.outerHeight() 
 						} );
 						
 				}
@@ -2916,8 +2921,8 @@ Magnetisme.prototype = {
 						obj : obj,
 						x : 0,
 						y : 0,
-						width : obj.width(),
-						height : obj.height()
+						width  :  obj.width()  ,
+						height :  obj.height() 
 		} );
 		
 		return element;
@@ -2968,8 +2973,6 @@ Magnetisme.prototype = {
 			adjacent = reduction( adjacent , this.gluePartiel( obj , typO , "x" )  ); 
 			adjacent = reduction( adjacent , this.gluePartiel( obj , typO , "y" )  ); 
 		}
-		adjacent = reduction( adjacent , this.gluePartiel( obj , 0.5 , "x" , 0.5 )  );
-		adjacent = reduction( adjacent , this.gluePartiel( obj , 0.5 , "y" , 0.5 )  );
 		return adjacent;	
 		function reduction( adj1 , adj2 ){
 			adj1.x = adj1.x && adj2.x && adj1.x.d <  adj2.x.d  || !adj2.x ? adj1.x : adj2.x;
@@ -2979,14 +2982,17 @@ Magnetisme.prototype = {
 	},
 	
 	
+	
+	
+	
 	// graphism ---------------------------------------------------------
 	initGuide : function(){
 		this.delGuide();
-		this.guide.x.svg = $( '<svg width="'+curr.page.width()+'px" height="'+curr.page.height()+'px" style="z-index:'+(curr.page.children().length+1)+';position:absolute;"><rect x="25px" y="25px" width="100" height="50" class="guide" /><line x1="40" x2="0" y1="20" y2="'+curr.page.height()+'" class="guide" /></svg>' );
+		this.guide.x.svg = $( '<svg width="'+curr.page.width()+'px" height="'+curr.page.height()+'px" style="z-index:'+(curr.page.children().length+1)+';position:absolute;"><rect x="25px" y="25px" width="100" height="50" class="guide" /><line x1="0" x2="0" y1="0" y2="'+curr.page.height()+'" class="guide" /></svg>' );
 		curr.page.append( this.guide.x.svg );	
 		this.guide.x.svg.hide();
 		
-		this.guide.y.svg = $( '<svg width="'+curr.page.width()+'px" height="'+curr.page.height()+'px" style="z-index:'+(curr.page.children().length+1)+';position:absolute;"><rect x="25px" y="25px" width="100" height="50" class="guide" /><line y1="40" y2="0" x1="0" x2="'+curr.page.width()+'" class="guide" /></svg>' );
+		this.guide.y.svg = $( '<svg width="'+curr.page.width()+'px" height="'+curr.page.height()+'px" style="z-index:'+(curr.page.children().length+1)+';position:absolute;"><rect x="25px" y="25px" width="100" height="50" class="guide" /><line y1="0" y2="0" x1="0" x2="'+curr.page.width()+'" class="guide" /></svg>' );
 		curr.page.append( this.guide.y.svg );	
 		this.guide.y.svg.hide();
 	},
@@ -2996,15 +3002,15 @@ Magnetisme.prototype = {
 		if( this.guide.y.svg )
 			this.guide.y.svg.remove();
 		
-		this.guide.x.c = -1;
-		this.guide.y.c = -1;
+		this.guide.x.c = -100;
+		this.guide.y.c = -100;
 		this.guide.x.id = null;
 		this.guide.y.id = null;
 	},
-	showGuide : function( obj , param , axe ){	
+	showGuide : function(  param , axe ){	
 		if( !axe ){
-			this.showGuide( obj, param, "x" );
-			this.showGuide( obj, param, "y" );
+			this.showGuide(  param, "x" );
+			this.showGuide(  param, "y" );
 			return;
 		}
 		if( param[axe] ){
@@ -3022,12 +3028,13 @@ Magnetisme.prototype = {
 				rect.attr( "width"  , param[ axe ].obj.width  );
 				rect.attr( "height" , param[ axe ].obj.height );
 			}
-		}else
-			if( this.guide[ axe ].c > 0 ){
+		}else{
+			if( this.guide[ axe ].c > -100 ){
 				this.guide[ axe ].svg.hide();
-				this.guide[ axe ].c = -1;
+				this.guide[ axe ].c = -100;
 				this.guide[ axe ].id = null;
 			}	
+		}
 	},
 	
 };
@@ -3041,13 +3048,24 @@ var tag = {
 	movestarted: false,
 	resizestarted: false,
 	drawstarted: false,
-	noborder: false
+	noborder: false,
 };
-var prevState = {};
+// position of the mouse relative to the element manipulated ( resized or translated )
 var anchor = {};
 var curr = {};
-var currentSelected = null;
 var editSupportTag = ['SPAN', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'DIV'];
+var originalRatio = 1;
+var multiSelect = [];
+var rectMutliSelect = {};
+var isMajDown=false;
+var isCtrlDown=false;
+$(document).keyup(function (e) {
+	if(e.which == 17) isCtrlDown=false;
+	if(e.which == 16) isMajDown=false;
+}).keydown(function (e) {
+	if(e.which == 17) isCtrlDown=true;
+	if(e.which == 16) { isMajDown=true; magnetisme.showGuide( {}  );  }
+});
 
 
 // Add top right hover icon
@@ -3177,13 +3195,30 @@ function startMove(e) {
 	e.preventDefault();
 	e.stopPropagation();
 	tag.movestarted = true;
-	moveCmd = new MoveObjCmd(this);
-	currentSelected = $( this );
-	// trigger the event, as we have modified the resizestart flag
-	//currentSelected.mouseout();
-	anchor.x = e.clientX - currentSelected.position().left ;
-	anchor.y = e.clientY - currentSelected.position().top ;
-	magnetisme.updateVisibleElement( currentSelected );
+	moveCmd = new MoveObjCmd( multiSelect );
+	
+	var el = $( multiSelect[ 0 ] );
+	rectMutliSelect.pos = {x:el.position().left , y:el.position().top };
+	rectMutliSelect.w   = {x:0 , y:0 };
+	
+	// calculate the boundary rect
+	for( var i = 0 ; i < multiSelect.length ; i ++ ){
+		var el = $( multiSelect[ i ] );
+		if( rectMutliSelect.pos.x > el.position().left )
+			rectMutliSelect.pos.x = el.position().left;
+		if( rectMutliSelect.pos.y > el.position().top )
+			rectMutliSelect.pos.y = el.position().top;
+		if( rectMutliSelect.w.x < el.position().left + el.outerWidth() )
+			rectMutliSelect.w.x = el.position().left + el.outerWidth();
+		if( rectMutliSelect.w.y < el.position().top + el.outerHeight() )
+			rectMutliSelect.w.y = el.position().top + el.outerHeight();
+	}
+	rectMutliSelect.w.x -= rectMutliSelect.pos.x;
+	rectMutliSelect.w.y -= rectMutliSelect.pos.y;
+	
+	// relative to the boundary rect
+	rectMutliSelect.bigAnchor = { x : e.clientX - rectMutliSelect.pos.x , y : e.clientY - rectMutliSelect.pos.y };
+	magnetisme.updateVisibleElement( multiSelect );
 	magnetisme.initGuide();
 }
 function cancelMove(e) {
@@ -3192,19 +3227,18 @@ function cancelMove(e) {
         e.stopPropagation();
         CommandMgr.executeCmd(moveCmd);
         tag.movestarted = false;
-		// trigger the event, as we have modified the resizestart flag
-		currentSelected.mouseover();
-		currentSelected = null;
 		magnetisme.delGuide();
+		// it should be a trigger of mouseenter on the element that have been moved ( for the right option panel to pop )
     }
 }
 function moveElem(e) {
 	if(!tag.movestarted) return;
 	e.preventDefault();
 	e.stopPropagation();
-	var elem = currentSelected;
-	var x = e.clientX - anchor.x;
-	var y = e.clientY - anchor.y;
+	
+	var x = e.clientX - rectMutliSelect.bigAnchor.x;
+	var y = e.clientY - rectMutliSelect.bigAnchor.y;
+	
 	// Adjustement
 	//var w = elem.width(), h = elem.height();
 	//var scene = elem.parents('.scene');
@@ -3213,20 +3247,32 @@ function moveElem(e) {
 	//if(x < 0) x = 0; if(y < 0) y = 0;
 	//if(x+w > cw) x = cw-w; if(y+h > ch) y = ch-h;
 	
-	var adj = magnetisme.glue( {x:x , y:y , width:elem.width() , height:elem.height() } );
-	if( adj.x  )
-		x = adj.x.coorC;
-	if( adj.y  )
-		y = adj.y.coorC;
-	magnetisme.showGuide(elem, adj);
-	elem.css({'top':y+'px', 'left':x+'px'});
+	var rect = {x:x , y:y , width:rectMutliSelect.w.x , height:rectMutliSelect.w.y };
+	
+	if( !isMajDown ){
+		var adj = magnetisme.glue( rect );
+		if( adj.x  )
+			x = adj.x.coorC;
+		if( adj.y  )
+			y = adj.y.coorC;
+		magnetisme.showGuide( adj );
+	}
+	
+	var d = { x :  Math.round( x - rectMutliSelect.pos.x )  , y :   Math.round( y - rectMutliSelect.pos.y )  };
+	for( var i = 0 ; i < multiSelect.length ; i ++ ){
+		var el = $( multiSelect[ i ] );
+		el.css({'top':(el.position().top+d.y)+'px', 'left':(el.position().left+d.x)+'px'});
+	}
+	rectMutliSelect.pos.x = x;
+	rectMutliSelect.pos.y = y;
 }
 
 $.fn.moveable = function(supp) {
 	this.unbind('mousedown', startMove);
 	this.unbind('mouseup', cancelMove);
+	this.unbind('mousedown' , choose );
 	if(supp !== false)
-		this.mousedown(startMove).mouseup(cancelMove);
+		this.mousedown( choose ).mousedown(startMove).mouseup(cancelMove);
 		
 	
 	return this;
@@ -3235,45 +3281,34 @@ $.fn.moveable = function(supp) {
 
 
 // Choose event
-function chooseElem(e) {
-    e.preventDefault();
-    var elem = $(this);
-    curr.choosed = elem;
-}
-function unchoose(e) {
-    
-}
-function chooseElemWithBorder(e) {
+function choose(e) {
 	e.preventDefault();
-	var elem = $(this);
-	if(curr.choosed && curr.choosed != elem) {
-		if(tag.noborder)
-			curr.choosed.css({'z-index':'0','border-top-width':'0px','border-bottom-width':'0px','border-left-width':'0px','border-right-width':'0px'});
-		tag.noborder = false;
+    var elem = $(this);
+	if( !isCtrlDown ){
+		for( var i = 0 ; i < multiSelect.length ; i ++ )
+			$( multiSelect[ i ] ).removeClass( 'selected' );
+		multiSelect = [ elem ];
+		elem.addClass( 'selected' );
+	} else {
+		for( var i = 0 ; i < multiSelect.length ; i ++ )
+			if( $( multiSelect[ i ] ).attr("id") == elem.attr("id") )
+				break;
+			
+		if( i == multiSelect.length ){
+			multiSelect.push( elem );
+			elem.addClass( 'selected' );
+		}
 	}
-	else if(curr.choosed == elem) return;
-	
-	tag.noborder = (elem.css('border-top-width') == '0px');
-	if(tag.noborder) {
-		elem.css({'z-index':'1','border-top-width':'1px','border-bottom-width':'1px','border-left-width':'1px','border-right-width':'1px'});
-	}
-	curr.choosed = elem;
 }
+// only for resizable element
 function chooseElemWithCtrlPts(e) {
 	e.preventDefault();
 	var elem = $(this);
-	if(curr.choosed && curr.choosed != elem) {
-		if(tag.noborder)
-			curr.choosed.css({'border-top-width':'0px','border-bottom-width':'0px','border-left-width':'0px','border-right-width':'0px'});
-		tag.noborder = false;
-		// Remove Control points
+	if(curr.choosed && curr.choosed != elem)
 		curr.choosed.children('.ctrl_pt').remove();
-	}
+	
 	else if(curr.choosed == elem) return;
 	
-	tag.noborder = (elem.css('border-top-width') == '0px');
-	if(tag.noborder)
-		elem.css({'border-top-width':'1px','border-bottom-width':'1px','border-left-width':'1px','border-right-width':'1px'});
 	// Add Control points
 	var pts = [];
 	var r = 3, width = elem.width(), height = elem.height();
@@ -3305,6 +3340,7 @@ function startResize(e) {
 	anchor.y = e.clientY - curr.ctrlPt.parent().offset().top ;
 	magnetisme.updateVisibleElement( curr.ctrlPt.parent() );
 	magnetisme.initGuide();
+	originalRatio = curr.ctrlPt.parent().outerWidth() / curr.ctrlPt.parent().outerHeight();
 }
 function cancelResize(e) {
 	if(tag.resizestarted) {
@@ -3323,66 +3359,123 @@ function resizeElem(e) {
 	var top = curr.ctrlPt.position().top, left = curr.ctrlPt.position().left;
 	var elem = curr.ctrlPt.parent();
 	var pos = { x : elem.position().left, y : elem.position().top };
-	var w = { x: elem.width(), y: elem.height() };
-	var d = { x: e.clientX - elem.offset().left - anchor.x , y : e.clientY - elem.offset().top - anchor.y };
-	var adj;
-	// minimal size
+	var border = { x : cssCoordToNumber( elem.css( 'border-left-width' ) ) , y : cssCoordToNumber( elem.css( 'border-top-width' ) ) };
+	var w = { x: elem.width() + border.x*2, y: elem.height()+ border.x*2 };  // ~ outerWidth
 	var limit = { x : 20 , y : 20 };
-	function factor( leftOrRight , coor ){
-		if( leftOrRight ){ // left ( or top ) side is expanded
-			pos[ coor ] += d[ coor ];
-			w[ coor ]   -= d[ coor ];
-			// magnetisme
-			adj = magnetisme.gluePartiel( {x:pos.x , y:pos.y , width:w.x, height:w.y } , 0 , coor );
-			if( adj[ coor ] ){
-				if( adj[ coor ].typO == 0.5 ){
-					// middle case
-					var l_fix = Math.abs( ( pos[ coor ] + w[ coor ] ) - adj[ coor ].c ) * 2;
-					pos[ coor ] = pos[ coor ] + w[ coor ] - l_fix;
-					w[ coor ] = l_fix;
-				} else {
-					w[ coor ] += pos[ coor ] - adj[ coor ].coorC;
-					pos[ coor ] = adj[ coor ].coorC;
-				}
-			}
-			// size min
-			if( w[ coor ] < limit[ coor ] ){
-				pos[ coor ] += w[ coor ] - limit[ coor ];
-				w[ coor ] = limit[ coor ];
-			}
-		} else { // right ( or bottom ) side is expanded
-			w[ coor ] += d[ coor ];
-			anchor[ coor ] += d[ coor ];
-			// magnetisme
-			adj = magnetisme.gluePartiel( {x:pos.x , y:pos.y , width:w.x, height:w.y } , 1 , coor );
-			if( adj[ coor ] ){
-				if( adj[ coor ].typO == 0.5 ){
-					// middle case
-					var l_fix = Math.abs(  pos[ coor ]  - adj[ coor ].c ) * 2;
-					anchor[ coor ] -= w[ coor ] - l_fix;
-					w[ coor ] = l_fix;
-				} else {
-					w[ coor ] -= pos[ coor ] - adj[ coor ].coorC;
-					anchor[ coor ] -= pos[ coor ] - adj[ coor ].coorC;
-				}
-			}
-			// size min
-			if( w[ coor ] < limit[ coor ] ){
-				anchor[ coor ] -= w[ coor ] - limit[ coor ];
-				w[ coor ] = limit[ coor ];
-			}
-		}
-		magnetisme.showGuide( elem, adj, coor );
-	}
-	factor( left<0 , "x" );
-	factor( top<0 , "y" );
+	var sens = { x : left<0 , y:top<0 };
 	
-	elem.css({'top':pos.y+'px', 'left':pos.x+'px', 'width':w.x+'px', 'height':w.y+'px'});
+	enlarge();
+	if( isCtrlDown )
+		keepRatio();
+	if( !isMajDown )
+		useMagnetism( isMajDown );
+	minimalSize();
+	
+	elem.css({'top':pos.y+'px', 'left':pos.x+'px', 'width': ( w.x - border.x*2 ) + 'px', 'height': ( w.y - border.y*2 ) + 'px'});
 	// Control pts update
 	var ctrlw = (w.x-6.5)+'px', ctrlh = (w.y-6.5)+'px';
 	curr.rt.css('top',ctrlh);
 	curr.lb.css('left',ctrlw);
 	curr.rb.css({'left':ctrlw, 'top':ctrlh});
+	
+	// simply enlarge the rectangle, following the mouse cursor
+	function enlarge(  ){
+		var d = { x: e.clientX - elem.offset().left - anchor.x , y : e.clientY - elem.offset().top - anchor.y };
+		factor( "x" );
+		factor( "y" );
+		function factor( coor ){
+			if( sens[ coor ] ){
+				pos[ coor ] += d[ coor ];
+				w[ coor ]   -= d[ coor ];
+			}else{
+				w[ coor ] += d[ coor ];
+				anchor[ coor ] += d[ coor ];
+			}
+		}
+	}
+	
+	// adjust so the rectangle keep the ratio "originalRatio", if forcage is not omited, the axe defined by forcage is resized, else its the smaller axe
+	function keepRatio( forcage ){
+		var ratio = { x: originalRatio , y : 1/originalRatio };
+		if( forcage )
+			factor( forcage == "y" ? "x" : "y" , forcage );
+		else
+			if( w.x < w.y * ratio.x )
+				factor( "x" , "y" );
+			else
+				factor( "y" , "x" );
+		function factor(  coor , compl ){
+			var tmp = Math.round( w[ compl ] * ratio[ coor ] );
+			if( sens[ coor ] ){
+				pos[ coor ]  -= tmp - w[ coor ];
+				w[ coor ]    += tmp - w[ coor ];
+			} else {
+				anchor[ coor ] += tmp - w[ coor ];
+				w[ coor ]      += tmp - w[ coor ];
+			}
+		}
+	}
+	
+	// glue the element to others
+	function useMagnetism( lockRatio ){
+		factor( "x"  );
+		factor( "y"  );
+		function factor( coor  ){
+			var adj;
+			if( sens[ coor ] ){
+				adj = magnetisme.gluePartiel( {x:pos.x , y:pos.y , width:w.x, height:w.y } , 0 , coor );
+				if( adj[ coor ] ){
+					if( adj[ coor ].typO == 0.5 ){
+						// middle case
+						var l_fix = Math.abs( ( pos[ coor ] + w[ coor ] ) - adj[ coor ].c ) * 2;
+						pos[ coor ] = pos[ coor ] + w[ coor ] - l_fix;
+						w[ coor ] = l_fix;
+					} else {
+						w[ coor ] += pos[ coor ] - adj[ coor ].coorC;
+						pos[ coor ] = adj[ coor ].coorC;
+					}
+					// resize the other axe, in case of the ratio is fixed
+					if( lockRatio )
+						keepRatio( coor );
+				}
+			}else{
+				adj = magnetisme.gluePartiel( {x:pos.x , y:pos.y , width:w.x, height:w.y } , 1 , coor );
+				if( adj[ coor ] ){
+					if( adj[ coor ].typO == 0.5 ){
+						// middle case
+						var l_fix = Math.abs(  pos[ coor ]  - adj[ coor ].c ) * 2;
+						anchor[ coor ] -= w[ coor ] - l_fix;
+						w[ coor ] = l_fix;
+					} else {
+						w[ coor ] -= pos[ coor ] - adj[ coor ].coorC;
+						anchor[ coor ] -= pos[ coor ] - adj[ coor ].coorC;
+					}
+					// resize the other axe, in case of the ratio is fixed
+					if( lockRatio )
+						keepRatio( coor );
+				}
+			}
+			magnetisme.showGuide( adj, coor );
+		}
+	}
+	
+	// adjust so the rectangle stay larger than limit
+	function minimalSize(){
+		factor( "x" );
+		factor( "y" );
+		function factor(  coor  ){
+			if( w[ coor ] < limit[ coor ] ){
+				var tmp = limit[ coor ];
+				if( sens[ coor ] ){
+					pos[ coor ]  -= tmp - w[ coor ];
+					w[ coor ]    += tmp - w[ coor ];
+				} else {
+					w[ coor ]      -= tmp - w[ coor ];
+					anchor[ coor ] -= tmp - w[ coor ];
+				}
+			}
+		}
+	}
 }
 
 $.fn.supportResize = function() {
@@ -3397,25 +3490,29 @@ $.fn.supportMove = function(){
 	this.mouseup(cancelMove);
 }
 $.fn.resizable = function(supp) {
-	this.unbind('click', chooseElemWithCtrlPts);
-	this.unbind('click', chooseElem);
-	this.unbind('click', chooseElemWithBorder);
+	//this.unbind('click', chooseElemWithCtrlPts);
+	this.unbind('mousedown' , chooseElemWithCtrlPts );
+	this.unbind('click' , objChoosed);
+	this.unbind('mousedown' , choose );
 	if(supp !== false) {
-            this.click(chooseElemWithCtrlPts);
+            this.mousedown(chooseElemWithCtrlPts);
             this.click(objChoosed);
+			this.mousedown( choose );
         }
 	return this;
 }
 $.fn.selectable = function(f) {
 	if(f === false) {
 		this.unbind('click');
+		this.unbind('mousedown' , choose );
 		return this;
 	}
-	if(arguments.length == 1 && !f) 
-	    var func = chooseElem;
-	else var func = f || chooseElemWithBorder;
+	else if( !typeof f == 'function' )
+		return this;
+	var func = f;
 	this.click(func);
 	this.click(objChoosed);
+	this.mousedown( choose );
 	return this;
 }
 

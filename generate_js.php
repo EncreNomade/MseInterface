@@ -128,6 +128,7 @@ class ProjectGenerator {
         // Add all ressources to xml structure
         $srcs = $this->pj->getAllSrcs();
         $animesrcs = array();
+		if(count($srcs) > 0) {
         foreach( $srcs as $name=>$srcData ) {
             $type = $srcData->type;
             $src = $srcData->data;
@@ -180,6 +181,7 @@ class ProjectGenerator {
                 break;
             }
         }
+		}
         
         // Generate pages
         $pages = $this->pj->getStruct();

@@ -692,11 +692,15 @@ $.extend(DeleteObjCmd.prototype, {
         this.state = 'CANCEL';
     }
 });
-var MoveObjCmd = function(elem){
-    this.obj = $(elem);
-    this.sx = this.obj.position().left;
-    this.sy = this.obj.position().top;
-    
+var MoveObjCmd = function(elems){
+    if( !elems instanceof Array )
+		elems = [ elems ];
+	this.objs = elems;
+	for( var i = 0 ; i < this.objs.length ; i ++ ){
+		var obj = $( this.objs[ i ] );
+		this.objs[ i ].sx = obj.position().left;
+		this.objs[ i ].sy = obj.position().top;
+	}
     this.state = 'WAITING';
 };
 extend(MoveObjCmd, Command);
@@ -704,16 +708,17 @@ $.extend(MoveObjCmd.prototype, {
     execute: function(){
         if(this.state != 'WAITING' && this.state != 'CANCEL') return;
         
-//        this.ex = this.obj.position().left;
-//        this.ey = this.obj.position().top;
         this.state = 'SUCCESS';
     },
     undo: function(){
         if(this.state != 'SUCCESS') return;
         
-        this.obj.css('left', this.sx+'px');
-        this.obj.css('top', this.sy+'px');
-        
+		for( var i = 0 ; i < this.objs.length ; i ++ ){
+			var obj = $( this.objs[ i ] );
+			obj.css('left', this.objs[ i ].sx+'px');
+			obj.css('top', this.objs[ i ].sy+'px');
+		}
+		
         this.state = 'CANCEL';
     }
 });
