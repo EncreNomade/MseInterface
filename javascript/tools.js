@@ -892,18 +892,24 @@ StepManager.prototype = {
 	        if(obj.hasClass('article')) {
 	            obj.deletable().configurable();
 	            obj.children('div').each(function(){
-	                $(this).deletable(null, true)
-	                       .selectable(selectP)
-	                       .staticButton('./images/UI/insertbelow.png', insertElemDialog)
-	                       .staticButton('./images/UI/config.png', staticConfig)
-	                       .staticButton('./images/tools/anime.png', animeTool.animateObj)
-	                       .staticButton('./images/UI/addscript.jpg', addScriptForObj)
-	                       .css({'z-index':'0','background':'none'});
-	                scriptMgr.countScripts($(this).attr('id'),'obj');
-	                $(this).children('.del_container').css({
-	                	'position': 'relative',
-	                	'top': ($(this).children('p').length == 0) ? '0%' : '-100%',
-	                	'display':'none'});
+                    function setArticleObjProp (jqObj){
+                        jqObj.deletable(null, true)
+                               .selectable(selectP)
+                               .staticButton('./images/UI/insertbelow.png', insertElemDialog)
+                               .staticButton('./images/UI/config.png', staticConfig)
+                               .staticButton('./images/tools/anime.png', animeTool.animateObj)
+                               .staticButton('./images/UI/addscript.jpg', addScriptForObj)
+                               .css({'z-index':'0','background':'none'});
+                        scriptMgr.countScripts($(this).attr('id'),'obj');
+                        jqObj.children('.del_container').css({
+                            'position': 'relative',
+                            'top': (jqObj.children('p').length == 0) ? '0%' : '-100%',
+                            'display':'none'});
+                    }
+                    if ($(this).hasClass('speaker')){
+                        $(this).children().each(function(){setArticleObjProp($(this));});
+                    }
+                    else setArticleObjProp($(this))
 	            });
 	        }
 	        // Other obj

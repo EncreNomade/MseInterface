@@ -958,6 +958,46 @@ $.extend(mse.Layer.prototype, {
 });
 
 
+// Text dialog
+mse.Speaker = function( parent , param ) {
+	// Super constructor
+	mse.UIObject.call( this , parent , param );
+	
+	// its an ArticleLayer
+	this.parent = parent;
+	
+	this.height = 0;
+};
+extend(mse.Speaker, mse.UIObject);
+$.extend(mse.Speaker.prototype, {
+    logic: function(delta){
+    
+    },
+    draw: function(ctx ) {
+		
+		ctx.save();
+    	ctx.beginPath();
+        ctx.rect( this.getX() , this.getY() , this.width , this.height);
+        ctx.fillStyle = '#8ED6FF';
+        ctx.fill();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = 'black';
+        ctx.stroke();
+    	ctx.restore();
+    	
+    },
+	addObject : function( obj ){
+		
+		obj.evtDeleg.addListener('show', new mse.Callback( this.lineShowed , this , obj ) );
+		
+		this.parent.addObject( obj );
+	},
+	lineShowed : function( obj ){
+		
+		this.height += obj.height;
+		
+	}
+});
 
 
 // Text obj
