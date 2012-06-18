@@ -62,7 +62,7 @@ mse.EventDistributor.prototype = {
     constructor: mse.EventDistributor,
     distributor: function(e) {
         // Correction coordinates with root viewport
-        if(mse.root.viewport && e && !e.corrected && !isNaN(e.offsetX)) {
+        if(this.src == mse.root && mse.root.viewport && e && !e.corrected && !isNaN(e.offsetX)) {
             e.offsetX += mse.root.viewport.x;
             e.offsetY += mse.root.viewport.y;
             e.corrected = true;
@@ -79,8 +79,8 @@ mse.EventDistributor.prototype = {
         if(dominate != this.src) this.dominate = dominate;
     	if(this.dispatcher) this.dispatcher.setDominate(dominate);
     },
-    addListener: function(evtName, callback, pr, target) {
-    	this.rootEvt.addListener(evtName,callback,pr,target);
+    addListener: function(evtName, callback, pr) {
+    	this.rootEvt.addListener(evtName,callback,pr);
     },
     removeListeners: function(evtName) {
     	this.rootEvt.removeListeners(evtName);
@@ -225,6 +225,10 @@ mse.EventDelegateSystem.prototype = {
 				}
 			}
 		}
+	},
+	// Detect if there are listeners for one type of event
+	hasListener: function(evtName) {
+	    return (this.listeners[evtName] != null);
 	},
 	// Notify a event, and return true if the listener will prevent bubbling, if not return false
 	eventNotif: function(evtName, evt) {

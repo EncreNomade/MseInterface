@@ -528,6 +528,14 @@ mse.UIObject.prototype = {
 	removeListener: function() {
 		this.evtDeleg.removeListener.apply(this.evtDeleg, Array.prototype.slice.call(arguments));
 	},
+	supportMultiTouch: function() {
+	    if(!this.analyser) {
+	        this.analyser = new GestureAnalyser(this.evtDeleg);
+	        this.addListener('multiGestAdd', new Callback(this.analyser.addBlob, this.analyser));
+	        this.addListener('multiGestUpdate', new Callback(this.analyser.updateBlob, this.analyser));
+	        this.addListener('multiGestRemove', new Callback(this.analyser.removeBlob, this.analyser));
+	    }
+	},
 	
 	
 	// Config drawing context
@@ -573,110 +581,7 @@ mse.UIObject.prototype = {
 
 // Root object, a canvas Dom element
 mse.Root = function(id, width, height, orientation) {
-	this.setPos = function(x, y) {
-		this.jqObj.css({'left':x+'px', 'top':y+'px'});
-	};
-	this.setSize = function(width, height) {
-		this.width = width;
-		this.height = height;
-		this.jqObj.attr({'width':width, 'height':height});
-	};
-	this.setScale = function(scale) {
-		// Scale
-		if(scale > 1) {
-			if(this.height*scale > MseConfig.pageHeight) scale = MseConfig.pageHeight/this.height;
-			if(this.width*scale > MseConfig.pageWidth) scale = MseConfig.pageWidth/this.width;
-			var width = this.width * scale;
-			var height = this.height * scale;
-			var x = (MseConfig.pageWidth - width)/2;
-			var y = (MseConfig.pageHeight - height)/2;
-			this.setPos(x,y);
-			this.setSize(width, height);
-			this.scale = scale;
-		}
-	};
-	this.setCenteredViewport = function(){
-	    this.viewport = {};
-	    this.viewport.x = (this.width - MseConfig.pageWidth)/2;
-	    this.viewport.y = (this.height - MseConfig.pageHeight)/2;
-	    this.jqObj.attr({'width':MseConfig.pageWidth, 'height':MseConfig.pageHeight});
-	    this.jqObj.css({'left':"0px",'top':"0px"});
-	    this.ctx.translate(-this.viewport.x, -this.viewport.y);
-	};
 	
-	this.setContainer = function(container) {
-		// Reset first show state to prepare for calling the show event
-		if(this.container) this.container.firstShow = false;
-		container.root = this;
-		this.container = container;
-		this.evtDistributor.setDispatcher(container.dispatcher);
-		this.dest = null;
-		this.container.scale = this.scale;
-	};
-	
-	this.transition = function(container) {
-		if(this.dest) return;
-		if(this.container) {
-			mse.fadeout( this.container, 20, new mse.Callback(this.setContainer, this, container) );
-			this.dest = container;
-		}
-		else this.setContainer(container);
-		mse.fadein(container, 20);
-	};
-	
-	this.inObj = function(x,y) {return true;};
-		
-	this.logic = function(delta) {
-		for(var i in this.animations)
-			if(this.animations[i].logic(delta))
-				// Delete finish animation
-				this.animations.splice(i,1);
-		
-		var block = false;
-		for(var i in this.animes) {
-		    if(this.animes[i].block) block = true;
-			if(this.animes[i].logic(delta))
-			    // Delete finish animation
-			    this.animes.splice(i,1);
-		}
-		if(block) return;
-		
-		if(this.gamewindow.logic(delta)) return;
-		
-		if(this.container) this.container.logic(delta);
-	};
-	
-	this.draw = function() {
-	    this.ctx.clearRect(0, 0, this.width, this.height);
-		
-        if(!this.gamewindow.isFullScreen()){
-		    if(this.container) this.container.draw(this.ctx);
-		    if(this.dest) this.dest.draw(this.ctx);
-		}
-		if(this.gamewindow.currGame) this.gamewindow.draw(this.ctx);
-		
-		for(var i in this.animes) this.animes[i].draw(this.ctx);
-		
-		this.evtDistributor.rootEvt.eventNotif("drawover",this.ctx);
-	};
-	
-	// Timeline delegate
-	this.initTimeline = function(timeline) {};
-	
-	this.runTimeline = function(delta) {
-		if(!this.init) {
-			var proc = mse.src.preloadProc();
-			if(proc[0] < proc[1]) {
-				mse.src.preloadPage(this.ctx, proc[0], proc[1]);
-			}
-			else this.init = true;
-		}
-		else if(!this.end) {
-			this.logic(delta);
-			this.draw();
-		}
-		else mse.currTimeline.end = true;
-	};
 	
 	mse.root = this;
 	// Canvas obj parameters
@@ -695,9 +600,12 @@ mse.Root = function(id, width, height, orientation) {
 	this.interval = 40;
 	this.ctx = this.jqObj.get(0).getContext("2d");
 	
-	if(MseConfig.mobile) this.setCenteredViewport();
-	
 	this.evtDistributor = new mse.EventDistributor(this, this.jqObj);
+	
+	if(MseConfig.mobile) {
+	    this.setCenteredViewport();
+	    this.evtDistributor.addListener('translate2', new mse.Callback(this.translate, this));
+	}
 	
 	this.container = null;
 	this.end = false;
@@ -722,6 +630,121 @@ mse.Root = function(id, width, height, orientation) {
 	
 	// Launch Timeline
 	mse.currTimeline = new mse.Timeline(this, this.interval);
+};
+mse.Root.prototype = {
+    constructor: mse.Root,
+    setPos: function(x, y) {
+    	this.jqObj.css({'left':x+'px', 'top':y+'px'});
+    },
+    setSize: function(width, height) {
+    	this.width = width;
+    	this.height = height;
+    	this.jqObj.attr({'width':width, 'height':height});
+    },
+    setScale: function(scale) {
+    	// Scale
+    	if(scale > 1) {
+    		if(this.height*scale > MseConfig.pageHeight) scale = MseConfig.pageHeight/this.height;
+    		if(this.width*scale > MseConfig.pageWidth) scale = MseConfig.pageWidth/this.width;
+    		var width = this.width * scale;
+    		var height = this.height * scale;
+    		var x = (MseConfig.pageWidth - width)/2;
+    		var y = (MseConfig.pageHeight - height)/2;
+    		this.setPos(x,y);
+    		this.setSize(width, height);
+    		this.scale = scale;
+    	}
+    },
+    setCenteredViewport: function(){
+        this.viewport = {};
+        this.viewport.x = (this.width - MseConfig.pageWidth)/2;
+        this.viewport.y = (this.height - MseConfig.pageHeight)/2;
+        this.jqObj.attr({'width':MseConfig.pageWidth, 'height':MseConfig.pageHeight});
+        this.jqObj.css({'left':"0px",'top':"0px"});
+        this.ctx.translate(-this.viewport.x, -this.viewport.y);
+    },
+    translate: function(e) {
+        if(isNaN(e.deltaDx)) return;
+        this.ctx.translate(this.viewport.x, this.viewport.y);
+        this.viewport.x -= e.deltaDx;
+        // Correction
+        if(this.viewport.x > this.width - MseConfig.pageWidth) 
+            this.viewport.x = this.width - MseConfig.pageWidth;
+        else if(this.viewport.x < 0) this.viewport.x = 0;
+        this.ctx.translate(-this.viewport.x, 0);
+        this.ctx.save();
+    },
+    setContainer: function(container) {
+    	// Reset first show state to prepare for calling the show event
+    	if(this.container) this.container.firstShow = false;
+    	container.root = this;
+    	this.container = container;
+    	this.evtDistributor.setDispatcher(container.dispatcher);
+    	this.dest = null;
+    	this.container.scale = this.scale;
+    },
+    transition: function(container) {
+    	if(this.dest) return;
+    	if(this.container) {
+    		mse.fadeout( this.container, 20, new mse.Callback(this.setContainer, this, container) );
+    		this.dest = container;
+    	}
+    	else this.setContainer(container);
+    	mse.fadein(container, 20);
+    },
+    inObj: function(x,y) {return true;},
+    	
+    logic: function(delta) {
+    	for(var i in this.animations)
+    		if(this.animations[i].logic(delta))
+    			// Delete finish animation
+    			this.animations.splice(i,1);
+    	
+    	var block = false;
+    	for(var i in this.animes) {
+    	    if(this.animes[i].block) block = true;
+    		if(this.animes[i].logic(delta))
+    		    // Delete finish animation
+    		    this.animes.splice(i,1);
+    	}
+    	if(block) return;
+    	
+    	if(this.gamewindow.logic(delta)) return;
+    	
+    	if(this.container) this.container.logic(delta);
+    },
+    
+    draw: function() {
+        this.ctx.clearRect(0, 0, this.width, this.height);
+    	
+        if(!this.gamewindow.isFullScreen()){
+    	    if(this.container) this.container.draw(this.ctx);
+    	    if(this.dest) this.dest.draw(this.ctx);
+    	}
+    	if(this.gamewindow.currGame) this.gamewindow.draw(this.ctx);
+    	
+    	for(var i in this.animes) this.animes[i].draw(this.ctx);
+    	
+    	this.evtDistributor.rootEvt.eventNotif("drawover",this.ctx);
+    },
+    
+    // Timeline delegate
+    initTimeline: function(timeline) {},
+    
+    runTimeline: function(delta) {
+    	if(!this.init) {
+    		var proc = mse.src.preloadProc();
+    		if(proc[0] < proc[1]) {
+    			mse.src.preloadPage(this.ctx, proc[0], proc[1]);
+    		}
+    		else this.init = true;
+    	}
+    	else if(!this.end) {
+    		this.logic(delta);
+    		this.draw();
+    	}
+    	else mse.currTimeline.end = true;
+    }
 };
 
 
@@ -2773,8 +2796,9 @@ mse.Timeline.prototype = {
 			}
 			else {
 			    this.timer = requestAnimationFrame(this.frameFn);
-			    if(this.switching) this.src.runTimeline(this.interval);
-			    this.switching = !this.switching;
+			    //if(this.switching) 
+			    this.src.runTimeline(this.interval);
+			    //this.switching = !this.switching;
 			}
 		}
 		// END

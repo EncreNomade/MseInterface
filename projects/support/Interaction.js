@@ -117,20 +117,42 @@ GestureAnalyser.prototype = {
     		this.listeners.eventNotif('translate', e);
     	}
     	else if(this.count == 2){
+    	    // Collect two finger info
+    	    var begin = [];
+    	    var end = [];
+    	    var path = [];
+    	    for(var id in this.blobs) {
+    	        var p = this.blobs[id];
+    	        path.push(p);
+    	        begin.push(p.origin());
+    	        end.push(p.last());
+    	    }
     		// Two finger scale
-    		// Collect two finger info
-    		var begin = [];
-    		var end = [];
-    		for(var id in this.blobs) {
-    		    begin.push(this.blobs[id].origin());
-    		    end.push(this.blobs[id].last());
+    		if(this.listeners.hasListener('scale')) {
+    		    var disBegin = [begin[1].x - begin[0].x, begin[1].y - begin[0].y];
+    		    var disEnd = [end[1].x - end[0].x, end[1].y - end[0].y];
+    		    var lbegin = Math.sqrt(disBegin[0]*disBegin[0] + disBegin[1]*disBegin[1]);
+    		    var lend = Math.sqrt(disEnd[0]*disEnd[0] + disEnd[1]*disEnd[1]);
+    		    var e = {'scale': lend/lbegin, 'type':'scale'};
+    		    this.listeners.eventNotif('scale', e);
     		}
-    		var disBegin = [begin[1].x - begin[0].x, begin[1].y - begin[0].y];
-    		var disEnd = [end[1].x - end[0].x, end[1].y - end[0].y];
-    		var lbegin = Math.sqrt(disBegin[0]*disBegin[0] + disBegin[1]*disBegin[1]);
-    		var lend = Math.sqrt(disEnd[0]*disEnd[0] + disEnd[1]*disEnd[1]);
-    		var e = {'scale': lend/lbegin, 'type':'scale'};
-    		this.listeners.eventNotif('scale', e);
+    		// Two finger translate
+    		if(this.listeners.hasListener('translate2')) {
+    		    var angleA = angleFor2Point(begin[0], end[0]);
+    		    var angleB = angleFor2Point(begin[1], end[1]);
+    		    if(Math.abs(angleA - angleB) <= 20) {
+    		        var beforEnd = path[0].pts[path[0].pts.length-2];
+    		        this.listeners.eventNotif('translate2', {'deltaDx': end[0].x-beforEnd.x, 
+    		                                                 'deltaDy': end[0].y-beforEnd.y, 
+    		                                                 'dx': end[0].x-begin[0].x, 
+    		                                                 'dy': end[0].y-begin[0].y, 
+    		                                                 'type':'translate2'});
+    		    }
+    		}
+    		// Clean
+    		begin = null;
+    		end = null;
+    		path = null;
     	}
     },
     analyseRemove: function(id) {
@@ -199,7 +221,8 @@ var eventsMobile = {
 	gestureSingle	: 'touchstart touchmove touchend',
 	gestureMulti    : 'touchstart touchmove touchend',
 	translate       : 'touchstart touchmove touchend',
-	scale           : 'touchstart touchmove touchend'
+	scale           : 'touchstart touchmove touchend',
+	translate2      : 'touchstart touchmove touchend'
 };
 
 

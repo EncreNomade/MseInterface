@@ -10,12 +10,12 @@ var RatGame = function() {
 	this.width = mse.coor(wid); this.height = mse.coor(hid);
 	
 	mse.src.addSource('ratImg', 'games/rat.png', 'img');
-	var ratSit = new mse.Sprite(null,{pos:[30,this.height-80]}, 'ratImg', 80,50, 0,0,400,100);
-	var ratHead = new mse.Sprite(null,{pos:[20,this.height-96]}, 'ratImg', 39,34, 400,0,39,34);
-	var ratHang = new mse.Sprite(null, {pos:[45,this.height-80]}, 'ratImg', 40,113, 0,101,400,113);
+	var ratSit = new mse.Sprite(this,{pos:[30,this.height-80]}, 'ratImg', 80,50, 0,0,400,100);
+	var ratHead = new mse.Sprite(this,{pos:[20,this.height-96]}, 'ratImg', 39,34, 400,0,39,34);
+	var ratHang = new mse.Sprite(this, {pos:[45,this.height-80]}, 'ratImg', 40,113, 0,101,400,113);
 	mse.src.addSource('sacImg', 'games/sac.png', 'img');
-	var sac = new mse.Image(null, {pos:[this.width-160,20], insideRec:[60,40,60,60]}, 'sacImg');
-	var pochet = new mse.Sprite(null, {pos:[this.width-100,175]}, 'sacImg', 60,40, 60,155,60,40);
+	var sac = new mse.Image(this, {pos:[this.width-160,20], insideRec:[60,40,60,60]}, 'sacImg');
+	var pochet = new mse.Sprite(this, {pos:[this.width-100,175]}, 'sacImg', 60,40, 60,155,60,40);
 	
 	var seq = [0,1,2,3,4,5,6,7,8,9];
 	var sitAnim = new mse.FrameAnimation(ratSit, seq, 0, 2);
@@ -24,7 +24,7 @@ var RatGame = function() {
 	this.dragStart = function(e) {
 		if(ratSit.inObj(e.offsetX, e.offsetY)){
 			this.sit = false;
-			ratHang.offx = e.offsetX-20; 
+			ratHang.offx = e.offsetX-20;
 			ratHang.offy = e.offsetY-14;
 			
 			sitAnim.stop();
@@ -63,9 +63,9 @@ var RatGame = function() {
 	var cbEnd = new mse.Callback(this.dragEnd, this);
 	
 	this.init = function() {
-		this.getEvtProxy().addListener('gestureStart', cbStart, true, this);
-		this.getEvtProxy().addListener('gestureUpdate', cbMove, true, this);
-		this.getEvtProxy().addListener('gestureEnd', cbEnd, true, this);
+		this.getEvtProxy().addListener('gestureStart', cbStart, true);
+		this.getEvtProxy().addListener('gestureUpdate', cbMove, true);
+		this.getEvtProxy().addListener('gestureEnd', cbEnd, true);
 		
 		this.sit = true;
 		this.droped = false;
