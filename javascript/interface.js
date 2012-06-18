@@ -881,6 +881,9 @@ function delCurrentPage() {
 };
 
 function staticConfig(e){e.preventDefault();e.stopPropagation();showParameter($(this).parent().parent());}
+
+// parse the raw texte,  match the speaker balise
+//use generateLines for creating object containing one text line, 
 function generateSpeaks(content, font, width, lineHeight){
 	
 	var res = $("<div/>");
@@ -888,38 +891,64 @@ function generateSpeaks(content, font, width, lineHeight){
 	var balise ;
 	while( balise || ( balise=getNextBalise(rest) ) ){
 		
-		// everything after the balise is a dialogue, until  - an end balise , or a \n
+		// delete the \n just before the balise ( or before with space between )
+		var j = 1;
+		for( ; rest.charAt( balise.start - j ) == " " ; j ++ );
+		if( rest.charAt( balise.start - j ) == "\n" )
+			balise.start -= j;
+			
+		//everything before the balise is normal text
 		var normalText = rest.substring( 0 , balise.start );
 		rest = rest.substring( balise.close );
+		
+		// check the next balise 
 		var nbalise = getNextBalise( rest );
 		var dialogueText;
+		
+		// if the next balise is a closing one
 		if( nbalise && nbalise.endBalise ){
+			// the speaked text end at the start of the closing balise
 			dialogueText = rest.substring( 0 , nbalise.start );
 			rest = rest.substring( nbalise.close );
 			nbalise = null;
 		} else {
+			// if its not, the spearker text end at the next \n
 			var alinea = rest.indexOf( "\n" );
 			if( alinea == -1 )
 				alinea = rest.length;
+			// if another speaking balise ( which is not a closing one ) is before the \n
 			if( nbalise && nbalise.start <  alinea ){
+				// the speaker text end at the start of the other balise ( instead of the next \n )
 				alinea = nbalise.start - 1;
 				dialogueText = rest.substring( 0 , nbalise.start );
 			} else
 				dialogueText = rest.substring( 0 , alinea );
 			rest = rest.substring( alinea+1 );
+			// update the next balise we have checked, we dont have to recalculate it for the next loop
 			if( nbalise ){
 				nbalise.start -= alinea+1;
 				nbalise.close -= alinea+1;
 			}
 		}
-		
-		
 		if( normalText.length > 0 )
-			res.append( generateLines(  normalText, font, width, lineHeight) );
-			
+			res.append( generateLines(  normalText, font, width, lineHeight) );	
 		if( dialogueText.length > 0 )
-			res.append( $('<div id="obj'+(curr.objId++)+'" class="speaker" data-who="'+balise.id+'" data-mood="'+( balise.param  ? balise.param : "default" )+'" />').append( generateSpeakLines( dialogueText, font, width, lineHeight) ) );
+			res.append( $('<div id="obj'+(curr.objId++)+'" class="speaker" data-who="'+balise.id+'" data-mood="'+( balise.param  ? balise.param : "default" )+'" />').append( generateSpeakLines( dialogueText, font, width, lineHeight) ) );	
+		
+		
 			
+		// automaticly add the linked ressource speaker
+		if( !srcMgr.isExist( balise.id ) || srcMgr.sourceType( balise.id ) != "speaker" )
+			srcMgr.addSource( "speaker" , new Speaker( balise.id ) );
+		
+		// and the mood
+		if( balise.param ){
+			var data = srcMgr.getSource( balise.id );
+			if( !data.hasMood( balise.param ) )
+				data.addMood( balise.param );
+		}
+		
+		// for the next loop, we dont want to calculate it twice
 		if( nbalise ) 
 			balise = nbalise;
 		else
@@ -981,7 +1010,7 @@ function generateLines(content, font, width, lineHeight){
 		for(var j = 0; j < arr[i].length;) {
 			// Find the index of next line
 			var next = TextUtil.checkNextline(arr[i].substr(j), maxM, width);
-			res += '<div id="obj'+(curr.objId++)+'"><p>'+arr[i].substr(j, next)+'</p></div>';
+			res += '<div id="obj'+(curr.objId++)+'" class="textLine"><p>'+arr[i].substr(j, next)+'</p></div>';
 			j += next;
 		}
 	}

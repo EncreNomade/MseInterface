@@ -292,7 +292,7 @@ SourceManager.prototype = {
 	constructor: SourceManager,
 	sources: {},
 	expos: {},
-	acceptType: new Array('image', 'audio', 'game', 'anime', 'wiki', 'code'),
+	acceptType: new Array('image', 'audio', 'game', 'anime', 'wiki', 'code' , 'speaker' ),
 	extCheck: /data:\s*(\w+)\/(\w+);/,
 	pathCheck: /^(\.\/)?([\w\_\s]+\/)*([\w\_\s\.]+)$/,
 	uploadResp: /^([\w\_\s]+)\&\&([\w\_\s\.\/]+)/,
@@ -401,6 +401,27 @@ SourceManager.prototype = {
 		                     'delete':['./images/UI/del.png',this.prepareDelSource]});
 		    expo.click(function(){
 		        srcMgr.getSource($(this).data('srcId')).showAnimeOnEditor();
+		    });
+		    break;
+		case 'speaker':
+		    if(this.sources[id]) {
+		        delete this.sources[id];
+		        src.data = data;
+		        this.sources[id] = src;
+		        return id;
+		    }
+		    src.data = data;
+		    this.sources[id] = src;
+			var icon;
+			if( icon = data.getIcon() )
+				expo.append('<img class="srcicon_back" src="'+  this.getSource( icon ).data  +'">');
+			else
+				expo.append('<img class="srcicon_back" src="./images/UI/default_portrait.png">');
+		    expo.append('<p>Speaker: '+data.name+'</p>');
+		    expo.circleMenu({'rename':['./images/UI/rename.jpg',this.renameDialog],
+		                     'delete':['./images/UI/del.png',this.prepareDelSource]});
+		    expo.click(function(){
+		        srcMgr.getSource($(this).data('srcId')).showSpeakerOnEditor();
 		    });
 		    break;
 		case 'code':
@@ -639,7 +660,7 @@ SourceManager.prototype = {
         var t = this.sources[newName].type;
         if(t == 'image') this.expos[newName].children('img').attr('name',newName);
         else {
-            if(t == "wiki" || t == "anime") {
+            if(t == "wiki" || t == "anime" || t == "speaker" ) {
                 this.sources[newName].data.name = newName;
             }
             var chaine = srcMgr.expos[newName].children("p").html().split(/: /);
@@ -1370,6 +1391,63 @@ Animation.prototype = {
     }
 };
 
+
+// Speaker system
+var Speaker = function( name , moods ) {
+    if(!name ) return;
+    this.name = name;
+	if( moods )
+		this.portrait = moods;
+	else
+		this.portrait = {};
+};
+Speaker.prototype = {
+    constructor: Speaker,
+	hasMood : function( key ){
+		return ($.inArray(id, Object.keys(this.portrait)) != -1);
+	},
+	addMood : function( key , image_id ){
+		if( image_id )
+			this.portrait[ key ] = image_id;
+		else
+			this.portrait[ key ] = null;
+	},
+	renameMood : function( oldName , newName ){
+		this.portrait[ newName ] = this.portrait[ oldName ];
+		delete this.portrait[ oldName ];
+	},
+    showSpeakerOnEditor: function(){
+        alert( "on" );
+    },
+	
+	// eventuellement, retourne null
+	getIcon : function(){
+		if( Object.keys(this.portrait).length < 1 )
+			return;
+		if( this.hasMood( "default" ) )
+			return this.portrait[ "default" ];
+		for( var i in this.portrait )
+			if( this.portrait[ i ] )
+				return this.portrait[ i ];
+		return ;
+	},
+    getDependency: function(id) {
+        for( var i in this.portrait )
+            if(this.portrait[i] == id)
+                return true;
+        return false;
+    },
+    removeDependency: function(id) {
+        for( var i in this.portrait )
+            if(this.portrait[i] == id)
+                delete this.portrait[i];
+    },
+    updateSource: function(id, newName) {
+		for( var i in this.portrait )
+            if(this.portrait[i] == id)
+                this.portrait[i] = newName;
+    }
+};
 
 
 
@@ -3067,7 +3145,7 @@ var isMajDown=false;
 var isCtrlDown=false;
 $(document).keyup(function (e) {
 	if(e.which == 17) isCtrlDown=false;
-	if(e.which == 16) isMajDown=false;
+	if(e.which == 16) { isMajDown=false; };
 }).keydown(function (e) {
 	if(e.which == 17) isCtrlDown=true;
 	if(e.which == 16) { isMajDown=true; magnetisme.showGuide( {}  );  }
@@ -3290,21 +3368,48 @@ $.fn.moveable = function(supp) {
 function choose(e) {
 	e.preventDefault();
     var elem = $(this);
-	if( !isCtrlDown ){
+	if( !isCtrlDown && !isMajDown ){
 		for( var i = 0 ; i < multiSelect.length ; i ++ )
 			$( multiSelect[ i ] ).removeClass( 'selected' );
 		multiSelect = [ elem ];
 		elem.addClass( 'selected' );
-	} else {
+	} else if( isCtrlDown ) {
 		for( var i = 0 ; i < multiSelect.length ; i ++ )
-			if( $( multiSelect[ i ] ).attr("id") == elem.attr("id") )
+			if( $( multiSelect[ i ] ).attr("id") == elem.attr("id") ){
+				$( multiSelect[ i ] ).removeClass( 'selected' );
+				multiSelect.splice( i , 1 );
 				break;
-			
+			}
 		if( i == multiSelect.length ){
 			multiSelect.push( elem );
 			elem.addClass( 'selected' );
 		}
+	} else if( elem.hasClass("textLine") && curr.last ){
+		var parent = elem.parents(".article");
+		var lines = parent.find( ".textLine" );		
+		var min = Math.min( elem.position().top , $( curr.last ).position().top );
+		var max = Math.max( elem.position().top , $( curr.last ).position().top );
+		for( var j = 0 ; j < lines.length ; j ++ ){
+			var line = $( lines[ j ] );
+			var y = line.position().top;
+			if( y> min ){
+				if( y >= max )
+					// break can be used because lines is sorted by top croissant, in the case of its not, replace break by continue
+					break;
+				for( var i = 0 ; i < multiSelect.length ; i ++ )
+					if( $( multiSelect[ i ] ).attr("id") == line.attr("id") )
+						break;
+				if( i == multiSelect.length ){
+					multiSelect.push( line );
+					line.addClass( 'selected' );
+				}
+			}
+		}
 	}
+	if( elem.hasClass("textLine") )
+		curr.last = elem;
+	else
+		curr.last = null;
 }
 // only for resizable element
 function chooseElemWithCtrlPts(e) {

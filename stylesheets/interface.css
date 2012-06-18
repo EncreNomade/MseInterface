@@ -355,6 +355,15 @@ body{
 	-webkit-box-shadow: 0 0 0px 2px #888;
 	box-shadow: 0 0 0px 2px #888;
 }
+.selected.textLine {
+	background: rgba(4,120,120,0.5);
+	
+	-moz-box-shadow: none;
+	-webkit-box-shadow: none;
+	box-shadow: none;
+	
+	color : green;
+}
 .text {
 	border:0px;
 	position:absolute;
