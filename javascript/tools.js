@@ -1472,8 +1472,13 @@ Speaker.prototype = {
         dialog.main.append(moodSelector);
         for (var i in self.portrait) {
             // restore all moods
+
             var id = self.portrait[i];
-            var elem = $('<div><img src="'+srcMgr.sources[id].data+'" name="'+id+'"></div>');
+			var url = id ? srcMgr.sources[id].data : "./images/UI/default_portrait.png";
+            var elem = $('<div><img src="'+ url +'" ></div>');
+			if( id )
+				elem.children("img").attr( "name" , id );
+                
             elem.append('<input type="text" value="'+i+'" />');
             elem.deletable(null,true);
             moodSelector.append(elem);
@@ -1489,7 +1494,7 @@ Speaker.prototype = {
         moods.each(function(i){
             var img = $(this).children('img'); // attr 'name' contain the source ID
             var moodName = $(this).children('input');
-            spkObj.addMood(moodName.val().toLowerCase(), img.attr('name')); // add each mood to the obj
+			spkObj.addMood(moodName.val().toLowerCase(), img.attr('name') ); // add each mood to the obj
         });
         
         spkObj.rename($('#speaker_name').val());
@@ -1506,6 +1511,12 @@ Speaker.prototype = {
 		return this.portrait[ key ];
 	},
 	// eventuellement, retourne null
+	getAssociateSpeak : function( mood ){
+		if( mood )
+			return $( ".speaker[data-who="+ this.name +"][data-mood="+ mood +"]" );
+		
+		return $( ".speaker[data-who="+ this.name +"]" );
+	}
 	getIcon : function(){
 		if( Object.keys(this.portrait).length < 1 )
 			return;

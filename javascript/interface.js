@@ -298,15 +298,20 @@ function createPageDialog() {
 				var img;
 				var url;
 				if( map[ i ] )
-					url = map[ i ]
+					url = srcMgr.getSource( map[ i ] );
 				else
 					url = "./images/UI/default_portrait.png"
 				
-				var option = $( '<div style="background:none;"><img src="' +url+ '" width:"30" height="30" />'+i+'</div>' );
+				var option = $( '<div style="background:none;"><img src="' +url+ '" width:"30" height="30" style="width:30px; height:30px;"/>'+i+'</div>' );
 				option.click( function( e ){
-					$("#"+id_speak).attr( "data-mood" , $( e.currentTarget ).text() );
-					$("#"+id_speak).find( 'img' ).attr( "src" , url );
-					updateHightlight( $( e.currentTarget ).text() );
+					console.log( $("#"+id_speak) );
+					var mood = $( e.currentTarget ).text()
+					$("#"+id_speak).attr( "data-mood" , mood );
+					var url = map[ mood ] ? srcMgr.getSource( map[ mood ] ) : "./images/UI/default_portrait.png";
+					$("#"+id_speak).children( 'img' ).attr( "src" , url );
+					console.log( $("#"+id_speak) );
+					console.log( mood );
+					updateHightlight( mood );
 				});
 				comboBox.append( option );
 			}
@@ -981,7 +986,6 @@ function generateSpeaks(content, font, width, lineHeight){
 			}
 		}
 		
-		
 		// automaticly add the linked ressource speaker
 		var alreadyExist = false;
 		var id_ressource;
@@ -999,14 +1003,17 @@ function generateSpeaks(content, font, width, lineHeight){
 		if( !data.hasMood( mood ) )
 				data.addMood( mood );
 		
-		
 		// append the textLine object
 		if( normalText.length > 0 )
 			res.append( generateLines(  normalText , font, width, lineHeight) );	
 		if( dialogueText.length > 0 ){
-			var lines = generateSpeakLines( dialogueText, font, width, lineHeight);
-			res.append( $('<div id="obj'+(curr.objId++)+'" class="speaker" data-who="'+balise.id+'" data-mood="'+mood+'" />').append( lines ) );	
+			var lines = generateSpeakLines( dialogueText, font, width, lineHeight , id );
+			res.append( $('<div id="'+ id +'" class="speaker" data-who="'+balise.id+'" data-mood="'+mood+'" />').append( lines ) );	
 		}
+		
+		
+		
+		
 		// for the next loop, we dont want to calculate it twice
 		if( nbalise ) 
 			balise = nbalise;
@@ -1018,7 +1025,7 @@ function generateSpeaks(content, font, width, lineHeight){
 	return res.children();
 	
 	// setUp the speak formate with img associate
-	function generateSpeakLines( content, font, width, lineHeight ){
+	function generateSpeakLines( content, font, width, lineHeight, id ){
 		
 		var decalage = 50;
 		var nline = 3;
@@ -1035,11 +1042,9 @@ function generateSpeaks(content, font, width, lineHeight){
 		var res = $("<div>");
 		var imgsrc = srcMgr.getSource( id_ressource ).getPictSrc( balise.param );
 		var img;
+		var url = imgsrc ? srcMgr.getSource( imgsrc ) : "./images/UI/default_portrait.png";
 		var d = first.length * lineHeight;
-		if( imgsrc )
-			img = $( '<img src="'+srcMgr.getSource( imgsrc )+'" width="'+d+'" height="'+d+'" style="width:'+d+'px;height:'+d+'px;display:inline-block;" />' );
-		else
-			img = $( '<img src="./images/UI/default_portrait.png" width="'+d+'" height="'+d+'" style="width:'+d+'px;height:'+d+'px;display:inline-block;" />' );
+		img = $( '<img src="'+ url +'" width="'+d+'" height="'+d+'" style="width:'+d+'px;height:'+d+'px;display:inline-block;" />' );
 		img.css( "position" , "absolute" );
 		img.css( "left" , ( ( decalage - d ) / 2 )+"px" );
 		
@@ -1047,8 +1052,10 @@ function generateSpeaks(content, font, width, lineHeight){
 		res.append( first );
 		res.append( last  );
 		
+		
+		
 		img.click( function(e){
-			editeSpeakDialog( "obj"+(curr.objId-1) );
+			editeSpeakDialog( id );
 		});
 		
 		return res.children();
