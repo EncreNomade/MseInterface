@@ -930,24 +930,32 @@ function generateSpeaks(content, font, width, lineHeight){
 				nbalise.close -= alinea+1;
 			}
 		}
-		if( normalText.length > 0 )
-			res.append( generateLines(  normalText, font, width, lineHeight) );	
-		if( dialogueText.length > 0 )
-			res.append( $('<div id="obj'+(curr.objId++)+'" class="speaker" data-who="'+balise.id+'" data-mood="'+( balise.param  ? balise.param : "default" )+'" />').append( generateSpeakLines( dialogueText, font, width, lineHeight) ) );	
 		
 		
-			
 		// automaticly add the linked ressource speaker
-		if( !srcMgr.isExist( balise.id ) || srcMgr.sourceType( balise.id ) != "speaker" )
-			srcMgr.addSource( "speaker" , new Speaker( balise.id ) );
-		
+		var alreadyExist = false;
+		var id_ressource;
+		for( var i in srcMgr.sources )
+			if( srcMgr.sourceType( i ) == "speaker" && srcMgr.getSource( i ).name == balise.id ){
+				alreadyExist = true;
+				id_ressource = i;
+				break;
+			}
+		if( !alreadyExist )
+			id_ressource = srcMgr.addSource( "speaker" , new Speaker( balise.id ) );
 		// and the mood
-		if( balise.param ){
-			var data = srcMgr.getSource( balise.id );
-			if( !data.hasMood( balise.param ) )
-				data.addMood( balise.param );
-		}
+		var mood = balise.param ? balise.param : "default";
+		var data = srcMgr.getSource( id_ressource );
+		if( !data.hasMood( mood ) )
+				data.addMood( mood );
 		
+		
+		if( normalText.length > 0 )
+			res.append( generateLines(  normalText , font, width, lineHeight) );	
+		if( dialogueText.length > 0 ){
+			var lines = generateSpeakLines( dialogueText, font, width, lineHeight);
+			res.append( $('<div id="obj'+(curr.objId++)+'" class="speaker" data-who="'+balise.id+'" data-mood="'+mood+'" />').append( lines ) );	
+		}
 		// for the next loop, we dont want to calculate it twice
 		if( nbalise ) 
 			balise = nbalise;
@@ -960,8 +968,9 @@ function generateSpeaks(content, font, width, lineHeight){
 	
 	function generateSpeakLines( content, font, width, lineHeight ){
 		
-		var decalage = width * 0.33;
+		var decalage = 50;
 		var nline = 3;
+		
 		
 		var first = generateLines( content , font, width - decalage , lineHeight );
 		first.css("left" , decalage+"px" );
@@ -969,10 +978,64 @@ function generateSpeaks(content, font, width, lineHeight){
 		first.css("position" , "relative" );
 		var rest = "";
 		first.children().slice( nline ).each( function( n , i ){ rest += $(i).text(); } );
+		first = first.slice( 0 , nline );
 		var last = generateLines( rest , font, width , lineHeight );
 		var res = $("<div>");
-		res.append( first.slice( 0 , nline ) );
-		res.append( last );
+		var imgsrc = srcMgr.getSource( id_ressource ).getPictSrc( balise.param );
+		var img;
+		var d = first.length * lineHeight;
+		if( imgsrc )
+			img = $( '<img src="'+srcMgr.getSource( imgsrc )+'" width="'+d+'" height="'+d+'" style="width:'+d+'px;height:'+d+'px;display:inline-block;" />' );
+		else
+			img = $( '<img src="./images/UI/default_portrait.png" width="'+d+'" height="'+d+'" style="width:'+d+'px;height:'+d+'px;display:inline-block;" />' );
+		img.css( "position" , "absolute" );
+		img.css( "left" , ( ( decalage - d ) / 2 )+"px" );
+		
+		res.append( img );
+		res.append( first );
+		res.append( last  );
+		
+		img.click( function(e){
+			dialog.showPopup('éditer interlocuteur', 340, 250 , "ok");
+			var id_speak = curr.objId-1;
+			var map = srcMgr.getSource( id_ressource ).portrait;
+			var comboBox = $( '<div style="width:100px;height:180px;overflow-y:auto;">' );
+			for( var i in map ){
+				var img;
+				var url;
+				if( map[ i ] )
+					url = map[ i ]
+				else
+					url = "./images/UI/default_portrait.png"
+				
+				var option = $( '<div style="background:none;"><img src="' +url+ '" width:"30" height="30" />'+i+'</div>' );
+				
+				option.click( function( e ){
+					$("#obj"+id_speak).attr( "data-mood" , $( e.currentTarget ).text() );
+					$("#obj"+id_speak).find( 'img' ).attr( "src" , url );
+					updateHightlight( $( e.currentTarget ).text() );
+				});
+				
+				comboBox.append( option );
+			}
+			updateHightlight( $("#obj"+id_speak).attr( "data-mood") );
+			
+			function updateHightlight( mood ){
+				var c = comboBox.find( "div" );
+				for( var i =0 ; i < c.length ; i ++  ){
+					var option = $( c[ i ] );
+					if( option.text() == mood )
+						option.css( "background" , "blue" );
+					else
+						option.css( "background" , "none" );
+				}
+			}
+			
+			dialog.main.append( comboBox  );
+			dialog.confirm.click(function() {
+				dialog.close();
+			});
+		});
 		return res.children();
 	}
 	function getNextBalise( rest ){
@@ -1003,7 +1066,7 @@ function generateLines(content, font, width, lineHeight){
 	var sep = 0;
 	for(var i = 0; i < arr.length; i++) {
 		if(arr[i].length == 0) { // Separator paragraph
-			res += '<div id="obj'+(curr.objId++)+'"/>';
+			res += '<div id="obj'+(curr.objId++)+'" class="textLine"/>';
 			sep++;continue;
 		}
 

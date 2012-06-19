@@ -412,12 +412,20 @@ SourceManager.prototype = {
 		    }
 		    src.data = data;
 		    this.sources[id] = src;
+<<<<<<< HEAD
             data.srcId = id;
 			var icon;
 			if( icon = data.getIcon() )
 				expo.append('<img class="srcicon_back" src="'+  this.getSource( icon ).data  +'" name="'+id+'">');
 			else
 				expo.append('<img class="srcicon_back" src="./images/UI/default_portrait.png" name="'+id+'">');
+=======
+			var icon;
+			if( icon = data.getIcon() )
+				expo.append('<img class="srcicon_back" src="'+  this.getSource( icon ).data  +'">');
+			else
+				expo.append('<img class="srcicon_back" src="./images/UI/default_portrait.png">');
+>>>>>>> 4ae156873f3cd3f860c6fd293049fd0f9bd21117
 		    expo.append('<p>Speaker: '+data.name+'</p>');
 		    expo.circleMenu({'rename':['./images/UI/rename.jpg',this.renameDialog],
 		                     'delete':['./images/UI/del.png',this.prepareDelSource]});
@@ -1420,13 +1428,10 @@ Speaker.prototype = {
         this.name = newName;
     },
 	hasMood : function( key ){
-		return ($.inArray(id, Object.keys(this.portrait)) != -1);
+		return ($.inArray(key, Object.keys(this.portrait)) != -1);
 	},
 	addMood : function( key , image_id ){
-		if( image_id )
-			this.portrait[ key ] = image_id;
-		else
-			this.portrait[ key ] = null;
+		this.portrait[ key ] = image_id;
 	},
 	renameMood : function( oldName , newName ){
 		this.portrait[ newName ] = this.portrait[ oldName ];
@@ -1502,7 +1507,11 @@ Speaker.prototype = {
     clearPortraits: function(){
         this.portrait = {};
     },
-	
+	getPictSrc : function( key ){
+		if( !key )
+			return this.portrait[ "default" ];
+		return this.portrait[ key ];
+	},
 	// eventuellement, retourne null
 	getIcon : function(){
 		if( Object.keys(this.portrait).length < 1 )
@@ -3449,14 +3458,23 @@ $.fn.moveable = function(supp) {
 
 // Choose event
 function choose(e) {
+<<<<<<< HEAD
 	e.preventDefault();
     var elem = $(this);
 	if( !isCtrlDown && !isMajDown ){
+=======
+	var elem = $(this);
+	if( !isCtrlDown  ){
+>>>>>>> 4ae156873f3cd3f860c6fd293049fd0f9bd21117
 		for( var i = 0 ; i < multiSelect.length ; i ++ )
 			$( multiSelect[ i ] ).removeClass( 'selected' );
 		multiSelect = [ elem ];
 		elem.addClass( 'selected' );
+<<<<<<< HEAD
 	} else if( isCtrlDown ) {
+=======
+	} else {
+>>>>>>> 4ae156873f3cd3f860c6fd293049fd0f9bd21117
 		for( var i = 0 ; i < multiSelect.length ; i ++ )
 			if( $( multiSelect[ i ] ).attr("id") == elem.attr("id") ){
 				$( multiSelect[ i ] ).removeClass( 'selected' );
@@ -3467,7 +3485,14 @@ function choose(e) {
 			multiSelect.push( elem );
 			elem.addClass( 'selected' );
 		}
+<<<<<<< HEAD
 	} else if( elem.hasClass("textLine") && curr.last ){
+=======
+	} 
+	/*
+	// c'etait pour génrer la selection par Maj en surcouche
+	else if( elem.hasClass("textLine") && curr.last ){
+>>>>>>> 4ae156873f3cd3f860c6fd293049fd0f9bd21117
 		var parent = elem.parents(".article");
 		var lines = parent.find( ".textLine" );		
 		var min = Math.min( elem.position().top , $( curr.last ).position().top );
@@ -3489,10 +3514,14 @@ function choose(e) {
 			}
 		}
 	}
+<<<<<<< HEAD
 	if( elem.hasClass("textLine") )
 		curr.last = elem;
 	else
 		curr.last = null;
+=======
+	*/
+>>>>>>> 4ae156873f3cd3f860c6fd293049fd0f9bd21117
 }
 // only for resizable element
 function chooseElemWithCtrlPts(e) {
