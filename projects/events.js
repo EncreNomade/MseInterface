@@ -144,6 +144,7 @@ mse.EventDispatcher.prototype = {
         var arr = this.observers[type];
         if(!arr) return success;
         
+        arr = arr.slice();
         for(var val in arr) {
         	if( (!this.domObj || this.domObj==arr[val] || this.domObj==arr[val].parent) ) {
         	    // Non location based event, notify directly
@@ -155,6 +156,7 @@ mse.EventDispatcher.prototype = {
         		if(res.prevent) break;
         	}
         }
+        arr = null;
         return success;
     }
 };

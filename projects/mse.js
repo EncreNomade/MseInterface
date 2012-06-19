@@ -770,7 +770,7 @@ $.extend(mse.BaseContainer.prototype, {
     },
     delLayer: function(name) {
     	if(name == null) return;
-    	for(var i in this._layers) {
+    	for(var i = this._layers.length-1; i >= 0; --i) {
     		if(this._layers[i].name == name) this._layers.splice(i,1);
     	}
     },
