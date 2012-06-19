@@ -992,3 +992,30 @@ svg rect.guide {
 	stroke-width:3px;
 	shape-rendering:crispEdges;
 }
+#mood_selector{
+    margin-top: 10px;
+    height: 140px;
+    position: relative;
+    overflow-y: auto;
+}
+#mood_selector > div{
+    height: 70px;
+    width: 70px;
+    margin: 5px;
+    float: left;
+}
+#mood_selector > div > img{
+    position: absolute;
+    height: 70px;
+    width: 70px;
+}
+#mood_selector input[type=text]{
+    position: absolute;
+    margin-top: 55px;
+    width: 65px;
+    opacity: 0.6;
+}
+#mood_selector > div > .del_container{
+    left: 70px;
+    position: relative;
+}

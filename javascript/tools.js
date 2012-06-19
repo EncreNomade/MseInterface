@@ -412,11 +412,12 @@ SourceManager.prototype = {
 		    }
 		    src.data = data;
 		    this.sources[id] = src;
+            data.srcId = id;
 			var icon;
 			if( icon = data.getIcon() )
-				expo.append('<img class="srcicon_back" src="'+  this.getSource( icon ).data  +'">');
+				expo.append('<img class="srcicon_back" src="'+  this.getSource( icon ).data  +'" name="'+id+'">');
 			else
-				expo.append('<img class="srcicon_back" src="./images/UI/default_portrait.png">');
+				expo.append('<img class="srcicon_back" src="./images/UI/default_portrait.png" name="'+id+'">');
 		    expo.append('<p>Speaker: '+data.name+'</p>');
 		    expo.circleMenu({'rename':['./images/UI/rename.jpg',this.renameDialog],
 		                     'delete':['./images/UI/del.png',this.prepareDelSource]});
@@ -1403,6 +1404,21 @@ var Speaker = function( name , moods ) {
 };
 Speaker.prototype = {
     constructor: Speaker,
+    rename: function(newName){
+        if (this.name == newName) return;
+        
+        // change all the div of this speaker
+        var divs = $('div[data-who="'+this.name+'"]');
+        divs.attr('data-who', newName);
+        // change the expo
+        $('.icon_src').children('[name="'+this.srcId+'"]')
+                      .siblings('p')
+                      .html('Speaker: '+newName);
+        // other way
+        // srcMgr.expos[this.srcId].children('p').html('Speaker: '+newName);
+        
+        this.name = newName;
+    },
 	hasMood : function( key ){
 		return ($.inArray(id, Object.keys(this.portrait)) != -1);
 	},
@@ -1417,7 +1433,74 @@ Speaker.prototype = {
 		delete this.portrait[ oldName ];
 	},
     showSpeakerOnEditor: function(){
-        alert( "on" );
+        function dropVisage(e) {
+            e = e.originalEvent;
+            e.stopPropagation();
+            $(this).css('border-style', 'dotted');
+            
+            var id = e.dataTransfer.getData('Text');
+            var type = srcMgr.sourceType(id);
+            if(!id || type != $(this).data('type')) return;
+            // Place in the elem zone
+            var elem = $('<div><img src="'+srcMgr.sources[id].data+'" name="'+id+'"></div>');
+            elem.append('<input type="text" value="Humeur'+$('#mood_selector div').length+'" />');
+            elem.deletable(null, true);
+            $('#mood_selector').append(elem);
+        }
+        dialog.showPopup('Edition speaker',450, 410,'Modifier');
+        // show ressource panel
+        $('#bottom').css('z-index','110');
+        
+        var htmlStr = '';
+        htmlStr += '<table>';
+        htmlStr +=  '<tr><td>Nom</td>';
+        htmlStr +=    '<td>Couleur</td>';
+        htmlStr +=    '<td>Style</td> </tr>';
+        htmlStr +=  '<tr><td><input type="text" id="speaker_name"/> </td>';
+        htmlStr +=    '<td><input type="text" id="bulle_couleur"/> </td>';
+        htmlStr +=    '<td><input type="text" id="bulle_style"/> </td> </tr>';
+        htmlStr += '</table><br/>';
+        
+        dialog.main.append(htmlStr);
+        $('#speaker_name').val(this.name);        
+        // $('#bulle_couleur').val(this.color);        
+        // $('#bulle_style').val(this.style);
+        
+        var dz = (new DropZone(dropVisage, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "script_supp")).jqObj;
+        dz.data('type', 'image');
+        dialog.main.append(dz);
+        
+        var moodSelector = $('<div id="mood_selector"></div>');
+        dialog.main.append(moodSelector);
+        for (var i in this.portrait) {
+            // restore all moods
+            var id = this.portrait[i];
+            var elem = $('<div><img src="'+srcMgr.sources[id].data+'" name="'+id+'"></div>');
+            elem.append('<input type="text" value="'+i+'" />');
+            elem.deletable(null,true);
+            moodSelector.append(elem);
+        }
+        
+        dialog.confirm.click({'speaker':this}, this.validChanges);
+    },
+    validChanges: function(e){
+        var spkObj =  e.data.speaker;
+        
+        spkObj.clearPortraits();
+        var moods = $('#mood_selector').children();
+        moods.each(function(i){
+            var img = $(this).children('img'); // attr 'name' contain the source ID
+            var moodName = $(this).children('input');
+            spkObj.addMood(moodName.val().toLowerCase(), img.attr('name')); // add each mood to the obj
+        });
+        
+        spkObj.rename($('#speaker_name').val());
+        
+        closeBottom();
+        dialog.close();
+    },
+    clearPortraits: function(){
+        this.portrait = {};
     },
 	
 	// eventuellement, retourne null
