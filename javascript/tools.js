@@ -1404,13 +1404,10 @@ var Speaker = function( name , moods ) {
 Speaker.prototype = {
     constructor: Speaker,
 	hasMood : function( key ){
-		return ($.inArray(id, Object.keys(this.portrait)) != -1);
+		return ($.inArray(key, Object.keys(this.portrait)) != -1);
 	},
 	addMood : function( key , image_id ){
-		if( image_id )
-			this.portrait[ key ] = image_id;
-		else
-			this.portrait[ key ] = null;
+		this.portrait[ key ] = image_id;
 	},
 	renameMood : function( oldName , newName ){
 		this.portrait[ newName ] = this.portrait[ oldName ];
@@ -1419,7 +1416,11 @@ Speaker.prototype = {
     showSpeakerOnEditor: function(){
         alert( "on" );
     },
-	
+	getPictSrc : function( key ){
+		if( !key )
+			return this.portrait[ "default" ];
+		return this.portrait[ key ];
+	},
 	// eventuellement, retourne null
 	getIcon : function(){
 		if( Object.keys(this.portrait).length < 1 )
@@ -3366,14 +3367,13 @@ $.fn.moveable = function(supp) {
 
 // Choose event
 function choose(e) {
-	e.preventDefault();
-    var elem = $(this);
-	if( !isCtrlDown && !isMajDown ){
+	var elem = $(this);
+	if( !isCtrlDown  ){
 		for( var i = 0 ; i < multiSelect.length ; i ++ )
 			$( multiSelect[ i ] ).removeClass( 'selected' );
 		multiSelect = [ elem ];
 		elem.addClass( 'selected' );
-	} else if( isCtrlDown ) {
+	} else {
 		for( var i = 0 ; i < multiSelect.length ; i ++ )
 			if( $( multiSelect[ i ] ).attr("id") == elem.attr("id") ){
 				$( multiSelect[ i ] ).removeClass( 'selected' );
@@ -3384,7 +3384,10 @@ function choose(e) {
 			multiSelect.push( elem );
 			elem.addClass( 'selected' );
 		}
-	} else if( elem.hasClass("textLine") && curr.last ){
+	} 
+	/*
+	// c'etait pour génrer la selection par Maj en surcouche
+	else if( elem.hasClass("textLine") && curr.last ){
 		var parent = elem.parents(".article");
 		var lines = parent.find( ".textLine" );		
 		var min = Math.min( elem.position().top , $( curr.last ).position().top );
@@ -3406,10 +3409,7 @@ function choose(e) {
 			}
 		}
 	}
-	if( elem.hasClass("textLine") )
-		curr.last = elem;
-	else
-		curr.last = null;
+	*/
 }
 // only for resizable element
 function chooseElemWithCtrlPts(e) {
