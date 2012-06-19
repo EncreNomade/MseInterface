@@ -281,6 +281,56 @@ function createPageDialog() {
 	});
 };
 
+// edite speack dialog
+		function editeSpeakDialog( id_speak ){
+			//  search the asoociate speaker
+			var speaker = $("#"+id_speak).attr( "data-who" );
+			var id_ressource_speaker;
+			for( var i in srcMgr.sources )
+				if( srcMgr.sourceType( i ) == "speaker" && srcMgr.getSource( i ).name == speaker ){
+					id_ressource_speaker = i;
+					break;
+				}
+			// setUp the list of moods
+			var map = srcMgr.getSource( id_ressource_speaker ).portrait;
+			var comboBox = $( '<div style="width:100px;height:180px;overflow-y:auto;">' );
+			for( var i in map ){
+				var img;
+				var url;
+				if( map[ i ] )
+					url = map[ i ]
+				else
+					url = "./images/UI/default_portrait.png"
+				
+				var option = $( '<div style="background:none;"><img src="' +url+ '" width:"30" height="30" />'+i+'</div>' );
+				option.click( function( e ){
+					$("#"+id_speak).attr( "data-mood" , $( e.currentTarget ).text() );
+					$("#"+id_speak).find( 'img' ).attr( "src" , url );
+					updateHightlight( $( e.currentTarget ).text() );
+				});
+				comboBox.append( option );
+			}
+			updateHightlight( $("#"+id_speak).attr( "data-mood") );
+			
+			function updateHightlight( mood ){
+				var c = comboBox.find( "div" );
+				for( var i =0 ; i < c.length ; i ++  ){
+					var option = $( c[ i ] );
+					if( option.text() == mood )
+						option.css( "background" , "blue" );
+					else
+						option.css( "background" , "none" );
+				}
+			}
+			
+			dialog.showPopup('éditer interlocuteur', 340, 250 , "ok");
+			dialog.main.append( comboBox  );
+			dialog.confirm.click(function() {
+				dialog.close();
+			});
+		}
+		
+
 // Add step dialog
 function createStepDialog() {
 	dialog.showPopup('Ajouter un nouveau étape', 340, 200);
@@ -950,6 +1000,7 @@ function generateSpeaks(content, font, width, lineHeight){
 				data.addMood( mood );
 		
 		
+		// append the textLine object
 		if( normalText.length > 0 )
 			res.append( generateLines(  normalText , font, width, lineHeight) );	
 		if( dialogueText.length > 0 ){
@@ -966,6 +1017,7 @@ function generateSpeaks(content, font, width, lineHeight){
 		res.append( generateLines( rest , font, width, lineHeight) );
 	return res.children();
 	
+	// setUp the speak formate with img associate
 	function generateSpeakLines( content, font, width, lineHeight ){
 		
 		var decalage = 50;
@@ -996,46 +1048,9 @@ function generateSpeaks(content, font, width, lineHeight){
 		res.append( last  );
 		
 		img.click( function(e){
-			dialog.showPopup('éditer interlocuteur', 340, 250 , "ok");
-			var id_speak = curr.objId-1;
-			var map = srcMgr.getSource( id_ressource ).portrait;
-			var comboBox = $( '<div style="width:100px;height:180px;overflow-y:auto;">' );
-			for( var i in map ){
-				var img;
-				var url;
-				if( map[ i ] )
-					url = map[ i ]
-				else
-					url = "./images/UI/default_portrait.png"
-				
-				var option = $( '<div style="background:none;"><img src="' +url+ '" width:"30" height="30" />'+i+'</div>' );
-				
-				option.click( function( e ){
-					$("#obj"+id_speak).attr( "data-mood" , $( e.currentTarget ).text() );
-					$("#obj"+id_speak).find( 'img' ).attr( "src" , url );
-					updateHightlight( $( e.currentTarget ).text() );
-				});
-				
-				comboBox.append( option );
-			}
-			updateHightlight( $("#obj"+id_speak).attr( "data-mood") );
-			
-			function updateHightlight( mood ){
-				var c = comboBox.find( "div" );
-				for( var i =0 ; i < c.length ; i ++  ){
-					var option = $( c[ i ] );
-					if( option.text() == mood )
-						option.css( "background" , "blue" );
-					else
-						option.css( "background" , "none" );
-				}
-			}
-			
-			dialog.main.append( comboBox  );
-			dialog.confirm.click(function() {
-				dialog.close();
-			});
+			editeSpeakDialog( "obj"+(curr.objId-1) );
 		});
+		
 		return res.children();
 	}
 	function getNextBalise( rest ){

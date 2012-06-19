@@ -811,6 +811,19 @@ $.extend(CreateElemCmd.prototype, {
         this.state = 'CANCEL';
     }
 });
+
+
+/* Speak Related Comands
+ *
+ * note that the add of speak is automaticly done by adding raw text with balise, 
+ * deleting a speak is not possible though
+ * 1. Modify the mood
+ *
+ */
+
+ 
+ 
+
 /* Ressources Management Commands
  *
  * 1. Add Source Command

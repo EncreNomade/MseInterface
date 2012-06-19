@@ -412,20 +412,12 @@ SourceManager.prototype = {
 		    }
 		    src.data = data;
 		    this.sources[id] = src;
-<<<<<<< HEAD
             data.srcId = id;
 			var icon;
 			if( icon = data.getIcon() )
 				expo.append('<img class="srcicon_back" src="'+  this.getSource( icon ).data  +'" name="'+id+'">');
 			else
 				expo.append('<img class="srcicon_back" src="./images/UI/default_portrait.png" name="'+id+'">');
-=======
-			var icon;
-			if( icon = data.getIcon() )
-				expo.append('<img class="srcicon_back" src="'+  this.getSource( icon ).data  +'">');
-			else
-				expo.append('<img class="srcicon_back" src="./images/UI/default_portrait.png">');
->>>>>>> 4ae156873f3cd3f860c6fd293049fd0f9bd21117
 		    expo.append('<p>Speaker: '+data.name+'</p>');
 		    expo.circleMenu({'rename':['./images/UI/rename.jpg',this.renameDialog],
 		                     'delete':['./images/UI/del.png',this.prepareDelSource]});
@@ -3458,23 +3450,13 @@ $.fn.moveable = function(supp) {
 
 // Choose event
 function choose(e) {
-<<<<<<< HEAD
-	e.preventDefault();
-    var elem = $(this);
-	if( !isCtrlDown && !isMajDown ){
-=======
 	var elem = $(this);
 	if( !isCtrlDown  ){
->>>>>>> 4ae156873f3cd3f860c6fd293049fd0f9bd21117
 		for( var i = 0 ; i < multiSelect.length ; i ++ )
 			$( multiSelect[ i ] ).removeClass( 'selected' );
 		multiSelect = [ elem ];
 		elem.addClass( 'selected' );
-<<<<<<< HEAD
-	} else if( isCtrlDown ) {
-=======
 	} else {
->>>>>>> 4ae156873f3cd3f860c6fd293049fd0f9bd21117
 		for( var i = 0 ; i < multiSelect.length ; i ++ )
 			if( $( multiSelect[ i ] ).attr("id") == elem.attr("id") ){
 				$( multiSelect[ i ] ).removeClass( 'selected' );
@@ -3485,43 +3467,7 @@ function choose(e) {
 			multiSelect.push( elem );
 			elem.addClass( 'selected' );
 		}
-<<<<<<< HEAD
-	} else if( elem.hasClass("textLine") && curr.last ){
-=======
 	} 
-	/*
-	// c'etait pour génrer la selection par Maj en surcouche
-	else if( elem.hasClass("textLine") && curr.last ){
->>>>>>> 4ae156873f3cd3f860c6fd293049fd0f9bd21117
-		var parent = elem.parents(".article");
-		var lines = parent.find( ".textLine" );		
-		var min = Math.min( elem.position().top , $( curr.last ).position().top );
-		var max = Math.max( elem.position().top , $( curr.last ).position().top );
-		for( var j = 0 ; j < lines.length ; j ++ ){
-			var line = $( lines[ j ] );
-			var y = line.position().top;
-			if( y> min ){
-				if( y >= max )
-					// break can be used because lines is sorted by top croissant, in the case of its not, replace break by continue
-					break;
-				for( var i = 0 ; i < multiSelect.length ; i ++ )
-					if( $( multiSelect[ i ] ).attr("id") == line.attr("id") )
-						break;
-				if( i == multiSelect.length ){
-					multiSelect.push( line );
-					line.addClass( 'selected' );
-				}
-			}
-		}
-	}
-<<<<<<< HEAD
-	if( elem.hasClass("textLine") )
-		curr.last = elem;
-	else
-		curr.last = null;
-=======
-	*/
->>>>>>> 4ae156873f3cd3f860c6fd293049fd0f9bd21117
 }
 // only for resizable element
 function chooseElemWithCtrlPts(e) {
