@@ -998,7 +998,7 @@ function generateSpeaks(content, font, width, lineHeight){
 		if( !alreadyExist )
 			id_ressource = srcMgr.addSource( "speaker" , new Speaker( balise.id ) );
 		// and the mood
-		var mood = balise.param ? balise.param : "default";
+		var mood = balise.param ? balise.param : "neutre";
 		var data = srcMgr.getSource( id_ressource );
 		if( !data.hasMood( mood ) )
 				data.addMood( mood );
@@ -1007,8 +1007,8 @@ function generateSpeaks(content, font, width, lineHeight){
 		if( normalText.length > 0 )
 			res.append( generateLines(  normalText , font, width, lineHeight) );	
 		if( dialogueText.length > 0 ){
-			var lines = generateSpeakLines( dialogueText, font, width, lineHeight , id );
-			res.append( $('<div id="'+ id +'" class="speaker" data-who="'+balise.id+'" data-mood="'+mood+'" />').append( lines ) );	
+			var lines = generateSpeakLines( dialogueText, font, width, lineHeight , id_ressource );
+			res.append( $('<div id="'+ id_ressource +'" class="speaker" data-who="'+balise.id+'" data-mood="'+mood+'" />').append( lines ) );	
 		}
 		
 		

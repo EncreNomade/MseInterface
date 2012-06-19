@@ -1431,7 +1431,8 @@ Speaker.prototype = {
 	},
     showSpeakerOnEditor: function(src){
         var self = srcMgr.getSource(src.data('srcId'));
-        function dropVisage(e) {
+        
+        function dropVisage(e){
             e = e.originalEvent;
             e.stopPropagation();
             $(this).css('border-style', 'dotted');
@@ -1443,6 +1444,18 @@ Speaker.prototype = {
             var elem = $('<div><img src="'+srcMgr.sources[id].data+'" name="'+id+'"></div>');
             elem.append('<input type="text" value="Humeur'+$('#mood_selector div').length+'" />');
             elem.deletable(null, true);
+            
+            var dz = new DropZone(function(e){
+                e = e.originalEvent;
+                e.stopPropagation();
+                var id = e.dataTransfer.getData('Text');
+                var type = srcMgr.sourceType(id);
+                if(!id || type != $(this).data('type')) return;
+                $(this).siblings('img').prop('src',srcMgr.sources[id].data);
+                $(this).siblings('img').prop('name',id);
+            },{'height':'100%','border-width': '1px'});
+            dz.jqObj.data('type','image');
+            elem.append(dz.jqObj);
             $('#mood_selector').append(elem);
         }
         dialog.showPopup('Edition speaker',450, 410,'Modifier');
@@ -1464,7 +1477,7 @@ Speaker.prototype = {
         // $('#bulle_couleur').val(this.color);        
         // $('#bulle_style').val(this.style);
         
-        var dz = (new DropZone(dropVisage, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "script_supp")).jqObj;
+        var dz = (new DropZone(dropVisage, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "add_mood")).jqObj;
         dz.data('type', 'image');
         dialog.main.append(dz);
         
@@ -1479,8 +1492,21 @@ Speaker.prototype = {
 			if( id )
 				elem.children("img").attr( "name" , id );
                 
-            elem.append('<input type="text" value="'+i+'" />');
-            elem.deletable(null,true);
+            if(i == 'neutre'){            
+                elem.append('<p>'+i+'</p>');
+                elem.deletable(function(){
+                    // mettre img par default
+                    var img = $(this).parent().siblings('img');
+                    var defaultUrl = "./images/UI/default_portrait.png";
+                    if(img.prop('src') != defaultUrl)
+                        img.prop('src', defaultUrl);
+                    console.log('te');
+                },true);
+            }
+            else {                
+                elem.append('<input type="text" value="'+i+'" />');
+                elem.deletable(null,true);
+            }
             moodSelector.append(elem);
         }
         
@@ -1494,7 +1520,8 @@ Speaker.prototype = {
         moods.each(function(i){
             var img = $(this).children('img'); // attr 'name' contain the source ID
             var moodName = $(this).children('input');
-			spkObj.addMood(moodName.val().toLowerCase(), img.attr('name') ); // add each mood to the obj
+            moodName = moodName.length == 0 ? $(this).children('p').html() : moodName.val();
+			spkObj.addMood(moodName.toLowerCase(), img.attr('name') ); // add each mood to the obj
         });
         
         spkObj.rename($('#speaker_name').val());
@@ -1507,7 +1534,7 @@ Speaker.prototype = {
     },
 	getPictSrc : function( key ){
 		if( !key )
-			return this.portrait[ "default" ];
+			return this.portrait[ "neutre" ];
 		return this.portrait[ key ];
 	},
 	// eventuellement, retourne null
@@ -1516,12 +1543,12 @@ Speaker.prototype = {
 			return $( ".speaker[data-who="+ this.name +"][data-mood="+ mood +"]" );
 		
 		return $( ".speaker[data-who="+ this.name +"]" );
-	}
+	},
 	getIcon : function(){
 		if( Object.keys(this.portrait).length < 1 )
 			return;
-		if( this.hasMood( "default" ) )
-			return this.portrait[ "default" ];
+		if( this.hasMood( "neutre" ) )
+			return this.portrait[ "neutre" ];
 		for( var i in this.portrait )
 			if( this.portrait[ i ] )
 				return this.portrait[ i ];

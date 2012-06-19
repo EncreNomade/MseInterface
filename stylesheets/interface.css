@@ -1015,6 +1015,14 @@ svg rect.guide {
     margin-top: 55px;
     width: 65px;
     opacity: 0.6;
+    z-index:  200;
+}
+#mood_selector p{
+    position: absolute;
+    margin-top: 55px;
+    width: 65px;
+    opacity: 0.6;
+    background-color: white;
 }
 #mood_selector > div > .del_container{
     left: 70px;
