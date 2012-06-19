@@ -997,6 +997,7 @@ svg rect.guide {
     height: 140px;
     position: relative;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 #mood_selector > div{
     height: 70px;

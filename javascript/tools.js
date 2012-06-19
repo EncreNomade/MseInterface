@@ -419,11 +419,11 @@ SourceManager.prototype = {
 			else
 				expo.append('<img class="srcicon_back" src="./images/UI/default_portrait.png" name="'+id+'">');
 		    expo.append('<p>Speaker: '+data.name+'</p>');
-		    expo.circleMenu({'rename':['./images/UI/rename.jpg',this.renameDialog],
+		    expo.circleMenu({'config':['./images/UI/config.png',data.showSpeakerOnEditor],
 		                     'delete':['./images/UI/del.png',this.prepareDelSource]});
-		    expo.click(function(){
-		        srcMgr.getSource($(this).data('srcId')).showSpeakerOnEditor();
-		    });
+		    // expo.click(function(){
+		        // srcMgr.getSource($(this).data('srcId')).showSpeakerOnEditor();
+		    // });
 		    break;
 		case 'code':
 		    if(this.sources[id]) {
@@ -1429,7 +1429,8 @@ Speaker.prototype = {
 		this.portrait[ newName ] = this.portrait[ oldName ];
 		delete this.portrait[ oldName ];
 	},
-    showSpeakerOnEditor: function(){
+    showSpeakerOnEditor: function(src){
+        var self = srcMgr.getSource(src.data('srcId'));
         function dropVisage(e) {
             e = e.originalEvent;
             e.stopPropagation();
@@ -1459,7 +1460,7 @@ Speaker.prototype = {
         htmlStr += '</table><br/>';
         
         dialog.main.append(htmlStr);
-        $('#speaker_name').val(this.name);        
+        $('#speaker_name').val(self.name);        
         // $('#bulle_couleur').val(this.color);        
         // $('#bulle_style').val(this.style);
         
@@ -1469,16 +1470,16 @@ Speaker.prototype = {
         
         var moodSelector = $('<div id="mood_selector"></div>');
         dialog.main.append(moodSelector);
-        for (var i in this.portrait) {
+        for (var i in self.portrait) {
             // restore all moods
-            var id = this.portrait[i];
+            var id = self.portrait[i];
             var elem = $('<div><img src="'+srcMgr.sources[id].data+'" name="'+id+'"></div>');
             elem.append('<input type="text" value="'+i+'" />');
             elem.deletable(null,true);
             moodSelector.append(elem);
         }
         
-        dialog.confirm.click({'speaker':this}, this.validChanges);
+        dialog.confirm.click({'speaker':self}, self.validChanges);
     },
     validChanges: function(e){
         var spkObj =  e.data.speaker;
