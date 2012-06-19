@@ -95,13 +95,6 @@ GestureAnalyser.prototype = {
         if(this.count == 1){
 			// One finger translate begin
 			
-			// Timeout for tap event
-			var analyser = this;
-			this.tapwait = true;
-			this.tapid = id;
-			setTimeout(function() {
-			    analyser.tapwait = false;
-			}, 500);
 		}
 		else if(this.count == 2){
 			// Two finger scale begin
@@ -157,12 +150,7 @@ GestureAnalyser.prototype = {
     },
     analyseRemove: function(id) {
         if(this.count == 1){
-    		// One finger translate end or tapped
-    		if(this.tapwait && this.tapid == id) {
-    		    var touch = this.blobs[id].last();
-    		    var e = {'offsetX': touch.x, 'offsetY': touch.y, 'type':'click'};
-    		    this.listeners.eventNotif('click', e);
-    		}
+    		// One finger translate end
     	}
     	else if(this.count == 2){
     		// Two finger scale end

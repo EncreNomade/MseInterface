@@ -58,6 +58,12 @@ addEventListener("load", function(){
 
 <body>
 
+<div id="root">
+    <canvas class="bookroot">Votre navigateur ne supporte pas HTML5</canvas>
+    <div class="video"></div>
+    <canvas class='game' width=50 height=50></canvas>
+</div>
+
 <script type="text/javascript">
 <?php 
 if(isset($content)) print($content);

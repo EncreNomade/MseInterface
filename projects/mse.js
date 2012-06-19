@@ -581,20 +581,12 @@ mse.UIObject.prototype = {
 
 // Root object, a canvas Dom element
 mse.Root = function(id, width, height, orientation) {
-	
-	
 	mse.root = this;
 	// Canvas obj parameters
-	this.jqObj = $('<canvas></canvas>');
-	this.jqObj.attr({'id':id});
+	this.jqObj = $('.bookroot').show();
 	var x = (MseConfig.pageWidth - width)/2;
-	this.jqObj.css({'margin':'0px auto',
-				   'padding':'0px',
-				  'position':'absolute',
-				  	  'left':x+'px',
-				  	   'top':'0px',
-				   'z-index':10});
-	$('body').css({'position':'relative'}).append(this.jqObj);
+	this.setPos(x, 0);
+	//this.jqObj.attr({'id':id});
 	this.scale = 1;
 	this.setSize(width, height);
 	this.interval = 40;
@@ -614,17 +606,8 @@ mse.Root = function(id, width, height, orientation) {
 	// Animation complete
 	this.animes = [];
 	// Video element
-	var video = $('<div id="video">');
-	video.css({'position':'absolute',
-	           'width':width*0.8+'px',
-	           'height':height*0.8+'px',
-	           'left':x+width*0.1+'px',
-	           'top':height*0.1+'px',
-	           'z-index':0
-	           });
-	$('body').prepend(video);
-	//this.video = video.flareVideo($('body'));
-	//this.video = video.hide();
+	var video = $('div.video');
+	this.video = video.flareVideo($('#root')).hide();
 	// Game element
 	this.gamewindow = new mse.GameShower();
 	
@@ -634,33 +617,20 @@ mse.Root = function(id, width, height, orientation) {
 mse.Root.prototype = {
     constructor: mse.Root,
     setPos: function(x, y) {
-    	this.jqObj.css({'left':x+'px', 'top':y+'px'});
+        this.jqObj.css({'left':'0px', 'top':'0px'});
+    	$('#root').css({'left':x+'px', 'top':y+'px'});
     },
     setSize: function(width, height) {
     	this.width = width;
     	this.height = height;
     	this.jqObj.attr({'width':width, 'height':height});
-    },
-    setScale: function(scale) {
-    	// Scale
-    	if(scale > 1) {
-    		if(this.height*scale > MseConfig.pageHeight) scale = MseConfig.pageHeight/this.height;
-    		if(this.width*scale > MseConfig.pageWidth) scale = MseConfig.pageWidth/this.width;
-    		var width = this.width * scale;
-    		var height = this.height * scale;
-    		var x = (MseConfig.pageWidth - width)/2;
-    		var y = (MseConfig.pageHeight - height)/2;
-    		this.setPos(x,y);
-    		this.setSize(width, height);
-    		this.scale = scale;
-    	}
+    	$('#root').css({'width':width, 'height':height});
     },
     setCenteredViewport: function(){
         this.viewport = {};
         this.viewport.x = (this.width - MseConfig.pageWidth)/2;
         this.viewport.y = (this.height - MseConfig.pageHeight)/2;
-        this.jqObj.attr({'width':MseConfig.pageWidth, 'height':MseConfig.pageHeight});
-        this.jqObj.css({'left':"0px",'top':"0px"});
+        this.setPos(0, 0);
         this.ctx.translate(-this.viewport.x, -this.viewport.y);
     },
     translate: function(e) {
@@ -1868,9 +1838,7 @@ $.extend(mse.Game.prototype, {
 
 // GameShower object, window of the games, one object for all the games
 mse.GameShower = function() {
-	this.jqObj = $("<canvas id='game' width=50 height=50></canvas>");
-	$('body').append(this.jqObj);
-	this.jqObj.css("display", "none");
+	this.jqObj = $("canvas.game");
 	this.ctx = this.jqObj.get(0).getContext('2d');
 	
 	this.dispatcher = new mse.EventDispatcher(this);
@@ -1908,18 +1876,18 @@ mse.GameShower.prototype = {
 	},
 	relocate : function() {
 	    if(this.state == "DESACTIVE") return;
+	    
 	    if(isNaN(this.currGame.canvasox))
-	        this.left = (MseConfig.iPhone||MseConfig.android) ? -1.5 : Math.round(MseConfig.pageWidth-this.width)/2;
-	    else this.left = mse.root.jqObj.offset().left - (mse.root.viewport?mse.root.viewport.x:0) + this.currGame.canvasox;
+	        this.left = (MseConfig.iPhone||MseConfig.android) ? -1.5 : Math.round(mse.root.width-this.width)/2;
+	    else this.left = this.currGame.canvasox - (mse.root.viewport?mse.root.viewport.x:0);
 	    if(isNaN(this.currGame.canvasoy))
-	        this.top = (MseConfig.iPhone||MseConfig.android) ? -1.5 : Math.round(MseConfig.pageHeight-this.height)/2;
-	    else this.top = mse.root.jqObj.offset().top - (mse.root.viewport?mse.root.viewport.y:0) + this.currGame.canvasoy;
+	        this.top = (MseConfig.iPhone||MseConfig.android) ? -1.5 : Math.round(mse.root.height-this.height)/2;
+	    else this.top = this.currGame.canvasoy - (mse.root.viewport?mse.root.viewport.y:0);
 	    this.jqObj.css({
 	        'left': this.left,
 	        'top': this.top,
 	        'width': this.width,
-	        'height': this.height,
-	        'z-index': 11
+	        'height': this.height
 	    });
 	},
 	load : function(game) {
@@ -1947,7 +1915,7 @@ mse.GameShower.prototype = {
             this.restartBn.setPos(this.width-115, this.height-50);
             this.passBn.setPos(10, this.height-50);
 	    }
-	    this.jqObj.show();
+	    this.jqObj.addClass('game_active');
 	},
 	start : function() {
 	    if(!this.currGame) return;
@@ -1978,8 +1946,7 @@ mse.GameShower.prototype = {
 	    this.distributor.addListener('click', this.cbrestart);
 	},
 	end : function() {
-	    this.jqObj.hide(1000);
-	    this.jqObj.css('z-index', 1);
+	    this.jqObj.removeClass('game_active');;
 	    this.state = "DESACTIVE";
 	},
 	logic : function(delta) {
@@ -2588,7 +2555,7 @@ extend( mse.Video , mse.UIObject );
 $.extend( mse.Video.prototype , { 
 	launch : function() {
 	    mse.root.video.load(srcs);
-	    mse.root.video.show();
+	    mse.root.video.addClass('video_active');
 	},
 	
 	draw : function(ctx) {
@@ -2622,12 +2589,6 @@ mse.ImageShower = function(target){
         return;
     }
     this.target = target;
-    
-	$('body').css({
-		'position': 'absolute',
-		'width'   : '100%',
-		'height'  : '100%'
-	});
     
     this.container = $('<div id="imgShower"></div>').css({
 		'position'  : 'absolute',
@@ -2712,7 +2673,7 @@ mse.ImageShower.prototype = {
         var ratio = pos.w/pos.h;
         var finalH = 0.8 * MseConfig.pageHeight;
         var finalW = finalH * ratio;
-        var imgX = MseConfig.pageWidth/2 - finalW/2;
+        var imgX = mse.root.width/2 - finalW/2;
         this.container.children('div').animate({ // animate image size to 80% of window size
             'height'    : finalH+'px',
             'width'     : finalW+'px',
@@ -2723,7 +2684,7 @@ mse.ImageShower.prototype = {
         });
         this.container.fadeIn(500);
         
-        $('body').append(this.container);
+        $('#root').append(this.container);
         
         var parent = this.target.parent;
         if (parent.interrupt)
