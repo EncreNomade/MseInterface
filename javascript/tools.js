@@ -413,11 +413,7 @@ SourceManager.prototype = {
 		    src.data = data;
 		    this.sources[id] = src;
             data.srcId = id;
-			var icon;
-			if( icon = data.getIcon() )
-				expo.append('<img class="srcicon_back" src="'+  this.getSource( icon ).data  +'" name="'+id+'">');
-			else
-				expo.append('<img class="srcicon_back" src="./images/UI/default_portrait.png" name="'+id+'">');
+			expo.append('<img class="srcicon_back" src="' + data.getMoodUrl("neutre") +'" name="'+id+'">');
 		    expo.append('<p>Speaker: '+data.name+'</p>');
 		    expo.circleMenu({'config':['./images/UI/config.png',data.showSpeakerOnEditor],
 		                     'delete':['./images/UI/del.png',this.prepareDelSource]});
@@ -1440,8 +1436,9 @@ Speaker.prototype = {
             var type = srcMgr.sourceType(id);
             if(!id || type != $(this).data('type')) return;
             // Place in the elem zone
-            var elem = $('<div><img src="'+srcMgr.sources[id].data+'" name="'+id+'"></div>');
-            elem.append('<input type="text" value="Humeur'+$('#mood_selector div').length+'" />');
+			var name = 'humeur'+$('#mood_selector div').length;
+            var elem = $('<div data-related="'+name+'" ><img  src="'+srcMgr.sources[id].data+'" name="'+id+'"></div>');
+            elem.append('<input type="text" value="'+name+'" />');
             elem.deletable(null, true);
             $('#mood_selector').append(elem);
         }
@@ -1473,11 +1470,10 @@ Speaker.prototype = {
         for (var i in self.portrait) {
             // restore all moods
 
-            var id = self.portrait[i];
-			var url = id ? srcMgr.sources[id].data : "./images/UI/default_portrait.png";
-            var elem = $('<div><img src="'+ url +'" ></div>');
-			if( id )
-				elem.children("img").attr( "name" , id );
+			var url = self.getMoodUrl( i );
+            var elem = $('<div data-related="'+i+'"><img src="'+ url +'" ></div>');
+			if( self.portrait[i] )
+				elem.children("img").attr( "name" , self.portrait[i] );
                 
             elem.append('<input type="text" value="'+i+'" />');
             elem.deletable(null,true);
@@ -1486,18 +1482,42 @@ Speaker.prototype = {
         
         dialog.confirm.click({'speaker':self}, self.validChanges);
     },
+	getMoodUrl : function( key ){
+		if( !key || !this.portrait[ key ] )
+			return "./images/UI/default_portrait.png";
+		return srcMgr.getSource( this.portrait[ key ] );
+	},
+	// analyse the change between the html form and the state of the object
     validChanges: function(e){
         var spkObj =  e.data.speaker;
         
-        spkObj.clearPortraits();
+		var state = {};
+		for( var i in spkObj.portrait )
+			state[ i ] = true;
+		
+		var cmds = [];
+		
         var moods = $('#mood_selector').children();
         moods.each(function(i){
-            var img = $(this).children('img'); // attr 'name' contain the source ID
-            var moodName = $(this).children('input');
-			spkObj.addMood(moodName.val().toLowerCase(), img.attr('name') ); // add each mood to the obj
+            var srcimg = $(this).children('img').attr('name'); 
+            var moodName = $(this).children('input').val().toLowerCase();
+            var reelName = $(this).attr("data-related" ).toLowerCase();  // name of the elment when we instanciate it
+			
+			if( !spkObj.hasMood( moodName ) )
+				cmds.push( new AddMoodCmd( spkObj , moodName , srcimg ) );
+			else{
+				state[ moodName ] = false;
+				if( spkObj.getPictSrc( moodName ) != srcimg )
+					cmds.push( new ModifyMoodSrcCmd( spkObj , moodName , srcimg ) );
+			}
         });
-        
-        spkObj.rename($('#speaker_name').val());
+        for( var i in state )
+			if( state[ i ] )
+				cmds.push( new DelMoodCmd( spkObj , i ) );
+		
+		
+		CommandMgr.executeCmd( new CommandMulti( cmds ) );
+			
         
         closeBottom();
         dialog.close();
@@ -1507,7 +1527,7 @@ Speaker.prototype = {
     },
 	getPictSrc : function( key ){
 		if( !key )
-			return this.portrait[ "default" ];
+			return this.portrait[ "neutre" ];
 		return this.portrait[ key ];
 	},
 	// eventuellement, retourne null
@@ -1516,12 +1536,12 @@ Speaker.prototype = {
 			return $( ".speaker[data-who="+ this.name +"][data-mood="+ mood +"]" );
 		
 		return $( ".speaker[data-who="+ this.name +"]" );
-	}
+	},
 	getIcon : function(){
 		if( Object.keys(this.portrait).length < 1 )
 			return;
-		if( this.hasMood( "default" ) )
-			return this.portrait[ "default" ];
+		if( this.hasMood( "neutre" ) )
+			return this.portrait[ "neutre" ];
 		for( var i in this.portrait )
 			if( this.portrait[ i ] )
 				return this.portrait[ i ];

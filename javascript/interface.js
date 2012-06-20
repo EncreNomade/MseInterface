@@ -282,35 +282,26 @@ function createPageDialog() {
 };
 
 // edite speack dialog
-		function editeSpeakDialog( id_speak ){
+function editeSpeakDialog( id_speak ){
 			//  search the asoociate speaker
-			var speaker = $("#"+id_speak).attr( "data-who" );
-			var id_ressource_speaker;
+			var speak = $("#"+id_speak);
+			var speaker = speak.attr( "data-who" );
 			for( var i in srcMgr.sources )
-				if( srcMgr.sourceType( i ) == "speaker" && srcMgr.getSource( i ).name == speaker ){
-					id_ressource_speaker = i;
+				if( srcMgr.sourceType( i ) == "speaker" && srcMgr.getSource( i ).name == speaker )
 					break;
-				}
+			var spkObj = srcMgr.getSource( i );
+			
 			// setUp the list of moods
-			var map = srcMgr.getSource( id_ressource_speaker ).portrait;
+			var map = spkObj.portrait;
 			var comboBox = $( '<div style="width:100px;height:180px;overflow-y:auto;">' );
 			for( var i in map ){
-				var img;
-				var url;
-				if( map[ i ] )
-					url = srcMgr.getSource( map[ i ] );
-				else
-					url = "./images/UI/default_portrait.png"
-				
-				var option = $( '<div style="background:none;"><img src="' +url+ '" width:"30" height="30" style="width:30px; height:30px;"/>'+i+'</div>' );
+				var option = $( '<div style="background:none;"><img src="' +  spkObj.getMoodUrl( i ) + '" width:"30" height="30" style="width:30px; height:30px;"/>'+i+'</div>' );
 				option.click( function( e ){
-					console.log( $("#"+id_speak) );
-					var mood = $( e.currentTarget ).text()
-					$("#"+id_speak).attr( "data-mood" , mood );
-					var url = map[ mood ] ? srcMgr.getSource( map[ mood ] ) : "./images/UI/default_portrait.png";
-					$("#"+id_speak).children( 'img' ).attr( "src" , url );
-					console.log( $("#"+id_speak) );
-					console.log( mood );
+					
+					var mood = $( e.currentTarget ).text();
+					speak.attr( "data-mood" , mood );
+					speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( mood ) );
+					
 					updateHightlight( mood );
 				});
 				comboBox.append( option );
@@ -330,8 +321,22 @@ function createPageDialog() {
 			
 			dialog.showPopup('éditer interlocuteur', 340, 250 , "ok");
 			dialog.main.append( comboBox  );
+			
+			
+			var initialMood = speak.attr("data-mood" );
 			dialog.confirm.click(function() {
+				var actualMood = speak.attr("data-mood" );
+				if( initialMood != actualMood )
+					CommandMgr.executeCmd( new ModifySpeakMoodCmd( speak , initialMood  , actualMood , spkObj.getMoodUrl( initialMood ) , spkObj.getMoodUrl( actualMood )  ) );
+				
 				dialog.close();
+			});
+			dialog.annuler.click(function() {
+				var actualMood = speak.attr("data-mood" );
+				if( initialMood != actualMood ){
+					speak.attr( "data-mood" , initialMood );
+					speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( initialMood ) );
+				}
 			});
 		}
 		
@@ -998,7 +1003,7 @@ function generateSpeaks(content, font, width, lineHeight){
 		if( !alreadyExist )
 			id_ressource = srcMgr.addSource( "speaker" , new Speaker( balise.id ) );
 		// and the mood
-		var mood = balise.param ? balise.param : "default";
+		var mood = balise.param ? balise.param : "neutre";
 		var data = srcMgr.getSource( id_ressource );
 		if( !data.hasMood( mood ) )
 				data.addMood( mood );
@@ -1007,6 +1012,7 @@ function generateSpeaks(content, font, width, lineHeight){
 		if( normalText.length > 0 )
 			res.append( generateLines(  normalText , font, width, lineHeight) );	
 		if( dialogueText.length > 0 ){
+			var id = "obj"+(curr.objId++);
 			var lines = generateSpeakLines( dialogueText, font, width, lineHeight , id );
 			res.append( $('<div id="'+ id +'" class="speaker" data-who="'+balise.id+'" data-mood="'+mood+'" />').append( lines ) );	
 		}
@@ -1040,11 +1046,9 @@ function generateSpeaks(content, font, width, lineHeight){
 		first = first.slice( 0 , nline );
 		var last = generateLines( rest , font, width , lineHeight );
 		var res = $("<div>");
-		var imgsrc = srcMgr.getSource( id_ressource ).getPictSrc( balise.param );
 		var img;
-		var url = imgsrc ? srcMgr.getSource( imgsrc ) : "./images/UI/default_portrait.png";
 		var d = first.length * lineHeight;
-		img = $( '<img src="'+ url +'" width="'+d+'" height="'+d+'" style="width:'+d+'px;height:'+d+'px;display:inline-block;" />' );
+		img = $( '<img src="'+ srcMgr.getSource( id_ressource ).getMoodUrl( balise.param ) +'" width="'+d+'" height="'+d+'" style="width:'+d+'px;height:'+d+'px;display:inline-block;" />' );
 		img.css( "position" , "absolute" );
 		img.css( "left" , ( ( decalage - d ) / 2 )+"px" );
 		

@@ -150,6 +150,53 @@ var CommandMgr = (function(capacity) {
 })(document, CommandMgr);
 
 
+var CommandMulti = function( ){
+
+	if( arguments.length < 1 )
+		return;
+
+	if( arguments.length == 1 && arguments[ 0 ] instanceof Array )
+		this.cmds = arguments[ 0 ];
+	else
+		this.cmds = arguments;
+		
+	for( var i = 0 ; i < this.cmds.length ; i ++ ){
+		if( !( this.cmds[ i ] instanceof Command ) )
+			return
+	}
+	
+	this.state = "WAITING"
+}
+extend(CommandMulti, Command);
+$.extend(CommandMulti.prototype, {
+    execute: function() {
+        if(this.state != "WAITING") return;
+        
+		// execute from 0 to n
+		for( var i = 0 ; i < this.cmds.length ; i ++ ){
+			this.cmds[ i ].execute();
+			console.log( this.cmds[ i ] );
+			if( this.cmds[ i ].state != "SUCCESS")
+				this.cmds.state = this.cmds[ i ].state;
+		}
+		
+        this.state = "SUCCESS";
+    },
+    undo: function() {
+        if(this.state != "SUCCESS") return;
+		
+        // execute from n to 0
+		for( var i = this.cmds.length-1 ; i >= 0 ; i -- ){
+			this.cmds[ i ].undo();
+			if( this.cmds[ i ].state != "CANCEL")
+				this.cmds.state = this.cmds[ i ].state;
+		}
+		
+        this.state = "CANCEL";
+        return true;
+    }
+});
+
 /* Page Commands
  *
  * 1. Add Page Command
@@ -820,10 +867,173 @@ $.extend(CreateElemCmd.prototype, {
  * 1. Modify the mood
  *
  */
-
+var ModifySpeakMoodCmd = function(  speak , oldMood , newMood , oldSrc , newSrc ){
+	this.speak = speak;
+	this.newMood = newMood;
+	this.oldMood = oldMood;
+	this.oldSrc = oldSrc;
+	this.newSrc = newSrc;
+	console.log( this );
+	this.state = 'WAITING';
+}
+extend( ModifySpeakMoodCmd , Command );
+$.extend( ModifySpeakMoodCmd.prototype, {
+    execute: function(){
+        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
+		
+		$( this.speak ).attr( "data-mood" , this.newMood );
+		$( this.speak ).children("img").attr( "src" , this.newSrc );
+		
+        this.state = 'SUCCESS';
+    },
+    undo: function(){
+        if(this.state != 'SUCCESS') return;
+        
+		$( this.speak ).attr( "data-mood" , this.oldMood );
+		$( this.speak ).children("img").attr( "src" , this.oldSrc );
+		
+        this.state = 'CANCEL';
+    }
+});
  
  
 
+/* Speaker Related Comands
+ *
+ * note that the add of speaker is automaticly done by adding raw text with balise, 
+ * deleting a speaker is not possible though
+ * 1. Add a mood
+ * 2. Rename a mood
+ * 3. Delete a mood
+ * 4. Modify the srouce image of a mood
+ */
+var AddMoodCmd = function(  speaker , key , image_id ){
+	this.speaker = speaker;
+	this.key = key;
+	this.image_id = image_id;
+	this.speaks;
+	
+	this.state = 'WAITING';
+}
+extend( AddMoodCmd , Command );
+$.extend( AddMoodCmd.prototype, {
+    execute: function(){
+        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
+		this.speaker.addMood( this.key , this.image_id );
+		if( this.speaks )
+			for( var i = 0 ; i < this.speaks.length ; i ++ ){
+				$( this.speaks[ i ] ).attr( "data-mood" , this.key );
+				$( this.speaks[ i ] ).children("img").attr( "src" , this.speaker.getMoodUrl( this.key ) );
+			}
+		
+        this.state = 'SUCCESS';
+    },
+    undo: function(){
+        if(this.state != 'SUCCESS') return;
+        
+		this.speaks = this.speaker.getAssociateSpeak( this.key );
+		
+		for( var i = 0 ; i < this.speaks.length ; i ++ ){
+			$( this.speaks[ i ] ).attr( "data-mood" , "neutre" );
+			$( this.speaks[ i ] ).children("img").attr( "src" , this.speaker.getMoodUrl( "neutre" ) );
+		}
+		delete this.speaker.portrait[ this.key ];
+		
+        this.state = 'CANCEL';
+    }
+});
+var RenameMoodCmd = function( speaker , oldName , newName){
+	this.speaker = speaker;
+	this.newName = newName;
+	this.oldName = oldName;
+	
+	this.state = 'WAITING';
+}
+extend( RenameMoodCmd , Command );
+$.extend( RenameMoodCmd.prototype, {
+    execute: function(){
+        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
+        
+		this.speaker.renameMood( this.oldName , this.newName );
+		
+        this.state = 'SUCCESS';
+    },
+    undo: function(){
+        if(this.state != 'SUCCESS') return;
+        
+		this.speaker.renameMood( this.newName , this.oldName );
+		
+        this.state = 'CANCEL';
+    }
+});
+var DelMoodCmd = function( speaker , mood ){
+	this.speaker = speaker;
+	this.mood = mood;
+	this.speaks ;
+	this.state = 'WAITING';
+}
+extend( DelMoodCmd , Command );
+$.extend( DelMoodCmd.prototype, {
+    execute: function(){
+        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
+        
+		this.speaks = this.speaker.getAssociateSpeak( this.mood );
+		
+		console.log( this.speaks );
+		
+        for( var i = 0 ; i < this.speaks.length ; i ++ ){
+			$( this.speaks[ i ] ).attr( "data-mood" , "neutre" );
+			console.log( $( this.speaks[ i ] ).children("img") );
+			$( this.speaks[ i ] ).children("img").attr( "src" , this.speaker.getMoodUrl( "neutre" ) );
+        }
+		
+		this.imgsrc = this.speaker.portrait[ this.mood ];
+		
+		delete this.speaker.portrait[ this.mood ];
+		
+        this.state = 'SUCCESS';
+    },
+    undo: function(){
+        if(this.state != 'SUCCESS') return;
+        
+		
+		console.log( this.imgsrc );
+		this.speaker.portrait[ this.mood ] = this.imgsrc;
+		console.log(this.speaker );
+        for( var i = 0 ; i < this.speaks.length ; i ++ ){
+			$( this.speaks[ i ] ).attr( "data-mood" , this.mood );
+			$( this.speaks[ i ] ).children("img").attr( "src" , this.speaker.getMoodUrl(  this.mood  ) );
+        }
+        
+        this.state = 'CANCEL';
+    }
+});
+ var ModifyMoodSrcCmd = function(  speaker  , mood,  newSrc ){
+	this.speaker = speaker;
+	this.oldSrc;
+	this.newSrc = newSrc;
+	this.mood = mood;
+	
+	this.state = 'WAITING';
+}
+extend( ModifyMoodSrcCmd , Command );
+$.extend( ModifyMoodSrcCmd.prototype, {
+    execute: function(){
+        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
+        
+		this.oldSrc = this.speaker.portrait[ mood ];
+		this.speaker.portrait[ mood ] = this.newSrc;
+		
+        this.state = 'SUCCESS';
+    },
+    undo: function(){
+        if(this.state != 'SUCCESS') return;
+        
+		this.speaker.portrait[ mood ] = this.oldSrc;
+		
+        this.state = 'CANCEL';
+    }
+});
 /* Ressources Management Commands
  *
  * 1. Add Source Command
