@@ -871,7 +871,6 @@ var ModifySpeakMoodCmd = function(  speak , oldMood , newMood , oldSrc , newSrc 
 	this.oldMood = oldMood;
 	this.oldSrc = oldSrc;
 	this.newSrc = newSrc;
-	console.log( this );
 	this.state = 'WAITING';
 }
 extend( ModifySpeakMoodCmd , Command );
@@ -977,11 +976,8 @@ $.extend( DelMoodCmd.prototype, {
         
 		this.speaks = this.speaker.getAssociateSpeak( this.mood );
 		
-		console.log( this.speaks );
-		
         for( var i = 0 ; i < this.speaks.length ; i ++ ){
 			$( this.speaks[ i ] ).attr( "data-mood" , "neutre" );
-			console.log( $( this.speaks[ i ] ).children("img") );
 			$( this.speaks[ i ] ).children("img").attr( "src" , this.speaker.getMoodUrl( "neutre" ) );
         }
 		
@@ -994,10 +990,7 @@ $.extend( DelMoodCmd.prototype, {
     undo: function(){
         if(this.state != 'SUCCESS') return;
         
-		
-		console.log( this.imgsrc );
 		this.speaker.portrait[ this.mood ] = this.imgsrc;
-		console.log(this.speaker );
         for( var i = 0 ; i < this.speaks.length ; i ++ ){
 			$( this.speaks[ i ] ).attr( "data-mood" , this.mood );
 			$( this.speaks[ i ] ).children("img").attr( "src" , this.speaker.getMoodUrl(  this.mood  ) );
@@ -1019,16 +1012,28 @@ $.extend( ModifyMoodSrcCmd.prototype, {
     execute: function(){
         if(this.state != 'WAITING' && this.state != 'CANCEL') return;
         
-		this.oldSrc = this.speaker.portrait[ mood ];
-		this.speaker.portrait[ mood ] = this.newSrc;
-		
+		this.oldSrc = this.speaker.portrait[ this.mood ];
+		this.speaker.portrait[ this.mood ] = this.newSrc;
+        
+		this.speaks = this.speaker.getAssociateSpeak( this.mood );
+		var src = this.speaker.getMoodUrl(this.mood);        
+		for( var i = 0 ; i < this.speaks.length ; i ++ ){
+			$( this.speaks[ i ] ).children("img").attr( "src" , src);
+		}
+        
         this.state = 'SUCCESS';
     },
     undo: function(){
         if(this.state != 'SUCCESS') return;
         
-		this.speaker.portrait[ mood ] = this.oldSrc;
+		this.speaker.portrait[ this.mood ] = this.oldSrc;
 		
+        this.speaks = this.speaker.getAssociateSpeak( this.mood );	
+        var src = this.speaker.getMoodUrl(this.mood);     
+		for( var i = 0 ; i < this.speaks.length ; i ++ ){
+			$( this.speaks[ i ] ).children("img").attr( "src" , src);
+		}
+        
         this.state = 'CANCEL';
     }
 });

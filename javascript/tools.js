@@ -1443,6 +1443,15 @@ Speaker.prototype = {
 		this.portrait[ newName ] = this.portrait[ oldName ];
 		delete this.portrait[ oldName ];
 	},
+    changeVisageInEditor: function(e){
+        e = e.originalEvent;
+        e.stopPropagation();
+        var id = e.dataTransfer.getData('Text');
+        var type = srcMgr.sourceType(id);
+        if(!id || type != $(this).data('type')) return;
+        $(this).siblings('img').prop('src',srcMgr.sources[id].data);
+        $(this).siblings('img').prop('name',id);
+    },
     showSpeakerOnEditor: function(src){
         var self = srcMgr.getSource(src.data('srcId'));
         
@@ -1459,16 +1468,8 @@ Speaker.prototype = {
             var elem = $('<div data-related="'+name+'" ><img  src="'+srcMgr.sources[id].data+'" name="'+id+'"></div>');
             elem.append('<input type="text" value="'+name+'" />');
             elem.deletable(null, true);
-            
-            var dz = new DropZone(function(e){
-                e = e.originalEvent;
-                e.stopPropagation();
-                var id = e.dataTransfer.getData('Text');
-                var type = srcMgr.sourceType(id);
-                if(!id || type != $(this).data('type')) return;
-                $(this).siblings('img').prop('src',srcMgr.sources[id].data);
-                $(this).siblings('img').prop('name',id);
-            },{'height':'100%','border-width': '1px'});
+            var obj = $('#mood_selector').data('spkObj');
+            var dz = new DropZone(obj.changeVisageInEditor,{'height':'100%','border-width': '1px'});
             dz.jqObj.data('type','image');
             elem.append(dz.jqObj);
             $('#mood_selector').append(elem);
@@ -1497,6 +1498,7 @@ Speaker.prototype = {
         dialog.main.append(dz);
         
         var moodSelector = $('<div id="mood_selector"></div>');
+        moodSelector.data('spkObj', self);
         dialog.main.append(moodSelector);
         for (var i in self.portrait) {
             // restore all moods
@@ -1506,21 +1508,28 @@ Speaker.prototype = {
 			if( self.portrait[i] )
 				elem.children("img").attr( "name" , self.portrait[i] );
                 
-            if(i == 'neutre'){            
+            if(i == 'neutre'){
                 elem.append('<p>'+i+'</p>');
                 elem.deletable(function(){
                     // mettre img par default
                     var img = $(this).parent().siblings('img');
                     var defaultUrl = "./images/UI/default_portrait.png";
-                    if(img.prop('src') != defaultUrl)
+                    if(img.prop('src') != defaultUrl){
                         img.prop('src', defaultUrl);
-                    console.log('te');
+                        img.removeAttr('name');
+                    }
+                    var obj = $('#mood_selector').data('spkObj');
+                    obj.portrait[i] = null;
                 },true);
             }
             else {                
                 elem.append('<input type="text" value="'+i+'" />');
                 elem.deletable(null,true);
             }
+            
+            var dz = new DropZone(self.changeVisageInEditor,{'height':'100%','border-width': '1px'});
+            dz.jqObj.data('type','image');
+            elem.append(dz.jqObj);
             moodSelector.append(elem);
         }
         
