@@ -651,16 +651,19 @@ class ProjectGenerator {
         }
         else if ($class = 'speaker'){ // its a dialogue obj contains txt lines
             $who = $objnode['data-who'];
+            $img = $objnode->img['name'];
             $firstLine = $objnode->div[0];
             $firstLine['style'] .= "width: ".$width."px; height: ".$lineHeight."px;";
             $params = $this->formatParams($firstLine['style'], 'txt');
-            $this->jstr .= "\n\t$obj=new mse.Speaker($layer,".$params[1].", '$who');";
+            $this->jstr .= "\n\t$obj=new mse.Speaker($layer,".$params[1].", '$who', '$img');";
             $this->jstr .= " $layer.addObject($obj);";
             foreach($objnode->children() as $lineNode){
-                // TODO : need factor
-                $childObj = 'objs.' . $lineNode['id'];
-                $this->addTxtObj($layer, $lineNode, $childObj, $width, $lineHeight, $index);
-                $this->jstr .= "\n\t$obj.addObject($childObj);";
+                // TODO : need factor 
+                if(count($lineNode->p) > 0){ // text lines
+                    $childObj = 'objs.' . $lineNode['id'];
+                    $this->addTxtObj($layer, $lineNode, $childObj, $width, $lineHeight, $index);
+                    $this->jstr .= "\n\t$obj.addObject($childObj);";
+                }
             }
         }
         
@@ -704,7 +707,7 @@ class ProjectGenerator {
         }
         else {
             $content = $p;
-            $this->jstr .= "\n\t$name=new mse.Text($layer,".$params[1].",'$content',true);";
+            $this->jstr .= "\n\t$name=new mse.Text($layer,".$params[1].",'".addslashes($content)."',true);";
         }
     }
     

@@ -959,12 +959,17 @@ $.extend(mse.Layer.prototype, {
 
 
 // Text dialog
-mse.Speaker = function( parent , param ) {
+mse.Speaker = function( parent, param, who, moodSrc ) {
 	// Super constructor
 	mse.UIObject.call( this , parent , param );
+    
 	
+    if(moodSrc && moodSrc != 'none')
+        this.moodImg = mse.src.getSrc(moodSrc);
+    else this.moodImg = false; // TODO: set default speaker image
 	// its an ArticleLayer
 	this.parent = parent;
+    this.who = who;
 	
 	this.height = 0;
 };

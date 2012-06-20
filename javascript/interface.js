@@ -299,6 +299,9 @@ function editeSpeakDialog( speak ){
 					var mood = $( e.currentTarget ).text();
 					speak.attr( "data-mood" , mood );
 					speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( mood ) );
+                    if(spkObj.portrait[mood]) 
+                        speak.children("img").attr( "name" , spkObj.portrait[mood]);
+                    else speak.children("img").attr( "name" , "none");
 					
 					updateHightlight( mood );
 				});
@@ -1037,7 +1040,7 @@ function generateSpeaks(content, font, width, lineHeight){
 		
 		var first = generateLines( content , font, width - decalage , lineHeight );
 		first.css("left" , decalage+"px" );
-		first.css("width" , (width - decalage)+"px" );
+        first.css("width" , (width - decalage)+"px" );
 		first.css("position" , "relative" );
 		var rest = "";
 		first.children().slice( nline ).each( function( n , i ){ rest += $(i).text(); } );
@@ -1047,7 +1050,11 @@ function generateSpeaks(content, font, width, lineHeight){
 		var img;
 		var d = first.length * lineHeight;
 		img = $( '<img src="'+ srcMgr.getSource( id_ressource ).getMoodUrl( balise.param ) +'" width="'+d+'" height="'+d+'" style="width:'+d+'px;height:'+d+'px;display:inline-block;" />' );
-		img.css( "position" , "absolute" );
+		// img.attr('name', srcMgr.getSource( id_ressource ).portrait[balise.param]);
+        if(srcMgr.getSource( id_ressource ).portrait[balise.param])
+             img.attr('name', srcMgr.getSource( id_ressource ).portrait[balise.param]);
+        else img.attr('name', 'none');
+        img.css( "position" , "absolute" );
 		img.css( "left" , ( ( decalage - d ) / 2 )+"px" );
 		
 		res.append( img );

@@ -1020,6 +1020,9 @@ $.extend( ModifyMoodSrcCmd.prototype, {
 		var src = this.speaker.getMoodUrl(this.mood);        
 		for( var i = 0 ; i < this.speaks.length ; i ++ ){
 			$( this.speaks[ i ] ).children("img").attr( "src" , src);
+            if(this.newSrc) 
+                $( this.speaks[ i ] ).children("img").attr( "name" , this.newSrc);
+            else $( this.speaks[ i ] ).children("img").attr( "name" , "none");
 		}
         
         this.state = 'SUCCESS';
@@ -1033,6 +1036,9 @@ $.extend( ModifyMoodSrcCmd.prototype, {
         var src = this.speaker.getMoodUrl(this.mood);     
 		for( var i = 0 ; i < this.speaks.length ; i ++ ){
 			$( this.speaks[ i ] ).children("img").attr( "src" , src);
+            if(this.oldSrc) 
+                $( this.speaks[ i ] ).children("img").attr( "name" , this.oldSrc);
+            else $( this.speaks[ i ] ).children("img").attr( "name" , "none");
 		}
         
         this.state = 'CANCEL';
