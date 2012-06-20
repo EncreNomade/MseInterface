@@ -967,6 +967,15 @@ mse.Speaker = function( parent , param ) {
 	this.parent = parent;
 	
 	this.height = 0;
+	
+	// graphic related
+	this.color = "green";
+	this.lineDec = 3;
+	this.borderRadius = 6;
+	this.imgWidth = 50;
+	this.imgHeight = 50;
+	this.line = 0;
+	this.h;
 };
 extend(mse.Speaker, mse.UIObject);
 $.extend(mse.Speaker.prototype, {
@@ -975,12 +984,81 @@ $.extend(mse.Speaker.prototype, {
     },
     draw: function(ctx ) {
 		
+		//(x,y)             -------------------------------------|    |          |
+ 		//                 |                                                  |    |          h_
+		//                 |                                                  |    |          |
+		//|------------|                                                  |    h
+		//|                                                                   |    |
+		//|--------------------------------------------------|    |        
+		//
+		//<-- w_ ---->
+		//<------------------------- w ----------------------->
+		
+		
+		var x = this.getX() +5 ;
+		var y = this.getY();
+		
+		var w = this.width;
+		var h = this.height;
+		
+		var w_ = this.imgWidth;
+		var h_ = this.h;
+		
+		if( this.line < 1 )
+			return;
+		
+		
+		
+		var pich = 15;
+		var picl = 10;
+
+		
 		ctx.save();
     	ctx.beginPath();
-        ctx.rect( this.getX() , this.getY() , this.width , this.height);
-        ctx.fillStyle = '#8ED6FF';
-        ctx.fill();
-        ctx.lineWidth = 5;
+		ctx.moveTo( x + w_  , y  + this.borderRadius );
+		ctx.quadraticCurveTo( x + w_ , y ,  x + w_ + this.borderRadius , y  );
+		ctx.lineTo( x+w - this.borderRadius , y  );
+		ctx.quadraticCurveTo( x+w , y ,  x+w , y + this.borderRadius );
+		ctx.lineTo( x+w  , y + h - this.borderRadius );
+		ctx.quadraticCurveTo( x+w , y + h ,  x+w - this.borderRadius, y + h  );
+		
+		if( this.line <= this.lineDec ){
+		
+			ctx.lineTo( x + w_ + this.borderRadius  , y + h  );
+			ctx.quadraticCurveTo( x + w_ , y + h ,  x + w_ , y +h - this.borderRadius  );
+			
+			
+			ctx.lineTo( x + w_, y + ( h - pich )/2 + pich  );
+			ctx.lineTo( x + w_- picl , y + h /2  );
+			ctx.lineTo( x + w_, y + ( h - pich )/2  );
+			ctx.lineTo( x + w_, y + this.borderRadius  );
+			
+		}else{
+			
+			ctx.lineTo( x + this.borderRadius  , y + h  );
+			ctx.quadraticCurveTo( x , y + h ,  x , y +h - this.borderRadius  );
+			ctx.lineTo( x , y + h_ + this.borderRadius  );
+			ctx.quadraticCurveTo( x , y + h_ ,  x + this.borderRadius , y +h_  );
+			ctx.lineTo( x + w_ - this.borderRadius , y + h_  );
+			ctx.quadraticCurveTo( x + w_ , y + h_ ,  x + w_ , y + h_ - this.borderRadius   );
+			
+			
+			ctx.lineTo( x + w_ , y + ( h_ - pich )/2 + pich  );
+			ctx.lineTo( x + w_- picl , y + h_ /2  );
+			ctx.lineTo( x + w_ , y + ( h_ - pich )/2  );
+			ctx.lineTo( x + w_ , y + this.borderRadius  );
+		}
+		
+		/*
+		ctx.arc( x - this.borderRadius , y - this.borderRadius , this.borderRadius , Math.PI , Math.PI*1.5 , false );
+		ctx.lineTo( x+w , y  );
+        ctx.arc( x+w - this.borderRadius , y - this.borderRadius , this.borderRadius , Math.PI*1.5 , 0 , false );
+		ctx.lineTo( x+w , y+h  );
+		*/
+        ctx.lineWidth = 1;
+		ctx.fillStyle = "#9867A3";
+		ctx.fill();
+		
         ctx.strokeStyle = 'black';
         ctx.stroke();
     	ctx.restore();
@@ -994,7 +1072,16 @@ $.extend(mse.Speaker.prototype, {
 	},
 	lineShowed : function( obj ){
 		
+		console.log( obj);
+		this.line ++;
+		
+		
 		this.height += obj.height;
+		
+		if( this.line == this.lineDec )
+			this.h = this.height;
+		
+		
 		
 	}
 });
