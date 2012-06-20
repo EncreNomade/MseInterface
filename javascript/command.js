@@ -172,27 +172,25 @@ $.extend(CommandMulti.prototype, {
     execute: function() {
         if(this.state != "WAITING") return;
         
+		this.state = "SUCCESS";
+		
 		// execute from 0 to n
 		for( var i = 0 ; i < this.cmds.length ; i ++ ){
 			this.cmds[ i ].execute();
-			console.log( this.cmds[ i ] );
 			if( this.cmds[ i ].state != "SUCCESS")
-				this.cmds.state = this.cmds[ i ].state;
+				this.state = this.cmds[ i ].state;
 		}
-		
-        this.state = "SUCCESS";
     },
     undo: function() {
         if(this.state != "SUCCESS") return;
 		
+		this.state = "CANCEL";
         // execute from n to 0
 		for( var i = this.cmds.length-1 ; i >= 0 ; i -- ){
 			this.cmds[ i ].undo();
 			if( this.cmds[ i ].state != "CANCEL")
-				this.cmds.state = this.cmds[ i ].state;
+				this.state = this.cmds[ i ].state;
 		}
-		
-        this.state = "CANCEL";
         return true;
     }
 });
