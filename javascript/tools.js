@@ -1427,7 +1427,8 @@ Speaker.prototype = {
 	},
     showSpeakerOnEditor: function(src){
         var self = srcMgr.getSource(src.data('srcId'));
-        function dropVisage(e) {
+        
+        function dropVisage(e){
             e = e.originalEvent;
             e.stopPropagation();
             $(this).css('border-style', 'dotted');
@@ -1440,6 +1441,18 @@ Speaker.prototype = {
             var elem = $('<div data-related="'+name+'" ><img  src="'+srcMgr.sources[id].data+'" name="'+id+'"></div>');
             elem.append('<input type="text" value="'+name+'" />');
             elem.deletable(null, true);
+            
+            var dz = new DropZone(function(e){
+                e = e.originalEvent;
+                e.stopPropagation();
+                var id = e.dataTransfer.getData('Text');
+                var type = srcMgr.sourceType(id);
+                if(!id || type != $(this).data('type')) return;
+                $(this).siblings('img').prop('src',srcMgr.sources[id].data);
+                $(this).siblings('img').prop('name',id);
+            },{'height':'100%','border-width': '1px'});
+            dz.jqObj.data('type','image');
+            elem.append(dz.jqObj);
             $('#mood_selector').append(elem);
         }
         dialog.showPopup('Edition speaker',450, 410,'Modifier');
@@ -1461,7 +1474,7 @@ Speaker.prototype = {
         // $('#bulle_couleur').val(this.color);        
         // $('#bulle_style').val(this.style);
         
-        var dz = (new DropZone(dropVisage, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "script_supp")).jqObj;
+        var dz = (new DropZone(dropVisage, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "add_mood")).jqObj;
         dz.data('type', 'image');
         dialog.main.append(dz);
         
@@ -1475,8 +1488,21 @@ Speaker.prototype = {
 			if( self.portrait[i] )
 				elem.children("img").attr( "name" , self.portrait[i] );
                 
-            elem.append('<input type="text" value="'+i+'" />');
-            elem.deletable(null,true);
+            if(i == 'neutre'){            
+                elem.append('<p>'+i+'</p>');
+                elem.deletable(function(){
+                    // mettre img par default
+                    var img = $(this).parent().siblings('img');
+                    var defaultUrl = "./images/UI/default_portrait.png";
+                    if(img.prop('src') != defaultUrl)
+                        img.prop('src', defaultUrl);
+                    console.log('te');
+                },true);
+            }
+            else {                
+                elem.append('<input type="text" value="'+i+'" />');
+                elem.deletable(null,true);
+            }
             moodSelector.append(elem);
         }
         
@@ -1499,8 +1525,11 @@ Speaker.prototype = {
 		
         var moods = $('#mood_selector').children();
         moods.each(function(i){
-            var srcimg = $(this).children('img').attr('name'); 
-            var moodName = $(this).children('input').val().toLowerCase();
+            var srcimg = $(this).children('img').attr('name');
+			if( $(this).children('input').length > 0 )
+				var moodName = $(this).children('input').val().toLowerCase();
+			else
+				var moodName = $(this).text().toLowerCase();
             var reelName = $(this).attr("data-related" ).toLowerCase();  // name of the elment when we instanciate it
 			
 			if( !spkObj.hasMood( moodName ) )
