@@ -1000,7 +1000,7 @@ $.extend(mse.Speaker.prototype, {
 		//<------------------------- w ----------------------->
 		
 		
-		var x = this.getX() +5 ;
+		var x = this.getX();
 		var y = this.getY();
 		
 		var w = this.width;

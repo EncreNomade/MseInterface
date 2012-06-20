@@ -1015,7 +1015,7 @@ function generateSpeaks(content, font, width, lineHeight){
 		if( dialogueText.length > 0 ){
 			var id = "obj"+(curr.objId++);
 			var lines = generateSpeakLines( dialogueText, font, width, lineHeight , id );
-			res.append( $('<div id="'+ id +'" class="speaker" data-who="'+balise.id+'" data-mood="'+mood+'" />').append( lines ) );	
+			res.append( $('<div id="'+ id +'" class="speaker" data-who="'+balise.id+'" data-mood="'+mood+'" style="width"300px;"/>').append( lines ) );	
 		}
 		
 		
@@ -1040,6 +1040,7 @@ function generateSpeaks(content, font, width, lineHeight){
 		
 		var first = generateLines( content , font, width - decalage , lineHeight );
 		first.css("left" , decalage+"px" );
+		first.css("top" , "0px" );
         first.css("width" , (width - decalage)+"px" );
 		first.css("position" , "relative" );
 		var rest = "";

@@ -652,9 +652,11 @@ class ProjectGenerator {
         else if ($class = 'speaker'){ // its a dialogue obj contains txt lines
             $who = $objnode['data-who'];
             $img = $objnode->img['name'];
-            $firstLine = $objnode->div[0];
-            $firstLine['style'] .= "width: ".$width."px; height: ".$lineHeight."px;";
-            $params = $this->formatParams($firstLine['style'], 'txt');
+            //$firstLine = $objnode->div[0];
+            //$firstLine['style'] .= "width: ".$width."px; height: ".$lineHeight."px;";
+            //$params = $this->formatParams($firstLine['style'], 'txt');
+			$objnode['style'] .= "width: ".$width."px; height: 0px;";
+            $params = $this->formatParams($objnode['style'], 'txt');
             $this->jstr .= "\n\t$obj=new mse.Speaker($layer,".$params[1].", '$who', '$img');";
             $this->jstr .= " $layer.addObject($obj);";
             foreach($objnode->children() as $lineNode){
@@ -741,6 +743,7 @@ class ProjectGenerator {
         preg_match(self::$patterns['textAlign'], $style, $textAlign);
         preg_match(self::$patterns['textBaseline'], $style, $textBaseline);
         preg_match(self::$patterns['lineHeight'], $style, $lineHeight);
+		
         if( array_key_exists(2, $width) && array_key_exists(2, $height) ) {
             $param['size'] = array($pj->realCoor($width[2]), $pj->realCoor($height[2]));
             $paramStr .= '"size":['.$this->encodedCoord($param['size'][0]).','.$this->encodedCoord($param['size'][1]).'],';
