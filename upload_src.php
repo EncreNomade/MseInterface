@@ -92,6 +92,18 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
                 echo "SUCCESS";
             }
         break;
+		case "speaker":
+            if(get_magic_quotes_gpc()) {
+                $wiki = json_decode(stripslashes($encodedStr));
+            }
+            else {
+                $wiki = json_decode($encodedStr);
+            }
+            if(!is_null($wiki)) {
+                $pj->addSrc($name, $type, $wiki);
+                echo "SUCCESS";
+            }
+        break;
         case "script":
             if(get_magic_quotes_gpc()) {
                 $script = stripslashes($encodedStr);

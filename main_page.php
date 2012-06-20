@@ -230,6 +230,9 @@ function retrieveLocalInfo(pjsave) {
         if(type == "text" || type == "obj") continue;
         else if(type == "anime") 
             data = objToClass(data, Animation);
+		else if(type == "speaker"){
+            data = objToClass(data, Speaker);
+		}
         else if(type == "wiki") 
             data = objToClass(data, Wiki);
         srcMgr.addSource(type, data, key);

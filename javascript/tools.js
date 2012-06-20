@@ -533,7 +533,7 @@ SourceManager.prototype = {
 	        // Animation & Wiki
 	        for(var srcid in srcMgr.sources) {
 	            var type = srcMgr.sources[srcid].type;
-	            if(type == "wiki" || type == "anime") {
+	            if(type == "wiki" || type == "anime" || type == "speaker" ) {
 	                srcMgr.sources[srcid].data.removeDependency(id);
 	            }
 	        }
@@ -578,9 +578,9 @@ SourceManager.prototype = {
 	            // Animation & Wiki
 	            for(var srcid in srcMgr.sources) {
 	                var type = srcMgr.sources[srcid].type;
-	                if(type == "wiki" || type == "anime") {
+	                if(type == "wiki" || type == "anime" || type == "speaker") {
 	                    if(srcMgr.sources[srcid].data.getDependency(id)) 
-	                        list.push((type=="anime"?"L'animation":"Le wiki")+": "+srcid);
+	                        list.push("Le "+type+": "+srcid);
 	                }
 	            }
 	        }
@@ -590,8 +590,17 @@ SourceManager.prototype = {
 	                list.push("Le jeu dans l'étape: "+$(this).parents('.layer').prop('id'));
 	            });
 	        }
-	        dialog.showPopup('Renomer source', 300, 160+list.length*40, 'Confirmer');
-	        dialog.main.html('<h2>Les elements suivants seraient supprimés aussi, cliquer sur le croix pour annuler</h2>');
+			// dependency for speaker balise
+			if( t == "speaker" ){
+				if( src.data.getAssociateSpeak().length > 0 ){
+					dialog.showPopup('Supprimer source', 300, 160+list.length*40 );
+					dialog.main.html('<h2>Il est impossible de supprimer un Speaker tant que des balises de dialogue lui font référence</h2>');
+					return;
+				}
+			}
+	        
+			dialog.showPopup('Supprimer source', 300, 160+list.length*40, 'Confirmer');
+	        dialog.main.html('<h2>Les elements suivants seraient supprimés aussi ( ou modifié ), cliquer sur le croix pour annuler</h2>');
 	        for(var i = 0; i < list.length; ++i) {
 	            dialog.main.append('<p>'+(i+1)+'. '+list[i]+'</p>');
 	        }
@@ -706,7 +715,7 @@ SourceManager.prototype = {
 	        case "image": case "audio": case "game":
 	            data = "pj="+pjName+"&type="+type+"&name="+key+"&data="+this.sources[key].data;
 	            break;
-	        case "wiki": case "anime": case "code":
+	        case "wiki": case "anime": case "code": case "speaker":
 	            ++this.uploaded;
 	            this.updateSrcs(pjName);
 	            continue;
@@ -925,9 +934,20 @@ StepManager.prototype = {
                             'display':'none'});
                     }
                     if ($(this).hasClass('speaker')){
-                        $(this).children().each(function(){setArticleObjProp($(this));});
-                    }
-                    else setArticleObjProp($(this))
+						// speaker is a div which contains textLine
+						// it also contains a img which need to have the click event binded
+                        $(this).children().each(function(){
+							// if its the img , bind the event
+							if( this.tagName.toLowerCase() == "img" ){
+								$(this).click( function(e){
+									editeSpeakDialog( $( e.currentTarget ).parent() );
+								});
+							}else
+								// if its not, its textLine
+								setArticleObjProp($(this));
+						});
+                    }else 
+						setArticleObjProp($(this))
 	            });
 	        }
 	        // Other obj
@@ -1390,13 +1410,11 @@ Animation.prototype = {
 
 
 // Speaker system
-var Speaker = function( name , moods ) {
+var Speaker = function( name ) {
     if(!name ) return;
     this.name = name;
-	if( moods )
-		this.portrait = moods;
-	else
-		this.portrait = {};
+	this.portrait = { neutre : null };
+	
 };
 Speaker.prototype = {
     constructor: Speaker,
@@ -1585,7 +1603,7 @@ Speaker.prototype = {
     removeDependency: function(id) {
         for( var i in this.portrait )
             if(this.portrait[i] == id)
-                delete this.portrait[i];
+                this.portrait[i] = null;
     },
     updateSource: function(id, newName) {
 		for( var i in this.portrait )

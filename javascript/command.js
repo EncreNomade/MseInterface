@@ -903,7 +903,7 @@ $.extend( ModifySpeakMoodCmd.prototype, {
  * note that the add of speaker is automaticly done by adding raw text with balise, 
  * deleting a speaker is not possible though
  * 1. Add a mood
- * 2. Rename a mood
+ * 2. Rename a mood  // unused, instead of rename an item, it is delete and another with the same src is added
  * 3. Delete a mood
  * 4. Modify the srouce image of a mood
  */

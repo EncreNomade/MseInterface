@@ -282,9 +282,8 @@ function createPageDialog() {
 };
 
 // edite speack dialog
-function editeSpeakDialog( id_speak ){
+function editeSpeakDialog( speak ){
 			//  search the asoociate speaker
-			var speak = $("#"+id_speak);
 			var speaker = speak.attr( "data-who" );
 			for( var i in srcMgr.sources )
 				if( srcMgr.sourceType( i ) == "speaker" && srcMgr.getSource( i ).name == speaker )
@@ -297,7 +296,6 @@ function editeSpeakDialog( id_speak ){
 			for( var i in map ){
 				var option = $( '<div style="background:none;"><img src="' +  spkObj.getMoodUrl( i ) + '" width:"30" height="30" style="width:30px; height:30px;"/>'+i+'</div>' );
 				option.click( function( e ){
-					
 					var mood = $( e.currentTarget ).text();
 					speak.attr( "data-mood" , mood );
 					speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( mood ) );
@@ -306,7 +304,7 @@ function editeSpeakDialog( id_speak ){
 				});
 				comboBox.append( option );
 			}
-			updateHightlight( $("#"+id_speak).attr( "data-mood") );
+			updateHightlight( speak.attr( "data-mood") );
 			
 			function updateHightlight( mood ){
 				var c = comboBox.find( "div" );
@@ -1059,7 +1057,7 @@ function generateSpeaks(content, font, width, lineHeight){
 		
 		
 		img.click( function(e){
-			editeSpeakDialog( id );
+			editeSpeakDialog( $( e.currentTarget ).parent() );
 		});
 		
 		return res.children();
@@ -1414,7 +1412,7 @@ function saveProject() {
         for(var i in steps) {
             var step = steps[i].clone();
             step.find('.del_container, .ctrl_pt').remove();
-			step.children().removeClass('selected');
+			step.find('.selected').removeClass('selected');
             struct[key][step.prop('id')] = serializer.serializeToString(step.get(0));
         }
     }
