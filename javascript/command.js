@@ -903,6 +903,8 @@ $.extend( ModifySpeakMoodCmd.prototype, {
  * 2. Rename a mood  // unused, instead of rename an item, it is delete and another with the same src is added
  * 3. Delete a mood
  * 4. Modify the srouce image of a mood
+ * 5. Modify the color
+ *
  */
 var AddMoodCmd = function(  speaker , key , image_id ){
 	this.speaker = speaker;
@@ -1016,12 +1018,15 @@ $.extend( ModifyMoodSrcCmd.prototype, {
 		this.speaker.portrait[ this.mood ] = this.newSrc;
         
 		this.speaks = this.speaker.getAssociateSpeak( this.mood );
-		var src = this.speaker.getMoodUrl(this.mood);        
+		var src = this.speaker.getMoodUrl(this.mood);     
+			console.log( this.speaks );
+		console.log( src );
 		for( var i = 0 ; i < this.speaks.length ; i ++ ){
 			$( this.speaks[ i ] ).children("img").attr( "src" , src);
             if(this.newSrc) 
                 $( this.speaks[ i ] ).children("img").attr( "name" , this.newSrc);
-            else $( this.speaks[ i ] ).children("img").attr( "name" , "none");
+            else 
+				$( this.speaks[ i ] ).children("img").attr( "name" , "none");
 		}
         
         this.state = 'SUCCESS';
@@ -1039,6 +1044,35 @@ $.extend( ModifyMoodSrcCmd.prototype, {
                 $( this.speaks[ i ] ).children("img").attr( "name" , this.oldSrc);
             else $( this.speaks[ i ] ).children("img").attr( "name" , "none");
 		}
+        
+        this.state = 'CANCEL';
+    }
+});
+ var ModifyColorSpeakCmd = function(  speaker  , newColor , oldColor ){
+	this.speaker = speaker;
+	this.newColor = newColor;
+	this.oldColor = oldColor;
+	
+	this.state = 'WAITING';
+}
+extend( ModifyColorSpeakCmd , Command );
+$.extend( ModifyColorSpeakCmd.prototype, {
+    execute: function(){
+        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
+        
+		this.speaker.color = this.newColor;
+		this.speaks = this.speaker.getAssociateSpeak( );
+		for( var i = 0 ; i < this.speaks.length ; i ++ )
+			$( this.speaks[ i ] ).attr( "data-color" , this.speaker.color );
+        
+        this.state = 'SUCCESS';
+    },
+    undo: function(){
+        if(this.state != 'SUCCESS') return;
+        
+        this.speaker.color = oldColor;
+		for( var i = 0 ; i < this.speaks.length ; i ++ )
+			$( this.speaks[ i ] ).attr( "data-color" , this.speaker.color );
         
         this.state = 'CANCEL';
     }

@@ -41,7 +41,18 @@ class ProjectGenerator {
     );
 
     function ProjectGenerator($project) {
-        $this->pj = $project;
+        
+		// set the error handler,  the default one pops a html page, which is unsuable
+		function blankErrorHandler($errno, $errstr, $errfile, $errline){
+		    
+			echo " php error : $errstr , on line $errline  \n\n\n";
+			
+		    return true;
+		}
+		$old_error_handler = set_error_handler("blankErrorHandler");
+		
+		
+		$this->pj = $project;
         $this->coords = array();
         $this->scriptExt = array();
     }
@@ -102,6 +113,9 @@ class ProjectGenerator {
     }
     
     function generateJS(){
+		
+		
+	
         if(is_null($this->pj) || is_null($this->pj->getStruct())) return "alert('JS Generation failed')";
         $this->pjWidth = intval($this->pj->getWidth());
         $this->pjHeight = intval($this->pj->getHeight());
@@ -524,7 +538,7 @@ class ProjectGenerator {
             $layer = preg_replace("/<\/img>/", "", $layer);
             $layer = preg_replace("/(<img[^>]*)(>)/", "$1/>", $layer);
             $layer = preg_replace("/[^\$]nbsp;/", ' ', $layer);
-            $layernode = simplexml_load_string($layer, "SimpleXMLElement");
+			$layernode = simplexml_load_string($layer, "SimpleXMLElement");
             $this->addLayer($layernode, $page);
         }
     }
@@ -578,6 +592,8 @@ class ProjectGenerator {
         }
         
         $this->jstr .= "\n\t$page.addLayer('$id',$layer);";
+		
+
     }
     
     function addObject($objnode, $layer) {
@@ -651,13 +667,18 @@ class ProjectGenerator {
         }
         else if ($class = 'speaker'){ // its a dialogue obj contains txt lines
             $who = $objnode['data-who'];
-            $img = $objnode->img['name'];
-            //$firstLine = $objnode->div[0];
-            //$firstLine['style'] .= "width: ".$width."px; height: ".$lineHeight."px;";
-            //$params = $this->formatParams($firstLine['style'], 'txt');
+			$color = $objnode['data-color'];
+            $img = isset( $objnode->img['name'] ) && $objnode->img['name'] != "none" ? "'".$objnode->img['name']."'" : "null";
 			$objnode['style'] .= "width: ".$width."px; height: 0px;";
             $params = $this->formatParams($objnode['style'], 'txt');
-            $this->jstr .= "\n\t$obj=new mse.Speaker($layer,".$params[1].", '$who', '$img');";
+			$imgWidth;
+			$imgHeight;
+			preg_match(self::$patterns['width'] , $objnode->img['style'] , $imgWidth);
+			preg_match(self::$patterns['height'] , $objnode->img['style'] , $imgHeight);
+			$imgWidth = $this->pj->realCoor( $imgWidth[2] );
+			$imgHeight = $this->pj->realCoor( $imgHeight[2] );
+			$withdrawal = $this->pj->realCoor( $objnode['data-withdrawal'] );
+            $this->jstr .= "\n\t$obj=new mse.Speaker( $layer,".$params[1].", '$who', {src:$img , width:mse.coor(mse.joinCoor(".$imgWidth.")) , height:mse.coor(mse.joinCoor(".$imgHeight.")) , widthdrawal:mse.coor(mse.joinCoor(".$withdrawal.")) } , '$color' );";
             $this->jstr .= " $layer.addObject($obj);";
             foreach($objnode->children() as $lineNode){
                 // TODO : need factor 

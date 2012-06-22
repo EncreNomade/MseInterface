@@ -959,28 +959,46 @@ $.extend(mse.Layer.prototype, {
 
 
 // Text dialog
-mse.Speaker = function( parent, param, who, moodSrc ) {
+mse.Speaker = function( parent, param, who, img , color ) {
+	// speaker draw some additional content under the text element
+	// it draws one squared bubble dans a picture of the speaker
+	// as the superposition of object in the same articleLayer is restricted,  some cheats have been deployed
+	// - first, the element deleguate the add of a element to the articleLayer ( addObject is called on this item, it runs additionnals actions and then call addobject on ArticleLayer ) we dont have to manipulate the apparition or disparition of the object contains by the speak
+	// - second, the element is added to articleLayer with a height worth marge, so the next object add will be display after the marge, ( that s not very smart , the speak is after delete from the list of object ) the same tricks is set for the bottom marge, the last added object has a height larger 
+	// - due to the superposition, the element cannot be displayed like a regular UIObject ( the reposition swap to the middle of the first line position from the middle of the speaker element , and the hide and show cause trouble too ). it is displayed as a unhiddableObject, that decide by his own when be drawn or notification
+	//     - in order to doing that, the element listen the hidding and showing of his composants, when no element is displayed, the container is not neither ( he remove or add itself to the list of object on which the articleLayer call draw without asking question )
 	// Super constructor
 	mse.UIObject.call( this , parent , param );
     
-	
-    if(moodSrc && moodSrc != 'none')
-        this.moodImg = mse.src.getSrc(moodSrc);
-    else this.moodImg = false; // TODO: set default speaker image
-	// its an ArticleLayer
-	this.parent = parent;
+	this.parent = parent; // its an ArticleLayer
     this.who = who;
+	this.img = img;
 	
-	this.height = 0;
+	this.sens = true; // true left align , false right align
 	
 	// graphic related
-	this.color = "green";
-	this.lineDec = 3;
-	this.borderRadius = 6;
-	this.imgWidth = 50;
-	this.imgHeight = 50;
-	this.line = 0;
-	this.h;
+	this.bordureImg = { top : 0 , left : -10 , right : 15 , bottom : 5 }; // inner bordure
+	this.color = color;
+	this.borderRadius = 4;
+	
+	
+	if( this.img.src ){
+		this.face = new mse.Image( this , null , this.img.src );
+		this.face.width = this.img.width - this.bordureImg.left - this.bordureImg.right;
+		this.face.height = this.img.height - this.bordureImg.top - this.bordureImg.bottom;
+	}
+	
+	// marge top and bottom,   top is set because the object is x pixel height when the next obj is added ( and 0 after ) the bottom because the last line is x pixel longer
+	this.marge = 10;
+	
+	this.lastObj = {};
+	this.primalWidth;
+	this.callbackList = [];
+	this.init = false;
+	
+	this.bubbleheight = 0;
+	this.height = this.marge;
+	this.displayedLines = 0;
 };
 extend(mse.Speaker, mse.UIObject);
 $.extend(mse.Speaker.prototype, {
@@ -988,106 +1006,194 @@ $.extend(mse.Speaker.prototype, {
     
     },
     draw: function(ctx ) {
-		
-		//(x,y)             -------------------------------------|    |          |
- 		//                 |                                                  |    |          h_
-		//                 |                                                  |    |          |
-		//|------------|                                                  |    h
-		//|                                                                   |    |
-		//|--------------------------------------------------|    |        
-		//
-		//<-- w_ ---->
-		//<------------------------- w ----------------------->
-		
-		
-		var x = this.getX();
-		var y = this.getY();
-		
-		var w = this.width;
-		var h = this.height;
-		
-		var w_ = this.imgWidth;
-		var h_ = this.h;
-		
-		if( this.line < 1 )
+		if( this.bubbleheight < 1 )
 			return;
-		
-		
-		
-		var pich = 15;
-		var picl = 10;
-
-		
-		ctx.save();
-    	ctx.beginPath();
-		ctx.moveTo( x + w_  , y  + this.borderRadius );
-		ctx.quadraticCurveTo( x + w_ , y ,  x + w_ + this.borderRadius , y  );
-		ctx.lineTo( x+w - this.borderRadius , y  );
-		ctx.quadraticCurveTo( x+w , y ,  x+w , y + this.borderRadius );
-		ctx.lineTo( x+w  , y + h - this.borderRadius );
-		ctx.quadraticCurveTo( x+w , y + h ,  x+w - this.borderRadius, y + h  );
-		
-		if( this.line <= this.lineDec ){
-		
-			ctx.lineTo( x + w_ + this.borderRadius  , y + h  );
-			ctx.quadraticCurveTo( x + w_ , y + h ,  x + w_ , y +h - this.borderRadius  );
-			
-			
-			ctx.lineTo( x + w_, y + ( h - pich )/2 + pich  );
-			ctx.lineTo( x + w_- picl , y + h /2  );
-			ctx.lineTo( x + w_, y + ( h - pich )/2  );
-			ctx.lineTo( x + w_, y + this.borderRadius  );
-			
-		}else{
-			
-			ctx.lineTo( x + this.borderRadius  , y + h  );
-			ctx.quadraticCurveTo( x , y + h ,  x , y +h - this.borderRadius  );
-			ctx.lineTo( x , y + h_ + this.borderRadius  );
-			ctx.quadraticCurveTo( x , y + h_ ,  x + this.borderRadius , y +h_  );
-			ctx.lineTo( x + w_ - this.borderRadius , y + h_  );
-			ctx.quadraticCurveTo( x + w_ , y + h_ ,  x + w_ , y + h_ - this.borderRadius   );
-			
-			
-			ctx.lineTo( x + w_ , y + ( h_ - pich )/2 + pich  );
-			ctx.lineTo( x + w_- picl , y + h_ /2  );
-			ctx.lineTo( x + w_ , y + ( h_ - pich )/2  );
-			ctx.lineTo( x + w_ , y + this.borderRadius  );
+		// draw the face ( its an mseImage )
+		var x = this.sens ? this.getX() + this.bordureImg.left + (this.img.widthdrawal - this.img.width)/2: this.getX() + this.width - this.img.width - this.bordureImg.left;
+		var y = this.getY() + this.marge;
+		if( this.face )
+			this.face.draw( ctx , x , y );
+		else {
+			// if there is no image associate, draw a blue rect
+			ctx.save();
+			ctx.beginPath();
+			ctx.rect( x , y , this.img.width - this.bordureImg.left - this.bordureImg.right , this.img.height - this.bordureImg.top - this.bordureImg.bottom );
+			ctx.fillStyle = "#278391";
+			ctx.fill();
+			ctx.restore();
 		}
 		
-		/*
-		ctx.arc( x - this.borderRadius , y - this.borderRadius , this.borderRadius , Math.PI , Math.PI*1.5 , false );
-		ctx.lineTo( x+w , y  );
-        ctx.arc( x+w - this.borderRadius , y - this.borderRadius , this.borderRadius , Math.PI*1.5 , 0 , false );
-		ctx.lineTo( x+w , y+h  );
-		*/
-        ctx.lineWidth = 1;
-		ctx.fillStyle = "#9867A3";
+		// draw the buble
+		ctx.save();
+		var x = this.getX() - 5;
+		var y = this.getY() - 1 + this.marge;
+		var w = this.width+10;
+		var h = this.bubbleheight+4;
+		if( this.img.height + 1 < this.bubbleheight )
+			drawBittenRect( x ,
+							y,
+							w,
+							h,
+							this.img.widthdrawal ,
+							this.img.height ,
+							this.borderRadius ,
+							this.sens
+			 );
+		else
+			drawBittenRect( x + ( this.sens ? this.img.widthdrawal : 0 ) ,
+							y,
+							w - this.img.widthdrawal ,
+							h,
+							0 ,
+							0 ,
+							this.borderRadius ,
+							this.sens
+			 );
+		ctx.fillStyle = this.color;
 		ctx.fill();
 		
+		ctx.lineWidth = 1;
         ctx.strokeStyle = 'black';
         ctx.stroke();
     	ctx.restore();
     	
+		function drawBittenRect( x , y , w , h , wb , hb , border , sens ){
+			
+			if(!wb||w<wb || !hb||h<hb){
+				wb=0;
+				hb=0;
+			}
+			
+			if( wb == 0  )
+				hb = h ;
+			
+			
+			if( border * 2 > h || border * 2 > hb || border * 2 > w )
+				border = Math.min( h/2 , hb/2 , w/2 );
+			
+				
+			var pich = Math.min( 20 , Math.max( 5 , hb /2 ) );
+			var criticBorder = Math.min( border , ( hb - pich ) / 2 );
+			
+			
+			var picl = 10;
+			
+	    	ctx.beginPath();
+			if( sens ){
+				ctx.moveTo( x + wb 	, y  + criticBorder );
+				ctx.quadraticCurveTo( x + wb , y ,  x + wb + border , y  );
+				ctx.lineTo( x + w - border , y  );
+				ctx.quadraticCurveTo( x+w , y ,  x+w , y + border );
+				ctx.lineTo( x+w  , y + h - border );
+				ctx.quadraticCurveTo( x+w , y + h ,  x+w - border, y + h  );
+				ctx.lineTo( x + border  , y + h  );
+				if( wb != 0  ){
+					var sborder = Math.min( border , ( h - hb ) /2 );
+					ctx.quadraticCurveTo( x , y+h ,  x , y + h - sborder );
+					ctx.lineTo( x  , y + hb + sborder );
+					ctx.quadraticCurveTo(  x  , y + hb , x +  border , y + hb );
+					ctx.lineTo( x + wb - border, y + hb  );
+					ctx.quadraticCurveTo(  x + wb  , y + hb , x +wb , y + hb -  criticBorder );
+				} else
+					ctx.quadraticCurveTo( x + wb , y+h ,  x , y + h - criticBorder );
+				//  the pic
+				
+				ctx.lineTo( x + wb , y + ( hb - pich )/2 + pich  );
+				ctx.lineTo( x + wb - picl , y + ( hb )/2  );
+				ctx.lineTo( x + wb , y + ( hb - pich )/2  );
+				ctx.lineTo( x + wb 	, y  + criticBorder  );
+				ctx.lineTo( x + wb 	, y  + criticBorder  );
+				
+			} else{
+				ctx.moveTo( x + w - wb 	, y  + criticBorder );
+				ctx.quadraticCurveTo( x + w - wb , y ,  x + w - wb - border , y  );
+				ctx.lineTo( x + border , y  );
+				ctx.quadraticCurveTo( x  , y ,  x , y + border );
+				ctx.lineTo( x  , y + h - border );
+				ctx.quadraticCurveTo( x , y + h ,  x + border, y + h  );
+				ctx.lineTo( x + w - border  , y + h  );
+				if( wb != 0  ){
+					var sborder = Math.min( border , ( h - hb ) /2 );
+					ctx.quadraticCurveTo( x+w , y+h ,  x+w , y + h - sborder );
+					ctx.lineTo( x+w  , y + hb + sborder );
+					ctx.quadraticCurveTo(  x+w  , y + hb , x +w -  border , y + hb );
+					ctx.lineTo( x +w- wb + border, y + hb  );
+					ctx.quadraticCurveTo(   x +w- wb  , y + hb ,  x +w- wb , y + hb -  criticBorder );
+				} else
+					ctx.quadraticCurveTo( x + w- wb , y+h ,  x + w , y + h - criticBorder );
+				//  the pic
+				
+				ctx.lineTo( x + w- wb , y + ( hb - pich )/2 + pich  );
+				ctx.lineTo( x + w- wb + picl , y + ( hb )/2  );
+				ctx.lineTo( x + w- wb , y + ( hb - pich )/2  );
+				ctx.lineTo( x + w- wb 	, y  + criticBorder  );
+				ctx.lineTo( x + w- wb 	, y  + criticBorder  );
+			}
+		}
     },
 	addObject : function( obj ){
 		
-		obj.evtDeleg.addListener('show', new mse.Callback( this.lineShowed , this , obj ) );
+		this.callbackList.push( new mse.Callback( this.lineShowed , this , obj ) );
 		
+		obj.evtDeleg.addListener('show', new mse.Callback( this.oneLineMore , this , obj ) );
+		obj.evtDeleg.addListener('disapear', new mse.Callback( this.oneLineLess , this , obj ) );
+		
+		obj.evtDeleg.addListener('show', this.callbackList[ this.callbackList.length-1 ] );
+		
+		//if( this.sens && this.alt_height < this.img.height+1  );
+		
+		// set the widthdrawal of the line object
+		if( !this.primalWidth )
+			this.primalWidth = obj.width;
+		if( this.primalWidth == obj.width )
+			obj.setX( this.img.widthdrawal );
+			
+			
+		// a bottom marge is needed,  so the last obj have to be x pixel longer than it should be
+		if( this.lastObj.o )
+			this.lastObj.o.height = this.lastObj.h;
+		this.lastObj.o = obj;
+		this.lastObj.h = obj.height;
+		obj.height += this.marge;
+		
+		// delegate the addObject to the article layer
 		this.parent.addObject( obj );
+		
+		
+		// if its the first object to be added
+		// we set the height 
+		// we remove the element from the articleLayer  objList ( because the speak element can not let the article layer trigger his draw and logic function ),
+		if( !this.init ){
+			this.init = true;
+			this.parent.delObject( this );
+			this.height = this.marge * 2 ;
+		}
+		this.height += obj.height;
+	},
+	oneLineMore : function(){
+		if( this.displayedLines == 0 ){
+			this.parent.addUnhiddableObject( this );
+			this.evtDeleg.eventNotif('show');
+		}
+		this.displayedLines ++;
+	},
+	oneLineLess : function(){
+		this.displayedLines --;
+		if( this.displayedLines == 0 ){
+			this.parent.delUnhiddableObject( this );
+			this.evtDeleg.eventNotif('disapear');
+		}
 	},
 	lineShowed : function( obj ){
 		
-		console.log( obj);
-		this.line ++;
+		if( this.lastObj.o ){
+			// the last textLine object is reset to is primal value, because it is needed here down
+			this.lastObj.o.height = this.lastObj.h;
+			this.lastObj = {};
+		}
+		this.bubbleheight += obj.height;
 		
-		
-		this.height += obj.height;
-		
-		if( this.line == this.lineDec )
-			this.h = this.height;
-		
-		
-		
+		obj.evtDeleg.removeListener( 'show' , this.callbackList.shift() );
 	}
 });
 
@@ -1318,6 +1424,7 @@ mse.ArticleLayer = function(container, z, param, article) {
 	this.vide = new mse.UIObject();
 	// Dominate obj, if exist, logic and draw dominated by this obj
 	this.dominate = null;
+	this.unhiddableObjectList = [];
 };
 extend(mse.ArticleLayer, mse.Layer);
 $.extend( mse.ArticleLayer.prototype , {
@@ -1505,7 +1612,7 @@ $.extend( mse.ArticleLayer.prototype , {
 	    }
 	},
 	delObject : function(obj) {
-		var res = this.constructor.prototype.delObject.call(this, obj);
+		var res = mse.Layer.prototype.delObject.call(this, obj);
 		if(!isNaN(res)) {
 			this.length -= obj.height;
 			this.updateIndexs(res, -1);
@@ -1518,7 +1625,17 @@ $.extend( mse.ArticleLayer.prototype , {
 		if(nb == 0) return 0;
 		return this.objList[nb-1].offy+this.objList[nb-1].height;
 	},
-	
+	addUnhiddableObject : function(obj){
+		this.unhiddableObjectList.push ( obj );
+	},
+	delUnhiddableObject : function(obj){
+		for( var i = 0 ; i < this.unhiddableObjectList.length ; i ++ )
+			if( this.unhiddableObjectList[ i ] == obj ){
+				this.unhiddableObjectList.splice( i , 1 );
+				return;
+			}
+		return -1;
+	},
 	// Get obj list on screen
 	updateListScreen : function() {
 		// Screen offset
@@ -1587,6 +1704,8 @@ $.extend( mse.ArticleLayer.prototype , {
 		if(this.slider) this.updateListScreen();
 		for(var i = this.startId; i <= this.endId; i++)
 			this.objList[i].logic(delta);
+		for( var i = 0 ; i < this.unhiddableObjectList.length ; i ++ )
+			this.unhiddableObjectList[ i ].logic(delta);
 		if(this.complete || !this.active) {
 			this.prevOffy = (this.oy-this.offy<0 ? 0 : this.oy-this.offy);
 			return;
@@ -1620,6 +1739,8 @@ $.extend( mse.ArticleLayer.prototype , {
 	},
 	draw : function(ctx) {
 	    this.configCtx(ctx);
+		for( var i = 0 ; i < this.unhiddableObjectList.length ; i ++ )
+			this.unhiddableObjectList[ i ].draw(ctx);
 		for(var i = this.startId; i <= this.endId; i++) {
 			this.objList[i].draw(ctx);
 		}
@@ -1646,7 +1767,7 @@ $.extend( mse.ArticleLayer.prototype , {
 mse.Image = function(parent, param, src) {
 	// Super constructor
 	mse.UIObject.call(this, parent, param);
-	
+
 	if(typeof src == 'string') {
 	    this.img = src;
 	    mse.src.waitSrc(this.img, new mse.Callback(this.init, this));
@@ -1711,7 +1832,6 @@ $.extend(mse.Image.prototype, {
     	var img = (this.cache ? this.cache : mse.src.getSrc(this.img));
     	this.configCtxFlex(ctx);
     	if(isNaN(x) || isNaN(y)) {x = this.getX(); y = this.getY();}
-    	
     	if(this.currentEffect != null && this.currentEffect.draw) 
     	    this.currentEffect.draw(ctx, img, x,y, this.width, this.height);
     	else 

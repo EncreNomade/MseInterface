@@ -527,7 +527,7 @@ SourceManager.prototype = {
 	    // Other dependency for image src: DOMElement, animation, wiki image content
 	    if(t == "image") {
 	        // DOMElement
-	        $('.scene img[name="'+id+'"]').each(function(){
+	        $('.scene img[name="'+id+'"]:not(.illu_speaker)').each(function(){
 	            $(this).parent().detach();
 	        });
 	        // Animation & Wiki
@@ -572,7 +572,7 @@ SourceManager.prototype = {
 	        // Other dependency for image src: DOMElement, animation, wiki image content
 	        if(t == "image") {
 	            // DOMElement
-	            $('.scene img[name="'+id+'"]').each(function(){
+	            $('.scene img[name="'+id+'"]:not(.illu_speaker)').each(function(){
 	                list.push("Image utilisant cette ressource dans l'étape: "+$(this).parents('.layer').prop('id'));
 	            });
 	            // Animation & Wiki
@@ -1414,7 +1414,7 @@ var Speaker = function( name ) {
     if(!name ) return;
     this.name = name;
 	this.portrait = { neutre : null };
-	
+	this.color = "#467291";
 };
 Speaker.prototype = {
     constructor: Speaker,
@@ -1490,7 +1490,7 @@ Speaker.prototype = {
         
         dialog.main.append(htmlStr);
         $('#speaker_name').val(self.name);        
-        // $('#bulle_couleur').val(this.color);        
+        $('#bulle_couleur').val(self.color);        
         // $('#bulle_style').val(this.style);
         
         var dz = (new DropZone(dropVisage, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "add_mood")).jqObj;
@@ -1563,13 +1563,19 @@ Speaker.prototype = {
 				cmds.push( new AddMoodCmd( spkObj , moodName , srcimg ) );
 			else{
 				state[ moodName ] = false;
-				if( spkObj.getPictSrc( moodName ) != srcimg )
+				console.log( srcimg );
+				console.log( spkObj );
+				if( ( !srcimg  ) || spkObj.getPictSrc( moodName ) != srcimg )
 					cmds.push( new ModifyMoodSrcCmd( spkObj , moodName , srcimg ) );
 			}
         });
         for( var i in state )
 			if( state[ i ] )
 				cmds.push( new DelMoodCmd( spkObj , i ) );
+		
+		var newColor = $('#bulle_couleur' ).val();
+		if( this.color != newColor && isColor( newColor ) )
+			cmds.push( new ModifyColorSpeakCmd( spkObj , newColor , this.color ) );
 		
 		
 		CommandMgr.executeCmd( new CommandMulti( cmds ) );

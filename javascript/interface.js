@@ -539,9 +539,10 @@ function insertElemDialog(e) {
 		var text = tzone.val();
 		if(text && text != "") {
 		    var font = dialog.caller.css('font-weight');
-		    font += " "+dialog.caller.css('font-size');
+		    font += " "+config.realX( cssCoordToNumber( dialog.caller.css('font-size') ) )+"px";
 		    font += " "+dialog.caller.css('font-family');
-		    last.after(generateSpeaks(text, font, dialog.caller.width(), dialog.caller.height()));
+			console.log( " depuis insertElemDialog "+dialog.caller.width() );
+		    last.after(generateSpeaks(text, font , config.realX( dialog.caller.width() ) , dialog.caller.height()));
 		}
 		dialog.close();
 	});
@@ -1014,12 +1015,11 @@ function generateSpeaks(content, font, width, lineHeight){
 			res.append( generateLines(  normalText , font, width, lineHeight) );	
 		if( dialogueText.length > 0 ){
 			var id = "obj"+(curr.objId++);
-			var lines = generateSpeakLines( dialogueText, font, width, lineHeight , id );
-			res.append( $('<div id="'+ id +'" class="speaker" data-who="'+balise.id+'" data-mood="'+mood+'" style="width"300px;"/>').append( lines ) );	
+			var lines = generateSpeakLines( dialogueText, font, width, lineHeight , id_ressource , mood );
+			var color = srcMgr.getSource( id_ressource ).color;
+			var withdrawal = ( s = lines.siblings( ".textLine" ).css( "left" ) ).substring( 0 , s.length-2 );
+			res.append( $('<div id="'+ id +'" class="speaker" data-who="'+balise.id+'" data-withdrawal="'+ withdrawal + '" data-color="'+color+'" data-mood="'+mood+'" style="width:'+  config.sceneX( width )+'px;"/>').append( lines ) );	
 		}
-		
-		
-		
 		
 		// for the next loop, we dont want to calculate it twice
 		if( nbalise ) 
@@ -1031,45 +1031,6 @@ function generateSpeaks(content, font, width, lineHeight){
 		res.append( generateLines( rest , font, width, lineHeight) );
 	return res.children();
 	
-	// setUp the speak formate with img associate
-	function generateSpeakLines( content, font, width, lineHeight, id ){
-		
-		var decalage = 50;
-		var nline = 3;
-		
-		
-		var first = generateLines( content , font, width - decalage , lineHeight );
-		first.css("left" , decalage+"px" );
-		first.css("top" , "0px" );
-        first.css("width" , (width - decalage)+"px" );
-		first.css("position" , "relative" );
-		var rest = "";
-		first.children().slice( nline ).each( function( n , i ){ rest += $(i).text(); } );
-		first = first.slice( 0 , nline );
-		var last = generateLines( rest , font, width , lineHeight );
-		var res = $("<div>");
-		var img;
-		var d = first.length * lineHeight;
-		img = $( '<img src="'+ srcMgr.getSource( id_ressource ).getMoodUrl( balise.param ) +'" width="'+d+'" height="'+d+'" style="width:'+d+'px;height:'+d+'px;display:inline-block;" />' );
-		// img.attr('name', srcMgr.getSource( id_ressource ).portrait[balise.param]);
-        if(srcMgr.getSource( id_ressource ).portrait[balise.param])
-             img.attr('name', srcMgr.getSource( id_ressource ).portrait[balise.param]);
-        else img.attr('name', 'none');
-        img.css( "position" , "absolute" );
-		img.css( "left" , ( ( decalage - d ) / 2 )+"px" );
-		
-		res.append( img );
-		res.append( first );
-		res.append( last  );
-		
-		
-		
-		img.click( function(e){
-			editeSpeakDialog( $( e.currentTarget ).parent() );
-		});
-		
-		return res.children();
-	}
 	function getNextBalise( rest ){
 		// match [ <string> : <string> ]
 		var regEx = /\[( *[a-z0-9]* *( *: *[a-z0-9]* *)?)\]/i;
@@ -1088,8 +1049,65 @@ function generateSpeaks(content, font, width, lineHeight){
 		return null;
 	}
 }
+// setUp the speak formate with img associate
+function generateSpeakLines( content, font, width, lineHeight, id , mood ){
+		
+		var decalage = 50;
+		
+		var nline = Math.ceil( decalage / lineHeight );
+		
+		
+		var first = generateLines( content , font, width - decalage , lineHeight );
+		
+		var rest = "";
+		
+		var res = $("<div/>");
+		
+		// apend the image
+		var img = $( '<img class="illu_speaker" src="'+ srcMgr.getSource( id ).getMoodUrl( mood ) +'" style="display:inline-block;" />' );
+		res.append( img );
+		
+		// append the firsts lines
+		for( var i = 0 ; i < first.length ; i ++ ){
+			if( i< nline ){
+				$(first[i]).css("left" , config.sceneX( decalage )+"px" ); 
+				$(first[i]).css("position" , "relative" );
+				$(first[i]).css("width" , ( width - decalage )+"px" );
+				console.log(  (width - decalage )+"  "+width );
+				//$(first[i]).css("width" , config.sceneX( width - decalage )+"px" );
+				res.append( $(first[i]) );
+			}else
+				rest += $(first[i]).text();
+		}
+		
+		var d = Math.min( decalage , res.children().length * lineHeight );
+		
+		// append the rest
+		if( rest.length > 0 )
+			res.append( generateLines( rest , font, width , lineHeight ) );
+		
+		
+        if( srcMgr.getSource( id ).portrait[ mood ] )
+             img.attr('name', srcMgr.getSource( id ).portrait[ mood ]);
+        else 
+			img.attr('name', 'none');
+        img.css( "position" , "absolute" );
+        img.css( "width" , config.sceneX(d)+"px" );
+        img.css( "height" , config.sceneX(d)+"px" );
+        img.attr( "height" , config.sceneX(d) );
+        img.attr( "width" , config.sceneX(d) );
+		img.css( "left" , config.sceneX( ( decalage - d ) / 2 )+"px" );
+		
+		
+		img.click( function(e){
+			editeSpeakDialog( $( e.currentTarget ).parent() );
+		});
+		
+		return res.children();
+	}
 function generateLines(content, font, width, lineHeight){
-    var res = '';
+    
+	var res = '';
     // Content processing
 	TextUtil.config(font);
 	var maxM = Math.floor( width/TextUtil.measure('A') );	
@@ -1111,7 +1129,7 @@ function generateLines(content, font, width, lineHeight){
 	}
 	res = $(res);
 	res.each(function() {
-		$(this).height(lineHeight);
+		$(this).height(config.sceneY(lineHeight));
 		$(this).deletable(null, true)
 		       .selectable(selectP)
 		       .staticButton('./images/UI/insertbelow.png', insertElemDialog)
@@ -1150,6 +1168,7 @@ function addArticle(manager, name, params, content) {
 	if(params.color) article.css('color', params.color);
 	if(params.align) article.css('text-align', params.align);
 	
+	console.log( " depuis addArticle "+params.lw );
 	article.append(generateSpeaks(content, font, params.lw, params.lh));
 	// Listener to manipulate
 	article.deletable().configurable();
