@@ -244,6 +244,12 @@ mse.init = function(configs) {
 	mse.src.addSource('pauseBn', './UI/button/pause.png', 'img', true);
 	mse.src.addSource('zoomIcon', './UI/button/zoom.png', 'img', true);
 	mse.src.addSource('closeBn', './UI/button/close.png', 'img', true);
+    
+    var imgShower = new mse.ImageShower();
+    imgShower.imgContainer.mseInteraction();
+    imgShower.imgContainer.mseInteraction('addListener', 'scale', new Callback(imgShower.scale, imgShower));
+    imgShower.img.mseInteraction();
+    imgShower.img.mseInteraction('addListener', 'translate', new Callback(imgShower.move, imgShower));
 };
 
 
@@ -1566,8 +1572,8 @@ $.extend(mse.Image.prototype, {
         this.zoomIcon = new mse.Image(this, {pos:[this.width-20, 0]}, 'zoomIcon');
         var cb = new mse.Callback(function(){
             if(!(this.imgShower instanceof mse.ImageShower))
-                this.imgShower = new mse.ImageShower(this);
-            this.imgShower.show();
+                this.imgShower = mse.ImageShower.getInstance();
+            this.imgShower.show(this);
         }, this);
         this.zoomIcon.addListener('click', cb, true);
     },
@@ -2330,9 +2336,8 @@ $.extend(mse.ImageCard.prototype, {
         this.zoomIcon = new mse.Image(this,{pos:[this.ix+this.iw-24-5, this.iy+5],size:[20,20]}, 'zoomIcon');
         var cb = new mse.Callback(function(){
             if(!(this.imgShower instanceof mse.ImageShower))
-                this.imgShower = new mse.ImageShower(this);
-            this.imgShower.show();
-            // console.log('zoom');
+                this.imgShower = mse.ImageShower.getInstance();
+            this.imgShower.show(this);
         }, this);
         this.zoomIcon.addListener('click', cb, true);
     },
@@ -2583,112 +2588,155 @@ $.extend( mse.Video.prototype , {
 *  See mse.Image.prototype.init() 
 *  & mse.ImageCard.init() (association with an icon)
 */ 
-mse.ImageShower = function(target){
-    if(!(target instanceof mse.Image) && !(target instanceof mse.ImageCard)) {
-        console.error('The target obj is not an instance of mse.Image or mse.ImageCard');
-        return;
-    }
-    this.target = target;
+mse.ImageShower = function(){
+    if(mse.ImageShower.getInstance()) return mse.ImageShower.getInstance(); // its a singleton classe
+    this.target = false;
+    this.container = $('#imgShower');
+    this.img = $('#imgShower #theImage');
+    this.imgContainer = $('#imgShower div');
+    this.closeButton = $('#imgShower #closeBn');
     
-    this.container = $('<div id="imgShower"></div>').css({
-		'position'  : 'absolute',
-		'z-index'   : '12',
-		'width'     : '100%',
-		'height'    : '100%',
-		'background': 'rgba(0, 0, 0, 0.6)',
-        'text-align': 'center'
-	});
+    this.img.click(function(e){e.preventDefault();e.stopPropagation();});
     
-    this.img = $(mse.src.getSrc(target.img)).css({
-		'width' : '100%',
-		'height': '100%'
-	});
-    
-    this.closeButton = $(mse.src.getSrc('closeBn')).prop('id', 'closeBn').css({
-        'position': 'absolute',
-        'top'     : '-20px',
-        'right'   : '-20px'
-    });
-
-
-   
-    this.container.bind('click',{showerObj: this},function(e){
-        // close the image on click in div
-        var pos = e.data.showerObj.getOriginalPos();
-        $(this).children('div').animate({
-            'height' : pos.h+'px',
-            'width'  : pos.w+'px',
-            'top'    : pos.y+'px',
-            'left'   : pos.x+'px',
-            'opacity': '0'
-        });
-        $(this).fadeOut(500, function(){
-            $(this).detach();
-            $(this).children('div').remove();
-            var parent = e.data.showerObj.target.parent;
-            if(parent.play)
-                parent.play();
-        });
-    }); // no close on click in image
+    var instance = this;
+    mse.ImageShower.getInstance = function(){return instance;};
 };
+mse.ImageShower.getInstance = function(){return false;};
 mse.ImageShower.prototype = {
+    setTarget: function(target){
+        if(!(target instanceof mse.Image) && !(target instanceof mse.ImageCard)) {
+            console.error('The target obj is not an instance of mse.Image or mse.ImageCard');
+            return;
+        }
+        this.target = target;
+        this.imgUrl = mse.src.getSrc(this.target.img).getAttribute('src');
+        this.img.prop('src', this.imgUrl);
+        return this;
+    }, 
     getOriginalPos: function(){
+        if(!this.target) return;
+        var pos = {};
         if(this.target instanceof mse.Image){ // Illu
-            var pos = {
-                x: mse.root.jqObj.position().left + this.target.getX(),
-                y: mse.root.jqObj.position().top + this.target.getY(),
-                w: this.target.getWidth(),
-                h: this.target.getHeight(),
-                angle: 'rotate(0deg)'
-            };
+            pos.x = mse.root.jqObj.position().left + this.target.getX();
+            pos.y = mse.root.jqObj.position().top + this.target.getY();
+            pos.w = this.target.getWidth();
+            pos.h = this.target.getHeight();
+            pos.angle = 'rotate(0deg)';
         }
         else { // Wiki
-            var pos = {
-                x: mse.root.jqObj.position().left + this.target.getX() + this.target.ix,
-                y: mse.root.jqObj.position().top + this.target.getY() + this.target.iy,
-                w: this.target.iw,
-                h: this.target.ih,
-                angle: 'rotate('+this.target.angle+'deg)'
-            };
+            pos.x = mse.root.jqObj.position().left + this.target.getX() + this.target.ix;
+            pos.y = mse.root.jqObj.position().top + this.target.getY() + this.target.iy;
+            pos.w = this.target.iw;
+            pos.h = this.target.ih;
+            pos.angle = 'rotate('+this.target.angle+'deg)';            
         }
         return pos;
     },
-    show: function(){
+    show: function(target){
+        this.setTarget(target);
+        if(!this.target) return;
+        this.container.unbind('click');
+        this.closeButton.unbind('click');
+        this.container.click({showerObj: this}, this.close);
+        this.closeButton.click({showerObj: this}, this.close);
         var pos = this.getOriginalPos();
-        $('<div></div>').css({
-            'position': 'absolute',
-            'z-index': '13',
+        this.img.css({
+            'left': '0px',
+            'top': '0px',
+            'height' : '100%',
+            'width'  : '100%'
+        });
+        this.imgContainer.css({
             'width'  : pos.w+'px',
             'height' : pos.h+'px',
             'top'    : pos.y+'px',
-            'left'   : pos.x+'px',
-            'opacity': '0'
-        }).append(this.img)
-          .append(this.closeButton)
-          .appendTo(this.container);
-
-        this.closeButton.click(function(){$('#imgShower').click();});
-        this.img.click(function(e){e.preventDefault();e.stopPropagation();});
+            'left'   : pos.x+'px'
+        });
         
-        var ratio = pos.w/pos.h;
-        var finalH = 0.8 * MseConfig.pageHeight;
-        var finalW = finalH * ratio;
-        var imgX = mse.root.width/2 - finalW/2;
-        this.container.children('div').animate({ // animate image size to 80% of window size
+        if (MseConfig.pageHeight < MseConfig.pageWidth) { // normal screen
+            var ratio =  pos.w/pos.h;
+            var finalH = 0.8 * MseConfig.pageHeight;
+            var finalW = finalH * ratio;
+            var imgX = mse.root.width/2 - finalW/2;
+        }
+        else { // smartphone screen
+            var ratio =  pos.h/pos.w;
+            var finalW = 0.8 *  MseConfig.pageWidth;
+            var finalH = finalW * ratio;
+            var imgX = MseConfig.pageWidth/2 - finalW/2;
+        }
+        
+        this.imgContainer.data('originPos',{h: finalH, 
+                                            w: finalW,
+                                            x:this.imgContainer.position().left,
+                                            y:this.imgContainer.position().top,
+                                            scale:1});
+             
+        this.imgContainer.animate({ // animate image size to 80% of window size
             'height'    : finalH+'px',
             'width'     : finalW+'px',
             'top'       : '0px',
-            'margin-top': '10%',
-            'left'      : imgX + 'px',
-            'opacity'   : '1'
+            'left'      : imgX + 'px'
         });
         this.container.fadeIn(500);
-        
-        $('#root').append(this.container);
         
         var parent = this.target.parent;
         if (parent.interrupt)
             parent.interrupt();
+    },
+    close: function(e){
+        // close the image on click in div
+        // no close on click in image
+        e.preventDefault();
+        var obj = mse.ImageShower.getInstance();
+        var pos = obj.getOriginalPos();
+        obj.container.children('div').animate({
+            'height' : pos.h+'px',
+            'width'  : pos.w+'px',
+            'top'    : pos.y+'px',
+            'left'   : pos.x+'px'
+        });
+        obj.container.fadeOut(500, function(){
+            var parent = obj.target.parent;
+            if(parent.play)
+                parent.play();
+        });
+    },
+    scale: function(e){
+        var max=3 , min = 1;
+        var pos = this.imgContainer.data('originPos');
+        var s = pos.scale * e.scale;
+        if (s >= max) return;
+        else if (s <= min) return;
+        
+        if(e.type == 'scaleEnd'){
+            pos.scale = s;
+            return;
+        }
+        var currPos = this.img.position();
+        var w = pos.w * s;
+        var h = pos.h * s;
+        var x = currPos.left - (w-this.img.width())/2;
+        var y = currPos.top - (h-this.img.height())/2;
+        this.img.css({width: w+'px',
+                      height: h+'px',
+                      top: y+'px',
+                      left: x+'px'});
+    },
+    move: function(e){
+        var iw = this.img.width(),
+            ih = this.img.height(),
+            cw = this.imgContainer.width(),
+            ch = this.imgContainer.height(),
+            posImg = this.img.position(),
+            x = posImg.left + e.dx,
+            y = posImg.top + e.dy;
+            
+        if(x > 0) x = 0;
+        if(x < cw - iw) x = cw - iw;
+        if(y > 0) y = 0;
+        if(y < ch - ih) y = ch - ih;
+        this.img.css({top: y+'px', left: x+'px'});
     }
 };
 

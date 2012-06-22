@@ -61,6 +61,10 @@ addEventListener("load", function(){
 <div id="root">
     <canvas class="bookroot">Votre navigateur ne supporte pas HTML5</canvas>
     <div class="video"></div>
+    <div id="imgShower"><div>
+            <img id="theImage" src=""/>
+            <img id="closeBn"  src="UI/button/close.png"/>
+    </div></div>
     <canvas class='game' width=50 height=50></canvas>
 </div>
 

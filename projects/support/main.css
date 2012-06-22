@@ -73,3 +73,28 @@ body {
     display: block;
     z-index: 12;
 }
+#imgShower {
+    position  : absolute;
+    z-index   : 12;
+    width     : 100%;
+    height    : 100%;
+    background: rgba(0, 0, 0, 0.6);
+    text-align: center;
+    display: none;
+}
+#imgShower > div {
+    position: absolute;
+    z-index: 13;
+    margin-top: 10%;
+    overflow: hidden;
+}
+#imgShower #closeBn {
+    position: absolute;
+    top     : -20px;
+    right   : -20px;
+}
+#imgShower #theImage {
+    width : 100%;
+    height: 100%;
+    position: absolute;
+}

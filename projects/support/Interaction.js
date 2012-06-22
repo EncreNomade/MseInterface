@@ -62,6 +62,7 @@ var GestureAnalyser = function(listeners){
     // Tags
     this.tapwait = false;
     this.tapid = 0;
+    this.prevScale = 1;
 }
 GestureAnalyser.prototype = {
     constructor: GestureAnalyser,
@@ -126,7 +127,8 @@ GestureAnalyser.prototype = {
     		    var disEnd = [end[1].x - end[0].x, end[1].y - end[0].y];
     		    var lbegin = Math.sqrt(disBegin[0]*disBegin[0] + disBegin[1]*disBegin[1]);
     		    var lend = Math.sqrt(disEnd[0]*disEnd[0] + disEnd[1]*disEnd[1]);
-    		    var e = {'scale': lend/lbegin, 'type':'scale'};
+                this.prevScale = lend/lbegin;
+    		    var e = {'scale': this.prevScale, 'type':'scale'};
     		    this.listeners.eventNotif('scale', e);
     		}
     		// Two finger translate
@@ -154,7 +156,10 @@ GestureAnalyser.prototype = {
     	}
     	else if(this.count == 2){
     		// Two finger scale end
-    		
+    		if(this.listeners.hasListener('scale')) {
+    		    var e = {'scale': isNaN(this.prevScale)?1:this.prevScale, 'type':'scaleEnd'};
+    		    this.listeners.eventNotif('scale', e);
+    		}
     	}
     }
 };
