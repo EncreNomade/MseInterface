@@ -20,7 +20,7 @@ var __currContextOwner__;
         window.cancelAnimationFrame = 
           window[vendors[x]+'CancelAnimationFrame'] || window[vendors[x]+'CancelRequestAnimationFrame'];
     }
- 
+
     if (!window.requestAnimationFrame)
         window.requestAnimationFrame = function(callback, element) {
             var currTime = new Date().getTime();
@@ -31,7 +31,7 @@ var __currContextOwner__;
             lastTime = currTime + timeToCall;
             return id;
         };
- 
+
     if (!window.cancelAnimationFrame)
         window.cancelAnimationFrame = function(id) {
             clearTimeout(id);
@@ -613,7 +613,7 @@ mse.Root = function(id, width, height, orientation) {
 	this.animes = [];
 	// Video element
 	var video = $('div.video');
-	this.video = video.flareVideo($('#root')).hide();
+	//this.video = video.flareVideo($('#root')).hide();
 	// Game element
 	this.gamewindow = new mse.GameShower();
 	
@@ -1208,10 +1208,12 @@ mse.ArticleLayer = function(container, z, param, article) {
 };
 extend(mse.ArticleLayer, mse.Layer);
 $.extend( mse.ArticleLayer.prototype , {
+    minInv : 1200,
+    maxInv : 3000,
 	setDefile : function(interval) {
 		this.currTime = 0;
 		this.currIndex = 0;
-		this.interval = interval;
+		this.interval = 2000;
 		this.complete = false;
 		this.endId = 0;
 		this.setSlider();
@@ -1240,13 +1242,13 @@ $.extend( mse.ArticleLayer.prototype , {
 			if(this.ralenti.inObj(e.offsetX, e.offsetY)) {
 				// Left button clicked, Reduce the speed
 				this.layer.interval += 200;
-				this.layer.interval = (this.layer.interval > 2000) ? 2000 : this.layer.interval;
+				this.layer.interval = (this.layer.interval > this.maxInv) ? this.maxInv : this.layer.interval;
 				this.tip.setText('moins rapide');
 			}
 			else if(this.accelere.inObj(e.offsetX, e.offsetY)) {
 				// Right button clicked, augmente the speed
 				this.layer.interval -= 200;
-				this.layer.interval = (this.layer.interval < 600) ? 600 : this.layer.interval;
+				this.layer.interval = (this.layer.interval < this.minInv) ? this.minInv : this.layer.interval;
 				this.tip.setText('plus rapide');
 			}
 			else if(this.play.inObj(e.offsetX, e.offsetY)) {
@@ -1284,11 +1286,11 @@ $.extend( mse.ArticleLayer.prototype , {
 			switch(e.keyCode) {
 			case __KEY_LEFT:
 				this.interval += 100;
-				this.interval = (this.interval > 2000) ? 2000 : this.interval;
+				this.interval = (this.interval > this.maxInv) ? this.maxInv : this.interval;
 				break;
 			case __KEY_RIGHT:
 				this.interval -= 100;
-				this.interval = (this.interval < 600) ? 600 : this.interval;
+				this.interval = (this.interval < this.minInv) ? this.minInv : this.interval;
 				break;
 			}
 		};
@@ -1488,7 +1490,7 @@ $.extend( mse.ArticleLayer.prototype , {
 				// Move layer to right place
 				if(this.currIndex < this.objList.length) {
 					var focusy = this.objList[this.currIndex].offy + this.objList[this.currIndex].height/2;
-					var nbfr = this.objList[this.currIndex].height/4;
+					var nbfr = this.objList[this.currIndex].height/3;
 					if(nbfr < 15) nbfr = 15;
 					else if(nbfr > 70) nbfr = 70;
 					if(focusy > mse.root.height/2) {

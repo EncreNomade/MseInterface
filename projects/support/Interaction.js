@@ -394,7 +394,8 @@ function analyse(e) {
 	if(!_listenerMgr) return;
 	
 	var evt = (e.originalEvent ? e.originalEvent : e) || window.event;
-	evt.preventDefault();
+	// Don't prevent key event because it will prevent for all the window
+	if(evt.type.indexOf('key') == -1) evt.preventDefault();
 	var event = new MseGestEvt(evt);
 	
 	switch( event.type ) {
