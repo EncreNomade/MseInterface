@@ -541,8 +541,7 @@ function insertElemDialog(e) {
 		    var font = dialog.caller.css('font-weight');
 		    font += " "+config.realX( cssCoordToNumber( dialog.caller.css('font-size') ) )+"px";
 		    font += " "+dialog.caller.css('font-family');
-			console.log( " depuis insertElemDialog "+dialog.caller.width() );
-		    last.after(generateSpeaks(text, font , config.realX( dialog.caller.width() ) , dialog.caller.height()));
+			last.after(generateSpeaks(text, font , config.realX( dialog.caller.width() ) , config.realY( dialog.caller.height()) ));
 		}
 		dialog.close();
 	});
@@ -1015,10 +1014,10 @@ function generateSpeaks(content, font, width, lineHeight){
 			res.append( generateLines(  normalText , font, width, lineHeight) );	
 		if( dialogueText.length > 0 ){
 			var id = "obj"+(curr.objId++);
-			var lines = generateSpeakLines( dialogueText, font, width, lineHeight , id_ressource , mood );
+			var withdrawal = 45;
+			var lines = generateSpeakLines( dialogueText, font, width, lineHeight , id_ressource , mood  , withdrawal);
 			var color = srcMgr.getSource( id_ressource ).color;
-			var withdrawal = ( s = lines.siblings( ".textLine" ).css( "left" ) ).substring( 0 , s.length-2 );
-			res.append( $('<div id="'+ id +'" class="speaker" data-who="'+balise.id+'" data-withdrawal="'+ withdrawal + '" data-color="'+color+'" data-mood="'+mood+'" style="width:'+  config.sceneX( width )+'px;"/>').append( lines ) );	
+			res.append( $('<div id="'+ id +'" class="speaker" data-who="'+balise.id+'" data-withdrawal="'+ config.sceneX(withdrawal) + '" data-color="'+color+'" data-mood="'+mood+'" style="width:'+  config.sceneX( width )+'px; background-color:'+color+';" />').append( lines ) );	
 		}
 		
 		// for the next loop, we dont want to calculate it twice
@@ -1050,11 +1049,13 @@ function generateSpeaks(content, font, width, lineHeight){
 	}
 }
 // setUp the speak formate with img associate
-function generateSpeakLines( content, font, width, lineHeight, id , mood ){
+function generateSpeakLines( content, font, width, lineHeight, id , mood , decalage ){
 		
-		var decalage = 50;
+		if( !decalage )
+			decalage = 50;
 		
 		var nline = Math.ceil( decalage / lineHeight );
+		
 		
 		
 		var first = generateLines( content , font, width - decalage , lineHeight );
@@ -1068,20 +1069,20 @@ function generateSpeakLines( content, font, width, lineHeight, id , mood ){
 		res.append( img );
 		
 		// append the firsts lines
+		var res_h = 0;
 		for( var i = 0 ; i < first.length ; i ++ ){
 			if( i< nline ){
 				$(first[i]).css("left" , config.sceneX( decalage )+"px" ); 
 				$(first[i]).css("position" , "relative" );
-				$(first[i]).css("width" , ( width - decalage )+"px" );
-				console.log(  (width - decalage )+"  "+width );
-				//$(first[i]).css("width" , config.sceneX( width - decalage )+"px" );
+				$(first[i]).css("width" , config.sceneX( width - decalage )+"px" );
+				res_h += $(first[i]).height();
 				res.append( $(first[i]) );
 			}else
 				rest += $(first[i]).text();
 		}
-		
-		var d = Math.min( decalage , res.children().length * lineHeight );
-		
+		if( res_h < decalage )
+			res.append( $('<div style="height:'+ config.sceneX( decalage - res_h )+'px;" />' ) );
+			
 		// append the rest
 		if( rest.length > 0 )
 			res.append( generateLines( rest , font, width , lineHeight ) );
@@ -1092,11 +1093,11 @@ function generateSpeakLines( content, font, width, lineHeight, id , mood ){
         else 
 			img.attr('name', 'none');
         img.css( "position" , "absolute" );
-        img.css( "width" , config.sceneX(d)+"px" );
-        img.css( "height" , config.sceneX(d)+"px" );
-        img.attr( "height" , config.sceneX(d) );
-        img.attr( "width" , config.sceneX(d) );
-		img.css( "left" , config.sceneX( ( decalage - d ) / 2 )+"px" );
+        img.css( "width" , config.sceneX(decalage*0.9)+"px" );
+        img.css( "height" , config.sceneX(decalage*0.9)+"px" );
+        img.attr( "height" , config.sceneX(decalage*0.9) );
+        img.attr( "width" , config.sceneX(decalage*0.9) );
+		img.css( "left" , config.sceneX( decalage*0.1 )+"px" );
 		
 		
 		img.click( function(e){
@@ -1167,8 +1168,6 @@ function addArticle(manager, name, params, content) {
 	}
 	if(params.color) article.css('color', params.color);
 	if(params.align) article.css('text-align', params.align);
-	
-	console.log( " depuis addArticle "+params.lw );
 	article.append(generateSpeaks(content, font, params.lw, params.lh));
 	// Listener to manipulate
 	article.deletable().configurable();

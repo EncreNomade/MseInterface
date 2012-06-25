@@ -671,14 +671,8 @@ class ProjectGenerator {
             $img = isset( $objnode->img['name'] ) && $objnode->img['name'] != "none" ? "'".$objnode->img['name']."'" : "null";
 			$objnode['style'] .= "width: ".$width."px; height: 0px;";
             $params = $this->formatParams($objnode['style'], 'txt');
-			$imgWidth;
-			$imgHeight;
-			preg_match(self::$patterns['width'] , $objnode->img['style'] , $imgWidth);
-			preg_match(self::$patterns['height'] , $objnode->img['style'] , $imgHeight);
-			$imgWidth = $this->pj->realCoor( $imgWidth[2] );
-			$imgHeight = $this->pj->realCoor( $imgHeight[2] );
 			$withdrawal = $this->pj->realCoor( $objnode['data-withdrawal'] );
-            $this->jstr .= "\n\t$obj=new mse.Speaker( $layer,".$params[1].", '$who', {src:$img , width:mse.coor(mse.joinCoor(".$imgWidth.")) , height:mse.coor(mse.joinCoor(".$imgHeight.")) , widthdrawal:mse.coor(mse.joinCoor(".$withdrawal.")) } , '$color' );";
+            $this->jstr .= "\n\t$obj=new mse.Speaker( $layer,".$params[1].", '$who', $img , mse.coor(mse.joinCoor(".$withdrawal.")) , '$color' );";
             $this->jstr .= " $layer.addObject($obj);";
             foreach($objnode->children() as $lineNode){
                 // TODO : need factor 

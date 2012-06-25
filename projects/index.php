@@ -55,10 +55,53 @@ addEventListener("load", function(){
 
 <body>
 
+<div id="fb-root"></div>
+
+<script>
+// Load the SDK Asynchronously
+(function(d){
+    var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
+    if (d.getElementById(id)) {return;}
+    js = d.createElement('script'); js.id = id; js.async = true;
+    js.src = "//connect.facebook.net/en_US/all.js";
+    ref.parentNode.insertBefore(js, ref);
+}(document));
+
+
+// Init the SDK upon load
+window.fbAsyncInit = function() {
+    FB.init({
+        appId      : '141570392646490', // App ID
+        channelUrl : 'http://testfb.encrenomade.com/channelfile', // Path to your Channel File
+        status     : true, // check login status
+        cookie     : true, // enable cookies to allow the server to access the session
+        xfbml      : true  // parse XFBML
+    });
+    
+    // listen for and handle auth.statusChange events
+    FB.Event.subscribe('auth.statusChange', function(response) {
+        if (response.authResponse) {
+            // user has auth'd your app and is logged into Facebook
+            FB.api('/me', function(user){
+                if (user.name) {
+                    var image = document.getElementById('photo');
+                    image.src = 'https://graph.facebook.com/' + user.id + '/picture';
+                }
+            })
+        } else {
+            // user has not auth'd your app, or is not logged into Facebook
+        }
+    });
+    
+}
+
+</script>
+
+
 <div id="root">
     <div id="menu">
         <ul>
-            <li><img src="./UI/facebook-like-icon.png"></li>
+            <li><div class="fb-login-button" style="width: 32px;height: 30px;background: transparent url('./UI/facebook-like-icon.png') no-repeat left top;"></div></li>
             <li><img id="comment_btn" src="./UI/comment.png"></li>
         </ul>
         <img class="feuille" src="./UI/feuille.png">
@@ -66,6 +109,8 @@ addEventListener("load", function(){
     <div id="center"><div id="comment">
         <img id="comment_close_btn" src="./UI/button/close.png">
         <div class="header">
+            <img id="photo" src="" />
+            <img id="camera" src="./UI/camera.png" />
             <img id="sns" src="./UI/sns_f.png">
             <a id="share">Partager</a>
         </div>

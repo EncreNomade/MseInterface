@@ -606,6 +606,18 @@ mse.Root = function(id, width, height, orientation) {
 	// Game element
 	this.gamewindow = new mse.GameShower();
 	
+	// Capture screen callbacks
+	this.initCapZonecb = new mse.Callback(this.initCapZone, this);
+	this.updateCapZonecb = new mse.Callback(this.updateCapZone, this);
+	this.fixCapZonecb = new mse.Callback(this.fixCapZone, this);
+	// Capture screen cache canvas
+	this.capCache = document.createElement("canvas");
+	this.capCtx = this.capCache.getContext("2d");
+	this.capCache.width = 0;
+	this.capCache.style.width = 0;
+	this.capCache.height = 0;
+	this.capCache.style.height = 0;
+	
 	// Launch Timeline
 	mse.currTimeline = new mse.Timeline(this, this.interval);
 };
@@ -709,6 +721,86 @@ mse.Root.prototype = {
     		this.draw();
     	}
     	else mse.currTimeline.end = true;
+    },
+    
+    // Screen caption
+    startCapture: function(callback) {
+        // Stop main timeline
+        mse.currTimeline.pause();
+        
+        // Pause book internal events, init all events for capturing
+        this.evtDistributor.setDominate(this);
+        this.evtDistributor.addListener('gestrueStart', this.initCapZonecb);
+        this.evtDistributor.addListener('gestrueUpdate', this.updateCapZonecb);
+        this.evtDistributor.addListener('gestrueEnd', this.fixCapZonecb);
+        
+        // Change mouse cursor
+        mse.setCursor('crosshair');
+        
+        // Register callback
+        if(callback instanceof mse.Callback) this.captureCallback = callback;
+    },
+    finishCapture: function(zone) {
+        // Invoke callback with the capture of screen
+        var capImageData = this.ctx.getImageData(zone.x, zone.y, zone.w, zone.h);
+        
+        // Remove callback
+        this.captureCallback = null;
+        
+        // Change mouse cursor to default
+        mse.setCursor('default');
+        
+        // Remove all events for capturing, reactive all internal events
+        this.evtDistributor.removeListener('gestrueStart', this.initCapZonecb);
+        this.evtDistributor.removeListener('gestrueUpdate', this.updateCapZonecb);
+        this.evtDistributor.removeListener('gestrueEnd', this.fixCapZonecb);
+        this.evtDistributor.setDominate(null);
+        
+        // Restart main timeline
+        mse.currTimeline.play();
+    },
+    // Event handlers
+    initCapZone: function(e) {
+        if(isNaN(this.capOx) && isNaN(this.capOy)) {
+            this.capOx = e.offsetX;
+            this.capOy = e.offsetY;
+        }
+    },
+    updateCapZone: function(e) {
+        this.capDx = e.offsetX;
+        this.capDy = e.offsetY;
+        
+        // Update canvas
+    },
+    fixCapZone: function(e) {
+        if(this.capDx > this.capOx) {
+            var x = this.capOx;
+            var w = this.capDx - this.capOx;
+        }
+        else {
+            var x = this.capDx;
+            var w = this.capOx - this.capDx;
+        }
+        if(this.capDy > this.capOy) {
+            var y = this.capOy;
+            var h = this.capDy - this.capOy;
+        }
+        else {
+            var y = this.capDy;
+            var h = this.capOy - this.capDy;
+        }
+        this.capOx = null;
+        this.capOy = null;
+        this.capDx = null;
+        this.capDy = null;
+        // Cancel because it's too small
+        if(w < 20 || h < 20) return;
+        
+        if(this.viewport) {
+            x -= this.viewport.x;
+            y -= this.viewport.y;
+        }
+        this.finishCapture({'x':x, 'y':y, 'w':w, 'h':h});
     }
 };
 
@@ -970,7 +1062,7 @@ $.extend(mse.Layer.prototype, {
 
 
 // Text dialog
-mse.Speaker = function( parent, param, who, img , color ) {
+mse.Speaker = function( parent, param, who, imgSrc , dim , color ) {
 	// speaker draw some additional content under the text element
 	// it draws one squared bubble dans a picture of the speaker
 	// as the superposition of object in the same articleLayer is restricted,  some cheats have been deployed
@@ -983,8 +1075,7 @@ mse.Speaker = function( parent, param, who, img , color ) {
     
 	this.parent = parent; // its an ArticleLayer
     this.who = who;
-	this.img = img;
-	
+	this.dim = dim;
 	this.sens = true; // true left align , false right align
 	
 	// graphic related
@@ -993,14 +1084,19 @@ mse.Speaker = function( parent, param, who, img , color ) {
 	this.borderRadius = 4;
 	
 	
-	if( this.img.src ){
-		this.face = new mse.Image( this , null , this.img.src );
-		this.face.width = this.img.width - this.bordureImg.left - this.bordureImg.right;
-		this.face.height = this.img.height - this.bordureImg.top - this.bordureImg.bottom;
+	if( imgSrc ){
+		this.face = new mse.Image( this , null , imgSrc );
+		this.face.width = this.dim - this.bordureImg.left - this.bordureImg.right;
+		this.face.height = this.dim - this.bordureImg.top - this.bordureImg.bottom;
 	}
 	
 	// marge top and bottom,   top is set because the object is x pixel height when the next obj is added ( and 0 after ) the bottom because the last line is x pixel longer
 	this.marge = 10;
+	
+	
+	// knows when the bubble enlarge just by counting the number of lines displayed
+	this.lineD = 0;
+	this.currline = 0;
 	
 	this.lastObj = {};
 	this.primalWidth;
@@ -1009,7 +1105,7 @@ mse.Speaker = function( parent, param, who, img , color ) {
 	
 	this.bubbleheight = 0;
 	this.height = this.marge;
-	this.displayedLines = 0;
+	this.displayedLines = 0;    // the number of line visible, ( a line which is not in the screen window is not visible , is not counted in displayedLines )
 };
 extend(mse.Speaker, mse.UIObject);
 $.extend(mse.Speaker.prototype, {
@@ -1020,7 +1116,7 @@ $.extend(mse.Speaker.prototype, {
 		if( this.bubbleheight < 1 )
 			return;
 		// draw the face ( its an mseImage )
-		var x = this.sens ? this.getX() + this.bordureImg.left + (this.img.widthdrawal - this.img.width)/2: this.getX() + this.width - this.img.width - this.bordureImg.left;
+		var x = this.sens ? this.getX() + this.bordureImg.left : this.getX() + this.width - this.dim - this.bordureImg.left;
 		var y = this.getY() + this.marge;
 		if( this.face )
 			this.face.draw( ctx , x , y );
@@ -1028,7 +1124,7 @@ $.extend(mse.Speaker.prototype, {
 			// if there is no image associate, draw a blue rect
 			ctx.save();
 			ctx.beginPath();
-			ctx.rect( x , y , this.img.width - this.bordureImg.left - this.bordureImg.right , this.img.height - this.bordureImg.top - this.bordureImg.bottom );
+			ctx.rect( x , y , this.dim - this.bordureImg.left - this.bordureImg.right , this.dim - this.bordureImg.top - this.bordureImg.bottom );
 			ctx.fillStyle = "#278391";
 			ctx.fill();
 			ctx.restore();
@@ -1040,20 +1136,20 @@ $.extend(mse.Speaker.prototype, {
 		var y = this.getY() - 1 + this.marge;
 		var w = this.width+10;
 		var h = this.bubbleheight+4;
-		if( this.img.height + 1 < this.bubbleheight )
+		if( this.lineD < this.currline   )
 			drawBittenRect( x ,
 							y,
 							w,
 							h,
-							this.img.widthdrawal ,
-							this.img.height ,
+							this.dim ,
+							this.dim ,
 							this.borderRadius ,
 							this.sens
 			 );
 		else
-			drawBittenRect( x + ( this.sens ? this.img.widthdrawal : 0 ) ,
+			drawBittenRect( x + ( this.sens ? this.dim : 0 ) ,
 							y,
-							w - this.img.widthdrawal ,
+							w - this.dim ,
 							h,
 							0 ,
 							0 ,
@@ -1065,7 +1161,7 @@ $.extend(mse.Speaker.prototype, {
 		
 		ctx.lineWidth = 1;
         ctx.strokeStyle = 'black';
-        ctx.stroke();
+        //ctx.stroke();
     	ctx.restore();
     	
 		function drawBittenRect( x , y , w , h , wb , hb , border , sens ){
@@ -1156,16 +1252,17 @@ $.extend(mse.Speaker.prototype, {
 		// set the widthdrawal of the line object
 		if( !this.primalWidth )
 			this.primalWidth = obj.width;
-		if( this.primalWidth == obj.width )
-			obj.setX( this.img.widthdrawal );
-			
+		if( this.primalWidth == obj.width ){
+			obj.setX( this.dim );
+			this.lineD ++;
+		}
 			
 		// a bottom marge is needed,  so the last obj have to be x pixel longer than it should be
 		if( this.lastObj.o )
 			this.lastObj.o.height = this.lastObj.h;
 		this.lastObj.o = obj;
 		this.lastObj.h = obj.height;
-		obj.height += this.marge;
+		obj.height += ( this.height + obj.height < this.dim ? this.dim + - obj.height - this.height : 0 ) + this.marge;
 		
 		// delegate the addObject to the article layer
 		this.parent.addObject( obj );
@@ -1180,6 +1277,8 @@ $.extend(mse.Speaker.prototype, {
 			this.height = this.marge * 2 ;
 		}
 		this.height += obj.height;
+		
+		
 	},
 	oneLineMore : function(){
 		if( this.displayedLines == 0 ){
@@ -1203,6 +1302,8 @@ $.extend(mse.Speaker.prototype, {
 			this.lastObj = {};
 		}
 		this.bubbleheight += obj.height;
+		
+		this.currline ++;
 		
 		obj.evtDeleg.removeListener( 'show' , this.callbackList.shift() );
 	}
