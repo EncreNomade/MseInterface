@@ -1,14 +1,18 @@
 var gui = {};
 
 gui.openComment = function(){
-    $('#comment').addClass('show');
+    gui.center.append(gui.comment);
+    gui.comment.addClass('show');
 }
 gui.closeComment = function() {
-    $('#comment').removeClass('show');
+    gui.comment.removeClass('show');
+    gui.comment.detach();
 }
 
 // Initialisation
 $(window).load(function() {
+    gui.center = $('#center');
+    gui.comment = $('#comment');
     $('#comment_btn').click(gui.openComment);
-    $('#comment_close_btn').click(gui.closeComment);
+    $('#comment_close_btn').click(gui.closeComment).click();
 });
