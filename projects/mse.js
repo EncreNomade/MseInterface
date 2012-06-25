@@ -1,5 +1,5 @@
 /*!
- * Encre Nomade Canvas JavaScript Library v0.85
+ * Encre Nomade Canvas JavaScript Library v0.9
  * Encre Nomade
  *
  * Author: LING Huabin - lphuabin@gmail.com
@@ -20,7 +20,6 @@ var __currContextOwner__;
         window.cancelAnimationFrame = 
           window[vendors[x]+'CancelAnimationFrame'] || window[vendors[x]+'CancelRequestAnimationFrame'];
     }
- 
     if (!window.requestAnimationFrame)
         window.requestAnimationFrame = function(callback, element) {
             var currTime = new Date().getTime();
@@ -31,7 +30,6 @@ var __currContextOwner__;
             lastTime = currTime + timeToCall;
             return id;
         };
- 
     if (!window.cancelAnimationFrame)
         window.cancelAnimationFrame = function(id) {
             clearTimeout(id);
@@ -44,6 +42,10 @@ mse.configs = {
 	font 	: 'Verdana',
 	defaultFont : '18px Arial',
 	srcPath	: '',
+	zids: {
+	    text: 12,
+	    wiki: 15
+	},
 	getSrcPath : function(path) {
 	    // Path complete
 	    if(path[0] == '.') return path;
@@ -240,6 +242,13 @@ mse.init = function(configs) {
 	mse.src.addSource('pauseBn', './UI/button/pause.png', 'img', true);
 	mse.src.addSource('zoomIcon', './UI/button/zoom.png', 'img', true);
 	mse.src.addSource('closeBn', './UI/button/close.png', 'img', true);
+    
+    var imgShower = new mse.ImageShower();
+    imgShower.imgContainer.mseInteraction();
+    imgShower.imgContainer.mseInteraction('addListener', 'scale', new Callback(imgShower.scale, imgShower));
+    imgShower.img.mseInteraction();
+    imgShower.img.mseInteraction('addListener', 'translate', new Callback(imgShower.move, imgShower));
+
 };
 
 
@@ -354,8 +363,7 @@ mse.UIObject = function(parent, param) {
     else this.parent = null;
     
     // Event handling
-    this.evtDeleg = new mse.EventDelegateSystem();
-    
+    this.evtDeleg = new mse.EventDelegateSystem(this);
     // Parameters
     if(param) {
     	if(param.pos)
@@ -455,15 +463,25 @@ mse.UIObject.prototype = {
 		if(this.insideRec) {
 			var ox = this.getX()+this.insideRec[0], oy = this.getY()+this.insideRec[1], w = this.insideRec[2], h = this.insideRec[3];
 		}
-		else var ox = this.getX(), oy = this.getY(), w = this.getWidth(), h = this.getHeight();
+		else var ox = this.getX(), oy = this.getY(), w = this.width, h = this.height;
 		
-		if(x>ox-0.1*w && x<ox+1.2*w && y>oy-0.1*h && y<oy+1.2*h) return true;
+		// Margin of reaction zone for simplize the mouse or touch event
+		var marginx = 0;
+		if(w < 110) marginx = w * 0.5 * (1 - (w-10) / 100);
+		var marginy = 0;
+		if(h < 110) marginy = h * 0.5 * (1 - (h-10) / 100);
+		ox -= marginx;
+		w += 2*marginx;
+		oy -= marginy;
+		h += 2*marginy;
+		
+		if(x>ox && x<ox+w && y>oy && y<oy+h) return true;
 		else return false;
 	},
 	
 	// Z-index
 	getZindex: function() {
-		return this.zid ? this.zid : (this.parent ? this.parent.zid : 0);
+		return this.zid ? this.zid : (this.parent ? this.parent.getZindex() : 0);
 	},
 	
 	// Container
@@ -499,14 +517,28 @@ mse.UIObject.prototype = {
 		this.offx += dx;
 		this.offy += dy;
 	},
-	
+	// Event management
+	eventCheck: function(type, e) {
+	    // In object, notify the event and get the return value that give the prevent bubbling value
+	    if(this.inObj(e.offsetX, e.offsetY))
+	        return this.evtDeleg.eventNotif(type, e);
+	    // Not in object, don't prevent bubbling
+	    else return {prevent:false,success:false};
+	},
 	addListener: function() {
-		this.evtDeleg.addListener.apply(this.evtDeleg, arguments);
+		this.evtDeleg.addListener.apply(this.evtDeleg, Array.prototype.slice.call(arguments));
 	},
 	removeListener: function() {
-		this.evtDeleg.removeListener.apply(this.evtDeleg, arguments);
+		this.evtDeleg.removeListener.apply(this.evtDeleg, Array.prototype.slice.call(arguments));
 	},
-	
+	supportMultiTouch: function() {
+	    if(!this.analyser) {
+	        this.analyser = new GestureAnalyser(this.evtDeleg);
+	        this.addListener('multiGestAdd', new Callback(this.analyser.addBlob, this.analyser));
+	        this.addListener('multiGestUpdate', new Callback(this.analyser.updateBlob, this.analyser));
+	        this.addListener('multiGestRemove', new Callback(this.analyser.removeBlob, this.analyser));
+	    }
+	},
 	// Config drawing context
 	configCtxFlex: function(ctx) {
 		if(this.font)
@@ -550,132 +582,23 @@ mse.UIObject.prototype = {
 
 // Root object, a canvas Dom element
 mse.Root = function(id, width, height, orientation) {
-	this.setPos = function(x, y) {
-		this.jqObj.css({'left':x+'px', 'top':y+'px'});
-	};
-	this.setSize = function(width, height) {
-		this.width = width;
-		this.height = height;
-		this.jqObj.attr({'width':width, 'height':height});
-	};
-	this.setScale = function(scale) {
-		// Scale
-		if(scale > 1) {
-			if(this.height*scale > MseConfig.pageHeight) scale = MseConfig.pageHeight/this.height;
-			if(this.width*scale > MseConfig.pageWidth) scale = MseConfig.pageWidth/this.width;
-			var width = this.width * scale;
-			var height = this.height * scale;
-			var x = (MseConfig.pageWidth - width)/2;
-			var y = (MseConfig.pageHeight - height)/2;
-			this.setPos(x,y);
-			this.setSize(width, height);
-			this.scale = scale;
-		}
-	};
-	this.setCenteredViewport = function(){
-	    this.viewport = {};
-	    this.viewport.x = (this.width - MseConfig.pageWidth)/2;
-	    this.viewport.y = (this.height - MseConfig.pageHeight)/2;
-	    this.jqObj.attr({'width':MseConfig.pageWidth, 'height':MseConfig.pageHeight});
-	    this.jqObj.css({'left':"0px",'top':"0px"});
-	    this.ctx.translate(-this.viewport.x, -this.viewport.y);
-	};
-	
-	this.setContainer = function(container) {
-		// Reset first show state to prepare for calling the show event
-		if(this.container) this.container.firstShow = false;
-		container.root = this;
-		this.container = container;
-		this.evtDistributor.setDelegate(container.evtDeleg);
-		this.dest = null;
-		this.container.scale = this.scale;
-	};
-	
-	this.transition = function(container) {
-		if(this.dest) return;
-		if(this.container) {
-			mse.fadeout( this.container, 20, new mse.Callback(this.setContainer, this, container) );
-			this.dest = container;
-		}
-		else this.setContainer(container);
-		mse.fadein(container, 20);
-	};
-	
-	this.inObj = function(x,y) {return true;};
-		
-	this.logic = function(delta) {
-		for(var i in this.animations)
-			if(this.animations[i].logic(delta))
-				// Delete finish animation
-				this.animations.splice(i,1);
-		
-		var block = false;
-		for(var i in this.animes) {
-		    if(this.animes[i].block) block = true;
-			if(this.animes[i].logic(delta))
-			    // Delete finish animation
-			    this.animes.splice(i,1);
-		}
-		if(block) return;
-		
-		if(this.gamewindow.logic(delta)) return;
-		
-		if(this.container) this.container.logic(delta);
-	};
-	
-	this.draw = function() {
-	    this.ctx.clearRect(0, 0, this.width, this.height);
-		
-        if(!this.gamewindow.isFullScreen()){
-		    if(this.container) this.container.draw(this.ctx);
-		    if(this.dest) this.dest.draw(this.ctx);
-		}
-		if(this.gamewindow.currGame) this.gamewindow.draw(this.ctx);
-		
-		for(var i in this.animes) this.animes[i].draw(this.ctx);
-		
-		this.evtDistributor.rootEvt.eventNotif("drawover",this.ctx);
-	};
-	
-	// Timeline delegate
-	this.initTimeline = function(timeline) {};
-	
-	this.runTimeline = function(delta) {
-		if(!this.init) {
-			var proc = mse.src.preloadProc();
-			if(proc[0] < proc[1]) {
-				mse.src.preloadPage(this.ctx, proc[0], proc[1]);
-			}
-			else this.init = true;
-		}
-		else if(!this.end) {
-			this.logic(delta);
-			this.draw();
-		}
-		else mse.currTimeline.end = true;
-	};
-	
 	mse.root = this;
 	// Canvas obj parameters
-	this.jqObj = $('<canvas></canvas>');
-	this.jqObj.attr({'id':id});
+	this.jqObj = $('.bookroot').show();
 	var x = (MseConfig.pageWidth - width)/2;
-	this.jqObj.css({'margin':'0px auto',
-				   'padding':'0px',
-				  'position':'absolute',
-				  	  'left':x+'px',
-				  	   'top':'0px',
-				   'z-index':10});
-	$('body').css({'position':'relative'}).append(this.jqObj);
+	this.setPos(x, 0);
+	//this.jqObj.attr({'id':id});
 	this.scale = 1;
 	this.setSize(width, height);
 	this.interval = 40;
 	this.ctx = this.jqObj.get(0).getContext("2d");
 	
-	if(MseConfig.mobile) this.setCenteredViewport();
-	
 	this.evtDistributor = new mse.EventDistributor(this, this.jqObj);
 	
+	if(MseConfig.mobile) {
+	    this.setCenteredViewport();
+	    this.evtDistributor.addListener('translate2', new mse.Callback(this.translate, this));
+	}
 	this.container = null;
 	this.end = false;
 	this.init = false;
@@ -683,24 +606,116 @@ mse.Root = function(id, width, height, orientation) {
 	// Animation complete
 	this.animes = [];
 	// Video element
-	var video = $('<div id="video">');
-	video.css({'position':'absolute',
-	           'width':width*0.8+'px',
-	           'height':height*0.8+'px',
-	           'left':x+width*0.1+'px',
-	           'top':height*0.1+'px',
-	           'z-index':0
-	           });
-	$('body').prepend(video);
-	//this.video = video.flareVideo($('body'));
-	//this.video = video.hide();
+	var video = $('div.video');
+	//this.video = video.flareVideo($('#root')).hide();
 	// Game element
 	this.gamewindow = new mse.GameShower();
 	
 	// Launch Timeline
 	mse.currTimeline = new mse.Timeline(this, this.interval);
 };
-
+mse.Root.prototype = {
+    constructor: mse.Root,
+    setPos: function(x, y) {
+        this.jqObj.css({'left':'0px', 'top':'0px'});
+    	$('#root').css({'left':x+'px', 'top':y+'px'});
+    },
+    setSize: function(width, height) {
+    	this.width = width;
+    	this.height = height;
+    	this.jqObj.attr({'width':width, 'height':height});
+    	$('#root').css({'width':width, 'height':height});
+    },
+    setCenteredViewport: function(){
+        this.viewport = {};
+        this.viewport.x = (this.width - MseConfig.pageWidth)/2;
+        this.viewport.y = (this.height - MseConfig.pageHeight)/2;
+        this.setPos(0, 0);
+        this.ctx.translate(-this.viewport.x, -this.viewport.y);
+    },
+    translate: function(e) {
+        if(isNaN(e.deltaDx)) return;
+        this.ctx.translate(this.viewport.x, this.viewport.y);
+        this.viewport.x -= e.deltaDx;
+        // Correction
+        if(this.viewport.x > this.width - MseConfig.pageWidth) 
+            this.viewport.x = this.width - MseConfig.pageWidth;
+        else if(this.viewport.x < 0) this.viewport.x = 0;
+        this.ctx.translate(-this.viewport.x, 0);
+        this.ctx.save();
+    },
+    setContainer: function(container) {
+    	// Reset first show state to prepare for calling the show event
+    	if(this.container) this.container.firstShow = false;
+    	container.root = this;
+    	this.container = container;
+    	this.evtDistributor.setDispatcher(container.dispatcher);
+    	this.dest = null;
+    	this.container.scale = this.scale;
+    },
+    transition: function(container) {
+    	if(this.dest) return;
+    	if(this.container) {
+    		mse.fadeout( this.container, 20, new mse.Callback(this.setContainer, this, container) );
+    		this.dest = container;
+    	}
+    	else this.setContainer(container);
+    	mse.fadein(container, 20);
+    },
+    inObj: function(x,y) {return true;},
+    	
+    logic: function(delta) {
+    	for(var i in this.animations)
+    		if(this.animations[i].logic(delta))
+    			// Delete finish animation
+    			this.animations.splice(i,1);
+    	
+    	var block = false;
+    	for(var i in this.animes) {
+    	    if(this.animes[i].block) block = true;
+    		if(this.animes[i].logic(delta))
+    		    // Delete finish animation
+    		    this.animes.splice(i,1);
+    	}
+    	if(block) return;
+    	
+    	if(this.gamewindow.logic(delta)) return;
+    	
+    	if(this.container) this.container.logic(delta);
+    },
+    
+    draw: function() {
+        this.ctx.clearRect(0, 0, this.width, this.height);
+    	
+        if(!this.gamewindow.isFullScreen()){
+    	    if(this.container) this.container.draw(this.ctx);
+    	    if(this.dest) this.dest.draw(this.ctx);
+    	}
+    	if(this.gamewindow.currGame) this.gamewindow.draw(this.ctx);
+    	
+    	for(var i in this.animes) this.animes[i].draw(this.ctx);
+    	
+    	this.evtDistributor.rootEvt.eventNotif("drawover",this.ctx);
+    },
+    
+    // Timeline delegate
+    initTimeline: function(timeline) {},
+    
+    runTimeline: function(delta) {
+    	if(!this.init) {
+    		var proc = mse.src.preloadProc();
+    		if(proc[0] < proc[1]) {
+    			mse.src.preloadPage(this.ctx, proc[0], proc[1]);
+    		}
+    		else this.init = true;
+    	}
+    	else if(!this.end) {
+    		this.logic(delta);
+    		this.draw();
+    	}
+    	else mse.currTimeline.end = true;
+    }
+};
 
 
 // Container object
@@ -711,6 +726,7 @@ mse.BaseContainer = function(root, param, orientation) {
 	this._layers = new Array();
 	this._changed = new Array();
 	this.deleg = null;
+	this.dispatcher = new mse.EventDispatcher(this);
 	
 	// Parametres
 	this.scale = 1.0;
@@ -753,7 +769,7 @@ $.extend(mse.BaseContainer.prototype, {
     },
     delLayer: function(name) {
     	if(name == null) return;
-    	for(var i in this._layers) {
+    	for(var i = this._layers.length-1; i >= 0; --i) {
     		if(this._layers[i].name == name) this._layers.splice(i,1);
     	}
     },
@@ -1197,14 +1213,13 @@ $.extend(mse.Speaker.prototype, {
 	}
 });
 
-
 // Text obj
 mse.Text = function(parent, param, text, styled) {
 	// Super constructor
 	mse.UIObject.call(this, parent, param);
 	this.styled = styled ? true : false;
 	this.links = [];
-	this.zid = 12;
+	this.zid = cfs.zids.text;
 	
 	this.text = text;
 	// Check if text real width is longer than object width, if true, wrap the text
@@ -1283,16 +1298,12 @@ $.extend(mse.Text.prototype, {
         if(!linkInit) return;
         
         if(this.links.length == 0) {
-            this.getContainer().evtDeleg.addListener(
-            	'click', 
-            	new mse.Callback(this.clicked, this), 
-            	false, 
-        		this);
+            this.addListener('gestureEnd', new mse.Callback(this.clicked, this), false);
         }
         
         // Audio auto play
         if(linkObj.type == 'audio')
-        	this.evtDeleg.addListener('firstShow', new mse.Callback(this.autoplay, this, linkObj.link));
+        	this.addListener('firstShow', new mse.Callback(this.autoplay, this, linkObj.link));
         
         linkObj.owner = this;
         this.links.push(linkObj); 
@@ -1428,15 +1439,18 @@ mse.ArticleLayer = function(container, z, param, article) {
 };
 extend(mse.ArticleLayer, mse.Layer);
 $.extend( mse.ArticleLayer.prototype , {
+    minInv : 1200,
+    maxInv : 3000,
 	setDefile : function(interval) {
 		this.currTime = 0;
 		this.currIndex = 0;
-		this.interval = interval;
+		this.interval = 2000;
 		this.complete = false;
 		this.endId = 0;
 		this.setSlider();
 		
-		this.ctrUI = new mse.Layer(null, this.zid+1, {pos:[this.getX()+(this.width-250)/2,mse.root.height-50], size:[250,50]});
+		this.ctrUI = new mse.Layer(this.parent, this.zid+1, {pos:[this.offx+(this.width-250)/2,this.offy+this.height-50], size:[250,50]});
+		this.parent.addLayer('CTRLUI', this.ctrUI);
 		this.ctrUI.accelere = new mse.Image(this.ctrUI, {pos:[220,10],size:[30,30]}, 'accelerBn');
 		this.ctrUI.ralenti = new mse.Image(this.ctrUI, {pos:[0,10],size:[30,30]}, 'ralentiBn');
 		this.ctrUI.up = new mse.Image(this.ctrUI, {pos:[170,10],size:[30,30]}, 'upBn');
@@ -1459,13 +1473,13 @@ $.extend( mse.ArticleLayer.prototype , {
 			if(this.ralenti.inObj(e.offsetX, e.offsetY)) {
 				// Left button clicked, Reduce the speed
 				this.layer.interval += 200;
-				this.layer.interval = (this.layer.interval > 2000) ? 2000 : this.layer.interval;
+				this.layer.interval = (this.layer.interval > this.maxInv) ? this.maxInv : this.layer.interval;
 				this.tip.setText('moins rapide');
 			}
 			else if(this.accelere.inObj(e.offsetX, e.offsetY)) {
 				// Right button clicked, augmente the speed
 				this.layer.interval -= 200;
-				this.layer.interval = (this.layer.interval < 600) ? 600 : this.layer.interval;
+				this.layer.interval = (this.layer.interval < this.minInv) ? this.minInv : this.layer.interval;
 				this.tip.setText('plus rapide');
 			}
 			else if(this.play.inObj(e.offsetX, e.offsetY)) {
@@ -1493,26 +1507,26 @@ $.extend( mse.ArticleLayer.prototype , {
 		};
 		
 		var cb = new mse.Callback(this.ctrUI.ctrEffect, this.ctrUI);
-		this.getContainer().evtDeleg.addListener('click', cb, true, this.ctrUI);
+		this.ctrUI.addListener('click', cb, true);
 		// Listener to scroll the layer with up down buttons
-		this.getContainer().evtDeleg.addListener('gestureStart', new mse.Callback(this.ctrUI.upDownStart, this.ctrUI), true, this.ctrUI);
-		this.getContainer().evtDeleg.addListener('gestureEnd', new mse.Callback(this.ctrUI.upDownEnd, this.ctrUI));
+		this.ctrUI.addListener('gestureStart', new mse.Callback(this.ctrUI.upDownStart, this.ctrUI), true);
+		this.ctrUI.addListener('gestureEnd', new mse.Callback(this.ctrUI.upDownEnd, this.ctrUI), true);
 		
 		// Key event for control of speed
 		this.speedCtr = function(e) {
 			switch(e.keyCode) {
 			case __KEY_LEFT:
 				this.interval += 100;
-				this.interval = (this.interval > 2000) ? 2000 : this.interval;
+				this.interval = (this.interval > this.maxInv) ? this.maxInv : this.interval;
 				break;
 			case __KEY_RIGHT:
 				this.interval -= 100;
-				this.interval = (this.interval < 600) ? 600 : this.interval;
+				this.interval = (this.interval < this.minInv) ? this.minInv : this.interval;
 				break;
 			}
 		};
 		cb = new mse.Callback(this.speedCtr, this);
-		this.getContainer().evtDeleg.addListener('keydown', cb);
+		this.addListener('keydown', cb);
 	},
 	setSlider : function() {
 		// Slider
@@ -1520,11 +1534,11 @@ $.extend( mse.ArticleLayer.prototype , {
 		this.updateListScreen();
 		
 		// Scroll event
-		this.slider.evtDeleg.addListener('rolling', new mse.Callback(function(){
+		this.slider.addListener('rolling', new mse.Callback(function(){
 		    //if(this.active && this.dominate instanceof mse.UIObject) return;
 		    this.pause = true;
 		}, this) );
-		this.slider.evtDeleg.addListener('hide', new mse.Callback(function(){
+		this.slider.addListener('hide', new mse.Callback(function(){
 		    var nb = this.complete ? this.objList.length : this.currIndex;
 		    if( nb==0 || this.objList[nb-1].getY() < mse.root.height*0.55 ) {
 		    	this.pause = false;
@@ -1557,8 +1571,8 @@ $.extend( mse.ArticleLayer.prototype , {
 		
 		for(var l in this.links) {
 			if(this.links[l].type == type) {
-				this.objList[this.links[l].index].evtDeleg.addListener('show', new mse.Callback(deleg.linkShowHandler, deleg, this.links[l]));
-				this.objList[this.links[l].index].evtDeleg.addListener('disapear', new mse.Callback(deleg.linkDisapearHandler, deleg, this.links[l]));
+				this.objList[this.links[l].index].addListener('show', new mse.Callback(deleg.linkShowHandler, deleg, this.links[l]));
+				this.objList[this.links[l].index].addListener('disapear', new mse.Callback(deleg.linkDisapearHandler, deleg, this.links[l]));
 			}
 		}
 	},
@@ -1580,7 +1594,7 @@ $.extend( mse.ArticleLayer.prototype , {
 	    }
 	    else {
 	        game.parent = this;
-	        game.evtDeleg.addListener('firstShow', new mse.Callback(game.start, game));
+	        game.addListener('firstShow', new mse.Callback(game.start, game));
 	        this.addObject(game);
 	    }
 	},
@@ -1607,7 +1621,7 @@ $.extend( mse.ArticleLayer.prototype , {
 	    }
 	    else {
 	        game.parent = this;
-	        game.evtDeleg.addListener('firstShow', new mse.Callback(game.start, game));
+	        game.addListener('firstShow', new mse.Callback(game.start, game));
 	        this.insertObject(game, index);
 	    }
 	},
@@ -1719,7 +1733,7 @@ $.extend( mse.ArticleLayer.prototype , {
 				// Move layer to right place
 				if(this.currIndex < this.objList.length) {
 					var focusy = this.objList[this.currIndex].offy + this.objList[this.currIndex].height/2;
-					var nbfr = this.objList[this.currIndex].height/4;
+					var nbfr = this.objList[this.currIndex].height/3;
 					if(nbfr < 15) nbfr = 15;
 					else if(nbfr > 70) nbfr = 70;
 					if(focusy > mse.root.height/2) {
@@ -1767,7 +1781,6 @@ $.extend( mse.ArticleLayer.prototype , {
 mse.Image = function(parent, param, src) {
 	// Super constructor
 	mse.UIObject.call(this, parent, param);
-
 	if(typeof src == 'string') {
 	    this.img = src;
 	    mse.src.waitSrc(this.img, new mse.Callback(this.init, this));
@@ -1805,11 +1818,10 @@ $.extend(mse.Image.prototype, {
         this.zoomIcon = new mse.Image(this, {pos:[this.width-20, 0]}, 'zoomIcon');
         var cb = new mse.Callback(function(){
             if(!(this.imgShower instanceof mse.ImageShower))
-                this.imgShower = new mse.ImageShower(this);
-            this.imgShower.show();
-            // console.log('zoom');
+                this.imgShower = mse.ImageShower.getInstance();
+            this.imgShower.show(this);
         }, this);
-        this.getContainer().evtDeleg.addListener('click', cb, true, this.zoomIcon);
+        this.zoomIcon.addListener('click', cb, true);
     },
     startEffect: function (effet) {
     	if(!this.currentEffect && effet instanceof mse.EffectImage && effet.subject == this) { 
@@ -2028,7 +2040,9 @@ $.extend(mse.Game.prototype, {
         return this.msg[this.state];
     },
     setEvtProxy: function(proxy) {
-        if(proxy instanceof mse.EventDistributor || proxy instanceof mse.EventDelegateSystem) {
+        if(proxy instanceof mse.EventDistributor || 
+           proxy instanceof mse.EventDispatcher || 
+           proxy instanceof mse.EventDelegateSystem) {
             this.proxy = proxy;
         }
     },
@@ -2049,15 +2063,19 @@ $.extend(mse.Game.prototype, {
         layer.addObject(this);
     },
     start: function() {
-    	mse.root.container.evtDeleg.setDominate(this);
+    	mse.root.evtDistributor.setDominate(this);
         if(!this.directShow) mse.root.gamewindow.loadandstart(this);
         else this.init();
         this.evtDeleg.eventNotif("start");
     },
+    getContainer: function() {
+        if(!this.directShow) return mse.root.gamewindow;
+        else return this.parent.getContainer();
+    },
     draw: function(ctx) {},
     end: function() {
         this.evtDeleg.eventNotif("end");
-        mse.root.container.evtDeleg.setDominate(null);
+        mse.root.evtDistributor.setDominate(null);
         if(!this.directShow) mse.root.gamewindow.end();
         if(this.expo) this.expo.endGame();
     },
@@ -2071,23 +2089,18 @@ $.extend(mse.Game.prototype, {
 
 // GameShower object, window of the games, one object for all the games
 mse.GameShower = function() {
-	this.jqObj = $("<canvas id='game' width=50 height=50></canvas>");
-	$('body').append(this.jqObj);
-	this.jqObj.css("display", "none");
+	this.jqObj = $("canvas.game");
 	this.ctx = this.jqObj.get(0).getContext('2d');
 	
-	this.evtDeleg = new mse.EventDelegateSystem();
-	this.jqObj.mseInteraction('init');
-	this.jqObj.mseInteraction('setDelegate', new Callback(function(e){
-	    this.evtDeleg.eventNotif(e.type, e);
-	}, this));
+	this.dispatcher = new mse.EventDispatcher(this);
+	this.distributor = new mse.EventDistributor(this, this.jqObj, this.dispatcher);
 	
 	this.currGame = null;
 	this.state = "DESACTIVE";
 	mse.src.addSource('gameover', './UI/gameover.jpg', 'img', true);
 	this.loseimg = new mse.Image(null, {pos:[0,0]}, 'gameover');
 	this.losetext = new mse.Text(null, {font:'Bold 36px '+mse.configs.font,fillStyle:'#FFF',textBaseline:'middle',textAlign:'center'}, 'Perdu ...', true);
-	this.losetext.evtDeleg.addListener('show', new mse.Callback(this.losetext.startEffect, this.losetext, {"typewriter":{speed:2}}));
+	this.losetext.addListener('show', new mse.Callback(this.losetext.startEffect, this.losetext, {"typewriter":{speed:2}}));
 	this.passBn = new mse.Button(null, {size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je ne joue plus', 'wikiBar');
 	this.restartBn = new mse.Button(null, {size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je rejoue', 'aideBar');
 	this.firstShow = false;
@@ -2098,6 +2111,15 @@ mse.GameShower = function() {
 };
 mse.GameShower.prototype = {
 	contructor : mse.GameShower,
+	addListener: function() {
+	    this.distributor.rootEvt.addListener.apply(this.distributor.rootEvt, Array.prototype.slice.call(arguments));
+	},
+	removeListener: function() {
+	    this.distributor.rootEvt.removeListener.apply(this.distributor.rootEvt, Array.prototype.slice.call(arguments));
+	},
+	eventNotif: function() {
+	    this.distributor.rootEvt.eventNotif.apply(this.distributor.rootEvt, Array.prototype.slice.call(arguments));
+	},
 	isFullScreen : function() {
 	     if((MseConfig.iPhone||MseConfig.android) && this.state == "START" && this.currGame && this.currGame.type == "INDEP")
 	         return true;
@@ -2105,24 +2127,24 @@ mse.GameShower.prototype = {
 	},
 	relocate : function() {
 	    if(this.state == "DESACTIVE") return;
+	    
 	    if(isNaN(this.currGame.canvasox))
-	        this.left = (MseConfig.iPhone||MseConfig.android) ? -1.5 : Math.round(MseConfig.pageWidth-this.width)/2;
-	    else this.left = mse.root.jqObj.offset().left - (mse.root.viewport?mse.root.viewport.x:0) + this.currGame.canvasox;
+	        this.left = (MseConfig.iPhone||MseConfig.android) ? -1.5 : Math.round(mse.root.width-this.width)/2;
+	    else this.left = this.currGame.canvasox - (mse.root.viewport?mse.root.viewport.x:0);
 	    if(isNaN(this.currGame.canvasoy))
-	        this.top = (MseConfig.iPhone||MseConfig.android) ? -1.5 : Math.round(MseConfig.pageHeight-this.height)/2;
-	    else this.top = mse.root.jqObj.offset().top - (mse.root.viewport?mse.root.viewport.y:0) + this.currGame.canvasoy;
+	        this.top = (MseConfig.iPhone||MseConfig.android) ? -1.5 : Math.round(mse.root.height-this.height)/2;
+	    else this.top = this.currGame.canvasoy - (mse.root.viewport?mse.root.viewport.y:0);
 	    this.jqObj.css({
 	        'left': this.left,
 	        'top': this.top,
 	        'width': this.width,
-	        'height': this.height,
-	        'z-index': 11
+	        'height': this.height
 	    });
 	},
 	load : function(game) {
 	    if(!game || !(game instanceof mse.Game)) return;
 	    this.currGame = game;
-	    this.currGame.setEvtProxy(this.evtDeleg);
+	    this.currGame.setEvtProxy(this.distributor);
 	    this.firstShow = false;
 	    this.state = "LOAD";
 	    
@@ -2144,7 +2166,7 @@ mse.GameShower.prototype = {
             this.restartBn.setPos(this.width-115, this.height-50);
             this.passBn.setPos(10, this.height-50);
 	    }
-	    this.jqObj.show();
+	    this.jqObj.addClass('game_active');
 	},
 	start : function() {
 	    if(!this.currGame) return;
@@ -2165,18 +2187,17 @@ mse.GameShower.prototype = {
 	        this.currGame.init();
 	    }
 	    else return;
-	    this.evtDeleg.removeListener('click', this.cbrestart);
+	    this.distributor.removeListener('click', this.cbrestart);
 	},
 	lose : function() {
 	    this.state = "LOSE";
 	    //mse.fadein(this.loseimg, 5);
-	    this.evtDeleg.removeListener('click');
+	    this.distributor.removeListeners('click');
 	    this.losetext.evtDeleg.eventNotif('show');
-	    this.evtDeleg.addListener('click', this.cbrestart);
+	    this.distributor.addListener('click', this.cbrestart);
 	},
 	end : function() {
-	    this.jqObj.hide(1000);
-	    this.jqObj.css('z-index', 1);
+	    this.jqObj.removeClass('game_active');
 	    this.state = "DESACTIVE";
 	},
 	logic : function(delta) {
@@ -2202,7 +2223,7 @@ mse.GameShower.prototype = {
 	        if(!this.firstShow){
 	            this.firstShow = true;
 	            if(this.currGame.type == "INDEP") {
-	                this.evtDeleg.eventNotif("firstShow");
+	                this.eventNotif("firstShow");
 	                if(MseConfig.iPhone || MseConfig.android){
 	                    this.currGame.mobileLazyInit();
 	                }
@@ -2233,30 +2254,29 @@ mse.GameExpose = function(parent, param, game) {
     this.msginlines = new Array();
     if(!this.font) this.font = "12px Verdana";
     this.lineHeight = Math.round( 1.2*checkFontSize(this.font) );
-    this.evtDeleg.addListener('firstShow', new mse.Callback(parent.interrupt, parent));
+    this.addListener('firstShow', new mse.Callback(parent.interrupt, parent));
     this.passBn = new mse.Button(this, {pos:[10,this.height-60],size:[105,35],font:'12px '+cfs.font,fillStyle:'#FFF'}, 'Je ne joue pas', 'wikiBar');
-    
-    // a corriger
+
     this.launchcb = new mse.Callback(this.launchGame, this);
 };
-extend( mse.GameExpose ,  mse.UIObject );
+extend( mse.GameExpose , mse.UIObject );
 $.extend( mse.GameExpose.prototype , {
 	launchGame : function(e) {
         if(this.passBn.inObj(e.offsetX, e.offsetY)) this.endGame();
         else {
-            this.getContainer().evtDeleg.removeListener('click', this.launchcb);
+            this.removeListener('click', this.launchcb);
             this.game.start();
         }
         this.passBn = null;
     },
     endGame : function() {
-        if(parent.play) parent.play();
+        if(this.parent.play) this.parent.play();
     },
 	logic : function() {
         if(!this.firstShow) {
             this.firstShow = true;
             this.evtDeleg.eventNotif('firstShow');
-            this.getContainer().evtDeleg.addListener('click',  this.launchcb, true);
+            this.addListener('click', this.launchcb, true);
         }
         // Message changed
         if(this.msg != this.game.getMsg()) {
@@ -2342,9 +2362,9 @@ mse.Slider = function(target, param, orientation, offset, parent) {
 	
 	this.cbScroll = new mse.Callback(this.scroll, this);
 	this.cbGest = new mse.Callback(this.gestUpdate, this);
-	this.getContainer().evtDeleg.addListener('gestureUpdate', this.cbGest, false, this.tar);
+	this.tar.addListener('gestureUpdate', this.cbGest, false);
 	if(!MseConfig.mobile)
-		this.getContainer().evtDeleg.addListener('mousewheel', this.cbScroll, false, this.tar);
+		this.tar.addListener('mousewheel', this.cbScroll, false);
 };
 extend(mse.Slider, mse.UIObject);
 $.extend(mse.Slider.prototype, {
@@ -2461,7 +2481,7 @@ $.extend(mse.Button.prototype, {
     setLink: function(link, type) {
         if(link) this.link = link;
         if(type == 'url') {
-            this.getContainer().evtDeleg.addListener('click', new mse.Callback(this.urlClicked, this), true, this);
+            this.addListener('click', new mse.Callback(this.urlClicked, this), true);
         }
     },
     draw: function(ctx, x, y) {
@@ -2485,6 +2505,7 @@ $.extend(mse.Button.prototype, {
 mse.Card = function(parent, param, ui) {
     mse.UIObject.call(this, parent, param);
     this._layers = new Array();
+    this.dispatcher = new mse.EventDispatcher(this);
     
     this.ui = ui;
     if(ui) this.addLayer('ui', ui);
@@ -2494,16 +2515,14 @@ mse.Card = function(parent, param, ui) {
     this.lw = this.width - this.margin[1] - this.margin[3];
     this.lh = this.height - this.margin[0] - this.margin[2];
 };
-extend(mse.Card, mse.UIObject);
+extend(mse.Card, mse.BaseContainer);
+delete mse.Card.prototype.setOrientation;
+delete mse.Card.prototype.orientChange;
+delete mse.Card.prototype.logic;
+delete mse.Card.prototype.setLayerActivate;
+delete mse.Card.prototype.desactiveOthers;
+delete mse.Card.prototype.reactiveOthers;
 $.extend(mse.Card.prototype, {
-    addLayer: mse.BaseContainer.prototype.addLayer,
-    delLayer: mse.BaseContainer.prototype.delLayer,
-    getLayer: mse.BaseContainer.prototype.getLayer,
-    sortLayer: mse.BaseContainer.prototype.sortLayer,
-    getContainer: function(){
-        return this;
-    },
-    
     draw: function(ctx){
         if(!this.ui)
             this.drawDefaultUI(ctx, this.getX(), this.getY());
@@ -2559,14 +2578,13 @@ $.extend(mse.ImageCard.prototype, {
         this.ix = this.margin[3] + (iw-this.iw)/2;
         this.iy = this.margin[0] + (ih-this.ih)/2;
         
-        this.zoomIcon = new mse.Image(this,{pos:[this.ix+this.iw-24-5, this.iy+5]}, 'zoomIcon');
+        this.zoomIcon = new mse.Image(this,{pos:[this.ix+this.iw-24-5, this.iy+5],size:[20,20]}, 'zoomIcon');
         var cb = new mse.Callback(function(){
             if(!(this.imgShower instanceof mse.ImageShower))
-                this.imgShower = new mse.ImageShower(this);
-            this.imgShower.show();
-            // console.log('zoom');
+                this.imgShower = mse.ImageShower.getInstance();
+            this.imgShower.show(this);
         }, this);
-        this.getContainer().evtDeleg.addListener('click', cb, true, this.zoomIcon);
+        this.zoomIcon.addListener('click', cb, true);
     },
     draw: function(ctx){
         ctx.save();
@@ -2689,7 +2707,7 @@ $.extend(mse.TextCard.prototype, {
 });
 
 mse.WikiLayer = function() {
-    mse.Layer.call(this, null, 11, {});
+    mse.Layer.call(this, null, cfs.zids.wiki, {});
     
     this.currCard = null;
     this.cbDragStart = new mse.Callback(this.dragStart, this);
@@ -2701,11 +2719,11 @@ $.extend(mse.WikiLayer.prototype, {
     cardw: 250,
     cardh: 320,
     hide: function() {
-        var container = this.getContainer();
+        var container = this.parent;
         if(container) {
-            container.evtDeleg.removeListener('gestureStart', this.cbDragStart);
-            container.evtDeleg.removeListener('gestureUpdate', this.cbDragMove);
-            container.evtDeleg.removeListener('gestureEnd', this.cbDragEnd);
+            this.removeListener('gestureStart', this.cbDragStart);
+            this.removeListener('gestureUpdate', this.cbDragMove);
+            this.removeListener('gestureEnd', this.cbDragEnd);
         }
         
         this.parent.reactiveOthers();
@@ -2722,9 +2740,9 @@ $.extend(mse.WikiLayer.prototype, {
         for(var card in this.objList)
             this.objList[card].setPos(this.cardx, this.cardy);
         
-        container.evtDeleg.addListener('gestureStart', this.cbDragStart, true, this);
-        container.evtDeleg.addListener('gestureUpdate', this.cbDragMove, true, this);
-        container.evtDeleg.addListener('gestureEnd', this.cbDragEnd, true, this);
+        this.addListener('gestureStart', this.cbDragStart, true);
+        this.addListener('gestureUpdate', this.cbDragMove, true);
+        this.addListener('gestureEnd', this.cbDragEnd, true);
         
         container.addLayer('wiki', this);
         this.globalAlpha = 1;
@@ -2754,7 +2772,7 @@ $.extend(mse.WikiLayer.prototype, {
             if(card.inObj(pt[0], pt[1])) {
                 e.offsetX = pt[0];
                 e.offsetY = pt[1];
-                if( !card.evtDeleg.eventNotif('click', e) )
+                if( !card.dispatcher.dispatch('click', e) )
                     this.currCard = card;
                 return;
             }
@@ -2781,13 +2799,13 @@ mse.Video = function(parent, param, srcs) {
 	mse.UIObject.call(this, parent, param);
 	this.srcs = srcs;
 	
-	this.getContainer().evtDeleg.addListener('click', new mse.Callback(this.launch, this), true, this);
+	this.addListener('click', new mse.Callback(this.launch, this), true);
 };
 extend( mse.Video , mse.UIObject );
 $.extend( mse.Video.prototype , { 
 	launch : function() {
 	    mse.root.video.load(srcs);
-	    mse.root.video.show();
+	    mse.root.video.addClass('video_active');
 	},
 	
 	draw : function(ctx) {
@@ -2815,118 +2833,155 @@ $.extend( mse.Video.prototype , {
 *  See mse.Image.prototype.init() 
 *  & mse.ImageCard.init() (association with an icon)
 */ 
-mse.ImageShower = function(target){
-    if(!(target instanceof mse.Image) && !(target instanceof mse.ImageCard)) {
-        console.error('The target obj is not an instance of mse.Image or mse.ImageCard');
-        return;
-    }
-    this.target = target;
+mse.ImageShower = function(){
+    if(mse.ImageShower.getInstance()) return mse.ImageShower.getInstance(); // its a singleton classe
+    this.target = false;
+    this.container = $('#imgShower');
+    this.img = $('#imgShower #theImage');
+    this.imgContainer = $('#imgShower div');
+    this.closeButton = $('#imgShower #closeBn');
     
-	$('body').css({
-		'position': 'absolute',
-		'width'   : '100%',
-		'height'  : '100%'
-	});
+    this.img.click(function(e){e.preventDefault();e.stopPropagation();});
     
-    this.container = $('<div id="imgShower"></div>').css({
-		'position'  : 'absolute',
-		'z-index'   : '12',
-		'width'     : '100%',
-		'height'    : '100%',
-		'background': 'rgba(0, 0, 0, 0.6)',
-        'text-align': 'center'
-	});
-    
-    this.img = $(mse.src.getSrc(target.img)).css({
-		'width' : '100%',
-		'height': '100%'
-	});
-    
-    this.closeButton = $(mse.src.getSrc('closeBn')).prop('id', 'closeBn').css({
-        'position': 'absolute',
-        'top'     : '-20px',
-        'right'   : '-20px'
-    });
-
-
-   
-    this.container.bind('click',{showerObj: this},function(e){
-        // close the image on click in div
-        var pos = e.data.showerObj.getOriginalPos();
-        $(this).children('div').animate({
-            'height' : pos.h+'px',
-            'width'  : pos.w+'px',
-            'top'    : pos.y+'px',
-            'left'   : pos.x+'px',
-            'opacity': '0'
-        });
-        $(this).fadeOut(500, function(){
-            $(this).detach();
-            $(this).children('div').remove();
-            var parent = e.data.showerObj.target.parent;
-            if(parent.play)
-                parent.play();
-        });
-    }); // no close on click in image
+    var instance = this;
+    mse.ImageShower.getInstance = function(){return instance;};
 };
+mse.ImageShower.getInstance = function(){return false;};
 mse.ImageShower.prototype = {
+    setTarget: function(target){
+        if(!(target instanceof mse.Image) && !(target instanceof mse.ImageCard)) {
+            console.error('The target obj is not an instance of mse.Image or mse.ImageCard');
+            return;
+        }
+        this.target = target;
+        this.imgUrl = mse.src.getSrc(this.target.img).getAttribute('src');
+        this.img.prop('src', this.imgUrl);
+        return this;
+    }, 
     getOriginalPos: function(){
+        if(!this.target) return;
+        var pos = {};
         if(this.target instanceof mse.Image){ // Illu
-            var pos = {
-                x: mse.root.jqObj.position().left + this.target.getX(),
-                y: mse.root.jqObj.position().top + this.target.getY(),
-                w: this.target.getWidth(),
-                h: this.target.getHeight(),
-                angle: 'rotate(0deg)'
-            };
+            pos.x = mse.root.jqObj.position().left + this.target.getX();
+            pos.y = mse.root.jqObj.position().top + this.target.getY();
+            pos.w = this.target.getWidth();
+            pos.h = this.target.getHeight();
+            pos.angle = 'rotate(0deg)';
         }
         else { // Wiki
-            var pos = {
-                x: mse.root.jqObj.position().left + this.target.getX() + this.target.ix,
-                y: mse.root.jqObj.position().top + this.target.getY() + this.target.iy,
-                w: this.target.iw,
-                h: this.target.ih,
-                angle: 'rotate('+this.target.angle+'deg)'
-            };
+            pos.x = mse.root.jqObj.position().left + this.target.getX() + this.target.ix;
+            pos.y = mse.root.jqObj.position().top + this.target.getY() + this.target.iy;
+            pos.w = this.target.iw;
+            pos.h = this.target.ih;
+            pos.angle = 'rotate('+this.target.angle+'deg)';            
         }
         return pos;
     },
-    show: function(){
+    show: function(target){
+        this.setTarget(target);
+        if(!this.target) return;
+        this.container.unbind('click');
+        this.closeButton.unbind('click');
+        this.container.click({showerObj: this}, this.close);
+        this.closeButton.click({showerObj: this}, this.close);
         var pos = this.getOriginalPos();
-        $('<div></div>').css({
-            'position': 'absolute',
-            'z-index': '13',
+        this.img.css({
+            'left': '0px',
+            'top': '0px',
+            'height' : '100%',
+            'width'  : '100%'
+        });
+        this.imgContainer.css({
             'width'  : pos.w+'px',
             'height' : pos.h+'px',
             'top'    : pos.y+'px',
-            'left'   : pos.x+'px',
-            'opacity': '0'
-        }).append(this.img)
-          .append(this.closeButton)
-          .appendTo(this.container);
-
-        this.closeButton.click(function(){$('#imgShower').click();});
-        this.img.click(function(e){e.preventDefault();e.stopPropagation();});
+            'left'   : pos.x+'px'
+        });
         
-        var ratio = pos.w/pos.h;
-        var finalH = 0.8 * MseConfig.pageHeight;
-        var finalW = finalH * ratio;
-        var imgX = MseConfig.pageWidth/2 - finalW/2;
-        this.container.children('div').animate({ // animate image size to 80% of window size
+        if (MseConfig.pageHeight < MseConfig.pageWidth) { // normal screen
+            var ratio =  pos.w/pos.h;
+            var finalH = 0.8 * MseConfig.pageHeight;
+            var finalW = finalH * ratio;
+            var imgX = mse.root.width/2 - finalW/2;
+        }
+        else { // smartphone screen
+            var ratio =  pos.h/pos.w;
+            var finalW = 0.8 *  MseConfig.pageWidth;
+            var finalH = finalW * ratio;
+            var imgX = MseConfig.pageWidth/2 - finalW/2;
+        }
+        
+        this.imgContainer.data('originPos',{h: finalH, 
+                                            w: finalW,
+                                            x:this.imgContainer.position().left,
+                                            y:this.imgContainer.position().top,
+                                            scale:1});
+             
+        this.imgContainer.animate({ // animate image size to 80% of window size
             'height'    : finalH+'px',
             'width'     : finalW+'px',
             'top'       : '0px',
-            'margin-top': '10%',
-            'left'      : imgX + 'px',
-            'opacity'   : '1'
+            'left'      : imgX + 'px'
         });
         this.container.fadeIn(500);
-        
-        $('body').append(this.container);
         
         var parent = this.target.parent;
         if (parent.interrupt)
             parent.interrupt();
+    },
+    close: function(e){
+        // close the image on click in div
+        // no close on click in image
+        e.preventDefault();
+        var obj = mse.ImageShower.getInstance();
+        var pos = obj.getOriginalPos();
+        obj.container.children('div').animate({
+            'height' : pos.h+'px',
+            'width'  : pos.w+'px',
+            'top'    : pos.y+'px',
+            'left'   : pos.x+'px'
+        });
+        obj.container.fadeOut(500, function(){
+            var parent = obj.target.parent;
+            if(parent.play)
+                parent.play();
+        });
+    },
+    scale: function(e){
+        var max=3 , min = 1;
+        var pos = this.imgContainer.data('originPos');
+        var s = pos.scale * e.scale;
+        if (s >= max) return;
+        else if (s <= min) return;
+        
+        if(e.type == 'scaleEnd'){
+            pos.scale = s;
+            return;
+        }
+        var currPos = this.img.position();
+        var w = pos.w * s;
+        var h = pos.h * s;
+        var x = currPos.left - (w-this.img.width())/2;
+        var y = currPos.top - (h-this.img.height())/2;
+        this.img.css({width: w+'px',
+                      height: h+'px',
+                      top: y+'px',
+                      left: x+'px'});
+    },
+    move: function(e){
+        var iw = this.img.width(),
+            ih = this.img.height(),
+            cw = this.imgContainer.width(),
+            ch = this.imgContainer.height(),
+            posImg = this.img.position(),
+            x = posImg.left + e.dx,
+            y = posImg.top + e.dy;
+            
+        if(x > 0) x = 0;
+        if(x < cw - iw) x = cw - iw;
+        if(y > 0) y = 0;
+        if(y < ch - ih) y = ch - ih;
+        this.img.css({top: y+'px', left: x+'px'});
     }
 };
 
@@ -2951,7 +3006,7 @@ mse.Timeline = function(src, interval, timeprog, length) {
 	}
 	this.src.initTimeline(this);
 	// For reduce the fps to 30
-	this.switch = false;
+	this.switching = false;
 };
 mse.Timeline.prototype = {
 	constructor : mse.Timeline ,
@@ -2995,8 +3050,9 @@ mse.Timeline.prototype = {
 			}
 			else {
 			    this.timer = requestAnimationFrame(this.frameFn);
-			    if(this.switch) this.src.runTimeline(this.interval);
-			    this.switch = !this.switch;
+			    //if(this.switching) 
+			    this.src.runTimeline(this.interval);
+			    //this.switching = !this.switching;
 			}
 		}
 		// END
@@ -3331,12 +3387,7 @@ $.extend(mse.Animation.prototype, {
 			this.expects[id] = cds[i].expect ? cds[i].expect : "everytime";
 			this.success[id] = false;
 			var src = cds[i].src;
-			if($.inArray(cds[i].type, defaultEvents)!=-1 && !(cds[i].src instanceof mse.BaseContainer)) {
-			    src = src.getContainer();
-			    src.evtDeleg.addListener(cds[i].type, new mse.Callback(this.conditionChanged, this, [id]), false, cds[i].src);
-			}
-			else 
-			    src.evtDeleg.addListener(cds[i].type, new mse.Callback(this.conditionChanged, this, [id]), false);
+			src.addListener(cds[i].type, new mse.Callback(this.conditionChanged, this, [id]), false);
 		}
 	};
 	mse.Script.prototype = {

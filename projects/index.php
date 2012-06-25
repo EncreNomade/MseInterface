@@ -41,14 +41,11 @@ addEventListener("load", function(){
 </script>
 
 <link rel="stylesheet" href="./support/main.css" type="text/css">
-<link rel="stylesheet" href="./support/flarevideo/flarevideo.css" type="text/css">
-<link rel="stylesheet" href="./support/flarevideo/flarevideo.default.css" type="text/css">
 <script src="./support/jquery-latest.js"></script>
 <script src="./support/BrowserDetect.js"></script>
-<script src="./support/flarevideo/jquery.ui.slider.js" type="text/javascript"></script>
-<script src="./support/flarevideo/flarevideo.js" type="text/javascript"></script>
 <script src="./support/Tools.js"></script>
 <script src="./support/Interaction.js"></script>
+<script src="./gui.js"></script>
 <script src="./events.js"></script>
 <script src="./mse.js"></script>
 <script src="./effet_mini.js"></script>
@@ -57,6 +54,33 @@ addEventListener("load", function(){
 </head>
 
 <body>
+
+<div id="root">
+    <div id="menu">
+        <ul>
+            <li><img src="./UI/facebook-like-icon.png"></li>
+            <li><img id="comment_btn" src="./UI/comment.png"></li>
+        </ul>
+        <img class="feuille" src="./UI/feuille.png">
+    </div>
+    <div id="center"><div id="comment">
+        <img id="comment_close_btn" src="./UI/button/close.png">
+        <div class="header">
+            <img id="sns" src="./UI/sns_f.png">
+            <a id="share">Partager</a>
+        </div>
+        <div class="body">
+            <textarea id="comment_content" rows="5" cols="30" placeholder="Écrire votre commentaire ici..."></textarea>
+        </div>
+    </div></div>
+    <canvas class="bookroot">Votre navigateur ne supporte pas HTML5</canvas>
+    <div class="video"></div>
+    <div id="imgShower"><div>
+            <img id="theImage" src=""/>
+            <img id="closeBn"  src="UI/button/close.png"/>
+    </div></div>
+    <canvas class='game' width=50 height=50></canvas>
+</div>
 
 <script type="text/javascript">
 <?php 

@@ -60,17 +60,17 @@ var GameSimonComa = function() {
     this.init = function() {
         this.parent.interrupt();
         
-    	mse.root.evtDistributor.addListener('gestureStart', cbStart, true, this);
-    	mse.root.evtDistributor.addListener('gestureUpdate', cbMove, true, this);
-    	mse.root.evtDistributor.addListener('gestureEnd', cbEnd, true, this);
-    	mse.root.evtDistributor.addListener('move', cbMoveon, true, this);
+        this.addListener('gestureStart', cbStart, true);
+    	this.addListener('gestureUpdate', cbMove, true);
+    	this.addListener('gestureEnd', cbEnd, true);
+    	this.addListener('move', cbMoveon, true);
     };
     this.end = function() {
-        mse.root.evtDistributor.removeListener('gestureStart', cbStart);
-        mse.root.evtDistributor.removeListener('gestureUpdate', cbMove);
-        mse.root.evtDistributor.removeListener('gestureEnd', cbEnd);
-        mse.root.evtDistributor.removeListener('move', cbMoveon);
-        mse.root.container.evtDeleg.setDominate(null);
+        this.removeListener('gestureStart', cbStart);
+        this.removeListener('gestureUpdate', cbMove);
+        this.removeListener('gestureEnd', cbEnd);
+        this.removeListener('move', cbMoveon);
+        mse.root.evtDistributor.setDominate(null);
         
         this.parent.play();
     };

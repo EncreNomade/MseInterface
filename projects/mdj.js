@@ -10,9 +10,9 @@
 
 
 
-var mdj = function() {};
+window.mdj = {};
  
-(function(window, mse, mdj, $) {
+(function(window, mse, $) {
 
 mdj.setGame = function(game) {
     mdj.currGame = game;
@@ -1067,4 +1067,4 @@ mdj.CollisionDetector.prototype = {
 
 
 
-})(window, mse, mdj, $);
+})(window, mse, $);

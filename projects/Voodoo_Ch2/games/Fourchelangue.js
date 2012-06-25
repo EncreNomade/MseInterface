@@ -226,7 +226,7 @@ var Fourchelangue = function() {
         this.checkSuccess();
     };
     this.clicked = function(e) {
-        if(MseConfig.mobile) {
+        if(MseConfig.android || MseConfig.iPhone) {
             var x = e.offsetX/0.8;
             var y = e.offsetY/0.62;
         }
@@ -350,7 +350,7 @@ var Fourchelangue = function() {
     
     this.draw = function(ctx) {
         ctx.save();
-        if(MseConfig.iPhone) {
+        if(MseConfig.android || MseConfig.iPhone) {
             ctx.scale(0.8, 0.62);
         }
         back.draw(ctx);
