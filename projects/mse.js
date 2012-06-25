@@ -1473,13 +1473,13 @@ $.extend( mse.ArticleLayer.prototype , {
 			if(this.ralenti.inObj(e.offsetX, e.offsetY)) {
 				// Left button clicked, Reduce the speed
 				this.layer.interval += 200;
-				this.layer.interval = (this.layer.interval > this.maxInv) ? this.maxInv : this.layer.interval;
+				this.layer.interval = (this.layer.interval > mse.ArticleLayer.prototype.maxInv) ? mse.ArticleLayer.prototype.maxInv : this.layer.interval;
 				this.tip.setText('moins rapide');
 			}
 			else if(this.accelere.inObj(e.offsetX, e.offsetY)) {
 				// Right button clicked, augmente the speed
 				this.layer.interval -= 200;
-				this.layer.interval = (this.layer.interval < this.minInv) ? this.minInv : this.layer.interval;
+				this.layer.interval = (this.layer.interval < mse.ArticleLayer.prototype.minInv) ? mse.ArticleLayer.prototype.minInv : this.layer.interval;
 				this.tip.setText('plus rapide');
 			}
 			else if(this.play.inObj(e.offsetX, e.offsetY)) {
