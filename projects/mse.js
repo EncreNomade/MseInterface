@@ -611,6 +611,18 @@ mse.Root = function(id, width, height, orientation) {
 	// Game element
 	this.gamewindow = new mse.GameShower();
 	
+	// Capture screen callbacks
+	this.initCapZonecb = new mse.Callback(this.initCapZone, this);
+	this.updateCapZonecb = new mse.Callback(this.updateCapZone, this);
+	this.fixCapZonecb = new mse.Callback(this.fixCapZone, this);
+	// Capture screen cache canvas
+	this.capCache = document.createElement("canvas");
+	this.capCtx = this.capCache.getContext("2d");
+	this.capCache.width = 0;
+	this.capCache.style.width = 0;
+	this.capCache.height = 0;
+	this.capCache.style.height = 0;
+	
 	// Launch Timeline
 	mse.currTimeline = new mse.Timeline(this, this.interval);
 };
@@ -714,6 +726,86 @@ mse.Root.prototype = {
     		this.draw();
     	}
     	else mse.currTimeline.end = true;
+    },
+    
+    // Screen caption
+    startCapture: function(callback) {
+        // Stop main timeline
+        mse.currTimeline.pause();
+        
+        // Pause book internal events, init all events for capturing
+        this.evtDistributor.setDominate(this);
+        this.evtDistributor.addListener('gestrueStart', this.initCapZonecb);
+        this.evtDistributor.addListener('gestrueUpdate', this.updateCapZonecb);
+        this.evtDistributor.addListener('gestrueEnd', this.fixCapZonecb);
+        
+        // Change mouse cursor
+        mse.setCursor('crosshair');
+        
+        // Register callback
+        if(callback instanceof mse.Callback) this.captureCallback = callback;
+    },
+    finishCapture: function(zone) {
+        // Invoke callback with the capture of screen
+        var capImageData = this.ctx.getImageData(zone.x, zone.y, zone.w, zone.h);
+        
+        // Remove callback
+        this.captureCallback = null;
+        
+        // Change mouse cursor to default
+        mse.setCursor('default');
+        
+        // Remove all events for capturing, reactive all internal events
+        this.evtDistributor.removeListener('gestrueStart', this.initCapZonecb);
+        this.evtDistributor.removeListener('gestrueUpdate', this.updateCapZonecb);
+        this.evtDistributor.removeListener('gestrueEnd', this.fixCapZonecb);
+        this.evtDistributor.setDominate(null);
+        
+        // Restart main timeline
+        mse.currTimeline.play();
+    },
+    // Event handlers
+    initCapZone: function(e) {
+        if(isNaN(this.capOx) && isNaN(this.capOy)) {
+            this.capOx = e.offsetX;
+            this.capOy = e.offsetY;
+        }
+    },
+    updateCapZone: function(e) {
+        this.capDx = e.offsetX;
+        this.capDy = e.offsetY;
+        
+        // Update canvas
+    },
+    fixCapZone: function(e) {
+        if(this.capDx > this.capOx) {
+            var x = this.capOx;
+            var w = this.capDx - this.capOx;
+        }
+        else {
+            var x = this.capDx;
+            var w = this.capOx - this.capDx;
+        }
+        if(this.capDy > this.capOy) {
+            var y = this.capOy;
+            var h = this.capDy - this.capOy;
+        }
+        else {
+            var y = this.capDy;
+            var h = this.capOy - this.capDy;
+        }
+        this.capOx = null;
+        this.capOy = null;
+        this.capDx = null;
+        this.capDy = null;
+        // Cancel because it's too small
+        if(w < 20 || h < 20) return;
+        
+        if(this.viewport) {
+            x -= this.viewport.x;
+            y -= this.viewport.y;
+        }
+        this.finishCapture({'x':x, 'y':y, 'w':w, 'h':h});
     }
 };
 
