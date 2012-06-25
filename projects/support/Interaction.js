@@ -112,7 +112,7 @@ GestureAnalyser.prototype = {
     		var e = {'dx': end.x-begin.x, 'dy': end.y-begin.y, 'type':'translation'};
     		this.listeners.eventNotif('translate', e);
     	}
-    	else if(this.session_count == 2){
+    	else if(this.session_count == 2 && this.count == 2){
     	    // Collect two finger info
     	    var begin = [];
     	    var end = [];
