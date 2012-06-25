@@ -1062,18 +1062,20 @@ $.extend( ModifyColorSpeakCmd.prototype, {
         
 		this.speaker.color = this.newColor;
 		this.speaks = this.speaker.getAssociateSpeak( );
-		for( var i = 0 ; i < this.speaks.length ; i ++ )
+		for( var i = 0 ; i < this.speaks.length ; i ++ ){
 			$( this.speaks[ i ] ).attr( "data-color" , this.speaker.color );
-        
+			$( this.speaks[ i ] ).css( "background-color", this.speaker.color );
+        }
         this.state = 'SUCCESS';
     },
     undo: function(){
         if(this.state != 'SUCCESS') return;
         
         this.speaker.color = oldColor;
-		for( var i = 0 ; i < this.speaks.length ; i ++ )
+		for( var i = 0 ; i < this.speaks.length ; i ++ ){
 			$( this.speaks[ i ] ).attr( "data-color" , this.speaker.color );
-        
+			$( this.speaks[ i ] ).css( "background-color", this.speaker.color );
+        }
         this.state = 'CANCEL';
     }
 });
