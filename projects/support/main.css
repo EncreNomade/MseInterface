@@ -286,7 +286,9 @@ body {
     position: absolute;
     z-index: 13;
     margin-top: 10%;
-    overflow: hidden;
+    box-shadow: 1px 1px 50px black;
+    border: 5px solid white;
+    border-radius: 5PX;
 }
 #imgShower #closeBn {
     position: absolute;

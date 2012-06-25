@@ -244,11 +244,6 @@ mse.init = function(configs) {
 	mse.src.addSource('closeBn', './UI/button/close.png', 'img', true);
     
     var imgShower = new mse.ImageShower();
-    imgShower.imgContainer.mseInteraction();
-    imgShower.imgContainer.mseInteraction('addListener', 'scale', new Callback(imgShower.scale, imgShower));
-    imgShower.img.mseInteraction();
-    imgShower.img.mseInteraction('addListener', 'translate', new Callback(imgShower.move, imgShower));
-
 };
 
 
@@ -2843,11 +2838,26 @@ mse.ImageShower = function(){
     
     this.img.click(function(e){e.preventDefault();e.stopPropagation();});
     
+    
+    
+    if(MseConfig.mobile){
+        // remove close button
+        this.closeButton.remove();
+        this.imgContainer.css('overflow','hidden');
+        // add touch event listener
+        this.imgContainer.mseInteraction();
+        this.imgContainer.mseInteraction('addListener', 'scale', new Callback(this.scale, this));
+        this.img.mseInteraction();
+        this.img.mseInteraction('addListener', 'translate', new Callback(this.move, this));
+    }
+    
     var instance = this;
     mse.ImageShower.getInstance = function(){return instance;};
 };
 mse.ImageShower.getInstance = function(){return false;};
 mse.ImageShower.prototype = {
+    maxScale: 3,
+    minScale: 1,
     setTarget: function(target){
         if(!(target instanceof mse.Image) && !(target instanceof mse.ImageCard)) {
             console.error('The target obj is not an instance of mse.Image or mse.ImageCard');
@@ -2948,25 +2958,43 @@ mse.ImageShower.prototype = {
         });
     },
     scale: function(e){
-        var max=3 , min = 1;
-        var pos = this.imgContainer.data('originPos');
-        var s = pos.scale * e.scale;
-        if (s >= max) return;
-        else if (s <= min) return;
+        var max = this.imgContainer.width() * this.maxScale,
+            min = this.imgContainer.width() * this.minScale,
+            pos = this.imgContainer.data('originPos');
+            
+        // var s = pos.scale * e.scale;
+        var s = e.scale;
+        
+        if (s * pos.w >= max ||
+            s * pos.w <= min)
+                return;
         
         if(e.type == 'scaleEnd'){
-            pos.scale = s;
+            // pos.scale = s;
+            pos.w = this.img.width();
+            pos.h = this.img.height();
+            // console.log(pos.scale);
             return;
-        }
-        var currPos = this.img.position();
-        var w = pos.w * s;
-        var h = pos.h * s;
-        var x = currPos.left - (w-this.img.width())/2;
-        var y = currPos.top - (h-this.img.height())/2;
-        this.img.css({width: w+'px',
-                      height: h+'px',
-                      top: y+'px',
-                      left: x+'px'});
+        }        
+        var currPos = this.img.position(),    
+            cw = this.imgContainer.width(),
+            ch = this.imgContainer.height(),
+            iw = pos.w * s,
+            ih = pos.h * s,
+            x = currPos.left - (iw-this.img.width())/2,
+            y = currPos.top - (ih-this.img.height())/2;
+        
+        if (x > 0) x = 0;
+        else if (x < cw - iw) x = cw - iw;
+        if (y > 0) y = 0;
+        else if (y < ch - ih) y = ch - ih;
+        
+        this.img.css({ width: iw+'px',
+                       height: ih+'px',
+                       top: y+'px',
+                       left: x+'px' });
+                       
+        
     },
     move: function(e){
         var iw = this.img.width(),
