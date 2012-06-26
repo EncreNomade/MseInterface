@@ -63,6 +63,7 @@ var GestureAnalyser = function(listeners){
     this.tapwait = false;
     this.tapid = 0;
     this.prevScale = 1;
+    this.session_count = 0;
 }
 GestureAnalyser.prototype = {
     constructor: GestureAnalyser,
@@ -101,16 +102,17 @@ GestureAnalyser.prototype = {
 			// Two finger scale begin
 			
 		}
+		this.session_count = this.count;
     },
     analyseUpdate: function(id) {
-        if(this.count == 1){
+        if(this.session_count == 1){
     		// One finger translate
     		var begin = this.blobs[id].origin();
     		var end = this.blobs[id].last();
     		var e = {'dx': end.x-begin.x, 'dy': end.y-begin.y, 'type':'translation'};
     		this.listeners.eventNotif('translate', e);
     	}
-    	else if(this.count == 2){
+    	else if(this.session_count == 2 && this.count == 2){
     	    // Collect two finger info
     	    var begin = [];
     	    var end = [];

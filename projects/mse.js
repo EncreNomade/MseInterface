@@ -244,11 +244,6 @@ mse.init = function(configs) {
 	mse.src.addSource('closeBn', './UI/button/close.png', 'img', true);
     
     var imgShower = new mse.ImageShower();
-    imgShower.imgContainer.mseInteraction();
-    imgShower.imgContainer.mseInteraction('addListener', 'scale', new Callback(imgShower.scale, imgShower));
-    imgShower.img.mseInteraction();
-    imgShower.img.mseInteraction('addListener', 'translate', new Callback(imgShower.move, imgShower));
-
 };
 
 
@@ -611,6 +606,18 @@ mse.Root = function(id, width, height, orientation) {
 	// Game element
 	this.gamewindow = new mse.GameShower();
 	
+	// Capture screen callbacks
+	this.initCapZonecb = new mse.Callback(this.initCapZone, this);
+	this.updateCapZonecb = new mse.Callback(this.updateCapZone, this);
+	this.fixCapZonecb = new mse.Callback(this.fixCapZone, this);
+	// Capture screen cache canvas
+	this.capCache = document.createElement("canvas");
+	this.capCtx = this.capCache.getContext("2d");
+	this.capCache.width = 0;
+	this.capCache.style.width = 0;
+	this.capCache.height = 0;
+	this.capCache.style.height = 0;
+	
 	// Launch Timeline
 	mse.currTimeline = new mse.Timeline(this, this.interval);
 };
@@ -714,6 +721,86 @@ mse.Root.prototype = {
     		this.draw();
     	}
     	else mse.currTimeline.end = true;
+    },
+    
+    // Screen caption
+    startCapture: function(callback) {
+        // Stop main timeline
+        mse.currTimeline.pause();
+        
+        // Pause book internal events, init all events for capturing
+        this.evtDistributor.setDominate(this);
+        this.evtDistributor.addListener('gestrueStart', this.initCapZonecb);
+        this.evtDistributor.addListener('gestrueUpdate', this.updateCapZonecb);
+        this.evtDistributor.addListener('gestrueEnd', this.fixCapZonecb);
+        
+        // Change mouse cursor
+        mse.setCursor('crosshair');
+        
+        // Register callback
+        if(callback instanceof mse.Callback) this.captureCallback = callback;
+    },
+    finishCapture: function(zone) {
+        // Invoke callback with the capture of screen
+        var capImageData = this.ctx.getImageData(zone.x, zone.y, zone.w, zone.h);
+        
+        // Remove callback
+        this.captureCallback = null;
+        
+        // Change mouse cursor to default
+        mse.setCursor('default');
+        
+        // Remove all events for capturing, reactive all internal events
+        this.evtDistributor.removeListener('gestrueStart', this.initCapZonecb);
+        this.evtDistributor.removeListener('gestrueUpdate', this.updateCapZonecb);
+        this.evtDistributor.removeListener('gestrueEnd', this.fixCapZonecb);
+        this.evtDistributor.setDominate(null);
+        
+        // Restart main timeline
+        mse.currTimeline.play();
+    },
+    // Event handlers
+    initCapZone: function(e) {
+        if(isNaN(this.capOx) && isNaN(this.capOy)) {
+            this.capOx = e.offsetX;
+            this.capOy = e.offsetY;
+        }
+    },
+    updateCapZone: function(e) {
+        this.capDx = e.offsetX;
+        this.capDy = e.offsetY;
+        
+        // Update canvas
+    },
+    fixCapZone: function(e) {
+        if(this.capDx > this.capOx) {
+            var x = this.capOx;
+            var w = this.capDx - this.capOx;
+        }
+        else {
+            var x = this.capDx;
+            var w = this.capOx - this.capDx;
+        }
+        if(this.capDy > this.capOy) {
+            var y = this.capOy;
+            var h = this.capDy - this.capOy;
+        }
+        else {
+            var y = this.capDy;
+            var h = this.capOy - this.capDy;
+        }
+        this.capOx = null;
+        this.capOy = null;
+        this.capDx = null;
+        this.capDy = null;
+        // Cancel because it's too small
+        if(w < 20 || h < 20) return;
+        
+        if(this.viewport) {
+            x -= this.viewport.x;
+            y -= this.viewport.y;
+        }
+        this.finishCapture({'x':x, 'y':y, 'w':w, 'h':h});
     }
 };
 
@@ -2852,11 +2939,26 @@ mse.ImageShower = function(){
     
     this.img.click(function(e){e.preventDefault();e.stopPropagation();});
     
+    
+    
+    if(MseConfig.mobile){
+        // remove close button
+        this.closeButton.remove();
+        this.imgContainer.css('overflow','hidden');
+        // add touch event listener
+        this.imgContainer.mseInteraction();
+        this.imgContainer.mseInteraction('addListener', 'scale', new Callback(this.scale, this));
+        this.img.mseInteraction();
+        this.img.mseInteraction('addListener', 'translate', new Callback(this.move, this));
+    }
+    
     var instance = this;
     mse.ImageShower.getInstance = function(){return instance;};
 };
 mse.ImageShower.getInstance = function(){return false;};
 mse.ImageShower.prototype = {
+    maxScale: 3,
+    minScale: 1,
     setTarget: function(target){
         if(!(target instanceof mse.Image) && !(target instanceof mse.ImageCard)) {
             console.error('The target obj is not an instance of mse.Image or mse.ImageCard');
@@ -2957,25 +3059,40 @@ mse.ImageShower.prototype = {
         });
     },
     scale: function(e){
-        var max=3 , min = 1;
-        var pos = this.imgContainer.data('originPos');
-        var s = pos.scale * e.scale;
-        if (s >= max) return;
-        else if (s <= min) return;
+        var max = this.imgContainer.width() * this.maxScale,
+            min = this.imgContainer.width() * this.minScale,
+            pos = this.imgContainer.data('originPos'),
+            s = e.scale;
+        
+        if (s * pos.w >= max ||
+            s * pos.w <= min)
+                return;
         
         if(e.type == 'scaleEnd'){
-            pos.scale = s;
+            pos.w = this.img.width();
+            pos.h = this.img.height();
             return;
-        }
-        var currPos = this.img.position();
-        var w = pos.w * s;
-        var h = pos.h * s;
-        var x = currPos.left - (w-this.img.width())/2;
-        var y = currPos.top - (h-this.img.height())/2;
-        this.img.css({width: w+'px',
-                      height: h+'px',
-                      top: y+'px',
-                      left: x+'px'});
+        }        
+        
+        var currPos = this.img.position(),    
+            cw = this.imgContainer.width(),
+            ch = this.imgContainer.height(),
+            iw = pos.w * s,
+            ih = pos.h * s,
+            x = currPos.left - (iw-this.img.width())/2,
+            y = currPos.top - (ih-this.img.height())/2;
+        
+        if (x > 0) x = 0;
+        else if (x < cw - iw) x = cw - iw;
+        if (y > 0) y = 0;
+        else if (y < ch - ih) y = ch - ih;
+        
+        this.img.css({ width: iw+'px',
+                       height: ih+'px',
+                       top: y+'px',
+                       left: x+'px' });
+                       
+        
     },
     move: function(e){
         var iw = this.img.width(),
