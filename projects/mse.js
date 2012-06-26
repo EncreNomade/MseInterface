@@ -3061,22 +3061,19 @@ mse.ImageShower.prototype = {
     scale: function(e){
         var max = this.imgContainer.width() * this.maxScale,
             min = this.imgContainer.width() * this.minScale,
-            pos = this.imgContainer.data('originPos');
-            
-        // var s = pos.scale * e.scale;
-        var s = e.scale;
+            pos = this.imgContainer.data('originPos'),
+            s = e.scale;
         
         if (s * pos.w >= max ||
             s * pos.w <= min)
                 return;
         
         if(e.type == 'scaleEnd'){
-            // pos.scale = s;
             pos.w = this.img.width();
             pos.h = this.img.height();
-            // console.log(pos.scale);
             return;
         }        
+        
         var currPos = this.img.position(),    
             cw = this.imgContainer.width(),
             ch = this.imgContainer.height(),

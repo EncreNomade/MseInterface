@@ -317,3 +317,28 @@ body {
     height: 100%;
     position: absolute;
 }
+#msgCenter{
+    position: absolute;
+    width: 100%;
+    z-index: 20;
+}
+#msgCenter ul{
+    margin: 0 auto;
+    padding: 10px;
+    width: 50%;
+}
+#msgCenter ul li{
+    text-align: center;
+    list-style: none;
+    opacity: 0;
+    -webkit-transition: all 1s ease; 
+    -moz-transition: all 1s ease; 
+    transition: all 1s ease;
+    background-color: #FFFFB5;
+    padding: 1px 5px 1px 5px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+#msgCenter ul li.fadeIn{
+    opacity: 1;
+}

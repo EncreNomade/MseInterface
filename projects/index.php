@@ -99,6 +99,7 @@ window.fbAsyncInit = function() {
 
 
 <div id="root">
+    <div id="msgCenter"><ul></ul></div>
     <div id="menu">
         <ul>
             <li><div class="fb-login-button" style="width: 32px;height: 30px;background: transparent url('./UI/facebook-like-icon.png') no-repeat left top;"></div></li>
@@ -118,6 +119,7 @@ window.fbAsyncInit = function() {
             <textarea id="comment_content" rows="5" cols="30" placeholder="Écrire votre commentaire ici..."></textarea>
         </div>
     </div></div>
+    
     <canvas class="bookroot">Votre navigateur ne supporte pas HTML5</canvas>
     <div class="video"></div>
     <div id="imgShower"><div>
