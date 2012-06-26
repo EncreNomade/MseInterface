@@ -70,7 +70,17 @@ Command.prototype = {
     },
     undo: function() {
         this.state = "CANCEL";
-    }
+    },
+	redo : function(){
+		if( this.state != "CANCEL")
+			return;
+			
+		this.state = "WAITING";
+		this.execute();
+	},
+	toString : function(){
+		return "Abstract command";
+	}
 };
 
 var CommandMgr = (function(capacity) {
@@ -79,10 +89,15 @@ var CommandMgr = (function(capacity) {
     var reversable = false, undoable = false;
     return {
         executeCmd: function(command) {
+			
+			
+			
             var result = command.execute();
             // Fail to execute command
             if(command.state != "SUCCESS") return false;
             
+			console.log( "do  "+command );
+			
             // Clean reverse stack
             reverseStack.clear();
             if(reversable) {
@@ -97,7 +112,9 @@ var CommandMgr = (function(capacity) {
             return result;
         },
         undoCmd: function() {
-            var command = undoStack.pop();
+            
+			var command = undoStack.pop();
+			
             if(undoStack.count() == 0 && undoable) {
                 undoable = false;
             }
@@ -107,6 +124,8 @@ var CommandMgr = (function(capacity) {
             // Fail to execute command
             if(command.state != "CANCEL") return false;
             
+			console.log( "undo  "+command );
+			
             reverseStack.push(command);
             if(!reversable) {
                 reversable = true;
@@ -114,16 +133,22 @@ var CommandMgr = (function(capacity) {
             return true;
         },
         reverseCmd: function() {
-            var command = reverseStack.pop();
+            
+			
+			
+			var command = reverseStack.pop();
+			
             if(reverseStack.count() == 0 && reversable) {
                 reversable = false;
             }
             // No command
             if(!command) return false;
-            var result = command.execute();
+            var result = command.redo();
             // Fail to execute
             if(command.state != "SUCCESS") return false;
             
+			console.log( "redo  "+command );
+			
             undoStack.push(command);
             if(!undoable) {
                 undoable = true;
@@ -145,6 +170,14 @@ var CommandMgr = (function(capacity) {
     	    }
     		//run code for CTRL+z
     		CommandMgr.undoCmd();
+    	}
+		if(e.which == 89 && isCtrl == true) {
+    	    var focusing = $(document.activeElement).prop('tagName');
+    	    if(focusing == "INPUT" || focusing == "TEXTAREA") {
+    	        return;
+    	    }
+    		//run code for CTRL+y
+    		CommandMgr.reverseCmd();
     	}
     });
 })(document, CommandMgr);
@@ -192,7 +225,25 @@ $.extend(CommandMulti.prototype, {
 				this.state = this.cmds[ i ].state;
 		}
         return true;
-    }
+    },
+	redo: function() {
+        if(this.state != "CANCEL" ) return;
+		
+		this.state = "SUCCESS";
+		
+		// execute from 0 to n
+		for( var i = 0 ; i < this.cmds.length ; i ++ ){
+			this.cmds[ i ].redo();
+			if( this.cmds[ i ].state != "SUCCESS")
+				this.state = this.cmds[ i ].state;
+		}
+    },
+	toString : function(){
+		var rep = "Commande multiple : ";
+		for( var i = 0 ; i < this.cmds.length ; i ++ )
+			rep += this.cmds[ i ]+" , ";
+		return rep;
+	}
 });
 
 /* Page Commands
@@ -235,7 +286,10 @@ $.extend(AddPageCmd.prototype, {
         
         this.state = "CANCEL";
         return true;
-    }
+    },
+	toString : function(){
+		return "ajout de la page "+this.name;
+	}
 });
 
 var DelPageCmd = function(name) {
@@ -288,7 +342,10 @@ $.extend(DelPageCmd.prototype, {
             page.data('StepManager').addStepWithContent(sname, step);
         }
         this.state = "CANCEL";
-    }
+    },
+	toString : function(){
+		return "suppression de la page "+this.name;
+	}
 });
 
 /* Scripts Commands
@@ -340,7 +397,10 @@ $.extend(AddScriptCmd.prototype, {
         }
         scriptMgr.delScript(this.name);
         this.state = "CANCEL";
-    }
+    },
+	toString : function(){
+		return "ajout du script "+this.name;
+	}
 });
 
 var DelScriptCmd = function(name){
@@ -369,7 +429,10 @@ $.extend(DelScriptCmd.prototype, {
         
         scriptMgr.addScript(this.name,this.src,this.srcType,this.action,this.target,this.reaction,this.immediate,this.supp);
         this.state = "CANCEL";
-    }
+    },
+	toString : function(){
+		return "suppression du script "+this.name;
+	}
 });
 
 var ModifyScriptCmd = function(name, src, srcType, action, target, reaction, immediate, supp){
@@ -419,7 +482,10 @@ $.extend(ModifyScriptCmd.prototype, {
         
         scriptMgr.addScript(this.name,this.oldSrc,this.oldSrcType,this.oldAction,this.oldTarget,this.oldReaction,this.oldImmediate,this.oldSupp);
         this.state = "CANCEL";
-    }
+    },
+	toString : function(){
+		return "modification du script "+this.name;
+	}
 });
 
 
@@ -459,7 +525,10 @@ $.extend(AddStepCmd.prototype, {
         
         this.manager.removeStep(this.step.data('stepN'));
         this.state = "CANCEL";
-    }
+    },
+	toString : function(){
+		return "ajout de l'étape "+this.name;
+	}
 });
 
 var AddArticleCmd = function(mgr, name, params, content) {
@@ -490,7 +559,10 @@ $.extend(AddArticleCmd.prototype, {
         
         this.manager.removeStep($('#'+this.name).data('stepN'));
         this.state = "CANCEL";
-    }
+    },
+	toString : function(){
+		return "ajout de l'étape-article "+this.name;
+	}
 });
 
 var DelStepCmd = function(mgr, stepN) {
@@ -524,17 +596,21 @@ $.extend(DelStepCmd.prototype, {
         
         this.manager.addStepWithContent(this.name, this.step);
         this.state = "CANCEL";
-    }    
+    },
+	toString : function(){
+		return "suppression de l'étape "+this.name;
+	}	
 });
 
 var RenameStepCmd = function(mgr, stepN, newName) {
-    if(!stepN || !nameValidation(newName) || !(mgr instanceof StepManager)) {
+    if(!stepN || !mgr.steps[stepN] || !nameValidation(newName) || !(mgr instanceof StepManager)) {
         this.state = "INVALID";
         return;
     }
     this.stepN = stepN;
     this.manager = mgr;
     this.newName = newName;
+	this.oldName = this.manager.steps[this.stepN].prop('id');
     this.state = "WAITING";
 };
 extend(RenameStepCmd, Command);
@@ -545,9 +621,8 @@ $.extend(RenameStepCmd.prototype, {
             this.state = "FAILEXE";
             return false;
         }
-        this.oldName = this.manager.steps[this.stepN].prop('id');
         this.manager.stepexpos[this.stepN].data('name', this.newName);
-        //this.manager.stepexpos[this.stepN].find('span').text(this.newName);
+        this.manager.stepexpos[this.stepN].find('span').text(this.newName);
         this.manager.steps[this.stepN].prop('id', this.newName);
         this.state = "SUCCESS";
     },
@@ -561,16 +636,20 @@ $.extend(RenameStepCmd.prototype, {
         this.manager.stepexpos[this.stepN].find('span').text(this.oldName);
         this.manager.steps[this.stepN].prop('id', this.oldName);
         this.state = "CANCEL";
-    }
+    },
+	toString : function(){
+		return "renommage de l'étape "+this.oldName+" en "+this.newName;
+	}
 });
 
 var StepUpCmd = function(mgr, stepN) {
-    if(!stepN || !(mgr instanceof StepManager)) {
+    if(!stepN || !mgr.steps[stepN] || !(mgr instanceof StepManager)) {
         this.state = "INVALID";
         return;
     }
     this.manager = mgr;
     this.stepN = stepN;
+	this.name = this.manager.steps[this.stepN].prop('id');
     this.state = "WAITING";
 };
 extend(StepUpCmd, Command);
@@ -584,15 +663,19 @@ $.extend(StepUpCmd.prototype, {
         if(this.state != "SUCCESS") return;
         this.manager.stepUp(this.stepN);
         this.state = "CANCEL";
-    }
+    },
+	toString : function(){
+		return "passage de l'étape "+this.name+" au plan supérieur";
+	}
 });
 var StepDownCmd = function(mgr, stepN) {
-    if(!stepN || !(mgr instanceof StepManager)) {
+    if(!stepN || !mgr.steps[stepN] || !(mgr instanceof StepManager)) {
         this.state = "INVALID";
         return;
     }
     this.manager = mgr;
     this.stepN = stepN;
+	this.name = this.manager.steps[this.stepN].prop('id');
     this.state = "WAITING";
 };
 extend(StepDownCmd, Command);
@@ -606,7 +689,10 @@ $.extend(StepDownCmd.prototype, {
         if(this.state != "SUCCESS") return;
         this.manager.stepDown(this.stepN);
         this.state = "CANCEL";
-    }
+    },
+	toString : function(){
+		return "passage de l'étape "+this.name+" au plan inférieur";
+	}
 });
 
 /*
@@ -628,19 +714,39 @@ var AddToSceneCmd = function(tool, elems, tar){
 extend(AddToSceneCmd, Command);
 $.extend(AddToSceneCmd.prototype, {
     execute: function(){
-        if(this.state != 'WAITING') return;
+	
+		console.log( this.tool.finishEdit );
+		
+		if(this.state != 'WAITING') return;
         this.objId = parseInt(curr.objId);
-        this.tool.finishEdit(this.elems, this.tar);
+        this.tool.finishEdit( this.elems , this.tar);
         this.state = 'SUCCESS';
     },
     undo: function(){
         if(this.state != 'SUCCESS') return;
         for (var i = 0; i < this.elems.length; i++){
             var id = this.objId+i;
-            $('#obj'+id).remove();
+			$('#obj'+id).remove();
         }
         this.state = 'CANCEL';
-    }
+    },
+	redo : function(){
+		if(this.state != 'CANCEL') return;
+		
+		console.log( this.tool.finishEdit );
+		
+		this.objId = parseInt(curr.objId);
+        this.tool.finishEdit( this.elems , this.tar);
+		
+		console.log( this.elems );
+		
+		
+		this.state = 'SUCCESS';
+	},
+	toString : function(){
+		var rep = "ajout de "+this.elems.length+" objets à la scène";
+		return rep;
+	}
 });
 
 /* Central Panel Commands
@@ -682,7 +788,10 @@ $.extend(ConfigObjCmd.prototype, {
         if(this.state != 'SUCCESS') return;
         this.target.css(this.oldRes);
         this.state = 'CANCEL';
-    }
+    },
+	toString : function(){
+		return "modification de l'objet "+this.target.attr("id");
+	}
 });
 
 var DeleteObjCmd = function(target){
@@ -735,37 +844,57 @@ $.extend(DeleteObjCmd.prototype, {
         this.parent.append(this.target);
         
         this.state = 'CANCEL';
-    }
+    },
+	toString : function(){
+		return "suppression de l'objet "+this.target.attr("id")+ ( this.relatedScripts.length > 0 ? " et de ces "+this.relatedScripts.length+" scripts associés" : "" );
+	}
 });
 var MoveObjCmd = function(elems){
     if( !elems instanceof Array )
 		elems = [ elems ];
 	this.objs = elems;
+	this.pos = [];
 	for( var i = 0 ; i < this.objs.length ; i ++ ){
 		var obj = $( this.objs[ i ] );
-		this.objs[ i ].sx = obj.position().left;
-		this.objs[ i ].sy = obj.position().top;
+		this.pos[ i ] = { s : {x:obj.position().left , y:obj.position().top}  };
 	}
     this.state = 'WAITING';
 };
 extend(MoveObjCmd, Command);
 $.extend(MoveObjCmd.prototype, {
     execute: function(){
-        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
+        if(this.state != 'WAITING' ) return;
         
+		if( this.pos.length > 0 && this.pos[ 0 ].d )
+			for( var i = 0 ; i < this.objs.length ; i ++ ){
+				var obj = $( this.objs[ i ] );
+				obj.css('left', this.pos[ i ].d.x+'px');
+				obj.css('top',  this.pos[ i ].d.y+'px');
+			}
+		
         this.state = 'SUCCESS';
     },
     undo: function(){
         if(this.state != 'SUCCESS') return;
         
+		
 		for( var i = 0 ; i < this.objs.length ; i ++ ){
 			var obj = $( this.objs[ i ] );
-			obj.css('left', this.objs[ i ].sx+'px');
-			obj.css('top', this.objs[ i ].sy+'px');
+			this.pos[ i ].d = {x:obj.position().left , y:obj.position().top}  ;
+		}
+		
+		for( var i = 0 ; i < this.objs.length ; i ++ ){
+			var obj = $( this.objs[ i ] );
+			obj.css('left', this.pos[ i ].s.x+'px');
+			obj.css('top',  this.pos[ i ].s.y+'px');
 		}
 		
         this.state = 'CANCEL';
-    }
+    },
+	toString : function(){
+		return "déplacement "+( this.objs.length > 1 ? "du groupe d'objets" : "de l'objet "+$( this.objs[ 0 ] ).attr( "id" ) );
+	}
+	
 });
 
 
@@ -790,24 +919,55 @@ var ResizeObjCmd = function(elem, curr){
 extend(ResizeObjCmd, Command);
 $.extend(ResizeObjCmd.prototype, {
     execute: function(){
-        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
-        
+        if(this.state != 'WAITING' ) return;
+		if( this.dx ){
+			this.obj.css('left', this.dx);
+	        this.obj.css('top', this.dy);
+	        this.obj.css('width', this.dw);
+	        this.obj.css('height', this.dh);
+	        
+			if( $( this.curr.choosed ).attr("id") == this.obj.attr( "id" ) ){
+		        this.curr.rt.css('top', this.undoCtrlPt.rt);
+		        this.curr.lb.css('left', this.undoCtrlPt.lb);
+		        this.curr.rb.css({'left': this.undoCtrlPt.rb.left,'top': this.undoCtrlPt.rb.top});
+			}
+		}
+		
+		
         this.state = 'SUCCESS';
     },
     undo: function(){
         if(this.state != 'SUCCESS') return;
         
+		
+		this.dx = this.obj.css('left');
+	    this.dy = this.obj.css('top');
+	    this.dw = this.obj.css('width');
+	    this.dh = this.obj.css('height');
+		
+		this.undoCtrlPt = {
+	        rt: this.curr.rt.css('top'),
+	        lb: this.curr.lb.css('left'),
+	        rb:{left: this.curr.rb.css('left'), top: this.curr.rb.css('top')}
+	    };
+		
+		
         this.obj.css('left', this.sx);
         this.obj.css('top', this.sy);
         this.obj.css('width', this.sw);
         this.obj.css('height', this.sh);
         
-        this.curr.rt.css('top', this.initialCtrlPt.rt);
-        this.curr.lb.css('left', this.initialCtrlPt.lb);
-        this.curr.rb.css({'left': this.initialCtrlPt.rb.left,'top': this.initialCtrlPt.rb.top});
-        
+		if( $( this.curr.choosed ).attr("id") == this.obj.attr( "id" ) ){
+			this.curr.rt.css('top', this.initialCtrlPt.rt);
+			this.curr.lb.css('left', this.initialCtrlPt.lb);
+			this.curr.rb.css({'left': this.initialCtrlPt.rb.left,'top': this.initialCtrlPt.rb.top});
+        }
         this.state = 'CANCEL';
-    }
+    },
+	toString : function(){
+		return "redimensionement de l'objet "+$( this.obj ).attr( "id" );
+	}
+	
 });
 
 var GoDownCmd = function(upperElem, lowerElem){
@@ -818,7 +978,7 @@ var GoDownCmd = function(upperElem, lowerElem){
 extend(GoDownCmd, Command);
 $.extend(GoDownCmd.prototype, {
     execute: function(){
-        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
+        if(this.state != 'WAITING' ) return;
         
         this.state = 'SUCCESS';
     },
@@ -830,7 +990,19 @@ $.extend(GoDownCmd.prototype, {
         this.upper.css('z-index', tempZ);
         
         this.state = 'CANCEL';
-    }
+    },
+	redo : function(){
+		if(this.state != 'CANCEL'  ) return;
+        
+		var tempZ = this.lower.css('z-index');
+        this.lower.css('z-index', this.upper.css('z-index'));
+        this.upper.css('z-index', tempZ);
+		
+        this.state = 'SUCCESS';
+	},
+	toString : function(){
+		return "swap la position de "+this.upper.attr( "id" )+" avec celle de "+this.lower.attr( "id" );
+	}
 });
 
 var CreateElemCmd = function(step, container){
@@ -842,7 +1014,7 @@ var CreateElemCmd = function(step, container){
 extend(CreateElemCmd, Command);
 $.extend(CreateElemCmd.prototype, {
     execute: function(){
-        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
+        if(this.state != 'WAITING' ) return;
         
         this.step.append(this.container);
         
@@ -854,7 +1026,10 @@ $.extend(CreateElemCmd.prototype, {
         this.container.detach();
         
         this.state = 'CANCEL';
-    }
+    },
+	toString : function(){
+		return "ajout de l'objet "+this.container.attr( "id" );
+	}
 });
 
 
@@ -865,18 +1040,24 @@ $.extend(CreateElemCmd.prototype, {
  * 1. Modify the mood
  *
  */
-var ModifySpeakMoodCmd = function(  speak , oldMood , newMood , oldSrc , newSrc ){
+var ModifySpeakMoodCmd = function(  speak , newMood , newSrc , oldMood , oldSrc){
 	this.speak = speak;
 	this.newMood = newMood;
-	this.oldMood = oldMood;
-	this.oldSrc = oldSrc;
 	this.newSrc = newSrc;
+	if( oldMood )
+		this.oldMood = oldMood;
+	else
+		this.oldMood = $( this.speak ).attr( "data-mood" );
+	if( oldSrc )
+		this.oldSrc = oldSrc;
+	else
+		this.oldSrc = $( this.speak ).children("img").attr( "src" );
 	this.state = 'WAITING';
 }
 extend( ModifySpeakMoodCmd , Command );
 $.extend( ModifySpeakMoodCmd.prototype, {
     execute: function(){
-        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
+        if(this.state != 'WAITING') return;
 		
 		$( this.speak ).attr( "data-mood" , this.newMood );
 		$( this.speak ).children("img").attr( "src" , this.newSrc );
@@ -890,7 +1071,10 @@ $.extend( ModifySpeakMoodCmd.prototype, {
 		$( this.speak ).children("img").attr( "src" , this.oldSrc );
 		
         this.state = 'CANCEL';
-    }
+    },
+	toString : function(){
+		return "modification de l'humeur ";
+	}
 });
  
  
@@ -917,7 +1101,7 @@ var AddMoodCmd = function(  speaker , key , image_id ){
 extend( AddMoodCmd , Command );
 $.extend( AddMoodCmd.prototype, {
     execute: function(){
-        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
+        if(this.state != 'WAITING') return;
 		this.speaker.addMood( this.key , this.image_id );
 		if( this.speaks )
 			for( var i = 0 ; i < this.speaks.length ; i ++ ){
@@ -939,42 +1123,22 @@ $.extend( AddMoodCmd.prototype, {
 		delete this.speaker.portrait[ this.key ];
 		
         this.state = 'CANCEL';
-    }
-});
-var RenameMoodCmd = function( speaker , oldName , newName){
-	this.speaker = speaker;
-	this.newName = newName;
-	this.oldName = oldName;
-	
-	this.state = 'WAITING';
-}
-extend( RenameMoodCmd , Command );
-$.extend( RenameMoodCmd.prototype, {
-    execute: function(){
-        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
-        
-		this.speaker.renameMood( this.oldName , this.newName );
-		
-        this.state = 'SUCCESS';
     },
-    undo: function(){
-        if(this.state != 'SUCCESS') return;
-        
-		this.speaker.renameMood( this.newName , this.oldName );
-		
-        this.state = 'CANCEL';
-    }
+	toString : function(){
+		return "ajout de l'humeur "+this.key+" sur l'interlocuteur "+this.speaker.name;
+	}
 });
 var DelMoodCmd = function( speaker , mood ){
 	this.speaker = speaker;
 	this.mood = mood;
 	this.speaks ;
 	this.state = 'WAITING';
+	this.imgsrc;
 }
 extend( DelMoodCmd , Command );
 $.extend( DelMoodCmd.prototype, {
     execute: function(){
-        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
+        if(this.state != 'WAITING' ) return;
         
 		this.speaks = this.speaker.getAssociateSpeak( this.mood );
 		
@@ -999,7 +1163,10 @@ $.extend( DelMoodCmd.prototype, {
         }
         
         this.state = 'CANCEL';
-    }
+    },
+	toString : function(){
+		return "suppression de l'humeur "+this.mood+" sur l'interlocuteur "+this.speaker.name;
+	}
 });
  var ModifyMoodSrcCmd = function(  speaker  , mood,  newSrc ){
 	this.speaker = speaker;
@@ -1012,15 +1179,13 @@ $.extend( DelMoodCmd.prototype, {
 extend( ModifyMoodSrcCmd , Command );
 $.extend( ModifyMoodSrcCmd.prototype, {
     execute: function(){
-        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
+        if(this.state != 'WAITING' ) return;
         
 		this.oldSrc = this.speaker.portrait[ this.mood ];
 		this.speaker.portrait[ this.mood ] = this.newSrc;
         
 		this.speaks = this.speaker.getAssociateSpeak( this.mood );
 		var src = this.speaker.getMoodUrl(this.mood);     
-			console.log( this.speaks );
-		console.log( src );
 		for( var i = 0 ; i < this.speaks.length ; i ++ ){
 			$( this.speaks[ i ] ).children("img").attr( "src" , src);
             if(this.newSrc) 
@@ -1046,19 +1211,22 @@ $.extend( ModifyMoodSrcCmd.prototype, {
 		}
         
         this.state = 'CANCEL';
-    }
+    },
+	toString : function(){
+		return "modification de l'humeur "+this.mood+" sur l'interlocuteur "+this.speaker.name;
+	}
 });
- var ModifyColorSpeakCmd = function(  speaker  , newColor , oldColor ){
+ var ModifyColorSpeakCmd = function(  speaker  , newColor  ){
 	this.speaker = speaker;
 	this.newColor = newColor;
-	this.oldColor = oldColor;
+	this.oldColor = this.speaker.color;
 	
 	this.state = 'WAITING';
 }
 extend( ModifyColorSpeakCmd , Command );
 $.extend( ModifyColorSpeakCmd.prototype, {
     execute: function(){
-        if(this.state != 'WAITING' && this.state != 'CANCEL') return;
+		if(this.state != 'WAITING' ) return;
         
 		this.speaker.color = this.newColor;
 		this.speaks = this.speaker.getAssociateSpeak( );
@@ -1071,13 +1239,16 @@ $.extend( ModifyColorSpeakCmd.prototype, {
     undo: function(){
         if(this.state != 'SUCCESS') return;
         
-        this.speaker.color = oldColor;
+        this.speaker.color = this.oldColor;
 		for( var i = 0 ; i < this.speaks.length ; i ++ ){
 			$( this.speaks[ i ] ).attr( "data-color" , this.speaker.color );
 			$( this.speaks[ i ] ).css( "background-color", this.speaker.color );
         }
         this.state = 'CANCEL';
-    }
+    },
+	toString : function(){
+		return "modification de la couleur sur l'interlocuteur "+this.speaker.name;
+	}
 });
 /* Ressources Management Commands
  *
@@ -1116,7 +1287,10 @@ $.extend(AddSrcCmd.prototype, {
         srcMgr.delSource(this.id);
         
         this.state = "CANCEL";
-    }
+    },
+	toString : function(){
+		return "ajout de la ressource "+this.id+" de type "+this.type;
+	}
 });
 var ModSrcCmd = function(type, data, id) {
     if(!type || !data) {
@@ -1150,7 +1324,10 @@ $.extend(ModSrcCmd.prototype, {
         srcMgr.addSource(this.oldtype, this.olddata, this.id);
         
         this.state = "CANCEL";
-    }
+    },
+	toString : function(){
+		return "modification de la ressource "+this.id+" de type "+this.type;
+	}
 });
 
 var RenameSrcCmd = function(oldname, newname) {
@@ -1180,7 +1357,10 @@ $.extend(RenameSrcCmd.prototype, {
         }
         srcMgr.rename(this.newname, this.oldname);
         this.state = "CANCEL";
-    }
+    },
+	toString : function(){
+		return "renommage de la ressource "+ this.oldname +" en "+this.newname;
+	}
 });
 
 var DelSrcCmd = function(id) {
@@ -1198,7 +1378,8 @@ var DelSrcCmd = function(id) {
     var links = [];
     var doms = [];
     var wikianimes = [];
-    
+    var speaks = [];
+	
     var t = src.type;
     // Save all dependencies to this source
     // Script dependency
@@ -1238,6 +1419,15 @@ var DelSrcCmd = function(id) {
             if( (type == "wiki" || type == "anime") && srcMgr.sources[srcid].data.getDependency(id) ) {
                 wikianimes.push({'src':srcid, 'data':clone(srcMgr.sources[srcid].data)});
             }
+			if( type == "speaker" && srcMgr.getSource(srcid).getDependency(id) ){
+				var mood;
+				for( var i in srcMgr.getSource(srcid).portrait )
+					if( srcMgr.getSource(srcid).portrait[i] == id ){
+						mood = i;
+						break;
+					}
+				speaks.push({'src':srcid, 'speaks': srcMgr.sources[srcid].data.getAssociateSpeak( mood ) , 'mood':mood })
+			}
         }
     }
     // Other dependency for game src: DOMElement
@@ -1259,11 +1449,13 @@ var DelSrcCmd = function(id) {
             doms.push({'obj':game, 'related':related, 'relation':relation});
         });
     }
-    
+    if( t == "speaker" )
+		return;
     this.scripts = scripts;
     this.links = links;
     this.doms = doms;
     this.wikianimes = wikianimes;
+	this.speaks = speaks;
     this.state = "WAITING";
 };
 extend(DelSrcCmd, Command);
@@ -1275,6 +1467,16 @@ $.extend(DelSrcCmd.prototype, {
             return;
         }
         srcMgr.delSource(this.id);
+		
+		for(var i = 0; i < this.speaks.length; ++i) {
+			var obj = this.speaks[i];
+			for( var k = 0 ; k < obj.speaks.length ; k ++ ){
+				$( obj.speaks[ k ] ).attr( "data-mood" , "neutre" );
+				$( obj.speaks[ k ] ).children( "img" ).attr( "name" , srcMgr.getSource(obj.src).portrait[ "neutre" ] );
+				$( obj.speaks[ k ] ).children( "img" ).attr( "src" , srcMgr.getSource(obj.src).getMoodUrl( "neutre" ) );
+			}
+		}
+		
         this.state = "SUCCESS";
     },
     undo: function() {
@@ -1310,9 +1512,20 @@ $.extend(DelSrcCmd.prototype, {
             var obj = this.wikianimes[i];
             srcMgr.sources[obj.src].data = obj.data;
         }
-        
+        for(var i = 0; i < this.speaks.length; ++i) {
+			var obj = this.speaks[i];
+			srcMgr.getSource(obj.src).portrait[ obj.mood ] = this.id ;
+			for( var k = 0 ; k < obj.speaks.length ; k ++ ){
+				$( obj.speaks[ k ] ).attr( "data-mood" , obj.mood );
+				$( obj.speaks[ k ] ).children( "img" ).attr( "name" , this.id );
+				$( obj.speaks[ k ] ).children( "img" ).attr( "src" , srcMgr.sources[this.id].data );
+			}
+		}
         this.state = "CANCEL"
-    }
+    },
+	toString : function(){
+		return "suppression de la ressource "+ this.id +" de type "+this.type;
+	}
 });
 /*
  * Text Link Cmd
@@ -1344,7 +1557,10 @@ $.extend(AddTextLinkCmd.prototype, {
         this.selectNode.html(this.nodeHtml.replace(this.linkedStr, this.selStr));
 
         this.state = "CANCEL";
-    }
+    },
+	toString : function(){
+		return "ajout d'une relation";
+	}
 });
 
 var ModifyLinkCmd = function(linkType, link) {
@@ -1374,5 +1590,8 @@ $.extend(ModifyLinkCmd.prototype, {
         this.node.attr('link', this.oldLink);
 
         this.state = "CANCEL";
-    }
+    },
+	toString : function(){
+		return "modification d'une relation";
+	}
 });

@@ -328,7 +328,7 @@ function editeSpeakDialog( speak ){
 			dialog.confirm.click(function() {
 				var actualMood = speak.attr("data-mood" );
 				if( initialMood != actualMood )
-					CommandMgr.executeCmd( new ModifySpeakMoodCmd( speak , initialMood  , actualMood , spkObj.getMoodUrl( initialMood ) , spkObj.getMoodUrl( actualMood )  ) );
+					CommandMgr.executeCmd( new ModifySpeakMoodCmd( speak , actualMood  , spkObj.getMoodUrl( actualMood ) ,  initialMood , spkObj.getMoodUrl( initialMood ) ) );
 				
 				dialog.close();
 			});

@@ -1563,8 +1563,6 @@ Speaker.prototype = {
 				cmds.push( new AddMoodCmd( spkObj , moodName , srcimg ) );
 			else{
 				state[ moodName ] = false;
-				console.log( srcimg );
-				console.log( spkObj );
 				if( ( !srcimg  ) || spkObj.getPictSrc( moodName ) != srcimg )
 					cmds.push( new ModifyMoodSrcCmd( spkObj , moodName , srcimg ) );
 			}
@@ -1574,8 +1572,8 @@ Speaker.prototype = {
 				cmds.push( new DelMoodCmd( spkObj , i ) );
 		
 		var newColor = $('#bulle_couleur' ).val();
-		if( this.color != newColor && isColor( newColor ) )
-			cmds.push( new ModifyColorSpeakCmd( spkObj , newColor , this.color ) );
+		if( spkObj.color != newColor && isColor( newColor ) )
+			cmds.push( new ModifyColorSpeakCmd( spkObj , newColor ) );
 		
 		
 		CommandMgr.executeCmd( new CommandMulti( cmds ) );
@@ -2035,11 +2033,17 @@ var initShapeTool = function() {
             elems.detach();
             elems.each(function() {
             	$(this).attr('id', 'obj'+(curr.objId++));
+				
+				$(this).children(".del_container").remove();
+				$(this).resizable().moveable().deletable().configurable().canGoDown();
+				
             	$(this).hoverButton('./images/UI/addscript.jpg', addScriptForObj);
+				
+				
             });
 				defineZ(tar, elems);
             elems.appendTo(tar);
-
+			
             $('body').unbind('mouseup', cbfinish);
             $('body').unbind('mousemove', cbdraw);
         },
@@ -3453,11 +3457,14 @@ $.fn.canGoDown = function(f, statiq) {
 
 // Move event
 var moveCmd = {};
+var MouseStart = {};
 function startMove(e) {
 	e.preventDefault();
 	e.stopPropagation();
 	tag.movestarted = true;
 	moveCmd = new MoveObjCmd( multiSelect );
+	
+	MouseStart = { x:  e.clientX  , y : e.clientY };
 	
 	var el = $( multiSelect[ 0 ] );
 	rectMutliSelect.pos = {x:el.position().left , y:el.position().top };
@@ -3487,7 +3494,8 @@ function cancelMove(e) {
     if(tag.movestarted) {
 		e.preventDefault();
         e.stopPropagation();
-        CommandMgr.executeCmd(moveCmd);
+		if( MouseStart.x != e.clientX || MouseStart.y != e.clientY ) // check if there was a move
+			CommandMgr.executeCmd(moveCmd);
         tag.movestarted = false;
 		magnetisme.delGuide();
 		// it should be a trigger of mouseenter on the element that have been moved ( for the right option panel to pop )

@@ -992,7 +992,7 @@ mse.Speaker = function( parent, param, who, imgSrc , dim , color ) {
 	this.sens = true; // true left align , false right align
 	
 	// graphic related
-	this.bordureImg = { top : 0 , left : -10 , right : 15 , bottom : 5 }; // inner bordure
+	this.bordureImg = { top : -5 , left : -10 , right : 15 , bottom : 10 }; // inner bordure
 	this.color = color;
 	this.borderRadius = 4;
 	
@@ -1096,7 +1096,7 @@ $.extend(mse.Speaker.prototype, {
 			var criticBorder = Math.min( border , ( hb - pich ) / 2 );
 			
 			
-			var picl = 10;
+			var picl = 8;
 			
 	    	ctx.beginPath();
 			if( sens ){
@@ -3383,7 +3383,7 @@ $.extend(mse.Animation.prototype, {
 	var defaultEvents = ['click', 'doubleClick', 'longPress', 'move', 'swipe', 'gestureStart', 'gestureUpdate', 'gestureEnd', 'gestureSingle', 'keydown', 'keypress', 'keyup', 'scroll', 'swipeleft', 'swiperight'];
 	
 	mse.Script = function(cds) {
-	    if(!cds) return;
+		if(!cds) return;
 		this.scripts = [];
 		this.states = {};
 		this.expects = {};
