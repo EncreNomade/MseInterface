@@ -1,14 +1,3 @@
-var gui = {};
-
-gui.openComment = function(){
-    gui.center.append(gui.comment);
-    gui.comment.addClass('show');
-}
-gui.closeComment = function() {
-    gui.comment.removeClass('show');
-    gui.comment.detach();
-}
-
 var msgCenter =(function(){
     // private
     var messageList = false;
@@ -58,10 +47,79 @@ var msgCenter =(function(){
         },
     }
 })();
+
+
+var gui = {};
+
+gui.openComment = function(){
+    gui.center.append(gui.comment);
+    gui.comment.addClass('show');
+}
+gui.closeComment = function() {
+    gui.comment.removeClass('show');
+    gui.comment.detach();
+}
+
+gui.editImage = function(imgData, w, h) {
+    // Calcul size
+    if(w/h > 5/3) {
+        var width = w, height = Math.round(w*3/4);
+    }
+    else if(w/h < 1) {
+        var width = Math.round(h*4/3), height = h;
+    }
+    else {
+        var width = Math.round(w/0.8), height = Math.round(width*3/4);
+    }
+    
+    // Show scriber
+    gui.center.append(gui.scriber);
+    gui.scriber.show();
+    gui.scriber.css({
+        'left': -width/2,
+        'top': -height/2,
+        'width': width,
+        'height': height
+    });
+    var canvas = gui.scriber.children('canvas').get(0);
+    
+    // Resize canvas
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.width = width;
+    canvas.style.height = height;
+    
+    var ctx = canvas.getContext('2d');
+    ctx.putImageData(imgData, 0, 0);
+}
+
 // Initialisation
 $(window).load(function() {
     gui.center = $('#center');
     gui.comment = $('#comment');
+    gui.capture = $('#comment .header #camera');
+    
+    // Scriber interaction
+    $('#scriber .close').click(function(){
+        $('#scriber').detach();
+        mse.root.startCapture(new Callback(gui.editImage, window));
+    });
+    $('#scriber .confirm').click(function() {
+        $('#scriber').detach();
+        // Retrieve the cavnvas image data
+        var canvas = gui.scriber.children('canvas').get(0);
+        var img = canvas.toDataURL();
+        
+        gui.openComment();
+        $('#comment .header #upload').prop('src', img).show(500);
+    });
+    // Remove scriber temporarly
+    gui.scriber = $('#scriber').detach();
+    
     $('#comment_btn').click(gui.openComment);
-    $('#comment_close_btn').click(gui.closeComment).click();
+    $('#comment .close').click(gui.closeComment).click();
+    gui.capture.click(function() {
+        gui.closeComment();
+        mse.root.startCapture(new Callback(gui.editImage, window));
+    });
 });

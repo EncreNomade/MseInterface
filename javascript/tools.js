@@ -1654,11 +1654,11 @@ var scriptMgr = function() {
             pageTrans: "page",
             objTrans: "obj",
             playAnime: "anime",
-            changeCursor: "cursor",//
+            changeCursor: "cursor",
             playVoice: "audio",
             stopVoice: "audio",
-            addScript: "script",//
-            script: "code",//
+            addScript: "script",
+            script: "code",
             effet: "effetname",
             playDefi: "",
             pauseDefi: "",
