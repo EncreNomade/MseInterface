@@ -25,19 +25,19 @@ function userLogin($uid, $mdp){
     else return false;
 }
 
-function checkPjExist($pj) {
+function checkPjExist($pj, $lang='francais') {
     if(!isset($_SESSION['uid'])) return false;
-    $pid = $_SESSION['uid']."_".$pj;
-    $resp = mysql_query("SELECT COUNT(*) AS n FROM Projects WHERE id='$pid' LIMIT 1;");
+    $owner = $_SESSION['uid'];
+    $resp = mysql_query("SELECT COUNT(*) AS n FROM Projects WHERE owner='$owner' AND name='$pj' AND language='$lang' LIMIT 1;");
     $count = mysql_fetch_array($resp);
     if(!$count || $count['n'] == 0) return false;
     else return true;
 }
 
-function checkPjStruct($pj){
+function checkPjStruct($pj, $lang='francais'){
     if(!isset($_SESSION['uid'])) return false;
-    $pid = $_SESSION['uid']."_".$pj;
-    $resp = mysql_query("SELECT struct FROM Projects WHERE id='$pid' LIMIT 1;");
+    $owner = $_SESSION['uid'];
+    $resp = mysql_query("SELECT struct FROM Projects WHERE owner='$owner' AND name='$pj' AND language='$lang' LIMIT 1;");
     $struct = mysql_fetch_array($resp);
     if($struct) return $struct['struct'];
     else return false;

@@ -179,12 +179,13 @@ else header("Location: index.php", true);
 	
 	<?php
 	    print("var pjName = '".$pj->getName()."';");
+        print("var pjLanguage = '".$pj->getLanguage()."';");
 	    print("var imgPath = '".$pj->getSrcSavePath("image")."';");
 	    print("var audPath = '".$pj->getRelatSrcPath("audio")."';");
 	    print("var gamePath = '".$pj->getRelatSrcPath("game")."';");
 	    print("var lastModServer = ".$pj->getLastModTS().";");
 	    print("Config.init({width:".$pj->getWidth().", height:".$pj->getHeight()."});");
-    
+
         if(isset($_SESSION["uid"]) && $_SESSION["uid"] != "") {
             echo "uid = '".$_SESSION["uid"]."';";
         }

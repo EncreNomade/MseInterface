@@ -11,11 +11,12 @@ include 'dbconn.php';
 session_start();
 
 if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
-    if( array_key_exists("pjName", $_POST) ) {
+    if( array_key_exists("pjName", $_POST) && isset( $_POST['language'])) {
         $pjName = $_POST["pjName"];
+        $lang = $_POST['language'];
         ConnectDB();
         if( checkPjExist($pjName) ) {
-            $pj = MseProject::getExistProject($pjName);
+            $pj = MseProject::getExistProject($pjName, $lang);
             if($pj) {
                 $_SESSION[$pjName] = $pj;
                 echo "SUCCESS";
@@ -26,6 +27,7 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
         }
         else echo "Projet n'existe pas";
     }
+    
 }
 
 ?>

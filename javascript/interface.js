@@ -1469,7 +1469,7 @@ function saveProject() {
 	       pjsave.lastModif = curr.lastModif;
 	       var pjsavestr = JSON.stringify(pjsave);
 	       
-	       saveToLocalStorage(pjName, pjsavestr);
+	       saveToLocalStorage(pjName+' '+pjLanguage, pjsavestr);
 	       loading.hide();
 	   });
 }
