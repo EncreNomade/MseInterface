@@ -198,6 +198,13 @@ var TextUtil = function() {
 	$('body').append(canvas);
 	var ctx = canvas.get(0).getContext('2d');
 	
+	var textEditPrepa = function(obj){
+	    obj.parent().moveable(false).resizable(false);
+	}
+	var textEditFinish = function(content, obj) {
+	    obj.parent().moveable().resizable();
+	}
+	
 	return {
 		config : function(font) {
 			ctx.font = font;
@@ -234,7 +241,9 @@ var TextUtil = function() {
 				var lastsp = text.lastIndexOf(' ', maxM);
 				if(lastsp == -1) return maxM;
 				else return (lastsp+1);
-		}
+		},
+		editPrepaCb : new Callback(textEditPrepa, window),
+		editFinishCb : new Callback(textEditFinish, window)
 	};
 }();
 
@@ -956,6 +965,9 @@ StepManager.prototype = {
 	               .hoverButton('./images/tools/anime.png', animeTool.animateObj)
 	               .hoverButton('./images/UI/addscript.jpg', addScriptForObj)
 	               .canGoDown();
+	            // Editable for text object   
+                if(obj.children('p').length > 0)
+                    obj.children('p').editable(TextUtil.editFinishCb, TextUtil.editPrepaCb, true);
 	            scriptMgr.countScripts(obj.attr('id'),'obj');
 	        }
 	    });
@@ -1958,6 +1970,7 @@ var initTextTool = function() {
             	}
 					
             	// Append all in current step
+            	res.children('p').editable(TextUtil.editFinishCb, TextUtil.editPrepaCb, true);
             	res.moveable().resizable().deletable().configurable().hoverButton('./images/UI/addscript.jpg', addScriptForObj).appendTo(tar);
                 res.canGoDown();
             });
@@ -3319,7 +3332,7 @@ var tag = {
 // position of the mouse relative to the element manipulated ( resized or translated )
 var anchor = {};
 var curr = {};
-var editSupportTag = ['SPAN', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'DIV'];
+var editSupportTag = ['SPAN', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'DIV', 'P'];
 var originalRatio = 1;
 var multiSelect = [];
 var rectMutliSelect = {};
@@ -3797,14 +3810,22 @@ $.fn.addStepManager = function() {
 
 
 // Editable for the text tags
-$.fn.editable = function(callback) {
+$.fn.editable = function(callback, prepa, dblclick) {
 	var tagName = this[0].tagName;
 	// Don't support
 	if( $.inArray(tagName.toUpperCase(), editSupportTag) == -1 ) return;
 	
-	$(this).click(function() {
+	var editfn = function() {
+	    // Invoke the prepa function
+	    if(prepa) prepa.invoke($(this));
+	    
 	    var content = $(this).html();
-	    // Get infos
+	    // Get classes
+	    var className = this.className;
+	    // Get style
+	    var style = $(this).attr('style');
+	    
+	    // Get infos for textarea
 	    var color = $(this).css('color');
 	    var fsize = parseInt($(this).css('font-size'));
 	    var width = $(this).innerWidth();
@@ -3812,18 +3833,26 @@ $.fn.editable = function(callback) {
 		var editfield = $('<textarea row="'+Math.round(height/fsize)+'" col="'+Math.round(width*1.5/fsize)+'">'+content+'</textarea>');
 		editfield.css({'width':width, 'height':height, 'color':color, 'background':'rgba(255,255,255,0.3)', 'top':$(this).css('top'), 'left':$(this).css('left'), 'position':$(this).css('position'), 'font-family':$(this).css('font-family'), 'font-size':$(this).css('font-size'), 'text-align':$(this).css('text-align')});
 		$(this).replaceWith(editfield);
-		editfield.blur(function() {
-			var newcontent = $(this).val();
+		
+		var finishedit = function() {
+			var newcontent = editfield.val();
 			var newtext = $('<'+tagName+'>'+newcontent+'</'+tagName+'>');
-			newtext.css({'color':$(this).css('color'), 'top':$(this).css('top'), 'left':$(this).css('left'), 'position':$(this).css('position'), 'font-family':$(this).css('font-family'), 'font-size':$(this).css('font-size')});
-			$(this).replaceWith(newtext);
+			newtext.attr('style', style);
+			newtext.get(0).className = className;
+			editfield.replaceWith(newtext);
 			if(callback) {
 			    callback.invoke(newcontent, newtext);
-			    newtext.editable(callback);
 			}
-			else newtext.editable();
-		});
-	});
+			newtext.editable(callback, prepa, dblclick);
+			$('body').unbind('click', finishedit);
+		}
+		
+		editfield.blur(finishedit).click(function(e){e.stopPropagation();});
+		$('body').click(finishedit);
+	};
+	
+	if(dblclick === true) $(this).dblclick(editfn);
+	else $(this).click(editfn);
 	return this;
 }
 
