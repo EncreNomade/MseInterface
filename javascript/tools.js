@@ -2136,28 +2136,32 @@ var initShapeTool = function() {
 
 
 // Editable tools
-var CreatTool = function(jqToolsPanel, activeButton){
+var CreatTool = function(jqToolsPanel, activeButton, unhideable){
 // Verify tools panel
     if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools')) return;
-    if(!activeButton || !activeButton.click) return;
     this.toolsPanel = jqToolsPanel;
     this.toolsPanel.css('z-index', 7);
     this.toolsPanel.data('creatTool', this);
-    this.activeBn = activeButton;
-    this.activeBn.data('creatTool', this);
-    // Active process
-    this.activeBn.click(function() {
-        var tool = $(this).data('creatTool');
-        if(tool instanceof CreatTool) {
-            tool.active();
-        }
-    });
-    // Verify the existance of del container
-    if(jqToolsPanel.find('.del_container img').length == 0) {
-        jqToolsPanel.hideable(function() {
-            var tool = $(this).parents('.central_tools').data('creatTool');
-            tool.close();
+    
+    if(activeButton && activeButton.click) {
+        this.activeBn = activeButton;
+        this.activeBn.data('creatTool', this);
+        // Active process
+        this.activeBn.click(function() {
+            var tool = $(this).data('creatTool');
+            if(tool instanceof CreatTool) {
+                tool.active();
+            }
         });
+    }
+    if(unhideable !== true) {
+        // Verify the existance of del container
+        if(jqToolsPanel.find('.del_container img').length == 0) {
+            jqToolsPanel.hideable(function() {
+                var tool = $(this).parents('.central_tools').data('creatTool');
+                tool.close();
+            });
+        }
     }
     this.editor = $('#editor');
     this.menuMask = $('#menu_mask');
@@ -2979,6 +2983,27 @@ var initScriptTool = function() {
     objChooser.jqObj.css({'width':'19px', 'height':'100%'});
     objChooser.callback = new Callback(tool.insertVar, tool);
     $('#scriptTool').children('li:eq(0)').append(objChooser.jqObj);
+    return tool;
+}
+
+
+
+
+var initTranslateTool = function() {
+    var tool = new CreatTool($('#translateTool'), null, true);
+    
+    $.extend(tool, {
+        left: $('<div id="transTool_left"></div>'),
+        right: $('<div id="transTool_right"></div>'),
+        center: $('<div id="transTool_center"></div>'),
+        textInput: $('<textarea id="transTool_text" class="script_editor"></textarea>'),
+        inputBtn: $('<div id="transTool_input">Confirmer</div>'),
+        init: function(){
+            this.editor.append(this.left).append(this.center).append(this.right);
+            this.right.append(this.textInput).append(this.inputBtn);
+        }
+    });
+    
     return tool;
 }
 

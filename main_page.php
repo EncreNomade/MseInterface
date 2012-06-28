@@ -126,6 +126,11 @@ else header("Location: index.php", true);
 	    <li><h5>Nom:</h5><input id="code_name" size="5" type="text"></li>
 	    <li><input id="code_save" type="button" value="Sauvegarder" /></li>
 	</ul>
+	<ul id="translateTool" class="central_tools">
+	    <li style="float: right;"><input id="gene_trans" type="button" value="Générer" /></li>
+	    <li style="float: left; margin: 2px 5px;"><img src="./images/tools/previous.png"></li>
+	    <li style="float: left; margin: 2px 5px;"><img src="./images/tools/next.png"></li>
+	</ul>
 	<canvas id="rulerX" class="ruler"></canvas>
 	<canvas id="rulerY" class="ruler"></canvas>
 	

@@ -25,6 +25,9 @@ function init() {
 	window.animeTool = initAnimeTool();
 	window.scriptTool = initScriptTool();
 	
+	//window.translateTool = initTranslateTool();
+	//window.translateTool.active();
+	
 	// Mouse event handler for the resize behavior
 	$('body').supportResize();
 	$('body').supportMove(); 
