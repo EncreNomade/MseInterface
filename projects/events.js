@@ -67,8 +67,11 @@ mse.EventDistributor.prototype = {
             e.offsetY += mse.root.viewport.y;
             e.corrected = true;
         }
-    	if(!this.dominate) this.rootEvt.eventNotif(e.type, e);
-    	if(this.dispatcher) this.dispatcher.dispatch(e.type, e);
+    	if(this.dominate) this.rootEvt.eventNotif(e.type, e);
+    	else {
+    	    this.rootEvt.eventNotif(e.type, e);
+    	    if(this.dispatcher) this.dispatcher.dispatch(e.type, e);
+    	}
     },
     setDispatcher: function(dispatcher) {
         if(dispatcher instanceof mse.EventDispatcher)
@@ -76,7 +79,7 @@ mse.EventDistributor.prototype = {
     },
     
     setDominate: function(dominate) {
-        if(dominate != this.src) this.dominate = dominate;
+        this.dominate = dominate;
     	if(this.dispatcher) this.dispatcher.setDominate(dominate);
     },
     addListener: function(evtName, callback, pr) {
@@ -146,7 +149,7 @@ mse.EventDispatcher.prototype = {
         
         arr = arr.slice();
         for(var val in arr) {
-        	if( (!this.domObj || this.domObj==arr[val] || this.domObj==arr[val].parent) ) {
+        	if( (!this.domObj || this.domObj==arr[val]) ) {
         	    // Non location based event, notify directly
         	    if($.inArray(type, locationEvts) == -1) 
         		    var res = arr[val].evtDeleg.eventNotif(type, e);

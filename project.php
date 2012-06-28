@@ -11,7 +11,7 @@ error_reporting(E_ALL);
 
 class MseProject {
     private $name;
-    private $bookName;
+    private $folder;
     private $width;
     private $height;
     private $orientation;
@@ -26,7 +26,8 @@ class MseProject {
     private $language;
     private static $typeRegExp = "/(\w+)_((image)|(audio)|(game)|(anime)|(wiki))/";
 
-    function MseProject($pjName, $lang, $bkName="", $width = 800, $height = 600, $orient = 'portrait') {
+
+    function MseProject($pjName, $lang, $folder="", $width = 800, $height = 600, $orient = 'portrait') {
         $numargs = func_num_args();
         // Initialization with only pjName && language
         if($numargs == 1 || $numargs == 2) {
@@ -38,7 +39,7 @@ class MseProject {
             if(!$resp) return FALSE;
             
             $this->name = $pj['name'];
-            $this->bkName = $pj['folder'];
+            $this->folder = $pj['folder'];
             $this->width = $pj['width'];
             $this->height = $pj['height'];
             $this->ratio = 480/$this->height;
@@ -61,7 +62,7 @@ class MseProject {
     
         $this->name = $pjName;
         $this->language = $lang;
-        $this->bookName = (is_null($bkName) || $bkName=="") ? $pjName : $bkName;
+        $this->folder = (is_null($folder) || $folder=="") ? $pjName : $folder;
         $this->width = $width ? $width : 800;
         $this->height = $height ? $height : 600;
         $this->ratio = 480/$this->height;
@@ -90,7 +91,7 @@ class MseProject {
             mysql_real_escape_string($this->name),
             mysql_real_escape_string($this->language),
             $this->creation,
-            mysql_real_escape_string($this->bookName),
+            mysql_real_escape_string($this->folder),
             $this->width, $this->height, $this->orientation, 
             $this->currObjId, $this->currSrcId, $this->lastModif);
         $resp = mysql_query($query);
@@ -102,7 +103,7 @@ class MseProject {
     
     function getName() { return $this->name; }
     function getLanguage() { return $this->language; }
-    function getBookName() { return $this->bookName; }
+    function getFolder() { return $this->folder; }
     function getWidth() { return $this->width; }
     function getHeight() { return $this->height; }
     function getOrientation() { return $this->orientation; }
@@ -167,16 +168,16 @@ class MseProject {
     
     function getSrcSavePath($type) {
         switch($type) {
-        case "image" : return './projects/'.$this->name.'/images/';break;
-        case "audio" : return './projects/'.$this->name.'/audios/';break;
-        case "game" : return './projects/'.$this->name.'/games/';break;
+        case "image" : return './projects/'.$this->folder.'/images/';break;
+        case "audio" : return './projects/'.$this->folder.'/audios/';break;
+        case "game" : return './projects/'.$this->folder.'/games/';break;
         }
     }
     function getRelatSrcPath($type) {
         switch($type) {
-        case "image" : return './'.$this->name.'/images/';break;
-        case "audio" : return './'.$this->name.'/audios/';break;
-        case "game" : return './'.$this->name.'/games/';break;
+        case "image" : return './'.$this->folder.'/images/';break;
+        case "audio" : return './'.$this->folder.'/audios/';break;
+        case "game" : return './'.$this->folder.'/games/';break;
         }
     }
     

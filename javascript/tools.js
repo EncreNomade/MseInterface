@@ -198,6 +198,13 @@ var TextUtil = function() {
 	$('body').append(canvas);
 	var ctx = canvas.get(0).getContext('2d');
 	
+	var textEditPrepa = function(obj){
+	    obj.parent().moveable(false).resizable(false);
+	}
+	var textEditFinish = function(content, obj) {
+	    obj.parent().moveable().resizable();
+	}
+	
 	return {
 		config : function(font) {
 			ctx.font = font;
@@ -234,7 +241,9 @@ var TextUtil = function() {
 				var lastsp = text.lastIndexOf(' ', maxM);
 				if(lastsp == -1) return maxM;
 				else return (lastsp+1);
-		}
+		},
+		editPrepaCb : new Callback(textEditPrepa, window),
+		editFinishCb : new Callback(textEditFinish, window)
 	};
 }();
 
@@ -956,6 +965,9 @@ StepManager.prototype = {
 	               .hoverButton('./images/tools/anime.png', animeTool.animateObj)
 	               .hoverButton('./images/UI/addscript.jpg', addScriptForObj)
 	               .canGoDown();
+	            // Editable for text object   
+                if(obj.children('p').length > 0)
+                    obj.children('p').editable(TextUtil.editFinishCb, TextUtil.editPrepaCb, true);
 	            scriptMgr.countScripts(obj.attr('id'),'obj');
 	        }
 	    });
@@ -1563,8 +1575,6 @@ Speaker.prototype = {
 				cmds.push( new AddMoodCmd( spkObj , moodName , srcimg ) );
 			else{
 				state[ moodName ] = false;
-				console.log( srcimg );
-				console.log( spkObj );
 				if( ( !srcimg  ) || spkObj.getPictSrc( moodName ) != srcimg )
 					cmds.push( new ModifyMoodSrcCmd( spkObj , moodName , srcimg ) );
 			}
@@ -1574,8 +1584,8 @@ Speaker.prototype = {
 				cmds.push( new DelMoodCmd( spkObj , i ) );
 		
 		var newColor = $('#bulle_couleur' ).val();
-		if( this.color != newColor && isColor( newColor ) )
-			cmds.push( new ModifyColorSpeakCmd( spkObj , newColor , this.color ) );
+		if( spkObj.color != newColor && isColor( newColor ) )
+			cmds.push( new ModifyColorSpeakCmd( spkObj , newColor ) );
 		
 		
 		CommandMgr.executeCmd( new CommandMulti( cmds ) );
@@ -1656,11 +1666,11 @@ var scriptMgr = function() {
             pageTrans: "page",
             objTrans: "obj",
             playAnime: "anime",
-            changeCursor: "cursor",//
+            changeCursor: "cursor",
             playVoice: "audio",
             stopVoice: "audio",
-            addScript: "script",//
-            script: "code",//
+            addScript: "script",
+            script: "code",
             effet: "effetname",
             playDefi: "",
             pauseDefi: "",
@@ -1960,6 +1970,7 @@ var initTextTool = function() {
             	}
 					
             	// Append all in current step
+            	res.children('p').editable(TextUtil.editFinishCb, TextUtil.editPrepaCb, true);
             	res.moveable().resizable().deletable().configurable().hoverButton('./images/UI/addscript.jpg', addScriptForObj).appendTo(tar);
                 res.canGoDown();
             });
@@ -2035,11 +2046,17 @@ var initShapeTool = function() {
             elems.detach();
             elems.each(function() {
             	$(this).attr('id', 'obj'+(curr.objId++));
+				
+				$(this).children(".del_container").remove();
+				$(this).resizable().moveable().deletable().configurable().canGoDown();
+				
             	$(this).hoverButton('./images/UI/addscript.jpg', addScriptForObj);
+				
+				
             });
 				defineZ(tar, elems);
             elems.appendTo(tar);
-
+			
             $('body').unbind('mouseup', cbfinish);
             $('body').unbind('mousemove', cbdraw);
         },
@@ -3315,7 +3332,7 @@ var tag = {
 // position of the mouse relative to the element manipulated ( resized or translated )
 var anchor = {};
 var curr = {};
-var editSupportTag = ['SPAN', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'DIV'];
+var editSupportTag = ['SPAN', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'DIV', 'P'];
 var originalRatio = 1;
 var multiSelect = [];
 var rectMutliSelect = {};
@@ -3453,11 +3470,14 @@ $.fn.canGoDown = function(f, statiq) {
 
 // Move event
 var moveCmd = {};
+var MouseStart = {};
 function startMove(e) {
 	e.preventDefault();
 	e.stopPropagation();
 	tag.movestarted = true;
 	moveCmd = new MoveObjCmd( multiSelect );
+	
+	MouseStart = { x:  e.clientX  , y : e.clientY };
 	
 	var el = $( multiSelect[ 0 ] );
 	rectMutliSelect.pos = {x:el.position().left , y:el.position().top };
@@ -3487,7 +3507,8 @@ function cancelMove(e) {
     if(tag.movestarted) {
 		e.preventDefault();
         e.stopPropagation();
-        CommandMgr.executeCmd(moveCmd);
+		if( MouseStart.x != e.clientX || MouseStart.y != e.clientY ) // check if there was a move
+			CommandMgr.executeCmd(moveCmd);
         tag.movestarted = false;
 		magnetisme.delGuide();
 		// it should be a trigger of mouseenter on the element that have been moved ( for the right option panel to pop )
@@ -3789,14 +3810,22 @@ $.fn.addStepManager = function() {
 
 
 // Editable for the text tags
-$.fn.editable = function(callback) {
+$.fn.editable = function(callback, prepa, dblclick) {
 	var tagName = this[0].tagName;
 	// Don't support
 	if( $.inArray(tagName.toUpperCase(), editSupportTag) == -1 ) return;
 	
-	$(this).click(function() {
+	var editfn = function() {
+	    // Invoke the prepa function
+	    if(prepa) prepa.invoke($(this));
+	    
 	    var content = $(this).html();
-	    // Get infos
+	    // Get classes
+	    var className = this.className;
+	    // Get style
+	    var style = $(this).attr('style');
+	    
+	    // Get infos for textarea
 	    var color = $(this).css('color');
 	    var fsize = parseInt($(this).css('font-size'));
 	    var width = $(this).innerWidth();
@@ -3804,18 +3833,26 @@ $.fn.editable = function(callback) {
 		var editfield = $('<textarea row="'+Math.round(height/fsize)+'" col="'+Math.round(width*1.5/fsize)+'">'+content+'</textarea>');
 		editfield.css({'width':width, 'height':height, 'color':color, 'background':'rgba(255,255,255,0.3)', 'top':$(this).css('top'), 'left':$(this).css('left'), 'position':$(this).css('position'), 'font-family':$(this).css('font-family'), 'font-size':$(this).css('font-size'), 'text-align':$(this).css('text-align')});
 		$(this).replaceWith(editfield);
-		editfield.blur(function() {
-			var newcontent = $(this).val();
+		
+		var finishedit = function() {
+			var newcontent = editfield.val();
 			var newtext = $('<'+tagName+'>'+newcontent+'</'+tagName+'>');
-			newtext.css({'color':$(this).css('color'), 'top':$(this).css('top'), 'left':$(this).css('left'), 'position':$(this).css('position'), 'font-family':$(this).css('font-family'), 'font-size':$(this).css('font-size')});
-			$(this).replaceWith(newtext);
+			newtext.attr('style', style);
+			newtext.get(0).className = className;
+			editfield.replaceWith(newtext);
 			if(callback) {
 			    callback.invoke(newcontent, newtext);
-			    newtext.editable(callback);
 			}
-			else newtext.editable();
-		});
-	});
+			newtext.editable(callback, prepa, dblclick);
+			$('body').unbind('click', finishedit);
+		}
+		
+		editfield.blur(finishedit).click(function(e){e.stopPropagation();});
+		$('body').click(finishedit);
+	};
+	
+	if(dblclick === true) $(this).dblclick(editfn);
+	else $(this).click(editfn);
 	return this;
 }
 

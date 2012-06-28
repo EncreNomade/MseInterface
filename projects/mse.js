@@ -607,16 +607,7 @@ mse.Root = function(id, width, height, orientation) {
 	this.gamewindow = new mse.GameShower();
 	
 	// Capture screen callbacks
-	this.initCapZonecb = new mse.Callback(this.initCapZone, this);
-	this.updateCapZonecb = new mse.Callback(this.updateCapZone, this);
-	this.fixCapZonecb = new mse.Callback(this.fixCapZone, this);
-	// Capture screen cache canvas
-	this.capCache = document.createElement("canvas");
-	this.capCtx = this.capCache.getContext("2d");
-	this.capCache.width = 0;
-	this.capCache.style.width = 0;
-	this.capCache.height = 0;
-	this.capCache.style.height = 0;
+	this.capturecb = new mse.Callback(this.captureHandler, this);
 	
 	// Launch Timeline
 	mse.currTimeline = new mse.Timeline(this, this.interval);
@@ -728,79 +719,80 @@ mse.Root.prototype = {
         // Stop main timeline
         mse.currTimeline.pause();
         
-        // Pause book internal events, init all events for capturing
-        this.evtDistributor.setDominate(this);
-        this.evtDistributor.addListener('gestrueStart', this.initCapZonecb);
-        this.evtDistributor.addListener('gestrueUpdate', this.updateCapZonecb);
-        this.evtDistributor.addListener('gestrueEnd', this.fixCapZonecb);
+        // Append capture body after jqObj for capture events
+        this.capBody = $('<div class="capbody"></div>');
+        this.capBox = $('<div class="capbox"></div>');
+        this.jqObj.after(this.capBox).after(this.capBody);
         
-        // Change mouse cursor
-        mse.setCursor('crosshair');
+        // Init gesture events for capturing
+        this.capBody.mseInteraction();
+        this.capBody.mseInteraction('addListener', 'gestureSingle', this.capturecb);
         
         // Register callback
         if(callback instanceof mse.Callback) this.captureCallback = callback;
     },
     finishCapture: function(zone) {
-        // Invoke callback with the capture of screen
         var capImageData = this.ctx.getImageData(zone.x, zone.y, zone.w, zone.h);
-        
-        // Remove callback
-        this.captureCallback = null;
         
         // Change mouse cursor to default
         mse.setCursor('default');
         
-        // Remove all events for capturing, reactive all internal events
-        this.evtDistributor.removeListener('gestrueStart', this.initCapZonecb);
-        this.evtDistributor.removeListener('gestrueUpdate', this.updateCapZonecb);
-        this.evtDistributor.removeListener('gestrueEnd', this.fixCapZonecb);
-        this.evtDistributor.setDominate(null);
+        // Remove capture body and capture box
+        this.capBody.remove();
+        this.capBox.remove();
+        this.capBody = this.capBox = null;
         
         // Restart main timeline
         mse.currTimeline.play();
+        
+        // Invoke callback with the capture of screen
+        this.captureCallback.invoke(capImageData, zone.w, zone.h);
+        // Remove callback
+        this.captureCallback = null;
     },
     // Event handlers
+    captureHandler: function(e) {
+        if(e.type == "gestureStart") this.initCapZone(e);
+        else if(e.type == "gestureUpdate") this.updateCapZone(e);
+        else if(e.type == "gestureEnd") this.fixCapZone(e);
+    },
     initCapZone: function(e) {
-        if(isNaN(this.capOx) && isNaN(this.capOy)) {
-            this.capOx = e.offsetX;
-            this.capOy = e.offsetY;
+        if(this.capBody) {
+            this.capOx = Math.round(e.offsetX);
+            this.capOy = Math.round(e.offsetY);
+            
+            this.capBox.css({'left':this.capOx, 'top':this.capOy});
         }
     },
     updateCapZone: function(e) {
-        this.capDx = e.offsetX;
-        this.capDy = e.offsetY;
-        
-        // Update canvas
+        if(this.capBody) {
+            this.capDx = Math.round(e.offsetX);
+            this.capDy = Math.round(e.offsetY);
+            
+            // Update capture box
+            if(this.capDx < this.capOx) this.capBox.css('left', this.capDx);
+            if(this.capDy < this.capOy) this.capBox.css('top', this.capDy);
+            this.capBox.css({'width': Math.abs(this.capDx-this.capOx), 
+                             'height': Math.abs(this.capDy-this.capOy)});
+        }
     },
     fixCapZone: function(e) {
-        if(this.capDx > this.capOx) {
-            var x = this.capOx;
-            var w = this.capDx - this.capOx;
+        if(this.capBody) {
+            this.capOx = null;
+            this.capOy = null;
+            this.capDx = null;
+            this.capDy = null;
+            
+            var x = this.capBox.position().left;
+            var y = this.capBox.position().top;
+            var w = this.capBox.width();
+            var h = this.capBox.height();
+            
+            // Cancel because it's too small
+            if(w < 20 || h < 20) return;
+            
+            this.finishCapture({'x': x, 'y': y, 'w': w, 'h': h});
         }
-        else {
-            var x = this.capDx;
-            var w = this.capOx - this.capDx;
-        }
-        if(this.capDy > this.capOy) {
-            var y = this.capOy;
-            var h = this.capDy - this.capOy;
-        }
-        else {
-            var y = this.capDy;
-            var h = this.capOy - this.capDy;
-        }
-        this.capOx = null;
-        this.capOy = null;
-        this.capDx = null;
-        this.capDy = null;
-        // Cancel because it's too small
-        if(w < 20 || h < 20) return;
-        
-        if(this.viewport) {
-            x -= this.viewport.x;
-            y -= this.viewport.y;
-        }
-        this.finishCapture({'x':x, 'y':y, 'w':w, 'h':h});
     }
 };
 
@@ -1079,7 +1071,7 @@ mse.Speaker = function( parent, param, who, imgSrc , dim , color ) {
 	this.sens = true; // true left align , false right align
 	
 	// graphic related
-	this.bordureImg = { top : 0 , left : -10 , right : 15 , bottom : 5 }; // inner bordure
+	this.bordureImg = { top : -5 , left : -10 , right : 15 , bottom : 10 }; // inner bordure
 	this.color = color;
 	this.borderRadius = 4;
 	
@@ -1183,7 +1175,7 @@ $.extend(mse.Speaker.prototype, {
 			var criticBorder = Math.min( border , ( hb - pich ) / 2 );
 			
 			
-			var picl = 10;
+			var picl = 8;
 			
 	    	ctx.beginPath();
 			if( sens ){
@@ -3500,7 +3492,7 @@ $.extend(mse.Animation.prototype, {
 	var defaultEvents = ['click', 'doubleClick', 'longPress', 'move', 'swipe', 'gestureStart', 'gestureUpdate', 'gestureEnd', 'gestureSingle', 'keydown', 'keypress', 'keyup', 'scroll', 'swipeleft', 'swiperight'];
 	
 	mse.Script = function(cds) {
-	    if(!cds) return;
+		if(!cds) return;
 		this.scripts = [];
 		this.states = {};
 		this.expects = {};
