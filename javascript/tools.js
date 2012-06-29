@@ -450,7 +450,7 @@ SourceManager.prototype = {
 		    break;
 		}
 		
-		$('#Ressources').prepend(expo);
+		$('#Ressources_panel').prepend(expo);
 		// Set expo
 		expo.data('srcId', id);
 		this.expos[id] = expo;
@@ -1689,6 +1689,7 @@ var scriptMgr = function() {
         },
         cursors: ['default','pointer','crosshair','text','wait','help','move','autre'],
         scripts: {},
+        expos: {},
         reactionTarget: function(type) {return this.reaction[type];},
         actionSelectList: function(id, type, choosedElem){
             var actfortype = this.action[type];
@@ -1736,21 +1737,38 @@ var scriptMgr = function() {
         addScript: function(name, src, srcType, action, target, reaction, immediate, supp){
             if(!name || !nameValidation(name))
                 return;
+            this.addScriptObj(name, new Script(src, srcType, action, target, reaction, immediate, supp));
+        },
+        addScriptObj: function(name, script) {
+            if(!name || !nameValidation(name))
+                return;
             // If we are overwriting an existing script which is related to another src
             // we have to update the scripts number of this old src.
-            if(this.scripts[name] && this.scripts[name].src != src) {
-                var oldSrc = this.scripts[name].src;
-                var oldSrcType = this.scripts[name].srcType;
-            }
-            this.scripts[name] = new Script(src, srcType, action, target, reaction, immediate, supp);
-            this.countScripts(src, srcType);
-            if(oldSrc) this.countScripts(oldSrc, oldSrcType);
+            if(this.scripts[name])
+                this.delScript(name);
+            // Creation script
+            this.scripts[name] = script;
+            // New script expo
+            this.expos[name] = $('<div class="icon_src"><p>'+name+'</p></div>');
+            $('#Scripts_panel').prepend(this.expos[name]);
+            this.expos[name].click(function() { modifyScriptDialog([name]); });
+            this.countScripts(script.src, script.srcType);
+        },
+        addScripts: function(scripts) {
+            if(!(scripts instanceof Array) && Object.keys(scripts).length != 0)
+                for(var i in scripts) {
+                    this.addScriptObj(i, scripts[i]);
+                }
         },
         delScript: function(name) {
+            // Delete expo
+            this.expos[name].remove();
+            delete this.expos[name];
+            // Delete Script
             var relatedObj = this.scripts[name].src;
             var relatedType = this.scripts[name].srcType;
             delete this.scripts[name];
-            this.countScripts(relatedObj, relatedType);            
+            this.countScripts(relatedObj, relatedType);
         },
         delRelatedScripts: function(objId){
             for(var elem in this.scripts) {

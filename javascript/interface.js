@@ -32,6 +32,15 @@ function init() {
 	$('body').supportResize();
 	$('body').supportMove(); 
 	
+	// Bottom panel active function
+	$('#bottom_panel .tabBar li:lt(2)').click(function() {
+		var name = $(this).html();
+		$(this).siblings('.active').removeClass('active');
+		$(this).addClass('active');
+        $('#Ressources_panel, #Scripts_panel').css('z-index','1');
+		$('#'+name+'_panel').css('z-index','2');
+	});
+	$('#Ressources_panel').css('z-index','2');
 	$('#bottom_panel .add').click(function(){
 	    var bottom = $('#bottom_panel');
 	    // Close
@@ -611,11 +620,11 @@ function addScriptDialog(src, srcType){
     
     if (src.data('scriptsList') && src.data('scriptsList').length > 0){
         var modifyScriptsButton = dialog.addButton($('<input type="button" value="Modifier les scripts existants"></input>'));
-        modifyScriptsButton.click(function(){ modifyScriptDialog(src.data('scriptsList')); });
+        modifyScriptsButton.click(function(){ modifyScriptDialog(src.data('scriptsList'), null, src, srcType); });
     }
 };
 // Modify a script related to an obj
-function modifyScriptDialog(scriptsList, defaultScript) {
+function modifyScriptDialog(scriptsList, defaultScript, relatSrc, relatSrcType) {
     if (typeof(defaultScript) === 'undefined') defaultScript = scriptsList[0];
     dialog.showPopup('Modifier les scripts',400, 410,'Modifier');
     
@@ -639,7 +648,6 @@ function modifyScriptDialog(scriptsList, defaultScript) {
     checkbox += '</p>';
     dialog.main.append(checkbox);
     
-    
     var relatedAction = scriptMgr.scripts[choosedScript].action;
     var relatedReaction = scriptMgr.scripts[choosedScript].reaction;
     var srcid = scriptMgr.scripts[$('#script_name').val()].src;
@@ -652,43 +660,27 @@ function modifyScriptDialog(scriptsList, defaultScript) {
     var delScriptButton = dialog.addButton($('<input type="button" value="Supprimer" />'));
     delScriptButton.click(function(){
         var scriptName = $('#script_name').val();
-        var srcType = scriptMgr.scripts[$('#script_name').val()].srcType;        
-        if ($('#script_name').children().length > 1){
+        // Delete script
+        CommandMgr.executeCmd(new DelScriptCmd(scriptName));     
+        // Show next script 
+        if ($('#script_name').children().length > 1)
             $('#script_name').children().remove('[value="'+scriptName+'"]');
-            scriptMgr.delScript(scriptName);
-        }
-        else { // When delete the last script --> return on addScriptDialog
-            var src;
-            switch(srcType) {
-                case "obj": src = $('#' + scriptMgr.scripts[$('#script_name').val()].src);
-                    break;
-                case "page" : src =  $('#pageBar .active');
-                    break;
-                case "anime": src = srcMgr.expos[scriptMgr.scripts[$('#script_name').val()].src];
-                    break;
-            }
-            CommandMgr.executeCmd(new DelScriptCmd(scriptName));
-            addScriptDialog(src, srcType);            
+        // Last script removed
+        else { 
+            // When delete the last script --> return on addScriptDialog
+            if(relatSrc) addScriptDialog(src, srcType);
+            else dialog.close();
         }
     });
-    var addScriptButton = dialog.addButton($('<input type="button" value="Nouveau script"></input>'));
-    addScriptButton.click(function(){
-        dialog.close(); 
-        var srcType = scriptMgr.scripts[$('#script_name').val()].srcType;
-        var src;
-        switch(srcType) {
-            case "obj": src = $('#' + scriptMgr.scripts[$('#script_name').val()].src);
-                break;
-            case "page" : src =  $('#pageBar .active');
-                break;
-            case "anime": src = srcMgr.expos[scriptMgr.scripts[$('#script_name').val()].src];
-                break;
-        }
-        addScriptDialog(src, srcType);
-    });
+    if(relatSrc) {
+        var addScriptButton = dialog.addButton($('<input type="button" value="Nouveau script"></input>'));
+        addScriptButton.click(function(){
+            dialog.close(); 
+            addScriptDialog(relatSrc, relatSrcType);
+        });
+    }
     
-    
-    dialog.confirm.click({sourceId: srcid, sourceType: srcType},validScript)
+    dialog.confirm.click({sourceId: srcid, sourceType: srcType},validScript);
 }
 
 function validScript(e){
