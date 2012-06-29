@@ -122,7 +122,7 @@ function showOpenPj(){
     ConnectDB();
     if (isset($_SESSION["uid"]) && $_SESSION["uid"] != ""){
         $owner = $_SESSION['uid'];
-        $rep = mysql_query("SELECT name, language FROM projects WHERE owner='$owner' ORDER BY name");
+        $rep = mysql_query("SELECT name, language FROM Projects WHERE owner='$owner' ORDER BY name");
         if (!$rep) {
            echo "var pjList = false; var sqlError=\"".addslashes(mysql_error())."\";\n";
         }

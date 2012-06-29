@@ -40,7 +40,7 @@ Path.prototype = {
     constructor: Path,
     add: function(p) {
         if(isNaN(p.x) || isNaN(p.y)) return;
-        this.pts.push({'x':p.x, 'y':p.y});
+        this.pts.push({'x':p.x, 'y':p.y, 'clientX':p.clientX, 'clientY':p.clientY});
     },
     origin: function() {
         return this.pts[0];
@@ -100,7 +100,11 @@ GestureAnalyser.prototype = {
 		}
 		else if(this.count == 2){
 			// Two finger scale begin
-			
+			this.begin = [];
+			for(var id in this.blobs)
+			    this.begin.push(this.blobs[id].origin());
+			var dis = [this.begin[1].clientX - this.begin[0].clientX, this.begin[1].clientY - this.begin[0].clientY];
+			this.disBegin = Math.sqrt(dis[0]*dis[0] + dis[1]*dis[1]);
 		}
 		this.session_count = this.count;
     },
@@ -114,40 +118,35 @@ GestureAnalyser.prototype = {
     	}
     	else if(this.session_count == 2 && this.count == 2){
     	    // Collect two finger info
-    	    var begin = [];
     	    var end = [];
     	    var path = [];
     	    for(var id in this.blobs) {
     	        var p = this.blobs[id];
     	        path.push(p);
-    	        begin.push(p.origin());
     	        end.push(p.last());
     	    }
     		// Two finger scale
-    		if(this.listeners.hasListener('scale')) {
-    		    var disBegin = [begin[1].x - begin[0].x, begin[1].y - begin[0].y];
-    		    var disEnd = [end[1].x - end[0].x, end[1].y - end[0].y];
-    		    var lbegin = Math.sqrt(disBegin[0]*disBegin[0] + disBegin[1]*disBegin[1]);
+    		if(this.listeners.hasListener('scale') && this.disBegin) {
+    		    var disEnd = [end[1].clientX - end[0].clientX, end[1].clientY - end[0].clientY];
     		    var lend = Math.sqrt(disEnd[0]*disEnd[0] + disEnd[1]*disEnd[1]);
-                this.prevScale = lend/lbegin;
+                this.prevScale = lend / this.disBegin;
     		    var e = {'scale': this.prevScale, 'type':'scale'};
     		    this.listeners.eventNotif('scale', e);
     		}
     		// Two finger translate
     		if(this.listeners.hasListener('translate2')) {
-    		    var angleA = angleFor2Point(begin[0], end[0]);
-    		    var angleB = angleFor2Point(begin[1], end[1]);
+    		    var angleA = angleFor2Point(this.begin[0], end[0]);
+    		    var angleB = angleFor2Point(this.begin[1], end[1]);
     		    if(Math.abs(angleA - angleB) <= 20) {
     		        var beforEnd = path[0].pts[path[0].pts.length-2];
     		        this.listeners.eventNotif('translate2', {'deltaDx': end[0].x-beforEnd.x, 
     		                                                 'deltaDy': end[0].y-beforEnd.y, 
-    		                                                 'dx': end[0].x-begin[0].x, 
-    		                                                 'dy': end[0].y-begin[0].y, 
+    		                                                 'dx': end[0].x-this.begin[0].x, 
+    		                                                 'dy': end[0].y-this.begin[0].y, 
     		                                                 'type':'translate2'});
     		    }
     		}
     		// Clean
-    		begin = null;
     		end = null;
     		path = null;
     	}
@@ -163,6 +162,9 @@ GestureAnalyser.prototype = {
     		    this.listeners.eventNotif('scale', e);
     		}
     	}
+    	this.begin = null;
+    	this.disBegin = null;
+    	this.prevScale = null;
     }
 };
 
@@ -758,7 +760,7 @@ function MultiGestEvt( e, type ) {
         if(!touch.identifier) continue;
         var x = touch.pageX - tarPos.left;
         var y = touch.pageY - tarPos.top;
-        this.touches[touch.identifier] = {'x':x, 'y':y, 'evt':type};
+        this.touches[touch.identifier] = {'x':x, 'clientX':touch.clientX, 'y':y, 'clientY':touch.clientY, 'evt':type};
     }
 }
 
