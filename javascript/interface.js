@@ -826,7 +826,70 @@ function dropToTargetZone(e) {
 	$(this).attr('target', id);
 };
 
-
+function newTranslationDialog(){
+    dialog.showPopup('Nouvelle langue pour '+pjName, 500, 260, 'Générer traduction');
+    var htmlStr = '';
+    $.post('load_project.php', {'user': uid, 'project': pjName}, function(msg){
+        if(!msg || msg == 'FAIL')
+            console.error('fail to retrieve existing language for the project : see load_project.php');
+        else {
+            var langues = msg.split(' ');
+            var htmlStr = '<p>Langues existantes pour ce projet :</p>';
+            htmlStr += '<div id="language_list">';
+            for(var i in langues){
+                if(langues[i] == pjLanguage) htmlStr += '<p id="current_lang">'+langues[i]+'</p>';
+                else  htmlStr += '<p>'+langues[i]+'</p>';
+            }
+            htmlStr += '</div>';
+            dialog.main.prepend(htmlStr);
+        }
+    });
+    
+    dialog.main.append('<p><label for="newLanguage">Nouvelle langue:</label><input type="text" id="newLanguage" /></p>');
+    dialog.main.append('<p><label for="openNewLanguage">Ouvrir le nouveau projet:</label><input type="checkbox" checked id="openNewLanguage" /></p>');
+    
+    dialog.confirm.click(function(){
+        var jqNewLang = $('#newLanguage');
+        window.newLang = jqNewLang.val().toLowerCase();
+        window.currLang = pjLanguage;
+        pjLanguage = newLang;
+        var existLang = $('#language_list').children();
+        window.autoOpen = $('#openNewLanguage').get(0).checked;
+        for(var i = 0; i<existLang.length; i++){
+            if(existLang[i].innerHTML.toLowerCase() == newLang){
+                jqNewLang.siblings('label').css('color','red');
+                $(existLang[i]).css('color','red');
+                // todo : REGEXP test 
+                return;
+            }
+        }
+        $.ajax({
+            async:  false,
+            type: 'POST', 
+            url: 'create_translation.php', 
+            data: {'pj': pjName, 'newLang': newLang}, 
+            success: function(data, textStatus, jqXHR) {
+                if(data && data != '') {
+                    alert('Error while creating translation : see console for info.');
+                    console.log(data);
+                }
+                else if(autoOpen){
+                    window.open('main_page.php?pjName='+pjName+'&language='+window.newLang);
+                }
+                pjLanguage = window.currLang;
+                delete window.currLang;
+                delete window.newLang;
+                delete autoOpen;
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                // Une erreur s'est produite lors de la requete
+            }
+        });
+        dialog.close();
+    });
+    
+    
+}
 
 
 // Source management====================================
@@ -1445,7 +1508,7 @@ function saveProject() {
     var structStr = JSON.stringify(struct);
     
 	// Upload structure to server
-	$.post("save_project.php", {"pj":pjName, "struct":structStr, "objCurrId":curr.objId, "srcCurrId":srcMgr.currId}, function(msg){
+	$.post("save_project.php", {"pj":pjName, "struct":structStr, "objCurrId":curr.objId, "srcCurrId":srcMgr.currId, "language":pjLanguage, "untranslated":pjUntranslated}, function(msg){
 	       var modif = parseInt(msg);
 	       if(!isNaN(modif)) curr.lastModif = modif;
 	       else if(msg != ""){
