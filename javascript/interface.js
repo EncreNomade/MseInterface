@@ -1174,7 +1174,8 @@ function generateLines(content, font, width, lineHeight){
 	var arr = content.split('\n');
 	var sep = 0;
 	for(var i = 0; i < arr.length; i++) {
-		if(arr[i].length == 0) { // Separator paragraph
+	    // Paragraph blank
+	    if(arr[i].length == 0) {
 			res += '<div id="obj'+(curr.objId++)+'" class="textLine"/>';
 			sep++;continue;
 		}
@@ -1185,6 +1186,8 @@ function generateLines(content, font, width, lineHeight){
 			res += '<div id="obj'+(curr.objId++)+'" class="textLine"><p>'+arr[i].substr(j, next)+'</p></div>';
 			j += next;
 		}
+		// Separator paragraph
+		res += '<paragraphtag></paragraphtag>';
 	}
 	res = $(res);
 	res.each(function() {
@@ -1471,13 +1474,13 @@ var ArticleFormater = function() {
 		// return the lists of the links in the related article ( a link is a wiki, an audio ,  a script , an animation )
 		// return the lists of the insertions in the related article ( a insertion is a game, a image , a blank line )
 parseMetaText : function( article ){
-	var meta = [];
-	
-	if( !article )
+	if( !article || !article.hasClass('article') )
 		return;
 		
+	var meta = [];
+		
 	// the links
-	var spans = article.find( "div.textLine" ).find( "span.audiolink,span.wikilink" );
+	var spans = article.children( "div.textLine, div.speaker div.textLine" ).children( "span.audiolink,span.wikilink" );
 	for( var i = 0 ; i < spans.length ; i ++ ){
 		var span = $( spans[ i ] );
 		var textLine = span.parents( "div.textLine" );
@@ -1548,7 +1551,7 @@ parseMetaText : function( article ){
 		var illu = $( illus[ i ] );
 		var img  = $( illu.children("img").get(0) );
 		meta.push( { objId : illu.prev(".textLine").attr( "id" ) ,
-						keyword : 0,
+						keyword : "",
 						format : "inser",
 						index : illu.prev(".textLine").text().length,
 						link :  { 	type : "image" ,
@@ -1577,25 +1580,40 @@ parseMetaText : function( article ){
 
 //generate metaTextArticle
 formate : function( article , meta ){ 
-	if( !article )
-		article = $( "div#dgfdgfggg" ).children("div.article");
+	if( !article || !article.hasClass('article') ) return;
 	if( !meta )
 		meta = this.parseMetaText( article );
 	
 	var s = "";
 	var lines = article.children();
+	var wrapprefix = false;
 	for( var i = 0 ; i < lines.length ; i ++ ){
-		var line = $( lines[i] );
-		if( line.hasClass( "textLine" ) )
-			if( line.text().length == "" )
-				s += "\n";
-			else
+		var line = $( lines.get(i) );
+		if( line.prop('tagName') == "paragraphtag" ) {
+		    s += '\n';
+		    wrapprefix = true;
+		}
+		else if( line.hasClass( "textLine" ) ) {
+		    // Line gap
+			if( line.text().trim() == "" ) {
+			    // Add a prefix of line wrap
+			    if(!wrapprefix) s += '\n';
+				s += '\n';
+				wrapprefix = true;
+			}
+			// Line with content
+			else {
 				s += wrap( line );
-		else 
-		if( line.hasClass( "speaker" ) )
-			s += "\n[ "+line.attr( "data-who")+" : "+line.attr( "data-mood")+" ] " + this.formate( line , meta )+"\n";
-		else
-			continue;
+				wrapprefix = false;
+			}
+		}
+		else if( line.hasClass( "speaker" ) ) {
+		    // Add a prefix of line wrap
+		    if(!wrapprefix) s += '\n';
+			s += "[ "+line.attr( "data-who")+" : "+line.attr( "data-mood")+" ] " + this.formate( line , meta )+"\n";
+			wrapprefix = true;
+		}
+		else continue;
 	}
 	
 	
@@ -1634,12 +1652,9 @@ formate : function( article , meta ){
 
 // reverse	
 reverse : function( chaine , article , meta , font , width , lineHeight){ 
+	if( !article || !article.hasClass('article') ) return;
 	
 	var log = "";
-	
-	
-	if( !article ) 
-		article = $( "div#dgfdgfggg" ).children("div.article");
 	
 	if( !meta )
 		if( !article )
@@ -1668,16 +1683,14 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 			meta[ next.i ].link.id = next.id;
 		}
 		
-		
-		
 		meta[ next.i ].prev_index   = meta[ next.i ].index;
-		meta[ next.i ].prev_keyword   = meta[ next.i ].keyword;
+		meta[ next.i ].prev_keyword = meta[ next.i ].keyword;
 		meta[ next.i ].prev_objId   = meta[ next.i ].objId;
 		
 		meta[ next.i ].keyword = next.keyword;
 		meta[ next.i ].index   = next.index;
-		meta[ next.i ].format   = next.format;
-		meta[ next.i ].valide = true;
+		meta[ next.i ].format  = next.format;
+		meta[ next.i ].valide  = true;
 		
 		if( meta[ next.i ].link.type == "script" && !meta[ next.i ].link.dep ) 
 			if( scriptMgr.scripts[  meta[ next.i ].link.id ].srcType == "obj" && scriptMgr.scripts[  meta[ next.i ].link.id ].src == meta[ next.i ].prev_objId )
@@ -1690,7 +1703,6 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 				meta[ next.i ].link.dep = "target";
 			else
 				meta[ next.i ].link.dep = "src"; // comportement par default
-				
 	}
 
 	// traitement des éléments de dialogue 
@@ -1726,8 +1738,6 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 	if( !lineHeight )
 		lineHeight = config.realY( cssCoordToNumber( article.css('line-height') ) );
 	var res = $("<div>").append( generateSpeaks(chaine, font , width , lineHeight ) );
-	
-	
 	
 	// numerote les objets lignes
 	var table = [];
