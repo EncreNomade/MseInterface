@@ -297,6 +297,18 @@ SourceManager.prototype = {
 	pathCheck: /^(\.\/)?([\w\_\s]+\/)*([\w\_\s\.]+)$/,
 	uploadResp: /^([\w\_\s]+)\&\&([\w\_\s\.\/]+)/,
 	
+	// replace all the dependency from the oldObjId to the new one 
+	// unsused
+	replaceDependency : function( oldObjId , newObjId ){
+		for( var i in this.sources ){
+			if( sources[ i ].target == oldObjId )
+				sources[ i ].target = newObjId;
+			if( sources[ i ].supp == oldObjId )
+				sources[ i ].supp = newObjId;
+			if( srcType == "obj" && sources[ i ].src == oldObjId )
+				sources[ i ].src = newObjId;
+		}
+	},
 	sourceType: function(id) {
 	    if(this.sources[id]) {
     		return this.sources[id].type;

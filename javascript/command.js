@@ -96,8 +96,6 @@ var CommandMgr = (function(capacity) {
             // Fail to execute command
             if(command.state != "SUCCESS") return false;
             
-			console.log( "do  "+command );
-			
             // Clean reverse stack
             reverseStack.clear();
             if(reversable) {
@@ -124,8 +122,6 @@ var CommandMgr = (function(capacity) {
             // Fail to execute command
             if(command.state != "CANCEL") return false;
             
-			console.log( "undo  "+command );
-			
             reverseStack.push(command);
             if(!reversable) {
                 reversable = true;
@@ -147,8 +143,6 @@ var CommandMgr = (function(capacity) {
             // Fail to execute
             if(command.state != "SUCCESS") return false;
             
-			console.log( "redo  "+command );
-			
             undoStack.push(command);
             if(!undoable) {
                 undoable = true;
