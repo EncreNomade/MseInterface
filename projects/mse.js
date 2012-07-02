@@ -629,6 +629,8 @@ mse.Root.prototype = {
         this.viewport.x = (this.width - MseConfig.pageWidth)/2;
         this.viewport.y = (this.height - MseConfig.pageHeight)/2;
         this.setPos(0, 0);
+        this.jqObj.attr({'width':MseConfig.pageWidth, 'height':MseConfig.pageHeight});
+        $('#root').css({'width':MseConfig.pageWidth, 'height':MseConfig.pageHeight});
         this.ctx.translate(-this.viewport.x, -this.viewport.y);
     },
     translate: function(e) {
@@ -2217,10 +2219,10 @@ mse.GameShower.prototype = {
 	    if(this.state == "DESACTIVE") return;
 	    
 	    if(isNaN(this.currGame.canvasox))
-	        this.left = (MseConfig.iPhone||MseConfig.android) ? -1.5 : Math.round(mse.root.width-this.width)/2;
+	        this.left = (MseConfig.iPhone||MseConfig.android) ? -1.5 : Math.round(mse.root.jqObj.width()-this.width)/2;
 	    else this.left = this.currGame.canvasox - (mse.root.viewport?mse.root.viewport.x:0);
 	    if(isNaN(this.currGame.canvasoy))
-	        this.top = (MseConfig.iPhone||MseConfig.android) ? -1.5 : Math.round(mse.root.height-this.height)/2;
+	        this.top = (MseConfig.iPhone||MseConfig.android) ? -1.5 : Math.round(mse.root.jqObj.height()-this.height)/2;
 	    else this.top = this.currGame.canvasoy - (mse.root.viewport?mse.root.viewport.y:0);
 	    this.jqObj.css({
 	        'left': this.left,

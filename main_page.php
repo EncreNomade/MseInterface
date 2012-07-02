@@ -136,6 +136,11 @@ else header("Location: index.php", true);
 	    <li><h5>Nom:</h5><input id="code_name" size="5" type="text"></li>
 	    <li><input id="code_save" type="button" value="Sauvegarder" /></li>
 	</ul>
+	<ul id="translateTool" class="central_tools">
+	    <li style="float: right;"><input id="gene_trans" type="button" value="Générer" /></li>
+	    <li style="float: left; margin: 2px 5px;"><img src="./images/tools/previous.png"></li>
+	    <li style="float: left; margin: 2px 5px;"><img src="./images/tools/next.png"></li>
+	</ul>
 	<canvas id="rulerX" class="ruler"></canvas>
 	<canvas id="rulerY" class="ruler"></canvas>
 	
@@ -155,11 +160,14 @@ else header("Location: index.php", true);
 <div id="bottom_panel">
 	<ul class="tabBar">
 		<li class="active">Ressources</li>
+		<li>Scripts</li>
 		<li class="add">⋁</li>
 	</ul>
 
-	<div id="Ressources" class="source">
+	<div id="Ressources_panel" class="source">
 		<img id="srcAdd" class="icon_src" src="./images/UI/plus.png"></img>
+	</div>
+	<div id="Scripts_panel" class="source">
 	</div>
 </div>
 </div>
@@ -221,9 +229,6 @@ else header("Location: index.php", true);
 	init();
 	
 function retrieveLocalInfo(pjsave) {
-    // Scripts
-    if(pjsave.scripts && !(pjsave.scripts instanceof Array) && Object.keys(pjsave.scripts).length != 0)
-        scriptMgr.scripts = pjsave.scripts;
     // Pages/Layers/Objects
     var obj = null;
     var maxid = 0, id = 0;
@@ -239,6 +244,7 @@ function retrieveLocalInfo(pjsave) {
         }
         if(steps == 0) page.data('StepManager').addStep(pname+'default', null, true);
     }
+    
     // Ressources
     var src = pjsave.sources;
     for(var key in src) {
@@ -257,6 +263,12 @@ function retrieveLocalInfo(pjsave) {
     if(!isNaN(pjsave.srcCurrId)) srcMgr.currId = pjsave.srcCurrId;
     if(!isNaN(pjsave.objCurrId)) curr.objId = pjsave.objCurrId;
     //else if(!isNaN(maxid)) curr.objId = maxid+1;
+    
+    // Scripts
+    if(pjsave.scripts) {
+        scriptMgr.addScripts( pjsave.scripts );
+    }
+    
     if(isNaN(pjsave.lastModif)) curr.lastModif = lastModServer;
     else curr.lastModif = pjsave.lastModif;
 }
