@@ -198,6 +198,13 @@ var TextUtil = function() {
 	$('body').append(canvas);
 	var ctx = canvas.get(0).getContext('2d');
 	
+	var textEditPrepa = function(obj){
+	    obj.parent().moveable(false).resizable(false);
+	}
+	var textEditFinish = function(content, obj) {
+	    obj.parent().moveable().resizable();
+	}
+	
 	return {
 		config : function(font) {
 			ctx.font = font;
@@ -234,7 +241,9 @@ var TextUtil = function() {
 				var lastsp = text.lastIndexOf(' ', maxM);
 				if(lastsp == -1) return maxM;
 				else return (lastsp+1);
-		}
+		},
+		editPrepaCb : new Callback(textEditPrepa, window),
+		editFinishCb : new Callback(textEditFinish, window)
 	};
 }();
 
@@ -453,7 +462,7 @@ SourceManager.prototype = {
 		    break;
 		}
 		
-		$('#Ressources').prepend(expo);
+		$('#Ressources_panel').prepend(expo);
 		// Set expo
 		expo.data('srcId', id);
 		this.expos[id] = expo;
@@ -968,6 +977,9 @@ StepManager.prototype = {
 	               .hoverButton('./images/tools/anime.png', animeTool.animateObj)
 	               .hoverButton('./images/UI/addscript.jpg', addScriptForObj)
 	               .canGoDown();
+	            // Editable for text object   
+                if(obj.children('p').length > 0)
+                    obj.children('p').editable(TextUtil.editFinishCb, TextUtil.editPrepaCb, true);
 	            scriptMgr.countScripts(obj.attr('id'),'obj');
 	        }
 	    });
@@ -1666,11 +1678,11 @@ var scriptMgr = function() {
             pageTrans: "page",
             objTrans: "obj",
             playAnime: "anime",
-            changeCursor: "cursor",//
+            changeCursor: "cursor",
             playVoice: "audio",
             stopVoice: "audio",
-            addScript: "script",//
-            script: "code",//
+            addScript: "script",
+            script: "code",
             effet: "effetname",
             playDefi: "",
             pauseDefi: "",
@@ -1689,6 +1701,7 @@ var scriptMgr = function() {
         },
         cursors: ['default','pointer','crosshair','text','wait','help','move','autre'],
         scripts: {},
+        expos: {},
         reactionTarget: function(type) {return this.reaction[type];},
         actionSelectList: function(id, type, choosedElem){
             var actfortype = this.action[type];
@@ -1736,21 +1749,38 @@ var scriptMgr = function() {
         addScript: function(name, src, srcType, action, target, reaction, immediate, supp){
             if(!name || !nameValidation(name))
                 return;
+            this.addScriptObj(name, new Script(src, srcType, action, target, reaction, immediate, supp));
+        },
+        addScriptObj: function(name, script) {
+            if(!name || !nameValidation(name))
+                return;
             // If we are overwriting an existing script which is related to another src
             // we have to update the scripts number of this old src.
-            if(this.scripts[name] && this.scripts[name].src != src) {
-                var oldSrc = this.scripts[name].src;
-                var oldSrcType = this.scripts[name].srcType;
-            }
-            this.scripts[name] = new Script(src, srcType, action, target, reaction, immediate, supp);
-            this.countScripts(src, srcType);
-            if(oldSrc) this.countScripts(oldSrc, oldSrcType);
+            if(this.scripts[name])
+                this.delScript(name);
+            // Creation script
+            this.scripts[name] = script;
+            // New script expo
+            this.expos[name] = $('<div class="icon_src"><p>'+name+'</p></div>');
+            $('#Scripts_panel').prepend(this.expos[name]);
+            this.expos[name].click(function() { modifyScriptDialog([name]); });
+            this.countScripts(script.src, script.srcType);
+        },
+        addScripts: function(scripts) {
+            if(!(scripts instanceof Array) && Object.keys(scripts).length != 0)
+                for(var i in scripts) {
+                    this.addScriptObj(i, scripts[i]);
+                }
         },
         delScript: function(name) {
+            // Delete expo
+            this.expos[name].remove();
+            delete this.expos[name];
+            // Delete Script
             var relatedObj = this.scripts[name].src;
             var relatedType = this.scripts[name].srcType;
             delete this.scripts[name];
-            this.countScripts(relatedObj, relatedType);            
+            this.countScripts(relatedObj, relatedType);
         },
         delRelatedScripts: function(objId){
             for(var elem in this.scripts) {
@@ -1970,6 +2000,7 @@ var initTextTool = function() {
             	}
 					
             	// Append all in current step
+            	res.children('p').editable(TextUtil.editFinishCb, TextUtil.editPrepaCb, true);
             	res.moveable().resizable().deletable().configurable().hoverButton('./images/UI/addscript.jpg', addScriptForObj).appendTo(tar);
                 res.canGoDown();
             });
@@ -2135,28 +2166,32 @@ var initShapeTool = function() {
 
 
 // Editable tools
-var CreatTool = function(jqToolsPanel, activeButton){
+var CreatTool = function(jqToolsPanel, activeButton, unhideable){
 // Verify tools panel
     if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools')) return;
-    if(!activeButton || !activeButton.click) return;
     this.toolsPanel = jqToolsPanel;
     this.toolsPanel.css('z-index', 7);
     this.toolsPanel.data('creatTool', this);
-    this.activeBn = activeButton;
-    this.activeBn.data('creatTool', this);
-    // Active process
-    this.activeBn.click(function() {
-        var tool = $(this).data('creatTool');
-        if(tool instanceof CreatTool) {
-            tool.active();
-        }
-    });
-    // Verify the existance of del container
-    if(jqToolsPanel.find('.del_container img').length == 0) {
-        jqToolsPanel.hideable(function() {
-            var tool = $(this).parents('.central_tools').data('creatTool');
-            tool.close();
+    
+    if(activeButton && activeButton.click) {
+        this.activeBn = activeButton;
+        this.activeBn.data('creatTool', this);
+        // Active process
+        this.activeBn.click(function() {
+            var tool = $(this).data('creatTool');
+            if(tool instanceof CreatTool) {
+                tool.active();
+            }
         });
+    }
+    if(unhideable !== true) {
+        // Verify the existance of del container
+        if(jqToolsPanel.find('.del_container img').length == 0) {
+            jqToolsPanel.hideable(function() {
+                var tool = $(this).parents('.central_tools').data('creatTool');
+                tool.close();
+            });
+        }
     }
     this.editor = $('#editor');
     this.menuMask = $('#menu_mask');
@@ -2984,6 +3019,27 @@ var initScriptTool = function() {
 
 
 
+var initTranslateTool = function() {
+    var tool = new CreatTool($('#translateTool'), null, true);
+    
+    $.extend(tool, {
+        left: $('<div id="transTool_left"></div>'),
+        right: $('<div id="transTool_right"></div>'),
+        center: $('<div id="transTool_center"></div>'),
+        textInput: $('<textarea id="transTool_text" class="script_editor"></textarea>'),
+        inputBtn: $('<div id="transTool_input">Confirmer</div>'),
+        init: function(){
+            this.editor.append(this.left).append(this.center).append(this.right);
+            this.right.append(this.textInput).append(this.inputBtn);
+        }
+    });
+    
+    return tool;
+}
+
+
+
+
 
 // Popup widgt
 var Popup = function() {
@@ -3331,7 +3387,7 @@ var tag = {
 // position of the mouse relative to the element manipulated ( resized or translated )
 var anchor = {};
 var curr = {};
-var editSupportTag = ['SPAN', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'DIV'];
+var editSupportTag = ['SPAN', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'DIV', 'P'];
 var originalRatio = 1;
 var multiSelect = [];
 var rectMutliSelect = {};
@@ -3809,14 +3865,22 @@ $.fn.addStepManager = function() {
 
 
 // Editable for the text tags
-$.fn.editable = function(callback) {
+$.fn.editable = function(callback, prepa, dblclick) {
 	var tagName = this[0].tagName;
 	// Don't support
 	if( $.inArray(tagName.toUpperCase(), editSupportTag) == -1 ) return;
 	
-	$(this).click(function() {
+	var editfn = function() {
+	    // Invoke the prepa function
+	    if(prepa) prepa.invoke($(this));
+	    
 	    var content = $(this).html();
-	    // Get infos
+	    // Get classes
+	    var className = this.className;
+	    // Get style
+	    var style = $(this).attr('style');
+	    
+	    // Get infos for textarea
 	    var color = $(this).css('color');
 	    var fsize = parseInt($(this).css('font-size'));
 	    var width = $(this).innerWidth();
@@ -3824,18 +3888,26 @@ $.fn.editable = function(callback) {
 		var editfield = $('<textarea row="'+Math.round(height/fsize)+'" col="'+Math.round(width*1.5/fsize)+'">'+content+'</textarea>');
 		editfield.css({'width':width, 'height':height, 'color':color, 'background':'rgba(255,255,255,0.3)', 'top':$(this).css('top'), 'left':$(this).css('left'), 'position':$(this).css('position'), 'font-family':$(this).css('font-family'), 'font-size':$(this).css('font-size'), 'text-align':$(this).css('text-align')});
 		$(this).replaceWith(editfield);
-		editfield.blur(function() {
-			var newcontent = $(this).val();
+		
+		var finishedit = function() {
+			var newcontent = editfield.val();
 			var newtext = $('<'+tagName+'>'+newcontent+'</'+tagName+'>');
-			newtext.css({'color':$(this).css('color'), 'top':$(this).css('top'), 'left':$(this).css('left'), 'position':$(this).css('position'), 'font-family':$(this).css('font-family'), 'font-size':$(this).css('font-size')});
-			$(this).replaceWith(newtext);
+			newtext.attr('style', style);
+			newtext.get(0).className = className;
+			editfield.replaceWith(newtext);
 			if(callback) {
 			    callback.invoke(newcontent, newtext);
-			    newtext.editable(callback);
 			}
-			else newtext.editable();
-		});
-	});
+			newtext.editable(callback, prepa, dblclick);
+			$('body').unbind('click', finishedit);
+		}
+		
+		editfield.blur(finishedit).click(function(e){e.stopPropagation();});
+		$('body').click(finishedit);
+	};
+	
+	if(dblclick === true) $(this).dblclick(editfn);
+	else $(this).click(editfn);
 	return this;
 }
 

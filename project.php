@@ -11,7 +11,7 @@ error_reporting(E_ALL);
 
 class MseProject {
     private $name;
-    private $bookName;
+    private $folder;
     private $width;
     private $height;
     private $orientation;
@@ -23,21 +23,23 @@ class MseProject {
     private $lastModif;
     private $currObjId;
     private $currSrcId;
+    private $language;
     private static $typeRegExp = "/(\w+)_((image)|(audio)|(game)|(anime)|(wiki))/";
 
-    function MseProject($pjName, $bkName="", $width = 800, $height = 600, $orient = 'portrait') {
+
+    function MseProject($pjName, $lang, $folder="", $width = 800, $height = 600, $orient = 'portrait') {
         $numargs = func_num_args();
-        // Initialization with only pjName
-        if($numargs == 1) {
+        // Initialization with only pjName && language
+        if($numargs == 1 || $numargs == 2) {
             $pjName = func_get_arg(0);
             $owner = $_SESSION['uid'];
-            $resp = mysql_query("SELECT * FROM Projects WHERE name='$pjName' AND owner='$owner' LIMIT 1");
+            $resp = mysql_query("SELECT * FROM Projects WHERE name='$pjName' AND owner='$owner' AND language='$lang' LIMIT 1");
             $pj = mysql_fetch_array($resp);
             // No project exist
             if(!$resp) return FALSE;
             
             $this->name = $pj['name'];
-            $this->bkName = $pj['folder'];
+            $this->folder = $pj['folder'];
             $this->width = $pj['width'];
             $this->height = $pj['height'];
             $this->ratio = 480/$this->height;
@@ -46,6 +48,7 @@ class MseProject {
             $this->currObjId = $pj['objId'];
             $this->currSrcId = $pj['srcId'];
             $this->lastModif = $pj['lastModif'];
+            $this->language = $pj['language'];
             
             $struct = json_decode($pj['struct']);
             if($struct) $this->struct = get_object_vars($struct);
@@ -53,11 +56,13 @@ class MseProject {
             if($sources) $this->sources = get_object_vars($sources);
             $scripts = json_decode($pj['scripts']);
             if($scripts) $this->scripts = get_object_vars($scripts);
+            
             return;
         }
     
         $this->name = $pjName;
-        $this->bookName = (is_null($bkName) || $bkName=="") ? $pjName : $bkName;
+        $this->language = $lang;
+        $this->folder = (is_null($folder) || $folder=="") ? $pjName : $folder;
         $this->width = $width ? $width : 800;
         $this->height = $height ? $height : 600;
         $this->ratio = 480/$this->height;
@@ -81,12 +86,12 @@ class MseProject {
         else $owner = $_SESSION['uid'];
         $id = $owner."_".$this->name;
         
-        $query = sprintf("INSERT INTO Projects(id,owner,creation,folder,name,width,height,orientation,objId,srcId,lastModif) Value('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')",
-            mysql_real_escape_string($id), 
+        $query = sprintf("INSERT INTO Projects(owner,name,language,creation,folder,width,height,orientation,objId,srcId,lastModif) Value('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')",
             mysql_real_escape_string($owner), 
-            $this->creation,
-            mysql_real_escape_string($this->bookName),
             mysql_real_escape_string($this->name),
+            mysql_real_escape_string($this->language),
+            $this->creation,
+            mysql_real_escape_string($this->folder),
             $this->width, $this->height, $this->orientation, 
             $this->currObjId, $this->currSrcId, $this->lastModif);
         $resp = mysql_query($query);
@@ -97,7 +102,8 @@ class MseProject {
     }
     
     function getName() { return $this->name; }
-    function getBookName() { return $this->bookName; }
+    function getLanguage() { return $this->language; }
+    function getFolder() { return $this->folder; }
     function getWidth() { return $this->width; }
     function getHeight() { return $this->height; }
     function getOrientation() { return $this->orientation; }
@@ -162,16 +168,16 @@ class MseProject {
     
     function getSrcSavePath($type) {
         switch($type) {
-        case "image" : return './projects/'.$this->name.'/images/';break;
-        case "audio" : return './projects/'.$this->name.'/audios/';break;
-        case "game" : return './projects/'.$this->name.'/games/';break;
+        case "image" : return './projects/'.$this->folder.'/images/';break;
+        case "audio" : return './projects/'.$this->folder.'/audios/';break;
+        case "game" : return './projects/'.$this->folder.'/games/';break;
         }
     }
     function getRelatSrcPath($type) {
         switch($type) {
-        case "image" : return './'.$this->name.'/images/';break;
-        case "audio" : return './'.$this->name.'/audios/';break;
-        case "game" : return './'.$this->name.'/games/';break;
+        case "image" : return './'.$this->folder.'/images/';break;
+        case "audio" : return './'.$this->folder.'/audios/';break;
+        case "game" : return './'.$this->folder.'/games/';break;
         }
     }
     
@@ -196,21 +202,23 @@ class MseProject {
     function saveToDB() {
         if(!isset($_SESSION['uid'])) return;
         $owner = $_SESSION['uid'];
-        $id = $owner."_".$this->name;
+        $name = $this->name;
+        $lang = $this->language;
         $this->lastModif = time();
         
-        $resp = mysql_query("SELECT * FROM Projects WHERE id='$id' LIMIT 1");
+        $resp = mysql_query("SELECT * FROM Projects WHERE owner='$owner' AND name='$name' AND language='$lang' LIMIT 1");
         $exist = mysql_fetch_array($resp);
         
         if($exist) {
-            $query = sprintf("UPDATE Projects SET name='%s', width='%s', height='%s', struct='%s', sources='%s', scripts='%s', objId='%s', srcId='%s', lastModif='%s' WHERE id='%s'", 
-                mysql_real_escape_string($this->name), 
+            $query = sprintf("UPDATE Projects SET width='%s', height='%s', struct='%s', sources='%s', scripts='%s', objId='%s', srcId='%s', lastModif='%s' WHERE owner='%s' AND name='%s' AND language='%s'", 
                 $this->width, $this->height, 
                 mysql_real_escape_string(json_encode($this->struct)), 
                 mysql_real_escape_string(json_encode($this->sources)), 
                 mysql_real_escape_string(json_encode($this->scripts)), 
                 $this->currObjId, $this->currSrcId, $this->lastModif, 
-                mysql_real_escape_string($id));
+                mysql_real_escape_string($owner),
+                mysql_real_escape_string($name),
+                mysql_real_escape_string($lang));
             $resp = mysql_query($query);
             if(!$resp) {
                 echo "Fail to update the project record: ".mysql_error();
@@ -231,8 +239,8 @@ class MseProject {
         return '/content.js';
     }
 
-    public static function getExistProject($pjName) {
-        $pj = new MseProject($pjName);
+    public static function getExistProject($pjName, $lang = 'francais') {
+        $pj = new MseProject($pjName, $lang);
         return $pj;
     }
 }

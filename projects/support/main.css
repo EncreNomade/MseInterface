@@ -19,6 +19,28 @@ body {
     width: 100%;
     height: 100%;
 }
+.capbody {
+    position: absolute;
+    margin: 0px;
+    padding: 0px;
+    z-index: 12;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+    background: transparent;
+}
+.capbox {
+    position: absolute;
+    margin: 0px;
+    padding: 0px;
+    width: 0px;
+    height: 0px;
+    z-index: 11;
+    border: 1px solid #43A102;
+    background: transparent;
+}
 
 .game {
     position: absolute;
@@ -135,7 +157,7 @@ body {
     top: 50%;
     width: 0px;
     height: 0px;
-    z-index: 12;
+    z-index: 13;
 }
 #comment {
     position: absolute;
@@ -168,7 +190,7 @@ body {
 #comment.show {
     opacity: 1;
 }
-#comment #comment_close_btn {
+.close {
     position: absolute;
     right: -20px;
     top: -20px;
@@ -209,6 +231,15 @@ body {
     margin: 5px 0px;
     width: 40px;
     height: 40px;
+}
+#comment .header #upload {
+    position: absolute;
+    left: 140px;
+    top: 0px;
+    margin: 10px 0px;
+    width: 40px;
+    height: 30px;
+    display: none;
 }
 #comment .header #sns {
     position: absolute;
@@ -287,6 +318,29 @@ body {
     -webkit-border-radius: 5px;
     -moz-border-radius: 5px;
     border-radius: 5px;
+}
+
+#scriber {
+    position: absolute;
+    background: #fff;
+    display: none;
+    
+    border: 5px solid #666;
+    border-bottom: 50px solid #666;
+    border-radius: 5px;
+}
+#scriber canvas {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+}
+#scriber .confirm {
+    position: absolute;
+    right: 30px;
+    bottom: -40px;
+    width: 32px;
+    height: 32px;
+    background: transparent url('../UI/ok.png') no-repeat left top;
 }
 
 

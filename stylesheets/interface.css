@@ -341,6 +341,9 @@ body{
     height: 440px;
     padding: 20px;
     color: #000000;
+    resize: none;
+    outline: none;
+    overflow: auto;
     text-align: left;
     font: 12px/16px "Deja Vu Sans Mono", "Droid Sans Mono", MONACO, "Courier New";
 }
@@ -443,6 +446,61 @@ body{
 }
 #editor div.active {
     background-color:rgba(255,255,255,0.5);
+}
+
+#editor #transTool_left {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 268px;
+    height: 460px;
+    overflow: hidden;
+    margin: 0px;
+    padding: 10px;
+}
+#editor #transTool_center {
+    position: absolute;
+    left: 288px;
+    top: 0px;
+    width: 44px;
+    height: 460px;
+    overflow: hidden;
+    margin: 0px;
+    padding: 10px;
+    border-left: 1px dashed #333;
+    border-right: 1px dashed #333;
+}
+#editor #transTool_right {
+    position: absolute;
+    left: 354px;
+    top: 0px;
+    width: 268px;
+    height: 460px;
+    overflow: hidden;
+    margin: 0px;
+    padding: 10px;
+}
+#editor #transTool_text {
+    width: 248px;
+    height: 440px;
+    padding: 10px;
+    margin: 0px;
+}
+#editor #transTool_input {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    width: 70px;
+    height: 20px;
+    background: #FFBA84;
+    margin: 0px;
+    padding: 5px;
+    color: #000;
+    font: 15px/20px Arial, Helvetica, Geneva;
+    border: 1px solid #333;
+}
+#editor #transTool_left span {
+    border: 1px dashed #333;
 }
 
 #timeline {

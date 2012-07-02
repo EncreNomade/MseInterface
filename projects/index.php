@@ -107,19 +107,26 @@ window.fbAsyncInit = function() {
         </ul>
         <img class="feuille" src="./UI/feuille.png">
     </div>
-    <div id="center"><div id="comment">
-        <img id="comment_close_btn" src="./UI/button/close.png">
-        <div class="header">
-            <img id="photo" src="" />
-            <img id="camera" src="./UI/camera.png" />
-            <img id="sns" src="./UI/sns_f.png">
-            <a id="share">Partager</a>
+    <div id="center">
+        <div id="comment">
+            <img class="close" src="./UI/button/close.png"/>
+            <div class="header">
+                <img id="photo" src="" />
+                <img id="camera" src="./UI/camera.png" />
+                <img id="upload" src=""/>
+                <img id="sns" src="./UI/sns_f.png">
+                <a id="share">Partager</a>
+            </div>
+            <div class="body">
+                <textarea id="comment_content" rows="5" cols="30" placeholder="Écrire votre commentaire ici..."></textarea>
+            </div>
         </div>
-        <div class="body">
-            <textarea id="comment_content" rows="5" cols="30" placeholder="Écrire votre commentaire ici..."></textarea>
+        <div id="scriber">
+            <canvas></canvas>
+            <img class="close" src="./UI/button/close.png"/>
+            <div class="confirm"></div>
         </div>
-    </div></div>
-    
+    </div>
     <canvas class="bookroot">Votre navigateur ne supporte pas HTML5</canvas>
     <div class="video"></div>
     <div id="imgShower"><div>
