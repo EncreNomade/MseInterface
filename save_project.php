@@ -21,7 +21,9 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
     if( array_key_exists($pjname, $_SESSION) 
      && array_key_exists('struct', $_POST) 
      && array_key_exists('objCurrId', $_POST) 
-     && array_key_exists('srcCurrId', $_POST) ) {
+     && array_key_exists('srcCurrId', $_POST)
+     && array_key_exists('language', $_POST) 
+     && array_key_exists('untranslated', $_POST) ) {
         ConnectDB();
         // Read the input from stdin
         if(get_magic_quotes_gpc()) {
@@ -34,7 +36,13 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
         $objId = intval($_POST['objCurrId']);
         $srcId = intval($_POST['srcCurrId']);
         if(!is_null($struct) && $struct != false) {
+            $langue = $_POST['language'];
+            $untranslated = ($_POST['untranslated'] == 'true') ? 1 : 0;
             $pj = $_SESSION[$pjname];
+            if($pj->getLanguage() != $langue){
+                $pj = MseProject::getExistProject($pjname, $langue);
+            }
+            $pj->setUntranslated($untranslated);
             $pj->setStruct($struct);
             $pj->setCurrObjId($objId);
             $pj->setCurrSrcId($srcId);
@@ -42,7 +50,6 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WI
             
             $generator = new ProjectGenerator($pj);
             $generator->putAllinContentJS();
-            
             echo $modif;
         }
     }

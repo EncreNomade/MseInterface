@@ -11,6 +11,7 @@ error_reporting(E_ALL);
 
 class MseProject {
     private $name;
+    private $language;
     private $folder;
     private $width;
     private $height;
@@ -23,20 +24,20 @@ class MseProject {
     private $lastModif;
     private $currObjId;
     private $currSrcId;
-    private $language;
+    private $untranslated;
     private static $typeRegExp = "/(\w+)_((image)|(audio)|(game)|(anime)|(wiki))/";
 
 
     function MseProject($pjName, $lang, $folder="", $width = 800, $height = 600, $orient = 'portrait') {
         $numargs = func_num_args();
         // Initialization with only pjName && language
-        if($numargs == 1 || $numargs == 2) {
+        if($numargs == 2) {
             $pjName = func_get_arg(0);
             $owner = $_SESSION['uid'];
             $resp = mysql_query("SELECT * FROM Projects WHERE name='$pjName' AND owner='$owner' AND language='$lang' LIMIT 1");
-            $pj = mysql_fetch_array($resp);
-            // No project exist
-            if(!$resp) return FALSE;
+            if(!$resp) return FALSE; // No project exist
+            
+            $pj = mysql_fetch_array($resp);            
             
             $this->name = $pj['name'];
             $this->folder = $pj['folder'];
@@ -49,6 +50,7 @@ class MseProject {
             $this->currSrcId = $pj['srcId'];
             $this->lastModif = $pj['lastModif'];
             $this->language = $pj['language'];
+            $this->untranslated = $pj['untranslated'];
             
             $struct = json_decode($pj['struct']);
             if($struct) $this->struct = get_object_vars($struct);
@@ -80,13 +82,14 @@ class MseProject {
         if( !file_exists('projects/'.$this->name.'/audios') ) mkdir('projects/'.$this->name.'/audios');
         if( !file_exists('projects/'.$this->name.'/games') ) mkdir('projects/'.$this->name.'/games');
         
-        if(checkPjExist($this->name)) {echo "Fail to create project. Project already exist";return FALSE;}
+        if(checkPjExist($this->name, $this->language)) {echo "Fail to create project. Project already exist";return FALSE;}
         
         if(!isset($_SESSION['uid'])) {echo "Fail to create project. EditorUsers not login";return FALSE;}
         else $owner = $_SESSION['uid'];
         $id = $owner."_".$this->name;
         
-        $query = sprintf("INSERT INTO Projects(owner,name,language,creation,folder,width,height,orientation,objId,srcId,lastModif) Value('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')",
+        $query = sprintf("INSERT INTO Projects(owner,name,language,creation,folder,width,height,orientation,objId,srcId,lastModif) 
+                        Value('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s', '%s')",
             mysql_real_escape_string($owner), 
             mysql_real_escape_string($this->name),
             mysql_real_escape_string($this->language),
@@ -96,7 +99,7 @@ class MseProject {
             $this->currObjId, $this->currSrcId, $this->lastModif);
         $resp = mysql_query($query);
         if(!$resp) {
-            die("Fail to add the project record to database: ".mysql_error());
+            die("Fail to add the project record to database: ".$this->name.' '.$this->language.mysql_error());
             return FALSE;
         }
     }
@@ -115,6 +118,8 @@ class MseProject {
     function setCurrObjId($objId) { if(is_int($objId))$this->currObjId = $objId; }
     function getCurrSrcId() { return $this->currSrcId; }
     function setCurrSrcId($srcId) { if(is_int($srcId))$this->currSrcId = $srcId; }
+    function getUntranslated() { return $this->untranslated; }
+    function setUntranslated($bool) {$this->untranslated = $bool; }
     
     function realCoor($coor) {
         return $coor / $this->ratio;
@@ -182,10 +187,10 @@ class MseProject {
     }
     
     function getRelatJSPath(){
-        return './projects/'.$this->name.'/content.js';
+        return './projects/'.$this->name.'/content_'.$this->language.'.js';
     }
     function getPackedJSPath(){
-        return './projects/'.$this->name.'/content.min.js';
+        return './projects/'.$this->name.'/content_'.$this->language.'.min.js';
     }
     
     function getJSONProject(){
@@ -210,12 +215,13 @@ class MseProject {
         $exist = mysql_fetch_array($resp);
         
         if($exist) {
-            $query = sprintf("UPDATE Projects SET width='%s', height='%s', struct='%s', sources='%s', scripts='%s', objId='%s', srcId='%s', lastModif='%s' WHERE owner='%s' AND name='%s' AND language='%s'", 
+            $query = sprintf("UPDATE Projects SET width='%s', height='%s', struct='%s', sources='%s', scripts='%s', objId='%s', srcId='%s', lastModif='%s', untranslated='%s' WHERE owner='%s' AND name='%s' AND language='%s'", 
                 $this->width, $this->height, 
                 mysql_real_escape_string(json_encode($this->struct)), 
                 mysql_real_escape_string(json_encode($this->sources)), 
                 mysql_real_escape_string(json_encode($this->scripts)), 
                 $this->currObjId, $this->currSrcId, $this->lastModif, 
+                $this->untranslated,
                 mysql_real_escape_string($owner),
                 mysql_real_escape_string($name),
                 mysql_real_escape_string($lang));
@@ -230,6 +236,19 @@ class MseProject {
             return FALSE;
         }
         return $this->lastModif;
+    }
+    
+    function createTranslation($lang = false){
+        if(!$lang) return false;
+        $newPj = new self($this->name, $lang, $this->folder, $this->width, $this->height, $this->orientation);
+        $newPj->setStruct($this->struct);
+        $newPj->resetSrcs($this->sources);
+        $newPj->resetScripts($this->scripts);
+        $newPj->setCurrObjId( intval($this->currObjId) );
+        $newPj->setCurrSrcId( intval($this->currSrcId) );
+        $newPj->setUntranslated(1);
+        $newPj->saveToDB();
+        return $newPj;
     }
     
     public static function getRelatProjectPath($pjName) {

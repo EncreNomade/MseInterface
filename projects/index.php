@@ -13,9 +13,9 @@ ini_set("display_errors","1");
 error_reporting(E_ALL);
 
 // AJAX POST check
-if($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('pj', $_GET)) {
+if($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('pj', $_GET) && isset($_GET['language'])) {
 
-    $content = file_get_contents("./".$_GET['pj']."/content.js");
+    $content = file_get_contents("./".$_GET['pj']."/content_".$_GET['language'].".js");
 
 }
 

@@ -15,7 +15,7 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
         $pjName = $_POST["pjName"];
         $lang = $_POST['language'];
         ConnectDB();
-        if( checkPjExist($pjName) ) {
+        if( checkPjExist($pjName, $lang) ) {
             $pj = MseProject::getExistProject($pjName, $lang);
             if($pj) {
                 $_SESSION[$pjName] = $pj;
@@ -27,7 +27,27 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
         }
         else echo "Projet n'existe pas";
     }
-    
+    else if(isset( $_POST['user']) && isset( $_POST['project'])){ // new translation AJAX request from interface.js
+        $owner = $_POST['user'];
+        $name = $_POST['project'];
+        
+        ConnectDB();
+        $rep = mysql_query("SELECT language FROM Projects WHERE owner = '$owner' AND name = '$name' ORDER BY language");
+        if (!$rep) {
+           echo "FAIL";
+        }
+        else {
+            $i = 0;
+            while ($row = mysql_fetch_assoc($rep)){
+                $lang = $row['language'];
+                if ($i == 0)
+                    echo $row['language'];
+                else
+                    echo ' '.$row['language'];
+                $i++;
+            }
+        }
+    }
 }
 
 ?>

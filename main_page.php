@@ -13,11 +13,16 @@ include 'dbconn.php';
 session_start();
 if( !isset($_SESSION['uid']) )
     header("Location: index.php", true);
-else if( $_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists("pjName", $_GET) ) {
+else if( $_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists("pjName", $_GET)  && array_key_exists("language", $_GET)) {
     // Pj existance in session check
     $pjName = $_GET["pjName"];
+    $langue = $_GET["language"];
     if(array_key_exists($pjName, $_SESSION)){
         $pj = $_SESSION[$pjName];
+        if($pj->getLanguage() != $langue){
+            ConnectDB();
+            $pj = MseProject::getExistProject($pjName, $langue);
+        }
     }
     else {
         header("Location: index.php", true);
@@ -62,6 +67,11 @@ else header("Location: index.php", true);
 	<li><a href="#">Étape</a>
 		<ul>
 			<li><a id="newCalque">Nouvelle étape</a></li>
+		</ul>
+	</li>
+    <li><a href="#">Outils</a>
+		<ul>
+			<li><a id="newTranslation">Nouvelle traduction</a></li>
 		</ul>
 	</li>
 	<li class="id">Connexion</li>
@@ -182,10 +192,16 @@ else header("Location: index.php", true);
 	$('#removePage').click(delCurrentPage);
 	$('#newCalque').click(createStepDialog);
 	
+    $('#newTranslation').click(newTranslationDialog);
+    
 	$('#srcAdd').click(addFileDialog);
 	$('#saveProjet').click(saveProject);
 	
 	<?php
+        if($pj->getUntranslated())
+            print("var pjUntranslated = true;");
+        else
+            print("var pjUntranslated = false;");
 	    print("var pjName = '".$pj->getName()."';");
         print("var pjLanguage = '".$pj->getLanguage()."';");
 	    print("var imgPath = '".$pj->getSrcSavePath("image")."';");
@@ -203,7 +219,7 @@ else header("Location: index.php", true);
     }
 	
 	$('#showProjet').click(function(){
-	    window.open('./projects/index.php?pj='+pjName);
+	    window.open('./projects/index.php?pj='+pjName+'&language='+pjLanguage);
 	});
 	$('#newProjet').click(function(){
 	    window.open('./index.php');

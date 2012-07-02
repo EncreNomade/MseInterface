@@ -1048,6 +1048,7 @@ svg rect.guide {
 	stroke-width:3px;
 	shape-rendering:crispEdges;
 }
+
 #mood_selector{
     margin-top: 10px;
     height: 140px;
@@ -1083,4 +1084,16 @@ svg rect.guide {
 #mood_selector > div > .del_container{
     left: 70px;
     position: relative;
+}
+
+div#language_list p{
+    width: auto;
+    color: white;
+    border-radius: 3px;
+    background-color: #444170;
+    padding: 0 5px;
+    border: solid 2px transparent;
+}
+div#language_list #current_lang{
+    border: solid 2px #F55132;
 }

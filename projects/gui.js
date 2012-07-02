@@ -23,7 +23,8 @@ var msgCenter =(function(){
             if(!messageList) // initiate
                 messageList = $('#msgCenter ul');
                 
-            var message = $('<li>'+mes+'</li>');
+            var message = $('<li></li>');
+            message.append(mes);
             messageList.prepend(message);
             
             time = isNaN(time) ? 3000 : time;
