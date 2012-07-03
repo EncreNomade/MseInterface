@@ -1174,7 +1174,8 @@ function generateLines(content, font, width, lineHeight){
 	var arr = content.split('\n');
 	var sep = 0;
 	for(var i = 0; i < arr.length; i++) {
-		if(arr[i].length == 0) { // Separator paragraph
+	    // Paragraph blank
+	    if(arr[i].length == 0) {
 			res += '<div id="obj'+(curr.objId++)+'" class="textLine"/>';
 			sep++;continue;
 		}
@@ -1185,6 +1186,8 @@ function generateLines(content, font, width, lineHeight){
 			res += '<div id="obj'+(curr.objId++)+'" class="textLine"><p>'+arr[i].substr(j, next)+'</p></div>';
 			j += next;
 		}
+		// Separator paragraph
+		res += '<paragraphtag></paragraphtag>';
 	}
 	res = $(res);
 	res.each(function() {
@@ -1443,6 +1446,505 @@ function dropToWikiElemZone(e) {
 };
 
 
+
+var ArticleFormater = function() {
+	
+	var correspondanceType = { 	'audiolink' : 'audio' , 
+								'wikilink' : 'wiki' };
+	var correspondanceClass = { 'audio' : 'audiolink' , 
+								'wiki' : 'wikilink' };
+	var chart = {
+			linkOpenA : "<lin",
+			linkOpenB : " >",
+			linkCloseA : "</lin",
+			linkCloseB : " >",
+			
+			inserOpenA : "<ins",
+			inserOpenB : " />",
+			
+			i : / i:([0-9]*)/ ,
+			id : / id:([[a-zA-Z0-9]*)/ ,
+			type : / type:([[a-zA-Z0-9]*)/ 
+			
+			}
+	chart.all = new RegExp( "("+chart.linkCloseA+"|"+chart.linkOpenA+"|"+chart.inserOpenA+")[A-z0-9 :]*("+chart.linkCloseB+"|"+chart.linkOpenB+"|"+chart.inserOpenB+")" ,"g"  )
+	
+	
+	return {
+		// return the lists of the links in the related article ( a link is a wiki, an audio ,  a script , an animation )
+		// return the lists of the insertions in the related article ( a insertion is a game, a image , a blank line )
+parseMetaText : function( article ){
+	if( !article || !article.hasClass('article') )
+		return;
+		
+	var meta = [];
+		
+	// the links
+	var spans = article.children( "div.textLine, div.speaker div.textLine" ).children( "span.audiolink,span.wikilink" );
+	for( var i = 0 ; i < spans.length ; i ++ ){
+		var span = $( spans[ i ] );
+		var textLine = span.parents( "div.textLine" );
+		meta.push( { 	objId : textLine.attr( "id" ) ,
+						keyword : span.text(),
+						format : "link",
+						index : textLine.text().indexOf( span.text() ),
+						link :  { 	type : correspondanceType[ span.attr( "class" ) ] ,
+									id : span.attr( "link" ) } 
+					} );
+	}
+	
+	// the animations
+	for( var i in srcMgr.sources )
+		if( srcMgr.sources[ i ].type == "anime" ){
+			var anime = srcMgr.getSource( i );
+			for( var obj in anime.objs )
+				if( $( "#"+obj ).hasClass( "textLine" ) &&  $( "#"+obj ).parents( "div.layer[type=ArticleLayer]").attr( "id" ) == article.parent().attr( "id" ) )
+					meta.push( { 	objId : obj ,
+						keyword : anime.objs[ obj ].content,
+						index : $( "#"+obj ).text().indexOf( anime.objs[ obj ].content ),
+						format : "link",
+						link :  { 	type : "anime" ,
+									id : i } 
+					} );
+			
+		}
+		
+	// the scripts
+	for( var i in scriptMgr.scripts ){
+		var script = scriptMgr.scripts[ i ];
+		if( 	script.srcType == "obj"
+		&& 		$( "#"+script.src ).hasClass( "textLine" ) 
+		&& 		$( "#"+script.src ).parents( "div.layer[type=ArticleLayer]").attr( "id" ) == article.parent().attr( "id" ) )
+					meta.push( { 	objId : script.src ,
+						keyword : $( "#"+script.src ).text(),
+						index : 0,
+						format : "link",
+						link :  { 	type : "script" ,
+									id : i ,
+									dep : "src"} 
+					} );
+		if( $( "#"+script.target ).hasClass( "textLine" ) 
+		&& 	$( "#"+script.target ).parents( "div.layer[type=ArticleLayer]").attr( "id" ) == article.parent().attr( "id" ) )
+					meta.push( { 	objId : script.target ,
+						keyword : $( "#"+script.target ).text(),
+						index : 0,
+						format : "link",
+						link :  { 	type : "script" ,
+									id : i ,
+									dep : "target" } 
+					} );
+		if( $( "#"+script.supp ).hasClass( "textLine" ) 
+		&& 	$( "#"+script.supp ).parents( "div.layer[type=ArticleLayer]").attr( "id" ) == article.parent().attr( "id" ) )
+					meta.push( { 	objId : script.supp ,
+						keyword : $( "#"+script.supp ).text(),
+						index : 0,
+						format : "link",
+						link :  { 	type : "script" ,
+									id : i ,
+									dep : "supp" } 
+					} );
+	}
+	
+	// the illus
+	var illus = article.find( "div.illu" );
+	for( var i = 0 ; i < illus.length ; i ++ ){
+		var illu = $( illus[ i ] );
+		var img  = $( illu.children("img").get(0) );
+		meta.push( { objId : illu.prev(".textLine").attr( "id" ) ,
+						keyword : "",
+						format : "inser",
+						index : illu.prev(".textLine").text().length,
+						link :  { 	type : "image" ,
+									id : img.attr( "name" ) } 
+					} );
+	}
+	
+	// the games
+	var games = article.find( "div.game" );
+	for( var i = 0 ; i < games.length ; i ++ ){
+		var game = $( games[ i ] );
+		meta.push( { objId : game.prev(".textLine").attr( "id" ) ,
+						keyword : "",
+						format : "inser",
+						index : game.prev(".textLine").text().length,
+						link :  { 	type : "game" ,
+									id : game.attr( "name" ) } 
+					} );
+	}
+	
+	
+	
+	return meta;
+},
+
+
+//generate metaTextArticle
+formate : function( article , meta ){ 
+	if( !article || !article.hasClass('article') ) return;
+	if( !meta )
+		meta = this.parseMetaText( article );
+	
+	var s = "";
+	var lines = article.children();
+	var wrapprefix = false;
+	for( var i = 0 ; i < lines.length ; i ++ ){
+		var line = $( lines.get(i) );
+		if( line.prop('tagName') == "paragraphtag" ) {
+		    s += '\n';
+		    wrapprefix = true;
+		}
+		else if( line.hasClass( "textLine" ) ) {
+		    // Line gap
+			if( line.text().trim() == "" ) {
+			    // Add a prefix of line wrap
+			    if(!wrapprefix) s += '\n';
+				s += '\n';
+				wrapprefix = true;
+			}
+			// Line with content
+			else {
+				s += wrap( line );
+				wrapprefix = false;
+			}
+		}
+		else if( line.hasClass( "speaker" ) ) {
+		    // Add a prefix of line wrap
+		    if(!wrapprefix) s += '\n';
+			s += "[ "+line.attr( "data-who")+" : "+line.attr( "data-mood")+" ] " + this.formate( line , meta )+"\n";
+			wrapprefix = true;
+		}
+		else continue;
+	}
+	
+	
+	return s;
+	function wrap( obj ){
+		
+		var charge = [];
+		var id = obj.attr( "id" );
+		for( var i = 0 ; i< meta.length ; i ++ )
+			if( meta[ i ].objId == id )
+				if( meta[ i ].format == "link"){
+					// start balise
+					charge.push( { index : meta[ i ].index , b : chart.linkOpenA + " i:"+i + " type:" + meta[i].link.type + " id:" + meta[i].link.id + chart.linkOpenB } );
+					// close balise
+					charge.unshift( { index : meta[ i ].index + meta[ i ].keyword.length , b : chart.linkCloseA  + " i:"+i + chart.linkCloseB } );
+				}else
+					// balise insertion
+					charge.push( { index : meta[ i ].index , b : chart.inserOpenA + " i:"+i + " type:" + meta[i].link.type + " id:" + meta[i].link.id + chart.inserOpenB } );
+			
+		var r = obj.text();
+		
+		for( var i = 0 ; i < charge.length ; i ++ ){
+			var avant = r.substring( 0 , charge[i].index );
+			var apres = r.substring( charge[i].index );
+			
+			r = avant + charge[i].b + apres;
+			
+			for( var j = i+1 ; j < charge.length ; j ++ )
+				if( charge[ j ].index >  charge[i].index )
+					 charge[j].index += charge[i].b.length;	 
+		}
+		
+		return r;
+	}
+},
+
+// reverse	
+reverse : function( chaine , article , meta , font , width , lineHeight){ 
+	if( !article || !article.hasClass('article') ) return;
+	
+	var log = "";
+	
+	if( !meta )
+		if( !article )
+			meta = [];
+		else
+			meta = this.parseMetaText( article );
+	
+	// parsing de la chaine
+	// suppression des balises, stockage des index et keywords
+	var next;
+	var lastIndex=0;
+	while( (next = shiftNextBalise() ) ){
+		
+		if( !meta[ next.i ] ){
+			if(  !next.type || !next.id || next.type == "anime" ){
+					console.log( "encounter error parsing the metaText, missing information" );
+					return;
+			}
+			meta[ next.i ] = { link : { type : next.type ,
+										id : next.id    } } ;
+		} else {
+			if( next.type && meta[ next.i ].link.type != next.type || next.id && meta[ next.i ].link.id != next.id ){
+				console.log( "encounter error parsing the metaText, confliting information, continue with the raw text information" );
+			}
+			meta[ next.i ].link.type = next.type;
+			meta[ next.i ].link.id = next.id;
+		}
+		
+		meta[ next.i ].prev_index   = meta[ next.i ].index;
+		meta[ next.i ].prev_keyword = meta[ next.i ].keyword;
+		meta[ next.i ].prev_objId   = meta[ next.i ].objId;
+		
+		meta[ next.i ].keyword = next.keyword;
+		meta[ next.i ].index   = next.index;
+		meta[ next.i ].format  = next.format;
+		meta[ next.i ].valide  = true;
+		
+		if( meta[ next.i ].link.type == "script" && !meta[ next.i ].link.dep ) 
+			if( scriptMgr.scripts[  meta[ next.i ].link.id ].srcType == "obj" && scriptMgr.scripts[  meta[ next.i ].link.id ].src == meta[ next.i ].prev_objId )
+				meta[ next.i ].link.dep = "src";
+			else
+			if( scriptMgr.scripts[  meta[ next.i ].link.id ].supp == meta[ next.i ].prev_objId )
+				meta[ next.i ].link.dep = "supp";
+			else
+			if( scriptMgr.scripts[  meta[ next.i ].link.id ].target == meta[ next.i ].prev_objId )
+				meta[ next.i ].link.dep = "target";
+			else
+				meta[ next.i ].link.dep = "src"; // comportement par default
+	}
+
+	// traitement des éléments de dialogue 
+	// les balises dialogue sont ignoré par le générateur de line, elle n'apparaissent plus post génération ce qui introduit des erreurs dans l'indexation des mots 
+	// on corrige 
+	var next;
+	var start = 0;
+	while(  (next = chaine.indexOf( "[" , start )) != -1 ){
+		var end = chaine.indexOf( "]" , next )+1;	
+		for( var i = 0 ; i < meta.length ; i ++ )
+			if( meta[ i ].index > next )
+				meta[ i ].index += next - end;
+		start = end;
+	}
+	
+	// de même pour les retour chariot, ils ne sont plus présent post génération
+	start = 0;
+	while(  (next = chaine.indexOf( "\n" , start )) != -1 ){
+		for( var i = 0 ; i < meta.length ; i ++ )
+			if( meta[ i ].index > next )
+				meta[ i ].index --;
+		start = next+1;
+	}
+	
+	// genere les objets lines
+	if( !font ){
+		font = article.css('font-weight');
+		font += " "+config.realX( cssCoordToNumber( article.css('font-size') ) )+"px";
+		font += " "+article.css('font-family');
+	}
+	if( !width )
+		width = config.realX( article.width() );
+	if( !lineHeight )
+		lineHeight = config.realY( cssCoordToNumber( article.css('line-height') ) );
+	var res = $("<div>").append( generateSpeaks(chaine, font , width , lineHeight ) );
+	
+	// numerote les objets lignes
+	var table = [];
+	var cursor = 0;
+	res.find( "div.textLine" ).each(function(){
+		var line = $( this );
+		var l = line.text().length;
+		table.push( { 	obj : line ,
+						l : l,
+						ca : cursor ,
+						cb : ( cursor = cursor + l ),
+						b : []
+					} );
+	});
+	
+	// recréer les référence vers les links ( ajout en deux temps )
+	for( var i = 0 ; i < meta.length ; i ++ ){
+		
+		if( !meta[ i ] || !meta[ i ].valide )
+			continue;
+		
+		var e = Math.floor( meta[ i ].index / table[ table.length-1 ].cb * table.length );  // estimation
+		
+		while( meta[ i ].index < table[ e ].ca )    // ajustement
+			e --;
+		while( meta[ i ].index > table[ e ].cb )	  // ajustement
+			e ++;
+		
+		switch( meta[ i ].link.type ){
+			case "audio" : case "wiki" :
+				if( meta[ i ].format == "link" ){
+					table[ e ].b.push( { index : meta[ i ].index - table[ e ].ca  , b : '<span class="'+ correspondanceClass[ meta[ i ].link.type ] +'" link="'+meta[ i ].link.id+'">' } );
+					table[ e ].b.unshift( { index : meta[ i ].index + meta[ i ].keyword.length - table[ e ].ca , b : '</span>' } );
+				}	
+			break;
+			case "image" : case "game" :
+				if( meta[ i ].format == "inser" ){
+					var id = meta[ i ].link.id;
+					var elem = srcMgr.generateChildDomElem(id, res);
+					elem.attr('id', 'obj'+(curr.objId++));
+					elem.deletable(null, true)
+					    .selectable(selectP)
+					    .staticButton('./images/UI/insertbelow.png', insertElemDialog)
+					    .staticButton('./images/UI/config.png', staticConfig)
+					    .staticButton('./images/tools/anime.png', animeTool.animateObj)
+					    .staticButton('./images/UI/addscript.jpg', addScriptForObj)
+					    .children('.del_container').hide();
+					elem.insertAfter( table[ e ].obj );
+					log += meta[ i ].link.type+" "+id+" re inserée apres la ligne :\""+table[ e ].obj.text()+"\"\n";
+				}
+
+			break;
+			case "script" :
+				var lastIndex = meta[ i ].index + meta[ i ].keyword.length;
+				var lastLine = e;
+				while( lastIndex > table[ lastLine ].cb )
+					lastLine ++;
+					
+				
+				scriptMgr.scripts[  meta[ i ].link.id ][   meta[ i ].link.dep  ] = table[ lastLine ].obj.attr( "id" );
+				
+				log += "maintient de "+meta[ i ].link.dep+" du script "+meta[ i ].link.id+", celui ci est maintenant lié à la ligne :\""+table[ lastLine ].obj.text()+"\"\n";
+				
+			break;
+			case "anime" :
+				var lastIndex = meta[ i ].index + meta[ i ].keyword.length;
+				var lastLine = e;
+				while( lastIndex > table[ lastLine ].cb )
+					lastLine ++;
+				
+				if( !meta[ i ].prev_objId ){
+					console.log( "encounter error parsing the metaText, missing information relative to the previous link" );
+					return;
+				}
+				
+				var ex_id = meta[ i ].prev_objId;
+				var new_id = table[ lastLine ].obj.attr( "id" );
+				
+				var anim = srcMgr.getSource( meta[ i ].link.id );
+				
+				// change the obj id
+				anim.objs[ new_id ] = { };
+				for( var key in anim.objs[ ex_id ] )
+					anim.objs[ new_id ][ key ] = anim.objs[ ex_id ][ key ];
+				anim.objs[ new_id ].content = table[ lastLine ].obj.text() 
+				
+				// search occurence of the ex objid , replace it by the new
+				for( var j = 0 ; j < anim.frames.length ; j ++ ){
+					if( $.inArray( ex_id , Object.keys( anim.frames[ j ].objs )) != -1 ){
+						anim.frames[ j ].objs[ new_id ] = {};
+						for( var key in anim.frames[ j ].objs[ ex_id ] )
+							anim.frames[ j ].objs[ new_id ][ key ] = anim.frames[ j ].objs[ ex_id ][ key ];
+						delete anim.frames[ j ].objs[ ex_id ];
+					}
+				}
+				
+				delete srcMgr.getSource( meta[ i ].link.id ).objs[ ex_id ];
+				
+				log += "maintient de l'animation "+meta[ i ].link.id+", celle ci est maintenant lié à la ligne :\""+table[ lastLine ].obj.text()+"\"\n";
+				
+			break;
+		}
+	}
+	
+	for( var e = 0 ; e < table.length ; e ++ ){
+		var obj = $( table[ e ].obj ).children("p");
+		if( !obj || obj.length < 1 ) 		// if its a blank textLine, there is no p balise
+			continue
+		var r = obj.text();
+		for( var i = 0 ; i < table[ e ].b.length ; i ++ ){
+				var avant = r.substring( 0 , table[ e ].b[i].index );
+				var apres = r.substring( table[ e ].b[i].index );
+				
+				r = avant + table[ e ].b[i].b + apres;
+				
+				for( var j = i+1 ; j < table[ e ].b.length ; j ++ )
+					if( table[ e ].b[ j ].index >  table[ e ].b[i].index )
+						table[ e ].b[j].index += table[ e ].b[i].b.length;	 
+		}
+		obj.get(0).innerHTML = r;
+	}
+	
+	console.log( log );
+	
+	return res.children();
+	
+	
+	// share chaine, ( effet de bord )
+	function shiftNextBalise(){
+		
+		// détermine la prochaine occurence d'une balise de type link et de type inser
+		var nlin = chaine.indexOf( chart.linkOpenA , lastIndex );
+		var nins = chaine.indexOf( chart.inserOpenA , lastIndex  );
+		
+		var i;
+		var format;
+		
+		if( nlin <= -1 && nins <= -1 )
+			return;
+		
+		
+		if( nins <= -1 || ( nlin >= 0 && nlin < nins ) ){
+			
+			// si la balise la plus proche est une link
+			format = "link";
+			
+			var iboA = nlin;
+			var iboB = chaine.indexOf( chart.linkOpenB , iboA )+chart.linkOpenB.length;
+			
+			
+			var b = chaine.substring( iboA , iboB );
+			i = chart.i.exec( b ) || [ null , null ] ;
+			if( !i[1] ){
+				console.log( "encounter error parsing the metaText, missing i" );
+				return;
+			}
+			var reg =  new RegExp( chart.linkCloseA+" *i:" + i[1] +" *"+chart.linkCloseB   );
+			var ibfA = chaine.substring( iboA ).search( reg ); 
+			if( ibfA < 0 ){
+				console.log( "encounter error parsing the metaText, " );
+				return;
+			}
+			
+			ibfA  += iboA;
+			
+			var ibfB = chaine.indexOf( chart.linkCloseB , ibfA )+chart.linkCloseB.length;
+			
+			var middle = chaine.substring(  iboB , ibfA );
+			
+			chaine = chaine.substring( 0 , iboA ) + middle + chaine.substring( ibfB );
+			
+			keyword = middle.replace( chart.all , "");
+			
+		} else {
+			
+			// la balise la plus proche est une inser
+			format = "inser";
+			
+			var iboA = nins;
+			
+			var keyword = "";
+			
+			var iboB = chaine.indexOf( chart.inserOpenB , iboA )+chart.inserOpenB.length;
+			
+			var b = chaine.substring( iboA , iboB );
+			
+			chaine = chaine.substring( 0 , iboA ) + chaine.substring( iboB );
+			
+			lastIndex = iboA;
+			
+			i = chart.i.exec( b ) || [ null , null ] ;
+			if ( !i[1] ){
+				console.log( "encounter error parsing the metaText, missing i" );
+				return;
+			}
+		}
+		
+			
+		var id = chart.id.exec( b ) || [ null , null ] ;
+		var type = chart.type.exec( b ) || [ null , null ];
+		
+		return { i:i[1] , type:type[1] , id:id[1] , index:iboA , keyword : keyword , format:format };
+	}
+}
+
+	};
+}();
 
 
 
