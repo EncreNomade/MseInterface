@@ -3560,3 +3560,54 @@ $.extend(mse.Animation.prototype, {
 
 
 })(window, mse);
+
+
+// Language System for game
+(function (window, mse) {
+
+    mse.LanguageRessource = function( defaultLang ){
+        if(!defaultLang) defaultLang = 'anglais';
+        this.defaultLang = defaultLang;
+        this.currentLang = defaultLang;
+        
+        this.content = {};
+    };
+    mse.LanguageRessource.prototype = {
+        addElem: function(id, ressources){
+            // ressources = {langue1: contentLn1, langue2:contentLn2}
+            // type of content are choosed by the user
+            this.content[id] = ressources;
+            if(!ressources[this.defaultLang]) {
+                for(var i in ressources) break; // just get an existing langue in ressources
+                this.content[id][this.defaultLang] = ressources[i];
+                
+                console.error('translation missing in "'+this.defaultLang+ '" for "'+id+'" replaced by translation in "'+i+'"');
+            }
+        },
+        getElem: function(id){
+            if(this.content[id][this.currentLang])
+                return this.content[id][this.currentLang];
+                
+            else if(this.content[id][this.defaultLang])
+                return this.content[id][this.defaultLang];
+                
+            else // just a protection, normally never call
+                console.error( 'no translation for "'+id+'" in languages : '+this.currentLang+' or '+this.defaultLang );
+        },
+        setCurrentLang: function(lang){
+            if(typeof lang == 'string')
+                this.currentLang = lang;
+        },
+        getAllLangFor: function(id){
+            return this.content[id] || null;
+        }
+    };
+
+})(window, mse);
+
+
+
+
+
+
+
