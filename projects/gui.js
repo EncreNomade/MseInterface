@@ -45,7 +45,7 @@ var msgCenter =(function(){
             if(!messageList) 
                 messageList = $('#msgCenter ul');
             return messageList;
-        },
+        }
     }
 })();
 

@@ -3430,7 +3430,11 @@ var staticIcon = function(elem, func, img, data) {
 	
 function delParent(e) {
     e.preventDefault();e.stopPropagation();
-    CommandMgr.executeCmd( new DeleteObjCmd($(this).parent().parent()) );
+    var target = $(this).parent().parent();
+    var parent = target.parent();
+    if(parent.hasClass('speaker') && target.siblings('.textLine').length == 0) // if is last line in a speaker div
+        target = target.parent();
+    CommandMgr.executeCmd( new DeleteObjCmd(target) );
 }
 function hideParent(e) {e.preventDefault();e.stopPropagation();$(this).parent().parent().hide();}
 function configParent(e) {e.preventDefault();e.stopPropagation();showParameter($(this).parent().parent(), e.data.list);}

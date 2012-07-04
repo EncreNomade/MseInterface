@@ -126,6 +126,19 @@ var CommandMgr = (function(capacity) {
             if(!reversable) {
                 reversable = true;
             }
+            
+            // display a notification
+            var txt = $('<p>Annulation de : '+command.toString()+'. </p>');
+            if($('#msgCenter ul li').length == 0) {
+                var link = $('<a href="#">Refaire</a>');
+                link.click({cmdMgr: this}, function(e){
+                    e.data.cmdMgr.reverseCmd();
+                    $(this).remove();
+                });
+                link.appendTo(txt);
+            }
+            msgCenter.send(txt);
+            
             return true;
         },
         reverseCmd: function() {
@@ -147,6 +160,7 @@ var CommandMgr = (function(capacity) {
             if(!undoable) {
                 undoable = true;
             }
+            
             return result;
         }
     }
@@ -521,7 +535,7 @@ $.extend(AddStepCmd.prototype, {
         this.state = "CANCEL";
     },
 	toString : function(){
-		return "ajout de l'étape "+this.name;
+		return "ajout de l'Ã©tape "+this.name;
 	}
 });
 
@@ -555,7 +569,7 @@ $.extend(AddArticleCmd.prototype, {
         this.state = "CANCEL";
     },
 	toString : function(){
-		return "ajout de l'étape-article "+this.name;
+		return "ajout de l'Ã©tape-article "+this.name;
 	}
 });
 
@@ -592,7 +606,7 @@ $.extend(DelStepCmd.prototype, {
         this.state = "CANCEL";
     },
 	toString : function(){
-		return "suppression de l'étape "+this.name;
+		return "suppression de l'Ã©tape "+this.name;
 	}	
 });
 
@@ -632,7 +646,7 @@ $.extend(RenameStepCmd.prototype, {
         this.state = "CANCEL";
     },
 	toString : function(){
-		return "renommage de l'étape "+this.oldName+" en "+this.newName;
+		return "renommage de l'Ã©tape "+this.oldName+" en "+this.newName;
 	}
 });
 
@@ -659,7 +673,7 @@ $.extend(StepUpCmd.prototype, {
         this.state = "CANCEL";
     },
 	toString : function(){
-		return "passage de l'étape "+this.name+" au plan supérieur";
+		return "passage de l'Ã©tape "+this.name+" au plan supÃ©rieur";
 	}
 });
 var StepDownCmd = function(mgr, stepN) {
@@ -685,7 +699,7 @@ $.extend(StepDownCmd.prototype, {
         this.state = "CANCEL";
     },
 	toString : function(){
-		return "passage de l'étape "+this.name+" au plan inférieur";
+		return "passage de l'Ã©tape "+this.name+" au plan infÃ©rieur";
 	}
 });
 
@@ -738,7 +752,7 @@ $.extend(AddToSceneCmd.prototype, {
 		this.state = 'SUCCESS';
 	},
 	toString : function(){
-		var rep = "ajout de "+this.elems.length+" objets à la scène";
+		var rep = "ajout de "+this.elems.length+" objets Ã  la scÃ¨ne";
 		return rep;
 	}
 });
@@ -790,7 +804,14 @@ $.extend(ConfigObjCmd.prototype, {
 
 var DeleteObjCmd = function(target){
     this.target = target;
-    this.parent = target.parent();
+    if(target.parents('.article').length > 0 && target.next().length == 1){ // if its an article obj its linkeds to his next obj
+        this.type = 'articleObj';
+        this.tarLink = target.next();
+    }
+    else { // its an obj with no article parent or the last article obj --> could be treat with .append()
+        this.type = 'normalObj';
+        this.tarLink = target.parent();
+    }
     this.relatedScripts = [];
     for(var elem in scriptMgr.scripts) {
         if(scriptMgr.scripts[elem].src == target.attr('id') || scriptMgr.scripts[elem].target == target.attr('id') || scriptMgr.scripts[elem].supp == target.attr('id')){
@@ -834,15 +855,18 @@ $.extend(DeleteObjCmd.prototype, {
                 supp      = this.relatedScripts[i].supp;
             scriptMgr.addScript(name,src,srcType,action,target,reaction,immediate,supp);
         }
-        
-        this.parent.append(this.target);
+        if(this.type == 'normalObj')
+            this.tarLink.append(this.target);
+        else
+            this.tarLink.before(this.target);
         
         this.state = 'CANCEL';
     },
 	toString : function(){
-		return "suppression de l'objet "+this.target.attr("id")+ ( this.relatedScripts.length > 0 ? " et de ces "+this.relatedScripts.length+" scripts associés" : "" );
+		return "suppression de l'objet "+this.target.attr("id")+ ( this.relatedScripts.length > 0 ? " et de ces "+this.relatedScripts.length+" scripts associÃ©s" : "" );
 	}
 });
+
 var MoveObjCmd = function(elems){
     if( !elems instanceof Array )
 		elems = [ elems ];
@@ -886,7 +910,7 @@ $.extend(MoveObjCmd.prototype, {
         this.state = 'CANCEL';
     },
 	toString : function(){
-		return "déplacement "+( this.objs.length > 1 ? "du groupe d'objets" : "de l'objet "+$( this.objs[ 0 ] ).attr( "id" ) );
+		return "dÃ©placement "+( this.objs.length > 1 ? "du groupe d'objets" : "de l'objet "+$( this.objs[ 0 ] ).attr( "id" ) );
 	}
 	
 });

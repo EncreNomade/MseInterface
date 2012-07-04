@@ -48,7 +48,7 @@ else header("Location: index.php", true);
 
 </head>
 <body>
-
+<div id="msgCenter"><ul></ul></div>
 <nav class="menu">
 	<li><a href="#">Projet</a>
 		<ul>
