@@ -75,9 +75,6 @@ function init() {
 	window.animeTool = initAnimeTool();
 	window.scriptTool = initScriptTool();
 	
-	//window.translateTool = initTranslateTool();
-	//window.translateTool.active();
-	
 	// Mouse event handler for the resize behavior
 	$('body').supportResize();
 	$('body').supportMove(); 
@@ -1242,6 +1239,7 @@ function generateLines(content, font, width, lineHeight){
 	}
 	res = $(res);
 	res.each(function() {
+	    if($(this).prop('tagName') == "PARAGRAPHTAG") return;
 		$(this).height(config.sceneY(lineHeight));
 		$(this).deletable(null, true)
 		       .selectable(selectP)
@@ -1531,99 +1529,106 @@ parseMetaText : function( article ){
 	var meta = [];
 		
 	// the links
-	var spans = article.children( "div.textLine, div.speaker div.textLine" ).children( "span.audiolink,span.wikilink" );
+	var spans = article.children( "div.textLine, div.speaker div.textLine" ).find( "span.audiolink, span.wikilink" );
 	for( var i = 0 ; i < spans.length ; i ++ ){
 		var span = $( spans[ i ] );
 		var textLine = span.parents( "div.textLine" );
-		meta.push( { 	objId : textLine.attr( "id" ) ,
-						keyword : span.text(),
-						format : "link",
-						index : textLine.text().indexOf( span.text() ),
-						link :  { 	type : correspondanceType[ span.attr( "class" ) ] ,
-									id : span.attr( "link" ) } 
-					} );
+		meta.push( {objId : textLine.attr( "id" ) ,
+					keyword : span.text(),
+					format : "link",
+					index : textLine.text().indexOf( span.text() ),
+					link :  { 	type : correspondanceType[ span.attr( "class" ) ] ,
+								id : span.attr( "link" ) } 
+				} );
 	}
 	
 	// the animations
-	for( var i in srcMgr.sources )
+	for( var i in srcMgr.sources ) {
 		if( srcMgr.sources[ i ].type == "anime" ){
 			var anime = srcMgr.getSource( i );
 			for( var obj in anime.objs )
 				if( $( "#"+obj ).hasClass( "textLine" ) &&  $( "#"+obj ).parents( "div.layer[type=ArticleLayer]").attr( "id" ) == article.parent().attr( "id" ) )
-					meta.push( { 	objId : obj ,
-						keyword : anime.objs[ obj ].content,
-						index : $( "#"+obj ).text().indexOf( anime.objs[ obj ].content ),
-						format : "link",
-						link :  { 	type : "anime" ,
-									id : i } 
-					} );
+					meta.push( {objId : obj ,
+        						keyword : anime.objs[ obj ].content,
+        						index : $( "#"+obj ).text().indexOf( anime.objs[ obj ].content ),
+        						format : "link",
+        						link :  { 	type : "anime" ,
+        									id : i } 
+        					} );
 			
 		}
-		
+	}
+	
 	// the scripts
 	for( var i in scriptMgr.scripts ){
 		var script = scriptMgr.scripts[ i ];
-		if( 	script.srcType == "obj"
-		&& 		$( "#"+script.src ).hasClass( "textLine" ) 
-		&& 		$( "#"+script.src ).parents( "div.layer[type=ArticleLayer]").attr( "id" ) == article.parent().attr( "id" ) )
-					meta.push( { 	objId : script.src ,
-						keyword : $( "#"+script.src ).text(),
-						index : 0,
-						format : "link",
-						link :  { 	type : "script" ,
-									id : i ,
-									dep : "src"} 
-					} );
-		if( $( "#"+script.target ).hasClass( "textLine" ) 
-		&& 	$( "#"+script.target ).parents( "div.layer[type=ArticleLayer]").attr( "id" ) == article.parent().attr( "id" ) )
-					meta.push( { 	objId : script.target ,
-						keyword : $( "#"+script.target ).text(),
-						index : 0,
-						format : "link",
-						link :  { 	type : "script" ,
-									id : i ,
-									dep : "target" } 
-					} );
-		if( $( "#"+script.supp ).hasClass( "textLine" ) 
-		&& 	$( "#"+script.supp ).parents( "div.layer[type=ArticleLayer]").attr( "id" ) == article.parent().attr( "id" ) )
-					meta.push( { 	objId : script.supp ,
-						keyword : $( "#"+script.supp ).text(),
-						index : 0,
-						format : "link",
-						link :  { 	type : "script" ,
-									id : i ,
-									dep : "supp" } 
-					} );
+		var src = $( "#"+script.src );
+		if( script.srcType == "obj"
+		&& 	src.hasClass( "textLine" ) 
+		&& 	src.parents( ".article").get(0) == article.get(0) ) {
+			meta.push( {objId : script.src,
+            			keyword : src.children('p').text(),
+            			index : 0,
+            			format : "link",
+            			link :  { 	type : "script",
+            						id : i,
+            						dep : "src"}
+            		} );
+        }
+        
+        var tar = $( "#"+script.target );
+		if( tar.hasClass( "textLine" ) 
+		&& 	tar.parents( ".article").get(0) == article.get(0) ) {
+			meta.push( {objId : script.target,
+        				keyword : tar.children('p').text(),
+        				index : 0,
+        				format : "link",
+        				link :  { 	type : "script",
+        							id : i,
+        							dep : "target" } 
+        			} );
+        }
+        
+        var supp = $( "#"+script.supp );
+		if( supp.hasClass( "textLine" ) 
+		&& 	supp.parents( ".article").get(0) == article.get(0) ) {
+			meta.push( {objId : script.supp ,
+        				keyword : supp.children('p').text(),
+        				index : 0,
+        				format : "link",
+        				link :  { 	type : "script" ,
+        							id : i ,
+        							dep : "supp" } 
+        			} );
+        }
 	}
 	
 	// the illus
-	var illus = article.find( "div.illu" );
+	var illus = article.children( "div.illu" );
 	for( var i = 0 ; i < illus.length ; i ++ ){
 		var illu = $( illus[ i ] );
 		var img  = $( illu.children("img").get(0) );
-		meta.push( { objId : illu.prev(".textLine").attr( "id" ) ,
-						keyword : "",
-						format : "inser",
-						index : illu.prev(".textLine").text().length,
-						link :  { 	type : "image" ,
-									id : img.attr( "name" ) } 
-					} );
+		meta.push( {objId : illu.prev(".textLine").attr( "id" ) ,
+        			keyword : "",
+        			format : "inser",
+        			index : illu.prev(".textLine").text().length,
+        			link :  { 	type : "image" ,
+        						id : img.attr( "name" ) } 
+        		} );
 	}
 	
 	// the games
-	var games = article.find( "div.game" );
+	var games = article.children( "div.game" );
 	for( var i = 0 ; i < games.length ; i ++ ){
 		var game = $( games[ i ] );
-		meta.push( { objId : game.prev(".textLine").attr( "id" ) ,
-						keyword : "",
-						format : "inser",
-						index : game.prev(".textLine").text().length,
-						link :  { 	type : "game" ,
-									id : game.attr( "name" ) } 
-					} );
+		meta.push( {objId : game.prev(".textLine").attr( "id" ) ,
+    				keyword : "",
+    				format : "inser",
+    				index : game.prev(".textLine").text().length,
+    				link :  { 	type : "game" ,
+    							id : game.attr( "name" ) } 
+    			} );
 	}
-	
-	
 	
 	return meta;
 },
@@ -1631,7 +1636,9 @@ parseMetaText : function( article ){
 
 //generate metaTextArticle
 formate : function( article , meta ){ 
-	if( !article || !article.hasClass('article') ) return;
+
+	if( !article || !article.hasClass('article') )
+		return;
 	if( !meta )
 		meta = this.parseMetaText( article );
 	
@@ -1640,7 +1647,7 @@ formate : function( article , meta ){
 	var wrapprefix = false;
 	for( var i = 0 ; i < lines.length ; i ++ ){
 		var line = $( lines.get(i) );
-		if( line.prop('tagName') == "paragraphtag" ) {
+		if( line.prop('tagName') == "PARAGRAPHTAG" ) {
 		    s += '\n';
 		    wrapprefix = true;
 		}
@@ -1655,13 +1662,14 @@ formate : function( article , meta ){
 			// Line with content
 			else {
 				s += wrap( line );
+
 				wrapprefix = false;
 			}
 		}
 		else if( line.hasClass( "speaker" ) ) {
 		    // Add a prefix of line wrap
 		    if(!wrapprefix) s += '\n';
-			s += "[ "+line.attr( "data-who")+" : "+line.attr( "data-mood")+" ] " + this.formate( line , meta )+"\n";
+			s += "[ "+line.attr( "data-who")+" : "+line.attr( "data-mood")+" ] " + this.formate( line , meta )+"[end]\n";
 			wrapprefix = true;
 		}
 		else continue;
@@ -1706,7 +1714,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 	if( !article || !article.hasClass('article') ) return;
 	
 	var log = "";
-	
+
 	if( !meta )
 		if( !article )
 			meta = [];
