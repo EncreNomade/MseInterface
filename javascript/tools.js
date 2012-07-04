@@ -3046,10 +3046,10 @@ var initTranslateTool = function() {
             var offset = metas[i].index;
             var objId = metas[i].objId;
             var link = metas[i].link;
+            var obj = container.children('p[objId="'+objId+'"]');
             
             // For links
             if(format == "link") {
-                var obj = container.children('p[objId="'+objId+'"]');
                 var text = obj.text();
                 if(text.indexOf(keyword, offset) == offset) {
                     var start = text.substr( 0, offset );
@@ -3057,6 +3057,15 @@ var initTranslateTool = function() {
                     obj.html( start + "<span class='"+link.type+"'>"+keyword+"</span>" + end );
                     obj.data('link', link);
                 }
+            }
+            
+            // For insertions
+            if(format == "inser") {
+                var expo = srcMgr.getExpo(link.id);
+                expo.deletable(false);
+                expo.circleMenu(false);
+                expo.css({'position':'absolute', 'top':obj.position().top-20, 'right':'0px'});
+                obj.after(expo);
             }
         }
     };
@@ -3985,6 +3994,12 @@ $.fn.editable = function(callback, prepa, dblclick) {
 // Circle menu
 $.fn.circleMenu = function(buttonmap) {
     var tar = $(this);
+    if(buttonmap === false) {
+        tar.css('cursor', 'default');
+        tar.removeData('circleMenu');
+        tar.unbind('dblclick');
+    }
+    
     tar.css('cursor', 'url("./images/UI/circlemenuptr.cur"), auto');
     tar.data('circleMenu', buttonmap);
     tar.dblclick(function(e){
