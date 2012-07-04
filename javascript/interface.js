@@ -75,9 +75,6 @@ function init() {
 	window.animeTool = initAnimeTool();
 	window.scriptTool = initScriptTool();
 	
-	//window.translateTool = initTranslateTool();
-	//window.translateTool.active();
-	
 	// Mouse event handler for the resize behavior
 	$('body').supportResize();
 	$('body').supportMove(); 
@@ -1248,6 +1245,7 @@ function generateLines(content, font, width, lineHeight){
 	}
 	res = $(res);
 	res.each(function() {
+	    if($(this).prop('tagName') == "PARAGRAPHTAG") return;
 		$(this).height(config.sceneY(lineHeight));
 		$(this).deletable(null, true)
 		       .selectable(selectP)
@@ -1537,99 +1535,106 @@ parseMetaText : function( article ){
 	var meta = [];
 		
 	// the links
-	var spans = article.children( "div.textLine, div.speaker div.textLine" ).children( "span.audiolink,span.wikilink" );
+	var spans = article.children( "div.textLine, div.speaker div.textLine" ).find( "span.audiolink, span.wikilink" );
 	for( var i = 0 ; i < spans.length ; i ++ ){
 		var span = $( spans[ i ] );
 		var textLine = span.parents( "div.textLine" );
-		meta.push( { 	objId : textLine.attr( "id" ) ,
-						keyword : span.text(),
-						format : "link",
-						index : textLine.text().indexOf( span.text() ),
-						link :  { 	type : correspondanceType[ span.attr( "class" ) ] ,
-									id : span.attr( "link" ) } 
-					} );
+		meta.push( {objId : textLine.attr( "id" ) ,
+					keyword : span.text(),
+					format : "link",
+					index : textLine.children("p").text().indexOf( span.text() ),
+					link :  { 	type : correspondanceType[ span.attr( "class" ) ] ,
+								id : span.attr( "link" ) } 
+				} );
 	}
 	
 	// the animations
-	for( var i in srcMgr.sources )
+	for( var i in srcMgr.sources ) {
 		if( srcMgr.sources[ i ].type == "anime" ){
 			var anime = srcMgr.getSource( i );
 			for( var obj in anime.objs )
 				if( $( "#"+obj ).hasClass( "textLine" ) &&  $( "#"+obj ).parents( "div.layer[type=ArticleLayer]").attr( "id" ) == article.parent().attr( "id" ) )
-					meta.push( { 	objId : obj ,
-						keyword : anime.objs[ obj ].content,
-						index : $( "#"+obj ).text().indexOf( anime.objs[ obj ].content ),
-						format : "link",
-						link :  { 	type : "anime" ,
-									id : i } 
-					} );
+					meta.push( {objId : obj ,
+        						keyword : anime.objs[ obj ].content,
+        						index : $( "#"+obj ).children("p").text().indexOf( anime.objs[ obj ].content ),
+        						format : "link",
+        						link :  { 	type : "anime" ,
+        									id : i } 
+        					} );
 			
 		}
-		
+	}
+	
 	// the scripts
 	for( var i in scriptMgr.scripts ){
 		var script = scriptMgr.scripts[ i ];
-		if( 	script.srcType == "obj"
-		&& 		$( "#"+script.src ).hasClass( "textLine" ) 
-		&& 		$( "#"+script.src ).parents( "div.layer[type=ArticleLayer]").attr( "id" ) == article.parent().attr( "id" ) )
-					meta.push( { 	objId : script.src ,
-						keyword : $( "#"+script.src ).text(),
-						index : 0,
-						format : "link",
-						link :  { 	type : "script" ,
-									id : i ,
-									dep : "src"} 
-					} );
-		if( $( "#"+script.target ).hasClass( "textLine" ) 
-		&& 	$( "#"+script.target ).parents( "div.layer[type=ArticleLayer]").attr( "id" ) == article.parent().attr( "id" ) )
-					meta.push( { 	objId : script.target ,
-						keyword : $( "#"+script.target ).text(),
-						index : 0,
-						format : "link",
-						link :  { 	type : "script" ,
-									id : i ,
-									dep : "target" } 
-					} );
-		if( $( "#"+script.supp ).hasClass( "textLine" ) 
-		&& 	$( "#"+script.supp ).parents( "div.layer[type=ArticleLayer]").attr( "id" ) == article.parent().attr( "id" ) )
-					meta.push( { 	objId : script.supp ,
-						keyword : $( "#"+script.supp ).text(),
-						index : 0,
-						format : "link",
-						link :  { 	type : "script" ,
-									id : i ,
-									dep : "supp" } 
-					} );
+		var src = $( "#"+script.src );
+		if( script.srcType == "obj"
+		&& 	src.hasClass( "textLine" ) 
+		&& 	src.parents( ".article").get(0) == article.get(0) ) {
+			meta.push( {objId : script.src,
+            			keyword : src.children('p').text(),
+            			index : 0,
+            			format : "link",
+            			link :  { 	type : "script",
+            						id : i,
+            						dep : "src"}
+            		} );
+        }
+        
+        var tar = $( "#"+script.target );
+		if( tar.hasClass( "textLine" ) 
+		&& 	tar.parents( ".article").get(0) == article.get(0) ) {
+			meta.push( {objId : script.target,
+        				keyword : tar.children('p').text(),
+        				index : 0,
+        				format : "link",
+        				link :  { 	type : "script",
+        							id : i,
+        							dep : "target" } 
+        			} );
+        }
+        
+        var supp = $( "#"+script.supp );
+		if( supp.hasClass( "textLine" ) 
+		&& 	supp.parents( ".article").get(0) == article.get(0) ) {
+			meta.push( {objId : script.supp ,
+        				keyword : supp.children('p').text(),
+        				index : 0,
+        				format : "link",
+        				link :  { 	type : "script" ,
+        							id : i ,
+        							dep : "supp" } 
+        			} );
+        }
 	}
 	
 	// the illus
-	var illus = article.find( "div.illu" );
+	var illus = article.children( "div.illu" );
 	for( var i = 0 ; i < illus.length ; i ++ ){
 		var illu = $( illus[ i ] );
 		var img  = $( illu.children("img").get(0) );
-		meta.push( { objId : illu.prev(".textLine").attr( "id" ) ,
-						keyword : "",
-						format : "inser",
-						index : illu.prev(".textLine").text().length,
-						link :  { 	type : "image" ,
-									id : img.attr( "name" ) } 
-					} );
+		meta.push( {objId : illu.prev(".textLine").attr( "id" ) ,
+        			keyword : "",
+        			format : "inser",
+        			index : illu.prev(".textLine").children("p").text().length,
+        			link :  { 	type : "image" ,
+        						id : img.attr( "name" ) } 
+        		} );
 	}
 	
 	// the games
-	var games = article.find( "div.game" );
+	var games = article.children( "div.game" );
 	for( var i = 0 ; i < games.length ; i ++ ){
 		var game = $( games[ i ] );
-		meta.push( { objId : game.prev(".textLine").attr( "id" ) ,
-						keyword : "",
-						format : "inser",
-						index : game.prev(".textLine").text().length,
-						link :  { 	type : "game" ,
-									id : game.attr( "name" ) } 
-					} );
+		meta.push( {objId : game.prev(".textLine").attr( "id" ) ,
+    				keyword : "",
+    				format : "inser",
+    				index : game.prev(".textLine").children("p").text().length,
+    				link :  { 	type : "game" ,
+    							id : game.attr( "name" ) } 
+    			} );
 	}
-	
-	
 	
 	return meta;
 },
@@ -1637,16 +1642,20 @@ parseMetaText : function( article ){
 
 //generate metaTextArticle
 formate : function( article , meta ){ 
-	if( !article || !article.hasClass('article') ) return;
+
+	if( !article || !article.hasClass('article') )
+		return;
 	if( !meta )
 		meta = this.parseMetaText( article );
+	
+	console.log( meta );
 	
 	var s = "";
 	var lines = article.children();
 	var wrapprefix = false;
 	for( var i = 0 ; i < lines.length ; i ++ ){
 		var line = $( lines.get(i) );
-		if( line.prop('tagName') == "paragraphtag" ) {
+		if( line.prop('tagName') == "PARAGRAPHTAG" ) {
 		    s += '\n';
 		    wrapprefix = true;
 		}
@@ -1667,7 +1676,7 @@ formate : function( article , meta ){
 		else if( line.hasClass( "speaker" ) ) {
 		    // Add a prefix of line wrap
 		    if(!wrapprefix) s += '\n';
-			s += "[ "+line.attr( "data-who")+" : "+line.attr( "data-mood")+" ] " + this.formate( line , meta )+"\n";
+			s += "[ "+line.attr( "data-who")+" : "+line.attr( "data-mood")+" ] " + this.formate( line , meta )+"[end]\n";
 			wrapprefix = true;
 		}
 		else continue;
@@ -1690,7 +1699,7 @@ formate : function( article , meta ){
 					// balise insertion
 					charge.push( { index : meta[ i ].index , b : chart.inserOpenA + " i:"+i + " type:" + meta[i].link.type + " id:" + meta[i].link.id + chart.inserOpenB } );
 			
-		var r = obj.text();
+		var r = obj.children("p").text();
 		
 		for( var i = 0 ; i < charge.length ; i ++ ){
 			var avant = r.substring( 0 , charge[i].index );
@@ -1712,7 +1721,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 	if( !article || !article.hasClass('article') ) return;
 	
 	var log = "";
-	
+
 	if( !meta )
 		if( !article )
 			meta = [];
@@ -1745,7 +1754,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		meta[ next.i ].prev_objId   = meta[ next.i ].objId;
 		
 		meta[ next.i ].keyword = next.keyword;
-		meta[ next.i ].index   = next.index;
+		meta[ next.i ].offset  = next.index; 		// offset est le numero de caractére par rapport au debut du texte ( et non pas au début de la ligne comme index )
 		meta[ next.i ].format  = next.format;
 		meta[ next.i ].valide  = true;
 		
@@ -1770,8 +1779,8 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 	while(  (next = chaine.indexOf( "[" , start )) != -1 ){
 		var end = chaine.indexOf( "]" , next )+1;	
 		for( var i = 0 ; i < meta.length ; i ++ )
-			if( meta[ i ].index > next )
-				meta[ i ].index += next - end;
+			if( meta[ i ].offset > next )
+				meta[ i ].offset += next - end;
 		start = end;
 	}
 	
@@ -1779,8 +1788,8 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 	start = 0;
 	while(  (next = chaine.indexOf( "\n" , start )) != -1 ){
 		for( var i = 0 ; i < meta.length ; i ++ )
-			if( meta[ i ].index > next )
-				meta[ i ].index --;
+			if( meta[ i ].offset > next )
+				meta[ i ].offset --;
 		start = next+1;
 	}
 	
@@ -1801,7 +1810,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 	var cursor = 0;
 	res.find( "div.textLine" ).each(function(){
 		var line = $( this );
-		var l = line.text().length;
+		var l = line.children("p").text().length;
 		table.push( { 	obj : line ,
 						l : l,
 						ca : cursor ,
@@ -1816,22 +1825,39 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		if( !meta[ i ] || !meta[ i ].valide )
 			continue;
 		
-		var e = Math.floor( meta[ i ].index / table[ table.length-1 ].cb * table.length );  // estimation
+		var e = Math.floor( meta[ i ].offset / table[ table.length-1 ].cb * table.length );  // estimation
 		
-		while( meta[ i ].index < table[ e ].ca )    // ajustement
+		while( meta[ i ].offset < table[ e ].ca )    // ajustement
 			e --;
-		while( meta[ i ].index > table[ e ].cb )	  // ajustement
+		while( meta[ i ].offset > table[ e ].cb )	  // ajustement
 			e ++;
+		
+		
+		var new_objId;
+		var new_index;
+		var new_keyword;
+		
 		
 		switch( meta[ i ].link.type ){
 			case "audio" : case "wiki" :
 				if( meta[ i ].format == "link" ){
-					table[ e ].b.push( { index : meta[ i ].index - table[ e ].ca  , b : '<span class="'+ correspondanceClass[ meta[ i ].link.type ] +'" link="'+meta[ i ].link.id+'">' } );
-					table[ e ].b.unshift( { index : meta[ i ].index + meta[ i ].keyword.length - table[ e ].ca , b : '</span>' } );
+					
+					new_index = meta[ i ].offset - table[ e ].ca  	// relatif au debut de la ligne
+					new_objId = table[ e ].obj;
+					
+					table[ e ].b.push( { index : new_index  , b : '<span class="'+ correspondanceClass[ meta[ i ].link.type ] +'" link="'+meta[ i ].link.id+'">' } );
+					table[ e ].b.unshift( { 
+						index : Math.min( new_index + meta[ i ].keyword.length , table[ e ].l ) ,  		// le span est sur une seule ligne, si le groupe de mot occupe 2 lignes,  le span sera sur le début du groupe 
+						b : '</span>' 
+					} ); 
 				}	
 			break;
 			case "image" : case "game" :
 				if( meta[ i ].format == "inser" ){
+				
+					new_index = 0;
+					new_objId = table[ e ].obj;
+				
 					var id = meta[ i ].link.id;
 					var elem = srcMgr.generateChildDomElem(id, res);
 					elem.attr('id', 'obj'+(curr.objId++));
@@ -1842,28 +1868,46 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 					    .staticButton('./images/tools/anime.png', animeTool.animateObj)
 					    .staticButton('./images/UI/addscript.jpg', addScriptForObj)
 					    .children('.del_container').hide();
-					elem.insertAfter( table[ e ].obj );
-					log += meta[ i ].link.type+" "+id+" re inserée apres la ligne :\""+table[ e ].obj.text()+"\"\n";
+					elem.insertAfter( new_objId );
+					
+					log += meta[ i ].link.type+" "+id+" re inserée apres la ligne :\""+new_objId.children("p").text()+"\", ( il était précédement après \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
 				}
 
 			break;
 			case "script" :
-				var lastIndex = meta[ i ].index + meta[ i ].keyword.length;
+				var lastIndex = meta[ i ].offset + meta[ i ].keyword.length;
 				var lastLine = e;
-				while( lastIndex > table[ lastLine ].cb )
+				
+				new_index = meta[ i ].offset - table[ e ].ca;
+				
+				while( lastIndex > table[ lastLine ].cb ){
 					lastLine ++;
-					
+					new_index = 0;
+				}
 				
-				scriptMgr.scripts[  meta[ i ].link.id ][   meta[ i ].link.dep  ] = table[ lastLine ].obj.attr( "id" );
+				new_index = 0;
+				new_objId = table[ lastLine ].obj;
+				new_keyword = new_objId.children("p").text().substring( new_index );
 				
-				log += "maintient de "+meta[ i ].link.dep+" du script "+meta[ i ].link.id+", celui ci est maintenant lié à la ligne :\""+table[ lastLine ].obj.text()+"\"\n";
+				scriptMgr.scripts[  meta[ i ].link.id ][   meta[ i ].link.dep  ] = new_objId.attr( "id" );
+				
+				log += "maintient de "+meta[ i ].link.dep+" du script "+meta[ i ].link.id+", celui ci est maintenant lié à la ligne :\""+new_objId.children("p").text()+"\", ( il était précédement lié à \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
 				
 			break;
 			case "anime" :
-				var lastIndex = meta[ i ].index + meta[ i ].keyword.length;
+				var lastIndex = meta[ i ].offset + meta[ i ].keyword.length;
 				var lastLine = e;
-				while( lastIndex > table[ lastLine ].cb )
+				
+				new_index = meta[ i ].offset - table[ e ].ca;
+				
+				while( lastIndex > table[ lastLine ].cb ){
 					lastLine ++;
+					new_index = 0;
+				}
+				
+				new_index = 0;
+				new_objId = table[ lastLine ].obj;
+				new_keyword = new_objId.children("p").text().substring( new_index );
 				
 				if( !meta[ i ].prev_objId ){
 					console.log( "encounter error parsing the metaText, missing information relative to the previous link" );
@@ -1871,7 +1915,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 				}
 				
 				var ex_id = meta[ i ].prev_objId;
-				var new_id = table[ lastLine ].obj.attr( "id" );
+				var new_id = new_objId.attr( "id" );
 				
 				var anim = srcMgr.getSource( meta[ i ].link.id );
 				
@@ -1879,7 +1923,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 				anim.objs[ new_id ] = { };
 				for( var key in anim.objs[ ex_id ] )
 					anim.objs[ new_id ][ key ] = anim.objs[ ex_id ][ key ];
-				anim.objs[ new_id ].content = table[ lastLine ].obj.text() 
+				anim.objs[ new_id ].content = new_objId.children("p").text(); 
 				
 				// search occurence of the ex objid , replace it by the new
 				for( var j = 0 ; j < anim.frames.length ; j ++ ){
@@ -1893,10 +1937,18 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 				
 				delete srcMgr.getSource( meta[ i ].link.id ).objs[ ex_id ];
 				
-				log += "maintient de l'animation "+meta[ i ].link.id+", celle ci est maintenant lié à la ligne :\""+table[ lastLine ].obj.text()+"\"\n";
+				log += "maintient de l'animation "+meta[ i ].link.id+", celle ci est maintenant lié à la ligne :\""+new_objId.children("p").text()+"\", ( il était précédement lié à \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
 				
 			break;
 		}
+	
+		// remplace avec les nouveaux index , objId et keyword
+		if( new_index )
+			meta[ i ].index = new_index;
+		if( new_objId )
+			meta[ i ].objId = new_objId;
+		if( new_keyword )
+			meta[ i ].keyword = new_keyword;
 	}
 	
 	for( var e = 0 ; e < table.length ; e ++ ){

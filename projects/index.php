@@ -133,7 +133,7 @@ window.fbAsyncInit = function() {
             <img id="theImage" src=""/>
             <img id="closeBn"  src="UI/button/close.png"/>
     </div></div>
-    <canvas class='game' width=50 height=50></canvas>
+    <canvas id="gameCanvas" class='game' width=50 height=50></canvas>
 </div>
 
 <script type="text/javascript">

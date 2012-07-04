@@ -454,9 +454,10 @@ body{
     top: 0px;
     width: 268px;
     height: 460px;
-    overflow: hidden;
+    overflow-x: visible;
+    overflow-y: auto;
     margin: 0px;
-    padding: 10px;
+    padding: 10px 10px 10px 20px;
 }
 #editor #transTool_center {
     position: absolute;
@@ -469,6 +470,7 @@ body{
     padding: 10px;
     border-left: 1px dashed #333;
     border-right: 1px dashed #333;
+    background: transparent;
 }
 #editor #transTool_right {
     position: absolute;
@@ -476,9 +478,33 @@ body{
     top: 0px;
     width: 268px;
     height: 460px;
-    overflow: hidden;
+    overflow-x: visible;
+    overflow-y: auto;
     margin: 0px;
-    padding: 10px;
+    padding: 10px 10px 10px 20px;
+}
+#transTool_left p, #transTool_right p {
+    margin: 0px;
+    padding: 0px;
+    left: 0px;
+    width: 100%;
+    height: 20px;
+    font: 16px/20px Arial, Helvetica, Geneva, sans-serif;
+}
+#transTool_left p span, #transTool_right p span {
+    border: 1px dashed #f00;
+}
+#transTool_left p span.wiki, #transTool_right p span.wiki {
+    background: url(../images/UI/translate_wiki.png) no-repeat right top;
+}
+#transTool_left p span.audio, #transTool_right p span.audio {
+    background: url(../images/UI/translate_audio.png) no-repeat right top;
+}
+#transTool_left p span.anime, #transTool_right p span.anime {
+    background: url(../images/UI/translate_anime.png) no-repeat right top;
+}
+#transTool_left p span.script, #transTool_right p span.script {
+    background: url(../images/UI/translate_script.png) no-repeat right top;
 }
 #editor #transTool_text {
     width: 248px;
@@ -498,9 +524,6 @@ body{
     color: #000;
     font: 15px/20px Arial, Helvetica, Geneva;
     border: 1px solid #333;
-}
-#editor #transTool_left span {
-    border: 1px dashed #333;
 }
 
 #timeline {

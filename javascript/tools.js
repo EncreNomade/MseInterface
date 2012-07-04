@@ -3037,17 +3037,92 @@ var initScriptTool = function() {
 var initTranslateTool = function() {
     var tool = new CreatTool($('#translateTool'), null, true);
     
+    var appendAllLines = function(container, obj) {
+        obj.children().each(function() {
+            var line = $(this);
+            if( line.hasClass('textLine') ) {
+                var temp = $('<p>'+line.children('p').text()+'</p>');
+                temp.attr('objId', line.prop('id'));
+                container.append( temp );
+            }
+            else if( line.hasClass( "speaker" ) ) {
+            	appendAllLines( line );
+            }
+        });
+    };
+    
+    var getArticleExpo = function(container, article, metas) {
+        var lines = appendAllLines(container, article);
+        
+        if(!metas) metas = ArticleFormater.parseMetaText(article);
+        for(var i in metas) {
+            var format = metas[i].format;
+            var keyword = metas[i].keyword;
+            var offset = metas[i].index;
+            var objId = metas[i].objId;
+            var link = metas[i].link;
+            var obj = container.children('p[objId="'+objId+'"]');
+            
+            // For links
+            if(format == "link") {
+                var text = obj.text();
+                if(text.indexOf(keyword, offset) == offset) {
+                    var start = text.substr( 0, offset );
+                    var end = text.substring( offset+keyword.length, text.length-1 );
+                    obj.html( start + "<span class='"+link.type+"'>"+keyword+"</span>" + end );
+                    obj.data('link', link);
+                }
+            }
+            
+            // For insertions
+            if(format == "inser") {
+                var expo = srcMgr.getExpo(link.id);
+                expo.deletable(false);
+                expo.circleMenu(false);
+                expo.css({'position':'absolute', 'top':obj.position().top-20, 'right':'0px'});
+                obj.after(expo);
+            }
+        }
+    };
+    
     $.extend(tool, {
         left: $('<div id="transTool_left"></div>'),
         right: $('<div id="transTool_right"></div>'),
         center: $('<div id="transTool_center"></div>'),
         textInput: $('<textarea id="transTool_text" class="script_editor"></textarea>'),
         inputBtn: $('<div id="transTool_input">Confirmer</div>'),
+        
         init: function(){
             this.editor.append(this.left).append(this.center).append(this.right);
             this.right.append(this.textInput).append(this.inputBtn);
+            
+            // Add an article resume to left panel
+            this.article = $( $('.article').get(0) );
+            this.metas = ArticleFormater.parseMetaText(this.article);
+            getArticleExpo(this.left, this.article, this.metas);
+        },
+        
+        generateTranslation: function() {
+            var content = this.textInput.val();
+            if(content.trim() == "") return;
+            
+            this.right.children().remove();
+            
+            var newarticle = $('<div class="article" defile="'+this.article.attr('defile')+'"></div>');
+            newarticle.css({'left':this.article.css('left'), 'top':this.article.css('top'), 
+            			    'width':this.article.width(), 'height':this.article.height(),
+            			    'line-height' : this.article.css('line-height'), 
+            			    'text-align' : this.article.css('text-align'),
+            			    'font-weight' : this.article.css('font-weight'),
+            			    'font-size' : this.article.css('font-size'),
+            			    'font-family' : this.article.css('font-family'),
+            			    'color' : this.article.css('color')});
+            newarticle.append( ArticleFormater.reverse(content, this.article, this.metas) );
+            getArticleExpo(this.right, newarticle, ArticleFormater.parseMetaText(newarticle));
         }
     });
+    
+    tool.inputBtn.click(function(){tool.generateTranslation();});
     
     return tool;
 }
@@ -3934,6 +4009,12 @@ $.fn.editable = function(callback, prepa, dblclick) {
 // Circle menu
 $.fn.circleMenu = function(buttonmap) {
     var tar = $(this);
+    if(buttonmap === false) {
+        tar.css('cursor', 'default');
+        tar.removeData('circleMenu');
+        tar.unbind('dblclick');
+    }
+    
     tar.css('cursor', 'url("./images/UI/circlemenuptr.cur"), auto');
     tar.data('circleMenu', buttonmap);
     tar.dblclick(function(e){
