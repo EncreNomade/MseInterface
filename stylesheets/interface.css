@@ -1025,9 +1025,9 @@ div.big_button {
         -moz-border-radius: 5px;
     border:1px solid white;
     background-color: red;
-    padding: 0px 3px 0px 3px;
+    padding: 0px 3px 0px 3px !important;
     color: white;
-    float: left;
+    float: left !important;
     font-size: 9px;
     font-family: Helvetica, Arial, Sans-Serif;
     font-weight: bold;

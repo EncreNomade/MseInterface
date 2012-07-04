@@ -667,10 +667,13 @@ function addScriptDialog(src, srcType){
     dialog.annuler.click(closeBottom);
     dialog.confirm.click({sourceId: srcid, sourceType: srcType},validScript);
     
-    
-    if (src.data('scriptsList') && src.data('scriptsList').length > 0){
+    var relScript = scriptMgr.getRelatedScripts(srcid);
+    if (relScript.length > 0){
+        var scriptList = [];
+        for(var i=0; i<relScript.length; i++)
+            scriptList.push(relScript[i].id);
         var modifyScriptsButton = dialog.addButton($('<input type="button" value="Modifier les scripts existants"></input>'));
-        modifyScriptsButton.click(function(){ modifyScriptDialog(src.data('scriptsList'), null, src, srcType); });
+        modifyScriptsButton.click(function(){ modifyScriptDialog(scriptList, null, src, srcType); });
     }
 };
 // Modify a script related to an obj
@@ -812,6 +815,7 @@ function tarDynamic(e) {
             var choosedTarget = scriptMgr.scripts[choosedScript].target;
             $('#script_tar').children('h5').text(choosedTarget);
             dz.html(srcMgr.getExpo(scriptMgr.scripts[choosedScript].supp));
+            dz.attr('target', scriptMgr.scripts[choosedScript].supp);
         }
         
         // show ressource panel
@@ -848,8 +852,10 @@ function tarDynamic(e) {
         var dz = (new DropZone(dropToTargetZone, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "script_tar")).jqObj;
         dz.data('type', type);
         cible.append(dz);
-        if (typeof(choosedScript) !== 'undefined')
+        if (typeof(choosedScript) !== 'undefined'){
             dz.html(srcMgr.getExpo(scriptMgr.scripts[choosedScript].target));
+            dz.attr('target', scriptMgr.scripts[choosedScript].target);
+        }
         break;
     case "script":
         cible.append(scriptMgr.scriptSelectList('script_tar', choosedScript));
