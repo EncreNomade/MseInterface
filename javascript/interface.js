@@ -1667,9 +1667,9 @@ formate : function( article , meta ){
 			}
 			// Line with content
 			else {
-				s += wrap( line );
 				wrapprefix = false;
 			}
+			s += wrap( line );
 		}
 		else if( line.hasClass( "speaker" ) ) {
 		    // Add a prefix of line wrap
@@ -1928,7 +1928,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 				}
 				
 				var ex_id = meta[ i ].prev_objId;
-				var new_id = new_objId.attr( "id" );
+				var new_id = new_objId.prop( "id" );
 				
 				var anim = srcMgr.getSource( meta[ i ].link.id );
 				
@@ -1957,7 +1957,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 	
 		// remplace avec les nouveaux index , objId et keyword
 		meta[ i ].index = new_index;
-		meta[ i ].objId = new_objId;
+		meta[ i ].objId = new_objId.prop('id');
 		if( new_keyword )
 			meta[ i ].keyword = new_keyword;
 	}
@@ -1995,8 +1995,9 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		var i;
 		var format;
 		
-		if( nlin <= -1 && nins <= -1 )
-			return;
+		if( nlin <= -1 && nins <= -1 ) {
+			return false;
+		}
 		
 		
 		if( nins <= -1 || ( nlin >= 0 && nlin < nins ) ){
@@ -2012,13 +2013,13 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 			i = chart.i.exec( b ) || [ null , null ] ;
 			if( !i[1] ){
 				console.log( "encounter error parsing the metaText, missing i" );
-				return;
+				return false;
 			}
 			var reg =  new RegExp( chart.linkCloseA+" *i:" + i[1] +" *"+chart.linkCloseB   );
 			var ibfA = chaine.substring( iboA ).search( reg ); 
 			if( ibfA < 0 ){
 				console.log( "encounter error parsing the metaText, " );
-				return;
+				return false;
 			}
 			
 			ibfA  += iboA;
@@ -2051,7 +2052,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 			i = chart.i.exec( b ) || [ null , null ] ;
 			if ( !i[1] ){
 				console.log( "encounter error parsing the metaText, missing i" );
-				return;
+				return false;
 			}
 		}
 		

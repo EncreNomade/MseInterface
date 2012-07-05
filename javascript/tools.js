@@ -3118,7 +3118,7 @@ var initTranslateTool = function() {
             			    'font-family' : this.article.css('font-family'),
             			    'color' : this.article.css('color')});
             newarticle.append( ArticleFormater.reverse(content, this.article, this.metas) );
-            getArticleExpo(this.right, newarticle, ArticleFormater.parseMetaText(newarticle));
+            getArticleExpo(this.right, newarticle, this.metas);
         }
     });
     
