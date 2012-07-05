@@ -1660,8 +1660,6 @@ formate : function( article , meta ){
 	if( !meta )
 		meta = this.parseMetaText( article );
 	
-	console.log( meta );
-	
 	var s = "";
 	var lines = article.children();
 	var wrapprefix = false;
@@ -1681,9 +1679,9 @@ formate : function( article , meta ){
 			}
 			// Line with content
 			else {
-				s += wrap( line );
 				wrapprefix = false;
 			}
+			s += wrap( line );
 		}
 		else if( line.hasClass( "speaker" ) ) {
 		    // Add a prefix of line wrap
@@ -1735,7 +1733,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 	var log = "";
 
 	if( !meta )
-		if( !article )
+		if( !article  )
 			meta = [];
 		else
 			meta = this.parseMetaText( article );
@@ -1755,7 +1753,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 										id : next.id    } } ;
 		} else {
 			if( next.type && meta[ next.i ].link.type != next.type || next.id && meta[ next.i ].link.id != next.id ){
-				console.log( "encounter error parsing the metaText, confliting information, continue with the raw text information" );
+				console.log( "encounter error parsing the metaText, confliting information, continue with the raw text information "+next.i );
 			}
 			meta[ next.i ].link.type = next.type;
 			meta[ next.i ].link.id = next.id;
@@ -1782,17 +1780,27 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 			else
 				meta[ next.i ].link.dep = "src"; // comportement par default
 	}
-
+	
+	
+	
+	
+	
+	
 	// traitement des éléments de dialogue 
 	// les balises dialogue sont ignoré par le générateur de line, elle n'apparaissent plus post génération ce qui introduit des erreurs dans l'indexation des mots 
 	// on corrige 
+	
+	var decalage = [];
+	for( var i = 0 ; i < meta.length ; i ++ )
+		decalage[ i ] = 0;
+	
 	var next;
 	var start = 0;
 	while(  (next = chaine.indexOf( "[" , start )) != -1 ){
 		var end = chaine.indexOf( "]" , next )+1;	
 		for( var i = 0 ; i < meta.length ; i ++ )
 			if( meta[ i ].offset > next )
-				meta[ i ].offset += next - end;
+				decalage[ i ] -= next - end;
 		start = end;
 	}
 	
@@ -1801,9 +1809,13 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 	while(  (next = chaine.indexOf( "\n" , start )) != -1 ){
 		for( var i = 0 ; i < meta.length ; i ++ )
 			if( meta[ i ].offset > next )
-				meta[ i ].offset --;
+				decalage[ i ] ++;
 		start = next+1;
 	}
+	
+	// introduit le décalage
+	for( var i = 0 ; i < meta.length ; i ++ )
+		meta[ i ].offset -= decalage[ i ];
 	
 	// genere les objets lines
 	if( !font ){
@@ -1841,7 +1853,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		
 		while( meta[ i ].offset < table[ e ].ca )    // ajustement
 			e --;
-		while( meta[ i ].offset > table[ e ].cb )	  // ajustement
+		while( meta[ i ].offset >= table[ e ].cb )	  // ajustement
 			e ++;
 		
 		
@@ -1861,7 +1873,8 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 					table[ e ].b.unshift( { 
 						index : Math.min( new_index + meta[ i ].keyword.length , table[ e ].l ) ,  		// le span est sur une seule ligne, si le groupe de mot occupe 2 lignes,  le span sera sur le début du groupe 
 						b : '</span>' 
-					} ); 
+					} );
+					
 				}	
 			break;
 			case "image" : case "game" :
@@ -1927,7 +1940,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 				}
 				
 				var ex_id = meta[ i ].prev_objId;
-				var new_id = new_objId.attr( "id" );
+				var new_id = new_objId.prop( "id" );
 				
 				var anim = srcMgr.getSource( meta[ i ].link.id );
 				
@@ -1955,10 +1968,8 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		}
 	
 		// remplace avec les nouveaux index , objId et keyword
-		if( new_index )
-			meta[ i ].index = new_index;
-		if( new_objId )
-			meta[ i ].objId = new_objId;
+		meta[ i ].index = new_index;
+		meta[ i ].objId = new_objId.prop('id');
 		if( new_keyword )
 			meta[ i ].keyword = new_keyword;
 	}
@@ -1996,8 +2007,9 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		var i;
 		var format;
 		
-		if( nlin <= -1 && nins <= -1 )
-			return;
+		if( nlin <= -1 && nins <= -1 ) {
+			return false;
+		}
 		
 		
 		if( nins <= -1 || ( nlin >= 0 && nlin < nins ) ){
@@ -2013,13 +2025,13 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 			i = chart.i.exec( b ) || [ null , null ] ;
 			if( !i[1] ){
 				console.log( "encounter error parsing the metaText, missing i" );
-				return;
+				return false;
 			}
 			var reg =  new RegExp( chart.linkCloseA+" *i:" + i[1] +" *"+chart.linkCloseB   );
 			var ibfA = chaine.substring( iboA ).search( reg ); 
 			if( ibfA < 0 ){
 				console.log( "encounter error parsing the metaText, " );
-				return;
+				return false;
 			}
 			
 			ibfA  += iboA;
@@ -2052,7 +2064,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 			i = chart.i.exec( b ) || [ null , null ] ;
 			if ( !i[1] ){
 				console.log( "encounter error parsing the metaText, missing i" );
-				return;
+				return false;
 			}
 		}
 		
