@@ -1,11 +1,16 @@
 var msgCenter =(function(){
     // private
+    var $msgCenter =$('<div id="msgCenter"><ul></ul></div>');
     var messageList = false;
     var max = 5;
     
     function fadeIn(jQmsg){jQmsg.addClass('fadeIn');}
     function fadeOut(jQmsg){jQmsg.removeClass('fadeIn');}
-    function removeMsg(jQmsg){jQmsg.remove();}
+    function removeMsg(jQmsg){
+        jQmsg.remove();
+        if(messageList.children('li').length == 0)
+            $msgCenter.detach();
+    }
     
     function hideTimeOut(jQmsg,time){
             time = isNaN(time) ? 0 : Math.abs(time);
@@ -20,8 +25,11 @@ var msgCenter =(function(){
     //public
     return {
         send: function(mes, time){
-            if(!messageList) // initiate
-                messageList = $('#msgCenter ul');
+            if(!messageList){ // initiate
+                messageList = $msgCenter.children('ul');
+            }
+            if(messageList.children('li').length == 0)
+                $msgCenter.prependTo('body');
                 
             var message = $('<li></li>');
             message.append(mes);
@@ -403,6 +411,10 @@ function editeSpeakDialog( speak ){
 
 // Add step dialog
 function createStepDialog() {
+    if(typeof curr.page == 'undefined'){
+        alert("Impossible de créer une étape s'il n'y a pas de page dans le projet");
+        return;
+    }
 	dialog.showPopup('Ajouter un nouveau étape', 340, 200);
 	// Name and Z-index
 	var nz = $('<p><label>Nom:</label><input id="stepName" size="10" type="text"></p>');
@@ -1667,9 +1679,9 @@ formate : function( article , meta ){
 			}
 			// Line with content
 			else {
-				s += wrap( line );
 				wrapprefix = false;
 			}
+			s += wrap( line );
 		}
 		else if( line.hasClass( "speaker" ) ) {
 		    // Add a prefix of line wrap
@@ -1904,7 +1916,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 				}
 				
 				var ex_id = meta[ i ].prev_objId;
-				var new_id = new_obj.attr( "id" );
+				var new_id = new_objId.prop( "id" );
 				
 				var anim = srcMgr.getSource( meta[ i ].link.id );
 				
@@ -1933,7 +1945,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 	
 		// remplace avec les nouveaux index , objId et keyword
 		meta[ i ].index = new_index;
-		meta[ i ].objId = new_obj.attr( "id" );
+		meta[ i ].objId = new_objId.prop('id');
 		if( new_keyword )
 			meta[ i ].keyword = new_keyword;
 	}
@@ -1989,8 +2001,9 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		var i;
 		var format;
 		
-		if( nlin <= -1 && nins <= -1 )
-			return;
+		if( nlin <= -1 && nins <= -1 ) {
+			return false;
+		}
 		
 		
 		if( nins <= -1 || ( nlin >= 0 && nlin < nins ) ){
@@ -2006,13 +2019,13 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 			i = chart.i.exec( b ) || [ null , null ] ;
 			if( !i[1] ){
 				console.log( "encounter error parsing the metaText, missing i" );
-				return;
+				return false;
 			}
 			var reg =  new RegExp( chart.linkCloseA+" *" + i[1] +" *.*"+chart.linkCloseB   );
 			var ibfA = chaine.substring( iboA ).search( reg ); 
 			if( ibfA < 0 ){
 				console.log( "encounter error parsing the metaText, " );
-				return;
+				return false;
 			}
 			
 			ibfA  += iboA;
@@ -2045,7 +2058,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 			i = chart.i.exec( b ) || [ null , null ] ;
 			if ( !i[1] ){
 				console.log( "encounter error parsing the metaText, missing i" );
-				return;
+				return false;
 			}
 		}
 		

@@ -723,7 +723,6 @@ extend(AddToSceneCmd, Command);
 $.extend(AddToSceneCmd.prototype, {
     execute: function(){
 	
-		console.log( this.tool.finishEdit );
 		
 		if(this.state != 'WAITING') return;
         this.objId = parseInt(curr.objId);
@@ -741,12 +740,10 @@ $.extend(AddToSceneCmd.prototype, {
 	redo : function(){
 		if(this.state != 'CANCEL') return;
 		
-		console.log( this.tool.finishEdit );
 		
 		this.objId = parseInt(curr.objId);
         this.tool.finishEdit( this.elems , this.tar);
 		
-		console.log( this.elems );
 		
 		
 		this.state = 'SUCCESS';

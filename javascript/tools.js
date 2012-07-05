@@ -2515,11 +2515,14 @@ var initAnimeTool = function() {
     	container.resizable().moveable().configurable();
     	// Recut the image
     	container.hoverButton('./images/UI/recut.png', tool.recutAnimeObj)
-    	         .hoverButton('./images/UI/spritecut.png', animeTool.spriteCut);
+    	         .hoverButton('./images/UI/spritecut.png', animeTool.spriteCut)
+                 .canGoDown();
     
     	$('#editor').children().each(function(){
-    	    if($(this).css('z-index') == '2')
+    	    if($(this).css('z-index') == '2'){
+                defineZ($(this), container);
     	        $(this).append(container);
+            }
     	});
     }
     
@@ -3118,7 +3121,7 @@ var initTranslateTool = function() {
             			    'font-family' : this.article.css('font-family'),
             			    'color' : this.article.css('color')});
             newarticle.append( ArticleFormater.reverse(content, this.article, this.metas) );
-            getArticleExpo(this.right, newarticle, ArticleFormater.parseMetaText(newarticle));
+            getArticleExpo(this.right, newarticle, this.metas);
         }
     });
     

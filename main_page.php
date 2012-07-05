@@ -48,7 +48,7 @@ else header("Location: index.php", true);
 
 </head>
 <body>
-<div id="msgCenter"><ul></ul></div>
+
 <nav class="menu">
 	<li><a href="#">Projet</a>
 		<ul>
@@ -77,6 +77,7 @@ else header("Location: index.php", true);
 	<li class="id">Connexion</li>
 	<div id="menu_mask"></div>
 </nav>
+
 <ul id="tools">
 	<li id="texticon"><img src="./images/tools/pen.png"></img></li>
 	<li id="recticon"><img src="./images/tools/rule.png"></img></li>
@@ -272,8 +273,8 @@ function retrieveLocalInfo(pjsave) {
     if(isNaN(pjsave.lastModif)) curr.lastModif = lastModServer;
     else curr.lastModif = pjsave.lastModif;
     
-    window.translateTool = initTranslateTool();
-    window.translateTool.active();
+    // window.translateTool = initTranslateTool();
+    // window.translateTool.active();
 }
 	
 	// Compare server and local last modification info for Synchronization

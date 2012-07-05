@@ -8,8 +8,8 @@ body{
 }
 
 #tools {
-	background:#4d4d4d;
-	opacity:.5;
+	background:rgba(77, 77, 77,0.5);
+	/*opacity:.5;*/
 	position:fixed;
 	top:60px;
 	left:0px;
@@ -39,6 +39,7 @@ body{
 	user-select: none;
 }
 #tools li {
+    opacity: 0.6;
 	width:60px;
 	height:60px;
 	margin-left:10px;
@@ -46,6 +47,17 @@ body{
 	margin-bottom:20px;
 	padding:0px;
 	float:left;
+    -webkit-transition: opacity 0.2s ease, -webkit-transform 0.2s ease;
+    -moz-transition: opacity 0.2s ease, -moz-transform 0.2s ease;
+    -o-transition: opacity 0.2s ease, -o-transform 0.2s ease;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+#tools li:hover {
+    opacity: 1;
+    -webkit-transform: scale(1.2);
+    -moz-transform: scale(1.2);
+    -o-transform: scale(1.2);
+    transform: scale(1.2);
 }
 #tools li img {
 	width:100%;
@@ -967,7 +979,7 @@ div.big_button {
     position: fixed;
     width: 115px;
     height: 115px;
-    z-index:101;
+    z-index:111;
 }
 #circleMenu img{
     position: absolute;

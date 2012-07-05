@@ -1085,12 +1085,12 @@ function createbook(){
 	animes.simcour.addAnimation('src6',{'frame':JSON.parse('[0,13,16,19,22,25,28,31,34,37,40,43,46,49,52,55,58]'),'opacity':JSON.parse('[0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0]'),'spriteSeq':JSON.parse('[0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,3]'),'size':[[mse.coor('cid56'),mse.coor('cid57')],[mse.coor('cid56'),mse.coor('cid57')],[mse.coor('cid56'),mse.coor('cid57')],[mse.coor('cid56'),mse.coor('cid57')],[mse.coor('cid58'),mse.coor('cid57')],[mse.coor('cid58'),mse.coor('cid57')],[mse.coor('cid58'),mse.coor('cid57')],[mse.coor('cid58'),mse.coor('cid57')],[mse.coor('cid60'),mse.coor('cid57')],[mse.coor('cid60'),mse.coor('cid57')],[mse.coor('cid60'),mse.coor('cid57')],[mse.coor('cid60'),mse.coor('cid57')],[mse.coor('cid63'),mse.coor('cid57')],[mse.coor('cid63'),mse.coor('cid57')],[mse.coor('cid63'),mse.coor('cid57')],[mse.coor('cid63'),mse.coor('cid57')],[mse.coor('cid63'),mse.coor('cid57')]],'pos':[[mse.coor('cid23'),mse.coor('cid55')],[mse.coor('cid23'),mse.coor('cid55')],[mse.coor('cid23'),mse.coor('cid55')],[mse.coor('cid23'),mse.coor('cid55')],[mse.coor('cid23'),mse.coor('cid55')],[mse.coor('cid23'),mse.coor('cid55')],[mse.coor('cid23'),mse.coor('cid55')],[mse.coor('cid23'),mse.coor('cid55')],[mse.coor('cid59'),mse.coor('cid55'),1],[mse.coor('cid59'),mse.coor('cid55'),1],[mse.coor('cid59'),mse.coor('cid55'),1],[mse.coor('cid61'),mse.coor('cid55')],[mse.coor('cid62'),mse.coor('cid55')],[mse.coor('cid62'),mse.coor('cid55')],[mse.coor('cid62'),mse.coor('cid55')],[mse.coor('cid62'),mse.coor('cid55')],[mse.coor('cid62'),mse.coor('cid55')]]});
 	animes.textAnime=new mse.Animation(15,1,false);
 	animes.textAnime.block=true;
-	animes.textAnime.addObj('obj178',objs.obj178);
-	animes.textAnime.addAnimation('obj178',{'frame':JSON.parse('[0,8,14,15]'),'fontSize':[mse.coor('cid64'),mse.coor('cid66'),mse.coor('cid64'),mse.coor('cid64')]});
+	animes.textAnime.addObj('obj747',objs.obj747);
+	animes.textAnime.addAnimation('obj747',{'frame':JSON.parse('[0,8,14,15]'),'fontSize':[mse.coor('cid64'),mse.coor('cid66'),mse.coor('cid64'),mse.coor('cid64')]});
 	animes.trenteAnime=new mse.Animation(15,1,false);
 	animes.trenteAnime.block=true;
-	animes.trenteAnime.addObj('obj183',objs.obj183);
-	animes.trenteAnime.addAnimation('obj183',{'frame':JSON.parse('[0,8,14,15]'),'fontSize':[mse.coor('cid64'),mse.coor('cid66'),mse.coor('cid64'),mse.coor('cid64')]});
+	animes.trenteAnime.addObj('obj754',objs.obj754);
+	animes.trenteAnime.addAnimation('obj754',{'frame':JSON.parse('[0,8,14,15]'),'fontSize':[mse.coor('cid64'),mse.coor('cid66'),mse.coor('cid64'),mse.coor('cid64')]});
 	animes.piege=new mse.Animation(51,1,true);
 	animes.piege.block=true;
 	temp.obj=new mse.Image(null,{'pos':[mse.coor('cid2'),mse.coor('cid2')],'size':[mse.coor('cid0'),mse.coor('cid1')]},'grillageimg');
@@ -1101,7 +1101,7 @@ function createbook(){
 	animes.piege.addAnimation('obj587',{'frame':JSON.parse('[0,6,22,25,44,50,51]'),'fontSize':[mse.coor('cid34'),mse.coor('cid34'),mse.coor('cid71'),mse.coor('cid74'),mse.coor('cid74'),mse.coor('cid74'),mse.coor('cid74')],'pos':[[mse.coor('cid68'),mse.coor('cid69')],[mse.coor('cid68'),mse.coor('cid69')],[mse.coor('cid72'),mse.coor('cid73')],[mse.coor('cid75'),mse.coor('cid76')],[mse.coor('cid75'),mse.coor('cid76')],[mse.coor('cid75'),mse.coor('cid76')],[mse.coor('cid75'),mse.coor('cid76')]],'opacity':JSON.parse('[0,0,0.699999988079,1,1,0,0]')});
 	var action={};
 	var reaction={};
-	action.ShowFouine=new mse.Script([{src:objs.obj55,type:'show'}]);
+	action.ShowFouine=new mse.Script([{src:objs.obj632,type:'show'}]);
 	reaction.ShowFouine=function(){ 
 		animes.fouine.start(); 
 	};
@@ -1116,7 +1116,7 @@ function createbook(){
 		root.transition(pages.Chapitre); 
 	};
 	action.transCha.register(reaction.transCha);
-	action.showRat=new mse.Script([{src:objs.obj84,type:'firstShow'}]);
+	action.showRat=new mse.Script([{src:objs.obj659,type:'firstShow'}]);
 	reaction.showRat=function(){ 
 		games.RatGame.start(); 
 	};
@@ -1145,32 +1145,32 @@ function createbook(){
 		action.transCont.register(reaction.transCont); 
 	};
 	action.addTransContSc.register(reaction.addTransContSc);
-	action.simcourssc=new mse.Script([{src:objs.obj585,type:'show'}]);
+	action.simcourssc=new mse.Script([{src:objs.obj663,type:'show'}]);
 	reaction.simcourssc=function(){ 
 		animes.simcour.start(); 
 	};
 	action.simcourssc.register(reaction.simcourssc);
-	action.changeback=new mse.Script([{src:objs.obj133,type:'firstShow'}]);
+	action.changeback=new mse.Script([{src:objs.obj704,type:'firstShow'}]);
 	reaction.changeback=function(){ 
 		temp.width=objs.obj15.getWidth();temp.height=objs.obj15.getHeight();temp.boundingbox=imgBoundingInBox('src1',temp.width,temp.height);temp.obj=new mse.Image(objs.obj15.parent,temp.boundingbox,'src1');mse.transition(objs.obj15,temp.obj,25); 
 	};
 	action.changeback.register(reaction.changeback);
-	action.startPiege=new mse.Script([{src:objs.obj589,type:'show'}]);
+	action.startPiege=new mse.Script([{src:objs.obj796,type:'show'}]);
 	reaction.startPiege=function(){ 
 		animes.piege.start(); 
 	};
 	action.startPiege.register(reaction.startPiege);
-	action.piegesonplay=new mse.Script([{src:objs.obj230,type:'firstShow'}]);
+	action.piegesonplay=new mse.Script([{src:objs.obj796,type:'firstShow'}]);
 	reaction.piegesonplay=function(){ 
 		mse.src.getSrc('src21').play(); 
 	};
 	action.piegesonplay.register(reaction.piegesonplay);
-	action.startTextAnime=new mse.Script([{src:objs.obj178,type:'firstShow'}]);
+	action.startTextAnime=new mse.Script([{src:objs.obj747,type:'firstShow'}]);
 	reaction.startTextAnime=function(){ 
 		animes.textAnime.start(); 
 	};
 	action.startTextAnime.register(reaction.startTextAnime);
-	action.startTrenteAnime=new mse.Script([{src:objs.obj183,type:'firstShow'}]);
+	action.startTrenteAnime=new mse.Script([{src:objs.obj754,type:'firstShow'}]);
 	reaction.startTrenteAnime=function(){ 
 		animes.trenteAnime.start(); 
 	};
