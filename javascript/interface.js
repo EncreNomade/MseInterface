@@ -1509,15 +1509,15 @@ var ArticleFormater = function() {
 	var correspondanceClass = { 'audio' : 'audiolink' , 
 								'wiki' : 'wikilink' };
 	var chart = {
-			linkOpenA : "<lin",
-			linkOpenB : " >",
-			linkCloseA : "</lin",
-			linkCloseB : " >",
+			linkOpenA : "<",
+			linkOpenB : ">",
+			linkCloseA : "</",
+			linkCloseB : ">",
 			
-			inserOpenA : "<ins",
-			inserOpenB : " />",
+			inserOpenA : "<",
+			inserOpenB : "/>",
 			
-			i : / i:([0-9]*)/ ,
+			i : /^ *([0-9]*)/ ,
 			id : / id:([[a-zA-Z0-9]*)/ ,
 			type : / type:([[a-zA-Z0-9]*)/ 
 			
@@ -1690,12 +1690,12 @@ formate : function( article , meta ){
 			if( meta[ i ].objId == id )
 				if( meta[ i ].format == "link"){
 					// start balise
-					charge.push( { index : meta[ i ].index , b : chart.linkOpenA + " i:"+i + " type:" + meta[i].link.type + " id:" + meta[i].link.id + chart.linkOpenB } );
+					charge.push( { index : meta[ i ].index , b : chart.linkOpenA + " "+i + "  " + meta[i].link.type + " sur la source " + meta[i].link.id + chart.linkOpenB } );
 					// close balise
-					charge.unshift( { index : meta[ i ].index + meta[ i ].keyword.length , b : chart.linkCloseA  + " i:"+i + chart.linkCloseB } );
+					charge.unshift( { index : meta[ i ].index + meta[ i ].keyword.length , b : chart.linkCloseA  + " "+i+" " + chart.linkCloseB } );
 				}else
 					// balise insertion
-					charge.push( { index : meta[ i ].index , b : chart.inserOpenA + " i:"+i + " type:" + meta[i].link.type + " id:" + meta[i].link.id + chart.inserOpenB } );
+					charge.push( { index : meta[ i ].index , b : chart.inserOpenA + " "+i + "  " + meta[i].link.type + " sur la source " + meta[i].link.id + chart.inserOpenB } );
 			
 		var r = obj.children("p").text();
 		
@@ -1726,6 +1726,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		else
 			meta = this.parseMetaText( article );
 	
+	
 	// parsing de la chaine
 	// suppression des balises, stockage des index et keywords
 	var next;
@@ -1733,18 +1734,8 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 	while( (next = shiftNextBalise() ) ){
 		
 		if( !meta[ next.i ] ){
-			if(  !next.type || !next.id || next.type == "anime" ){
-					console.log( "encounter error parsing the metaText, missing information" );
-					return;
-			}
-			meta[ next.i ] = { link : { type : next.type ,
-										id : next.id    } } ;
-		} else {
-			if( next.type && meta[ next.i ].link.type != next.type || next.id && meta[ next.i ].link.id != next.id ){
-				console.log( "encounter error parsing the metaText, confliting information, continue with the raw text information "+next.i );
-			}
-			meta[ next.i ].link.type = next.type;
-			meta[ next.i ].link.id = next.id;
+			console.log( "encounter error parsing the metaText, missing information" );
+			return;
 		}
 		
 		meta[ next.i ].prev_index   = meta[ next.i ].index;
@@ -1756,22 +1747,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		meta[ next.i ].format  = next.format;
 		meta[ next.i ].valide  = true;
 		
-		if( meta[ next.i ].link.type == "script" && !meta[ next.i ].link.dep ) 
-			if( scriptMgr.scripts[  meta[ next.i ].link.id ].srcType == "obj" && scriptMgr.scripts[  meta[ next.i ].link.id ].src == meta[ next.i ].prev_objId )
-				meta[ next.i ].link.dep = "src";
-			else
-			if( scriptMgr.scripts[  meta[ next.i ].link.id ].supp == meta[ next.i ].prev_objId )
-				meta[ next.i ].link.dep = "supp";
-			else
-			if( scriptMgr.scripts[  meta[ next.i ].link.id ].target == meta[ next.i ].prev_objId )
-				meta[ next.i ].link.dep = "target";
-			else
-				meta[ next.i ].link.dep = "src"; // comportement par default
 	}
-	
-	
-	
-	
 	
 	
 	// traitement des éléments de dialogue 
@@ -1845,7 +1821,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 			e ++;
 		
 		
-		var new_objId;
+		var new_obj;
 		var new_index;
 		var new_keyword;
 		
@@ -1855,7 +1831,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 				if( meta[ i ].format == "link" ){
 					
 					new_index = meta[ i ].offset - table[ e ].ca  	// relatif au debut de la ligne
-					new_objId = table[ e ].obj;
+					new_obj = table[ e ].obj;
 					
 					table[ e ].b.push( { index : new_index  , b : '<span class="'+ correspondanceClass[ meta[ i ].link.type ] +'" link="'+meta[ i ].link.id+'">' } );
 					table[ e ].b.unshift( { 
@@ -1869,7 +1845,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 				if( meta[ i ].format == "inser" ){
 				
 					new_index = 0;
-					new_objId = table[ e ].obj;
+					new_obj = table[ e ].obj;
 				
 					var id = meta[ i ].link.id;
 					var elem = srcMgr.generateChildDomElem(id, res);
@@ -1881,9 +1857,9 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 					    .staticButton('./images/tools/anime.png', animeTool.animateObj)
 					    .staticButton('./images/UI/addscript.jpg', addScriptForObj)
 					    .children('.del_container').hide();
-					elem.insertAfter( new_objId );
+					elem.insertAfter( new_obj );
 					
-					log += meta[ i ].link.type+" "+id+" re inserée apres la ligne :\""+new_objId.children("p").text()+"\", ( il était précédement après \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
+					log += meta[ i ].link.type+" "+id+" re inserée apres la ligne :\""+new_obj.children("p").text()+"\", ( il était précédement après \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
 				}
 
 			break;
@@ -1899,12 +1875,12 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 				}
 				
 				new_index = 0;
-				new_objId = table[ lastLine ].obj;
-				new_keyword = new_objId.children("p").text().substring( new_index );
+				new_obj = table[ lastLine ].obj;
+				new_keyword = new_obj.children("p").text().substring( new_index );
 				
-				scriptMgr.scripts[  meta[ i ].link.id ][   meta[ i ].link.dep  ] = new_objId.attr( "id" );
+				scriptMgr.scripts[  meta[ i ].link.id ][   meta[ i ].link.dep  ] = new_obj.attr( "id" );
 				
-				log += "maintient de "+meta[ i ].link.dep+" du script "+meta[ i ].link.id+", celui ci est maintenant lié à la ligne :\""+new_objId.children("p").text()+"\", ( il était précédement lié à \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
+				log += "maintient de "+meta[ i ].link.dep+" du script "+meta[ i ].link.id+", celui ci est maintenant lié à la ligne :\""+new_obj.children("p").text()+"\", ( il était précédement lié à \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
 				
 			break;
 			case "anime" :
@@ -1919,8 +1895,8 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 				}
 				
 				new_index = 0;
-				new_objId = table[ lastLine ].obj;
-				new_keyword = new_objId.children("p").text().substring( new_index );
+				new_obj = table[ lastLine ].obj;
+				new_keyword = new_obj.children("p").text().substring( new_index );
 				
 				if( !meta[ i ].prev_objId ){
 					console.log( "encounter error parsing the metaText, missing information relative to the previous link" );
@@ -1928,7 +1904,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 				}
 				
 				var ex_id = meta[ i ].prev_objId;
-				var new_id = new_objId.attr( "id" );
+				var new_id = new_obj.attr( "id" );
 				
 				var anim = srcMgr.getSource( meta[ i ].link.id );
 				
@@ -1936,7 +1912,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 				anim.objs[ new_id ] = { };
 				for( var key in anim.objs[ ex_id ] )
 					anim.objs[ new_id ][ key ] = anim.objs[ ex_id ][ key ];
-				anim.objs[ new_id ].content = new_objId.children("p").text(); 
+				anim.objs[ new_id ].content = new_obj.children("p").text(); 
 				
 				// search occurence of the ex objid , replace it by the new
 				for( var j = 0 ; j < anim.frames.length ; j ++ ){
@@ -1950,14 +1926,14 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 				
 				delete srcMgr.getSource( meta[ i ].link.id ).objs[ ex_id ];
 				
-				log += "maintient de l'animation "+meta[ i ].link.id+", celle ci est maintenant lié à la ligne :\""+new_objId.children("p").text()+"\", ( il était précédement lié à \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
+				log += "maintient de l'animation "+meta[ i ].link.id+", celle ci est maintenant lié à la ligne :\""+new_obj.children("p").text()+"\", ( il était précédement lié à \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
 				
 			break;
 		}
 	
 		// remplace avec les nouveaux index , objId et keyword
 		meta[ i ].index = new_index;
-		meta[ i ].objId = new_objId;
+		meta[ i ].objId = new_obj.attr( "id" );
 		if( new_keyword )
 			meta[ i ].keyword = new_keyword;
 	}
@@ -1989,9 +1965,27 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 	function shiftNextBalise(){
 		
 		// détermine la prochaine occurence d'une balise de type link et de type inser
-		var nlin = chaine.indexOf( chart.linkOpenA , lastIndex );
-		var nins = chaine.indexOf( chart.inserOpenA , lastIndex  );
-		
+		if( chart.linkOpenA != chart.inserOpenA ){
+			var nlin = chaine.indexOf( chart.linkOpenA , lastIndex );
+			var nins = chaine.indexOf( chart.inserOpenA , lastIndex  );
+		} else {
+			// si les debut de balise sont les mêmes, il faut tester la fin
+			// on va faire un bricolage pour rester compatible avec la suite
+			var nlin = chaine.indexOf( chart.linkOpenA , lastIndex );
+			
+			if( nlin == -1 )
+				return;
+			
+			var endlin = chaine.indexOf( chart.linkOpenB , nlin ) ;
+			var endins = chaine.indexOf( chart.inserOpenB , nlin ) ;
+			
+			if( endlin <= -1 || ( endins >= 0 && endins < endlin ) ){
+				nins = nlin;
+				nlin = -1;
+			}else 
+				nins = -1;
+			
+		}
 		var i;
 		var format;
 		
@@ -2008,13 +2002,13 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 			var iboB = chaine.indexOf( chart.linkOpenB , iboA )+chart.linkOpenB.length;
 			
 			
-			var b = chaine.substring( iboA , iboB );
+			var b = chaine.substring( iboA + chart.linkOpenA.length , iboB - chart.linkOpenB.length );
 			i = chart.i.exec( b ) || [ null , null ] ;
 			if( !i[1] ){
 				console.log( "encounter error parsing the metaText, missing i" );
 				return;
 			}
-			var reg =  new RegExp( chart.linkCloseA+" *i:" + i[1] +" *"+chart.linkCloseB   );
+			var reg =  new RegExp( chart.linkCloseA+" *" + i[1] +" *.*"+chart.linkCloseB   );
 			var ibfA = chaine.substring( iboA ).search( reg ); 
 			if( ibfA < 0 ){
 				console.log( "encounter error parsing the metaText, " );
@@ -2042,7 +2036,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 			
 			var iboB = chaine.indexOf( chart.inserOpenB , iboA )+chart.inserOpenB.length;
 			
-			var b = chaine.substring( iboA , iboB );
+			var b = chaine.substring( iboA + chart.inserOpenA.length , iboB - chart.inserOpenB.length );
 			
 			chaine = chaine.substring( 0 , iboA ) + chaine.substring( iboB );
 			
