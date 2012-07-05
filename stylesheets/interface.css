@@ -454,7 +454,7 @@ body{
     top: 0px;
     width: 268px;
     height: 460px;
-    overflow-x: hidden;
+    overflow-x: visible;
     overflow-y: auto;
     margin: 0px;
     padding: 10px 10px 10px 20px;
@@ -470,6 +470,7 @@ body{
     padding: 10px;
     border-left: 1px dashed #333;
     border-right: 1px dashed #333;
+    background: transparent;
 }
 #editor #transTool_right {
     position: absolute;
@@ -477,14 +478,15 @@ body{
     top: 0px;
     width: 268px;
     height: 460px;
-    overflow-x: hidden;
+    overflow-x: visible;
     overflow-y: auto;
     margin: 0px;
-    padding: 10px;
+    padding: 10px 10px 10px 20px;
 }
 #transTool_left p, #transTool_right p {
     margin: 0px;
     padding: 0px;
+    left: 0px;
     width: 100%;
     height: 20px;
     font: 16px/20px Arial, Helvetica, Geneva, sans-serif;
@@ -1046,9 +1048,9 @@ div.big_button {
         -moz-border-radius: 5px;
     border:1px solid white;
     background-color: red;
-    padding: 0px 3px 0px 3px;
+    padding: 0px 3px 0px 3px !important;
     color: white;
-    float: left;
+    float: left !important;
     font-size: 9px;
     font-family: Helvetica, Arial, Sans-Serif;
     font-weight: bold;
