@@ -1,11 +1,16 @@
 var msgCenter =(function(){
     // private
+    var $msgCenter =$('<div id="msgCenter"><ul></ul></div>');
     var messageList = false;
     var max = 5;
     
     function fadeIn(jQmsg){jQmsg.addClass('fadeIn');}
     function fadeOut(jQmsg){jQmsg.removeClass('fadeIn');}
-    function removeMsg(jQmsg){jQmsg.remove();}
+    function removeMsg(jQmsg){
+        jQmsg.remove();
+        if(messageList.children('li').length == 0)
+            $msgCenter.detach();
+    }
     
     function hideTimeOut(jQmsg,time){
             time = isNaN(time) ? 0 : Math.abs(time);
@@ -20,8 +25,11 @@ var msgCenter =(function(){
     //public
     return {
         send: function(mes, time){
-            if(!messageList) // initiate
-                messageList = $('#msgCenter ul');
+            if(!messageList){ // initiate
+                messageList = $msgCenter.children('ul');
+            }
+            if(messageList.children('li').length == 0)
+                $msgCenter.prependTo('body');
                 
             var message = $('<li></li>');
             message.append(mes);
@@ -403,6 +411,10 @@ function editeSpeakDialog( speak ){
 
 // Add step dialog
 function createStepDialog() {
+    if(typeof curr.page == 'undefined'){
+        alert("Impossible de créer une étape s'il n'y a pas de page dans le projet");
+        return;
+    }
 	dialog.showPopup('Ajouter un nouveau étape', 340, 200);
 	// Name and Z-index
 	var nz = $('<p><label>Nom:</label><input id="stepName" size="10" type="text"></p>');
