@@ -625,7 +625,7 @@ var FindSimon = function() {
 	this.touchMovecb = new mse.Callback(this.touchMove, this);
 };
 extend(FindSimon, mse.Game);
-mse.coords = JSON.parse('{"cid0":800,"cid1":600,"cid2":0,"cid3":20,"cid4":305,"cid5":46.25,"cid6":342.5,"cid7":35,"cid8":197.5,"cid9":38.75,"cid10":425,"cid11":122.5,"cid12":30,"cid13":190,"cid14":40,"cid15":578.75,"cid16":533.75,"cid17":160,"cid18":27.5,"cid19":601.25,"cid20":543.75,"cid21":13.75,"cid22":400,"cid23":200,"cid24":41.25,"cid25":235,"cid26":108.75,"cid27":32.5,"cid28":177.5,"cid29":61.25,"cid30":320,"cid31":247.5,"cid32":340,"cid33":590,"cid34":230,"cid35":10,"cid36":22.5,"cid37":295,"cid38":306,"cid39":417.384,"cid40":17,"cid41":397.8,"cid42":483.75,"cid43":250,"cid44":100,"cid45":300,"cid46":409,"cid47":-200,"cid48":1090,"cid49":33,"cid50":109,"cid51":343,"cid52":41,"cid53":248,"cid54":178,"cid55":61,"cid56":344,"cid57":120,"cid58":255,"cid59":263,"cid60":296,"cid61":301,"cid62":298,"cid63":396,"cid64":201,"cid65":-42,"cid66":135,"cid67":1000,"cid68":164,"cid69":106,"cid70":189,"cid71":114,"cid72":221,"cid73":238,"cid74":23,"cid75":264,"cid76":80,"cid77":474}');
+mse.coords = JSON.parse('{"cid0":800,"cid1":600,"cid2":0,"cid3":20,"cid4":305,"cid5":46.25,"cid6":342.5,"cid7":35,"cid8":197.5,"cid9":38.75,"cid10":425,"cid11":122.5,"cid12":30,"cid13":190,"cid14":40,"cid15":578.75,"cid16":533.75,"cid17":160,"cid18":27.5,"cid19":601.25,"cid20":543.75,"cid21":13.75,"cid22":400,"cid23":200,"cid24":41.25,"cid25":235,"cid26":108.75,"cid27":32.5,"cid28":177.5,"cid29":61.25,"cid30":320,"cid31":247.5,"cid32":340,"cid33":590,"cid34":230,"cid35":10,"cid36":22.5,"cid37":295,"cid38":306,"cid39":417.384,"cid40":17,"cid41":397.8,"cid42":483.75,"cid43":250,"cid44":100,"cid45":300,"cid46":409,"cid47":-200,"cid48":1090,"cid49":33,"cid50":109,"cid51":343,"cid52":41,"cid53":248,"cid54":178,"cid55":61,"cid56":344,"cid57":120,"cid58":255,"cid59":263,"cid60":296,"cid61":301,"cid62":298,"cid63":396,"cid64":201,"cid65":-42,"cid66":135,"cid67":1000,"cid68":164,"cid69":106,"cid70":189,"cid71":114,"cid72":221,"cid73":238,"cid74":23,"cid75":329,"cid76":80,"cid77":375}');
 initMseConfig();
 mse.init();
 var pages={};
@@ -1140,14 +1140,14 @@ function createbook(){
 	animes.piege.addObj('obj587',temp.obj);
 	animes.piege.addAnimation('grillageimg',{'frame':JSON.parse('[0,6,22,25,44,50,51]'),'opacity':JSON.parse('[0,1,1,1,1,0,0]')});
 	animes.piege.addAnimation('obj587',{'frame':JSON.parse('[0,6,22,25,44,50,51]'),'fontSize':[mse.coor('cid34'),mse.coor('cid34'),mse.coor('cid68'),mse.coor('cid71'),mse.coor('cid71'),mse.coor('cid71'),mse.coor('cid71')],'pos':[[mse.coor('cid65'),mse.coor('cid66')],[mse.coor('cid65'),mse.coor('cid66')],[mse.coor('cid69'),mse.coor('cid70')],[mse.coor('cid72'),mse.coor('cid73')],[mse.coor('cid72'),mse.coor('cid73')],[mse.coor('cid72'),mse.coor('cid73')],[mse.coor('cid72'),mse.coor('cid73')]],'opacity':JSON.parse('[0,0,0.699999988079,1,1,0,0]')});
-	animes.quarantAnime=new mse.Animation(15,1,false);
-	animes.quarantAnime.block=true;
-	animes.quarantAnime.addObj('obj178',objs.obj178);
-	animes.quarantAnime.addAnimation('obj178',{'frame':JSON.parse('[0,8,14,15]'),'fontSize':[mse.coor('cid74'),mse.coor('cid76'),mse.coor('cid74'),mse.coor('cid74')]});
-	animes.trentAnime=new mse.Animation(15,1,false);
-	animes.trentAnime.block=true;
-	animes.trentAnime.addObj('obj183',objs.obj183);
-	animes.trentAnime.addAnimation('obj183',{'frame':JSON.parse('[0,8,14,15]'),'fontSize':[mse.coor('cid74'),mse.coor('cid76'),mse.coor('cid74'),mse.coor('cid74')]});
+	animes.qurantAnim=new mse.Animation(15,1,false);
+	animes.qurantAnim.block=true;
+	animes.qurantAnim.addObj('obj178',objs.obj178);
+	animes.qurantAnim.addAnimation('obj178',{'frame':JSON.parse('[0,8,14,15]'),'fontSize':[mse.coor('cid74'),mse.coor('cid76'),mse.coor('cid74'),mse.coor('cid74')]});
+	animes.trentAnim=new mse.Animation(15,1,false);
+	animes.trentAnim.block=true;
+	animes.trentAnim.addObj('obj183',objs.obj183);
+	animes.trentAnim.addAnimation('obj183',{'frame':JSON.parse('[0,8,14,15]'),'fontSize':[mse.coor('cid74'),mse.coor('cid76'),mse.coor('cid74'),mse.coor('cid74')]});
 	var action={};
 	var reaction={};
 	action.transAide=new mse.Script([{src:objs.obj5,type:'click'}]);
@@ -1291,20 +1291,20 @@ action.showCouteau.register(reaction.showCouteau);
 		mse.src.getSrc('src21').play(); 
 	};
 	action.piegesonplay.register(reaction.piegesonplay);
-	action.start40anime=new mse.Script([{src:objs.obj178,type:'firstShow'}]);
-	reaction.start40anime=function(){ 
-		animes.quarantAnime.start(); 
-	};
-	action.start40anime.register(reaction.start40anime);
-	action.start30anime=new mse.Script([{src:objs.obj183,type:'firstShow'}]);
-	reaction.start30anime=function(){ 
-		animes.trentAnime.start(); 
-	};
-	action.start30anime.register(reaction.start30anime);
 	action.showFouine=new mse.Script([{src:objs.obj617,type:'show'}]);
 	reaction.showFouine=function(){ 
 		animes.fouine.start(); 
 	};
 	action.showFouine.register(reaction.showFouine);
+	action.start40Anim=new mse.Script([{src:objs.obj178,type:'firstShow'}]);
+	reaction.start40Anim=function(){ 
+		animes.qurantAnim.start(); 
+	};
+	action.start40Anim.register(reaction.start40Anim);
+	action.start30Anim=new mse.Script([{src:objs.obj183,type:'firstShow'}]);
+	reaction.start30Anim=function(){ 
+		animes.trentAnim.start(); 
+	};
+	action.start30Anim.register(reaction.start30Anim);
 	mse.currTimeline.start();};
 mse.autoFitToWindow(createbook);

@@ -12,30 +12,6 @@ var __currContextOwner__;
 
 (function( window, $ ) {
 
-(function() {
-    var lastTime = 0;
-    var vendors = ['ms', 'moz', 'webkit', 'o'];
-    for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
-        window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
-        window.cancelAnimationFrame = 
-          window[vendors[x]+'CancelAnimationFrame'] || window[vendors[x]+'CancelRequestAnimationFrame'];
-    }
-    if (!window.requestAnimationFrame)
-        window.requestAnimationFrame = function(callback, element) {
-            var currTime = new Date().getTime();
-            // 33 means 33ms, which will do the loop in 30fps
-            var timeToCall = Math.max(0, 33 - (currTime - lastTime));
-            var id = window.setTimeout(function() { callback(currTime + timeToCall); }, 
-              timeToCall);
-            lastTime = currTime + timeToCall;
-            return id;
-        };
-    if (!window.cancelAnimationFrame)
-        window.cancelAnimationFrame = function(id) {
-            clearTimeout(id);
-        };
-}());
-
 var mse = window.mse;
 
 mse.configs = {
@@ -242,6 +218,32 @@ mse.init = function(configs) {
 	mse.src.addSource('pauseBn', './UI/button/pause.png', 'img', true);
 	mse.src.addSource('zoomIcon', './UI/button/zoom.png', 'img', true);
 	mse.src.addSource('closeBn', './UI/button/close.png', 'img', true);
+	
+	(function(config) {
+	    var lastTime = 0;
+	    var vendors = ['ms', 'moz', 'webkit', 'o'];
+	    if(config.mobile) {
+	        for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+	            window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+	            window.cancelAnimationFrame = 
+	              window[vendors[x]+'CancelAnimationFrame'] || window[vendors[x]+'CancelRequestAnimationFrame'];
+	        }
+	    }
+	    if (!window.requestAnimationFrame)
+	        window.requestAnimationFrame = function(callback, element) {
+	            var currTime = new Date().getTime();
+	            // 33 means 33ms, which will do the loop in 30fps
+	            var timeToCall = Math.max(0, 33 - (currTime - lastTime));
+	            var id = window.setTimeout(function() { callback(currTime + timeToCall); }, 
+	              timeToCall);
+	            lastTime = currTime + timeToCall;
+	            return id;
+	        };
+	    if (!window.cancelAnimationFrame)
+	        window.cancelAnimationFrame = function(id) {
+	            clearTimeout(id);
+	        };
+	}(window.MseConfig));
     
     var imgShower = new mse.ImageShower();
 };
@@ -1529,8 +1531,8 @@ mse.ArticleLayer = function(container, z, param, article) {
 };
 extend(mse.ArticleLayer, mse.Layer);
 $.extend( mse.ArticleLayer.prototype , {
-    minInv : 1200,
-    maxInv : 3000,
+    minInv : 600,
+    maxInv : 3600,
 	setDefile : function(interval) {
 		this.currTime = 0;
 		this.currIndex = 0;

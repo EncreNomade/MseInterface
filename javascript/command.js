@@ -1464,8 +1464,7 @@ var DelSrcCmd = function(id) {
             doms.push({'obj':game, 'related':related, 'relation':relation});
         });
     }
-    if( t == "speaker" )
-		return;
+    
     this.scripts = scripts;
     this.links = links;
     this.doms = doms;

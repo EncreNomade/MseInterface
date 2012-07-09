@@ -1697,30 +1697,37 @@ formate : function( article , meta ){
 		else if( line.hasClass( "speaker" ) ) {
 		    // Add a prefix of line wrap
 		    if(!wrapprefix) s += '\n';
-			s += "[ "+line.attr( "data-who")+" : "+line.attr( "data-mood")+" ] " + this.formate( line , meta )+"[end]\n";
+			s += "[ "+line.attr( "data-who")+" : "+line.attr( "data-mood")+" ]" + this.formate( line , meta )+"[end]\n";
 			wrapprefix = true;
 		}
-		else continue;
+		else {
+		    wrapprefix = false;
+		    continue;
+		}
 	}
 	
 	
 	return s;
 	function wrap( obj ){
+    	var r = obj.children("p").text();
+    	if(r.trim() == "") {r = r.trim();}
 		
-		var charge = [];
+		var charge = [], balise;
 		var id = obj.attr( "id" );
 		for( var i = 0 ; i< meta.length ; i ++ )
 			if( meta[ i ].objId == id )
 				if( meta[ i ].format == "link"){
 					// start balise
-					charge.push( { index : meta[ i ].index , b : chart.linkOpenA + " "+i + "  " + meta[i].link.type + " sur la source " + meta[i].link.id + chart.linkOpenB } );
+					balise = chart.linkOpenA + " "+i + "  " + meta[i].link.type + " sur la source " + meta[i].link.id + chart.linkOpenB;
+					charge.push( { index : meta[ i ].index , b : balise } );
 					// close balise
-					charge.unshift( { index : meta[ i ].index + meta[ i ].keyword.length , b : chart.linkCloseA  + " "+i+" " + chart.linkCloseB } );
-				}else
+					balise = chart.linkCloseA  + " "+i+" " + chart.linkCloseB;
+					charge.unshift( { index : meta[ i ].index + meta[ i ].keyword.length , b : balise } );
+				}else {
 					// balise insertion
-					charge.push( { index : meta[ i ].index , b : chart.inserOpenA + " "+i + "  " + meta[i].link.type + " sur la source " + meta[i].link.id + chart.inserOpenB } );
-			
-		var r = obj.children("p").text();
+					balise = chart.inserOpenA + " "+i + "  " + meta[i].link.type + " sur la source " + meta[i].link.id + chart.inserOpenB;
+					charge.push( { index : meta[ i ].index , b : balise } );
+				}
 		
 		for( var i = 0 ; i < charge.length ; i ++ ){
 			var avant = r.substring( 0 , charge[i].index );
