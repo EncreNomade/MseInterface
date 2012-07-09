@@ -1068,6 +1068,19 @@ function staticConfig(e){e.preventDefault();e.stopPropagation();showParameter($(
 
 // parse the raw texte,  match the speaker balise
 //use generateLines for creating object containing one text line, 
+
+function expressTrad(){
+	
+	var metas = ArticleFormater.parseMetaText($( ".article" ));
+	var a = ArticleFormater.formate( $( ".article" ), metas )
+	
+	var e  = ArticleFormater.reverse( a , $( ".article" ), metas )
+	
+	$( ".article" ).children().remove();
+	
+	$( ".article" ).append( e );
+}
+
 function generateSpeaks(content, font, width, lineHeight){
 	
 	var res = $("<div/>");
@@ -1075,16 +1088,26 @@ function generateSpeaks(content, font, width, lineHeight){
 	var balise ;
 	while( balise || ( balise=getNextBalise(rest) ) ){
 		
+		
 		// delete the \n just before the balise ( or before with space between )
 		var j = 1;
 		for( ; rest.charAt( balise.start - j ) == " " ; j ++ );
 		if( rest.charAt( balise.start - j ) == "\n" )
 			balise.start -= j;
-			
+		
+		
 		//everything before the balise is normal text
 		var normalText = rest.substring( 0 , balise.start );
 		rest = rest.substring( balise.close );
 		
+		// check for line break just befor the speak
+		/*
+		var j = 1;
+		for( ; rest.charAt( balise.start - j ) == " " ; j ++ );
+		if( rest.charAt( balise.start - j ) == "\n" ){
+			normalText = normalText.substring( 0 , balise.start - j );
+		}
+		*/
 		// check the next balise 
 		var nbalise = getNextBalise( rest );
 		var dialogueText;
@@ -1697,7 +1720,7 @@ formate : function( article , meta ){
 		else if( line.hasClass( "speaker" ) ) {
 		    // Add a prefix of line wrap
 		    if(!wrapprefix) s += '\n';
-			s += "[ "+line.attr( "data-who")+" : "+line.attr( "data-mood")+" ] " + this.formate( line , meta )+"[end]\n";
+			s += "[ "+line.attr( "data-who")+" : "+line.attr( "data-mood")+" ]" + this.formate( line , meta )+"[end]\n";
 			wrapprefix = true;
 		}
 		else continue;
@@ -1716,10 +1739,10 @@ formate : function( article , meta ){
 					charge.push( { index : meta[ i ].index , b : chart.linkOpenA + " "+i + "  " + meta[i].link.type + " sur la source " + meta[i].link.id + chart.linkOpenB } );
 					// close balise
 					charge.unshift( { index : meta[ i ].index + meta[ i ].keyword.length , b : chart.linkCloseA  + " "+i+" " + chart.linkCloseB } );
-				}else
+				}else {
 					// balise insertion
 					charge.push( { index : meta[ i ].index , b : chart.inserOpenA + " "+i + "  " + meta[i].link.type + " sur la source " + meta[i].link.id + chart.inserOpenB } );
-			
+				}
 		var r = obj.children("p").text();
 		
 		for( var i = 0 ; i < charge.length ; i ++ ){
@@ -1728,6 +1751,7 @@ formate : function( article , meta ){
 			
 			r = avant + charge[i].b + apres;
 			
+			// décalage des suivants
 			for( var j = i+1 ; j < charge.length ; j ++ )
 				if( charge[ j ].index >  charge[i].index )
 					 charge[j].index += charge[i].b.length;	 
@@ -1769,9 +1793,9 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		meta[ next.i ].offset  = next.index; 		// offset est le numero de caractére par rapport au debut du texte ( et non pas au début de la ligne comme index )
 		meta[ next.i ].format  = next.format;
 		meta[ next.i ].valide  = true;
-		
-	}
 	
+	}
+
 	
 	// traitement des éléments de dialogue 
 	// les balises dialogue sont ignoré par le générateur de line, elle n'apparaissent plus post génération ce qui introduit des erreurs dans l'indexation des mots 
@@ -1800,6 +1824,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		start = next+1;
 	}
 	
+	
 	// introduit le décalage
 	for( var i = 0 ; i < meta.length ; i ++ )
 		meta[ i ].offset -= decalage[ i ];
@@ -1821,7 +1846,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 	var cursor = 0;
 	res.find( "div.textLine" ).each(function(){
 		var line = $( this );
-		var l = line.children("p").text().length;
+		var l = line.children("p").text().length ;
 		table.push( { 	obj : line ,
 						l : l,
 						ca : cursor ,
@@ -1840,15 +1865,33 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		
 		while( meta[ i ].offset < table[ e ].ca )    // ajustement
 			e --;
-		while( meta[ i ].offset >= table[ e ].cb )	  // ajustement
+		while( meta[ i ].offset >= table[ e ].cb && ( table[ e ].l > 0 || table[ e ].ca == meta[ i ].offset ) )	  // ajustement
 			e ++;
-		
 		
 		var new_obj;
 		var new_index;
 		var new_keyword;
 		
+		if( i == 21 ){
+			console.log( meta[ i ] );
+			console.log( "key : "+meta[ i ].keyword );
+			console.log( meta[ i ].offset );
+			console.log( table[ e ] );
+		}
+		// rattrapage d'un saut d'origine inconnue
+		/*
+		var text = table[ e ].obj.children( "p" ).text();
+		var l = meta[ i ].offset - table[ e ].ca ;
+		while(  meta[ i ].offset >= 0 
+				&& 	text.substring( l , l + meta[ i ].keyword.length ) != meta[ i ].keyword )
+				l -- ;
 		
+		while(  l <= table[ e ].l
+				&&	text.substring( l , l + meta[ i ].keyword.length ) != meta[ i ].keyword )
+				l ++ ;
+		
+		meta[ i ].offset =  table[ e ].ca + l;
+		*/
 		switch( meta[ i ].link.type ){
 			case "audio" : case "wiki" :
 				if( meta[ i ].format == "link" ){
@@ -1869,7 +1912,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 				
 					new_index = 0;
 					new_obj = table[ e ].obj;
-				
+					
 					var id = meta[ i ].link.id;
 					var elem = srcMgr.generateChildDomElem(id, res);
 					elem.attr('id', 'obj'+(curr.objId++));
@@ -1881,7 +1924,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 					    .staticButton('./images/UI/addscript.jpg', addScriptForObj)
 					    .children('.del_container').hide();
 					elem.insertAfter( new_obj );
-					
+
 					log += meta[ i ].link.type+" "+id+" re inserée apres la ligne :\""+new_obj.children("p").text()+"\", ( il était précédement après \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
 				}
 
@@ -1978,6 +2021,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		}
 		obj.get(0).innerHTML = r;
 	}
+	
 	
 	console.log( log );
 	
