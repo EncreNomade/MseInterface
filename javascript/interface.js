@@ -1094,6 +1094,10 @@ function generateSpeaks(content, font, width, lineHeight){
 			// the speaked text end at the start of the closing balise
 			dialogueText = rest.substring( 0 , nbalise.start );
 			rest = rest.substring( nbalise.close );
+			// Delete the line break after the dialogs
+			var alinea = rest.indexOf( "\n" );
+			if( alinea == 0 )
+			    rest = rest.substring(1);
 			nbalise = null;
 		} else {
 			// if its not, the spearker text end at the next \n
@@ -1549,9 +1553,9 @@ parseMetaText : function( article ){
 	// the links
 	var spans = article.children( "div.textLine, div.speaker div.textLine" ).find( "span.audiolink, span.wikilink" );
 	for( var i = 0 ; i < spans.length ; i ++ ){
-		var span = $( spans[ i ] );
+		var span = $( spans.get(i) );
 		var textLine = span.parents( "div.textLine" );
-		meta.push( {objId : textLine.attr( "id" ) ,
+		meta.push( {objId : textLine.prop( "id" ) ,
 					keyword : span.text(),
 					format : "link",
 					index : textLine.children("p").text().indexOf( span.text() ),
@@ -1565,7 +1569,8 @@ parseMetaText : function( article ){
 		if( srcMgr.sources[ i ].type == "anime" ){
 			var anime = srcMgr.getSource( i );
 			for( var obj in anime.objs )
-				if( $( "#"+obj ).hasClass( "textLine" ) &&  $( "#"+obj ).parents( "div.layer[type=ArticleLayer]").attr( "id" ) == article.parent().attr( "id" ) )
+				if( $( "#"+obj ).hasClass( "textLine" ) 
+				&&  $( "#"+obj ).parents( ".article").get(0) == article.get(0) )
 					meta.push( {objId : obj ,
         						keyword : anime.objs[ obj ].content,
         						index : $( "#"+obj ).children("p").text().indexOf( anime.objs[ obj ].content ),
@@ -1624,12 +1629,15 @@ parseMetaText : function( article ){
 	// the illus
 	var illus = article.children( "div.illu" );
 	for( var i = 0 ; i < illus.length ; i ++ ){
-		var illu = $( illus[ i ] );
+		var illu = $( illus.get(i) );
 		var img  = $( illu.children("img").get(0) );
-		meta.push( {objId : illu.prev(".textLine").attr( "id" ) ,
+		var prev = illu.prev(".textLine");
+		if(prev.length == 0)
+		    prev = illu.prev(".speaker").children("div.textLine:last");
+		meta.push( {objId : prev.prop( "id" ) ,
         			keyword : "",
         			format : "inser",
-        			index : illu.prev(".textLine").children("p").text().length,
+        			index : prev.children("p").text().length,
         			link :  { 	type : "image" ,
         						id : img.attr( "name" ) } 
         		} );
@@ -1638,11 +1646,14 @@ parseMetaText : function( article ){
 	// the games
 	var games = article.children( "div.game" );
 	for( var i = 0 ; i < games.length ; i ++ ){
-		var game = $( games[ i ] );
-		meta.push( {objId : game.prev(".textLine").attr( "id" ) ,
+		var game = $( games.get(i) );
+		var prev = game.prev(".textLine");
+		if(prev.length == 0)
+		    prev = game.prev(".speaker").children("div.textLine:last");
+		meta.push( {objId : prev.prop( "id" ),
     				keyword : "",
     				format : "inser",
-    				index : game.prev(".textLine").children("p").text().length,
+    				index : prev.children("p").text().length,
     				link :  { 	type : "game" ,
     							id : game.attr( "name" ) } 
     			} );
@@ -1655,7 +1666,7 @@ parseMetaText : function( article ){
 //generate metaTextArticle
 formate : function( article , meta ){ 
 
-	if( !article || !article.hasClass('article') )
+	if( !article || (!article.hasClass('article') && !article.hasClass('speaker')) )
 		return;
 	if( !meta )
 		meta = this.parseMetaText( article );
@@ -1671,7 +1682,7 @@ formate : function( article , meta ){
 		}
 		else if( line.hasClass( "textLine" ) ) {
 		    // Line gap
-			if( line.text().trim() == "" ) {
+			if( line.children('p').text().trim() == "" ) {
 			    // Add a prefix of line wrap
 			    if(!wrapprefix) s += '\n';
 				s += '\n';
@@ -1916,7 +1927,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 				}
 				
 				var ex_id = meta[ i ].prev_objId;
-				var new_id = new_objId.prop( "id" );
+				var new_id = new_obj.prop( "id" );
 				
 				var anim = srcMgr.getSource( meta[ i ].link.id );
 				
@@ -1942,10 +1953,10 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 				
 			break;
 		}
-	
+
 		// remplace avec les nouveaux index , objId et keyword
 		meta[ i ].index = new_index;
-		meta[ i ].objId = new_objId.prop('id');
+		meta[ i ].objId = new_obj.prop('id');
 		if( new_keyword )
 			meta[ i ].keyword = new_keyword;
 	}

@@ -273,8 +273,8 @@ function retrieveLocalInfo(pjsave) {
     if(isNaN(pjsave.lastModif)) curr.lastModif = lastModServer;
     else curr.lastModif = pjsave.lastModif;
     
-    // window.translateTool = initTranslateTool();
-    // window.translateTool.active();
+    window.translateTool = initTranslateTool();
+    window.translateTool.active();
 }
 	
 	// Compare server and local last modification info for Synchronization

@@ -3049,7 +3049,7 @@ var initTranslateTool = function() {
                 container.append( temp );
             }
             else if( line.hasClass( "speaker" ) ) {
-            	appendAllLines( line );
+            	appendAllLines( container, line );
             }
         });
     };
@@ -3967,7 +3967,9 @@ $.fn.editable = function(callback, prepa, dblclick) {
 	// Don't support
 	if( $.inArray(tagName.toUpperCase(), editSupportTag) == -1 ) return;
 	
-	var editfn = function() {
+	var editfn = function(e) {
+	    e.preventDefault();
+	    e.stopPropagation();
 	    // Invoke the prepa function
 	    if(prepa) prepa.invoke($(this));
 	    
