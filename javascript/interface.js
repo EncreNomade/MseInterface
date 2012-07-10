@@ -1075,12 +1075,6 @@ function generateSpeaks(content, font, width, lineHeight){
 	var balise ;
 	while( balise || ( balise=getNextBalise(rest) ) ){
 		
-		// delete the \n just before the balise ( or before with space between )
-		var j = 1;
-		for( ; rest.charAt( balise.start - j ) == " " ; j ++ );
-		if( rest.charAt( balise.start - j ) == "\n" )
-			balise.start -= j;
-			
 		//everything before the balise is normal text
 		var normalText = rest.substring( 0 , balise.start );
 		rest = rest.substring( balise.close );
@@ -1094,10 +1088,6 @@ function generateSpeaks(content, font, width, lineHeight){
 			// the speaked text end at the start of the closing balise
 			dialogueText = rest.substring( 0 , nbalise.start );
 			rest = rest.substring( nbalise.close );
-			// Delete the line break after the dialogs
-			var alinea = rest.indexOf( "\n" );
-			if( alinea == 0 )
-			    rest = rest.substring(1);
 			nbalise = null;
 		} else {
 			// if its not, the spearker text end at the next \n
@@ -1142,7 +1132,13 @@ function generateSpeaks(content, font, width, lineHeight){
 		if( dialogueText.length > 0 ){
 			var id = "obj"+(curr.objId++);
 			var withdrawal = 45;
-			var lines = generateSpeakLines( dialogueText, font, width, lineHeight , id_ressource , mood  , withdrawal);
+			// Prebreak detection
+			var last = res.children("div.textLine, paragraphtag").last();
+			var prebreak = false;
+			if(last.prop('tagName') == "PARAGRAPHTAG" || last.children('p').text().trim().length == 0)
+			    prebreak = true;
+			
+			var lines = generateSpeakLines( dialogueText, font, width, lineHeight , id_ressource , mood  , withdrawal, prebreak);
 			var color = srcMgr.getSource( id_ressource ).color;
 			res.append( $('<div id="'+ id +'" class="speaker" data-who="'+balise.id+'" data-withdrawal="'+ config.sceneX(withdrawal) + '" data-color="'+color+'" data-mood="'+mood+'" style="width:'+  config.sceneX( width )+'px; background-color:'+color+';" />')
                .append( lines ) );
@@ -1177,7 +1173,7 @@ function generateSpeaks(content, font, width, lineHeight){
 	}
 }
 // setUp the speak formate with img associate
-function generateSpeakLines( content, font, width, lineHeight, id , mood , decalage ){
+function generateSpeakLines( content, font, width, lineHeight, id , mood , decalage , prebreak ){
 		
 		if( !decalage )
 			decalage = 50;
@@ -1186,7 +1182,7 @@ function generateSpeakLines( content, font, width, lineHeight, id , mood , decal
 		
 		
 		
-		var first = generateLines( content , font, width - decalage , lineHeight );
+		var first = generateLines( content , font, width - decalage , lineHeight , prebreak );
 		
 		var rest = "";
 		
@@ -1199,22 +1195,32 @@ function generateSpeakLines( content, font, width, lineHeight, id , mood , decal
 		// append the firsts lines
 		var res_h = 0;
 		for( var i = 0 ; i < first.length ; i ++ ){
-			if( i< nline ){
-				$(first[i]).css("left" , config.sceneX( decalage )+"px" ); 
-				$(first[i]).css("position" , "relative" );
-				$(first[i]).css("width" , config.sceneX( width - decalage )+"px" );
-				res_h += $(first[i]).height();
-				res.append( $(first[i]) );
-			}else
+		    var line = $(first.get(i));
+		    // Ignore paragraphtag
+		    if(line.prop('tagName') == "PARAGRAPHTAG") {
+		        res.append( line );
+		        nline++;
+		    }
+			else if( i < nline ){
+				line.css("left" , config.sceneX( decalage )+"px" ); 
+				line.css("position" , "relative" );
+				line.css("width" , config.sceneX( width - decalage )+"px" );
+				res_h += line.height();
+				res.append( line );
+			}
+			else
 				rest += $(first[i]).text();
 		}
 		if( res_h < decalage )
 			res.append( $('<div style="height:'+ config.sceneX( decalage - res_h )+'px;" />' ) );
 			
 		// append the rest
-		if( rest.length > 0 )
-			res.append( generateLines( rest , font, width , lineHeight ) );
-		
+		if( rest.length > 0 ) {
+		    var last = generateLines( rest , font, width , lineHeight );
+		    // Delete the first paragraphtag
+		    if(last.get(0).tagName = "PARAGRAPHTAG") last.splice(0, 1);
+			res.append( last );
+		}
 		
         if( srcMgr.getSource( id ).portrait[ mood ] )
              img.attr('name', srcMgr.getSource( id ).portrait[ mood ]);
@@ -1234,7 +1240,7 @@ function generateSpeakLines( content, font, width, lineHeight, id , mood , decal
 		
 		return res.children();
 	}
-function generateLines(content, font, width, lineHeight){
+function generateLines(content, font, width, lineHeight, prebreak){
     
 	var res = '';
     // Content processing
@@ -1243,21 +1249,31 @@ function generateLines(content, font, width, lineHeight){
 
 	var arr = content.split('\n');
 	var sep = 0;
+	var prefix = prebreak == true ? true : false;
 	for(var i = 0; i < arr.length; i++) {
-	    // Paragraph blank
 	    if(arr[i].length == 0) {
-			res += '<div id="obj'+(curr.objId++)+'" class="textLine"/>';
-			sep++;continue;
+	        // Blank in head, don't add a line blank, add a paragraphtag
+	        if(i == 0) 
+	            res += '<paragraphtag></paragraphtag>';
+	        // Paragraph blank
+	        else if(i != arr.length-1){
+			    res += '<div id="obj'+(curr.objId++)+'" class="textLine"></div>';
+			    sep++;
+			}
+			prefix = true;
+			continue;
 		}
-
+		
+        // Separator paragraph
+        if(!prefix) res += '<paragraphtag></paragraphtag>';
+        prefix = false;
+        // Content paragraph
 		for(var j = 0; j < arr[i].length;) {
 			// Find the index of next line
 			var next = TextUtil.checkNextline(arr[i].substr(j), maxM, width);
 			res += '<div id="obj'+(curr.objId++)+'" class="textLine"><p>'+arr[i].substr(j, next)+'</p></div>';
 			j += next;
 		}
-		// Separator paragraph
-		res += '<paragraphtag></paragraphtag>';
 	}
 	res = $(res);
 	res.each(function() {
@@ -1700,10 +1716,8 @@ formate : function( article , meta ){
 			s += "[ "+line.attr( "data-who")+" : "+line.attr( "data-mood")+" ]" + this.formate( line , meta )+"[end]\n";
 			wrapprefix = true;
 		}
-		else {
-		    wrapprefix = false;
+		else 
 		    continue;
-		}
 	}
 	
 	
@@ -1798,15 +1812,6 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		start = end;
 	}
 	
-	// de même pour les retour chariot, ils ne sont plus présent post génération
-	start = 0;
-	while(  (next = chaine.indexOf( "\n" , start )) != -1 ){
-		for( var i = 0 ; i < meta.length ; i ++ )
-			if( meta[ i ].offset > next )
-				decalage[ i ] ++;
-		start = next+1;
-	}
-	
 	// introduit le décalage
 	for( var i = 0 ; i < meta.length ; i ++ )
 		meta[ i ].offset -= decalage[ i ];
@@ -1823,18 +1828,44 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		lineHeight = config.realY( cssCoordToNumber( article.css('line-height') ) );
 	var res = $("<div>").append( generateSpeaks(chaine, font , width , lineHeight ) );
 	
+	// Deformat chiane
+	var realchaine = chaine.replace(/\[[^\[\]]*\]/g, "");
+	realchaine = realchaine.replace(/<[^<>]*>/g, "");
+	
 	// numerote les objets lignes
 	var table = [];
 	var cursor = 0;
-	res.find( "div.textLine" ).each(function(){
+	var prefix = true;
+	res.find("div.textLine, paragraphtag").each(function(){
 		var line = $( this );
-		var l = line.children("p").text().length;
-		table.push( { 	obj : line ,
-						l : l,
-						ca : cursor ,
-						cb : ( cursor = cursor + l ),
-						b : []
-					} );
+		if(line.prop('tagName') == "PARAGRAPHTAG") {
+		    cursor++;
+		    prefix = true;
+		}
+		else {
+        	var text = line.children("p").text();
+        	// Line blank
+        	if(text.trim().length == 0) {
+        	    var size = prefix ? 1:2;
+        	    table.push( { 	obj : line,
+        	    				l : size,
+        	    				ca : cursor,
+        	    				cb : ( cursor = cursor + size ),
+        	    				b : []
+        	    			} );
+        	    prefix = true;
+        	}
+        	// Line with content
+        	else {
+            	table.push( { 	obj : line ,
+            					l : text.length,
+            					ca : cursor ,
+            					cb : ( cursor = cursor + text.length ),
+            					b : []
+            				} );
+                prefix = false;
+            }
+		}
 	});
 	
 	// recréer les référence vers les links ( ajout en deux temps )
@@ -1850,11 +1881,9 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		while( meta[ i ].offset >= table[ e ].cb )	  // ajustement
 			e ++;
 		
-		
 		var new_obj;
 		var new_index;
 		var new_keyword;
-		
 		
 		switch( meta[ i ].link.type ){
 			case "audio" : case "wiki" :
