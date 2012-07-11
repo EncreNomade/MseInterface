@@ -3088,44 +3088,71 @@ var initTranslateTool = function() {
         }
     };
     
+    var article = null, newarticle = null, metas = null;
+    var untranslated = true;
+    
     $.extend(tool, {
         left: $('<div id="transTool_left"></div>'),
         right: $('<div id="transTool_right"></div>'),
         center: $('<div id="transTool_center"></div>'),
         textInput: $('<textarea id="transTool_text" class="script_editor"></textarea>'),
         inputBtn: $('<div id="transTool_input">Confirmer</div>'),
+        generateBtn: $('#gene_trans'),
+        newarticle: null,
         
         init: function(){
             this.editor.append(this.left).append(this.center).append(this.right);
-            this.right.append(this.textInput).append(this.inputBtn);
+            
+            if(metas && newarticle)
+                getArticleExpo(this.right, newarticle, metas);
+            else 
+                this.right.append(this.textInput).append(this.inputBtn);
             
             // Add an article resume to left panel
-            this.article = $( $('.article').get(0) );
-            this.metas = ArticleFormater.parseMetaText(this.article);
-            getArticleExpo(this.left, this.article, this.metas);
+            article = $( $('.article').get(0) );
+            metas = ArticleFormater.parseMetaText(article);
+            getArticleExpo(this.left, article, metas);
         },
         
-        generateTranslation: function() {
+        showTranslation: function() {
             var content = this.textInput.val();
             if(content.trim() == "") return;
             
             this.right.children().remove();
             
-            var newarticle = $('<div class="article" defile="'+this.article.attr('defile')+'"></div>');
-            newarticle.css({'left':this.article.css('left'), 'top':this.article.css('top'), 
-            			    'width':this.article.width(), 'height':this.article.height(),
-            			    'line-height' : this.article.css('line-height'), 
-            			    'text-align' : this.article.css('text-align'),
-            			    'font-weight' : this.article.css('font-weight'),
-            			    'font-size' : this.article.css('font-size'),
-            			    'font-family' : this.article.css('font-family'),
-            			    'color' : this.article.css('color')});
-            newarticle.append( ArticleFormater.reverse(content, this.article, this.metas) );
-            getArticleExpo(this.right, newarticle, this.metas);
+            newarticle = $('<div class="article" defile="'+article.attr('defile')+'"></div>');
+            newarticle.css({'left':article.css('left'), 'top':article.css('top'), 
+            			    'width':article.width(), 'height':article.height(),
+            			    'line-height' : article.css('line-height'), 
+            			    'text-align' : article.css('text-align'),
+            			    'font-weight' : article.css('font-weight'),
+            			    'font-size' : article.css('font-size'),
+            			    'font-family' : article.css('font-family'),
+            			    'color' : article.css('color')});
+            ArticleFormater.reverse(newarticle, content, article, metas);
+            getArticleExpo(this.right, newarticle, metas);
+        },
+        
+        generateTranslation: function() {
+            this.close();
+        },
+        
+        close: function() {
+            if(newarticle && article) {
+                article.replaceWith(newarticle);
+                untranslated = false;
+                CreatTool.prototype.close.call(this);
+            }
+            else return;
+        },
+        
+        untranslated: function() {
+            return untranslated;
         }
     });
     
-    tool.inputBtn.click(function(){tool.generateTranslation();});
+    tool.inputBtn.click(function(){tool.showTranslation();});
+    tool.generateBtn.click(function(){tool.generateTranslation();});
     
     return tool;
 }

@@ -1759,7 +1759,7 @@ formate : function( article , meta ){
 },
 
 // reverse	
-reverse : function( chaine , article , meta , font , width , lineHeight){ 
+reverse : function( parent, chaine , article , meta , font , width , lineHeight){ 
 	if( !article || !article.hasClass('article') ) return;
 	
 	var log = "";
@@ -1826,7 +1826,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		width = config.realX( article.width() );
 	if( !lineHeight )
 		lineHeight = config.realY( cssCoordToNumber( article.css('line-height') ) );
-	var res = $("<div>").append( generateSpeaks(chaine, font , width , lineHeight ) );
+	parent.append( generateSpeaks(chaine, font , width , lineHeight ) );
 	
 	// Deformat chiane
 	var realchaine = chaine.replace(/\[[^\[\]]*\]/g, "");
@@ -1836,7 +1836,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 	var table = [];
 	var cursor = 0;
 	var prefix = true;
-	res.find("div.textLine, paragraphtag").each(function(){
+	parent.find("div.textLine, paragraphtag").each(function(){
 		var line = $( this );
 		if(line.prop('tagName') == "PARAGRAPHTAG") {
 		    cursor++;
@@ -1907,7 +1907,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 					new_obj = table[ e ].obj;
 				
 					var id = meta[ i ].link.id;
-					var elem = srcMgr.generateChildDomElem(id, res);
+					var elem = srcMgr.generateChildDomElem(id, parent);
 					elem.attr('id', 'obj'+(curr.objId++));
 					elem.deletable(null, true)
 					    .selectable(selectP)
@@ -1916,9 +1916,9 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 					    .staticButton('./images/tools/anime.png', animeTool.animateObj)
 					    .staticButton('./images/UI/addscript.jpg', addScriptForObj)
 					    .children('.del_container').hide();
-					elem.insertAfter( new_obj );
+					elem.insertBefore( new_obj );
 					
-					log += meta[ i ].link.type+" "+id+" re inserée apres la ligne :\""+new_obj.children("p").text()+"\", ( il était précédement après \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
+					log += meta[ i ].link.type+" "+id+" re inserée avant la ligne :\""+new_obj.children("p").text()+"\", ( il était précédement après \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
 				}
 
 			break;
@@ -2017,7 +2017,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 	
 	console.log( log );
 	
-	return res.children();
+	return parent;
 	
 	
 	// share chaine, ( effet de bord )
@@ -2179,7 +2179,13 @@ function saveProject() {
     var structStr = JSON.stringify(struct);
     
 	// Upload structure to server
-	$.post("save_project.php", {"pj":pjName, "struct":structStr, "objCurrId":curr.objId, "srcCurrId":srcMgr.currId, "language":pjLanguage, "untranslated":pjUntranslated}, function(msg){
+	$.post("save_project.php", {"pj":pjName, 
+	                            "struct":structStr, 
+	                            "objCurrId":curr.objId, 
+	                            "srcCurrId":srcMgr.currId, 
+	                            "language":pjLanguage, 
+	                            "untranslated":(!window.translateTool || window.translateTool.untranslated())
+	                            }, function(msg){
 	       var modif = parseInt(msg);
 	       if(!isNaN(modif)) curr.lastModif = modif;
 	       else if(msg != ""){
