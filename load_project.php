@@ -11,14 +11,15 @@ include 'dbconn.php';
 session_start();
 
 if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
-    if( array_key_exists("pjName", $_POST) && isset( $_POST['language'])) {
+    // Load a project
+    if( array_key_exists("pjName", $_POST) && array_key_exists('lang', $_POST)) {
         $pjName = $_POST["pjName"];
-        $lang = $_POST['language'];
+        $lang = $_POST['lang'];
         ConnectDB();
         if( checkPjExist($pjName, $lang) ) {
             $pj = MseProject::getExistProject($pjName, $lang);
             if($pj) {
-                $_SESSION[$pjName] = $pj;
+                $_SESSION[$pjName."_".$lang] = $pj;
                 echo "SUCCESS";
             }
             else {
@@ -27,26 +28,24 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
         }
         else echo "Projet n'existe pas";
     }
-    else if(isset( $_POST['user']) && isset( $_POST['project'])){ // new translation AJAX request from interface.js
-        $owner = $_POST['user'];
-        $name = $_POST['project'];
+    // new translation AJAX request from interface.js, languages already exist will be return back
+    else if( array_key_exists('pjName', $_POST) && !array_key_exists('lang', $_POST) ){ 
+        $name = $_POST['pjName'];
         
         ConnectDB();
-        $rep = mysql_query("SELECT language FROM Projects WHERE owner = '$owner' AND name = '$name' ORDER BY language");
-        if (!$rep) {
-           echo "FAIL";
-        }
-        else {
-            $i = 0;
-            while ($row = mysql_fetch_assoc($rep)){
-                $lang = $row['language'];
+        $languages = MseProject::getPjLanguages($name);
+        
+        if( is_array($languages) ) {
+            $str = "";
+            for ($i = 0, $size = sizeof($languages); $i < $size; ++$i){
                 if ($i == 0)
-                    echo $row['language'];
+                    $str .= $languages[$i];
                 else
-                    echo ' '.$row['language'];
-                $i++;
+                    $str .= ' '.$languages[$i];
             }
+            echo $str;
         }
+        else echo "FAIL";
     }
 }
 

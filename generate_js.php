@@ -5,8 +5,6 @@
  * Site: pandamicro.co.cc
  * Janvier 2012
  */
- 
-include 'js_packer/class.JavaScriptPacker.php';
 
 class ProjectGenerator {
     private $pj;

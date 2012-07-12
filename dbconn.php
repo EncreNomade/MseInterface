@@ -17,8 +17,9 @@ function ConnectDB(){
 
 function userLogin($uid, $mdp){
     //$mdp = md5($mdp);
-    $identite = mysql_query("SELECT * FROM EditorUsers WHERE id='$uid' AND mdp='$mdp' LIMIT 1;");
-    if($identite) {
+    $identite = mysql_query("SELECT COUNT(*) AS n FROM EditorUsers WHERE id='$uid' AND mdp='$mdp' LIMIT 1;");
+    $count = mysql_fetch_array($identite);
+    if(isset($count) && $count['n'] != 0) {
         $_SESSION['uid'] = $uid;
         return true;
     }
@@ -30,7 +31,7 @@ function checkPjExist($pj, $lang='francais') {
     $owner = $_SESSION['uid'];
     $resp = mysql_query("SELECT COUNT(*) AS n FROM Projects WHERE owner='$owner' AND name='$pj' AND language='$lang' LIMIT 1;");
     $count = mysql_fetch_array($resp);
-    if(!$count || $count['n'] == 0) return false;
+    if(is_null($count) || $count['n'] == 0) return false;
     else return true;
 }
 

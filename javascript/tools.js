@@ -718,7 +718,7 @@ SourceManager.prototype = {
 	    if(!this.sources[id] || !(this.sources[id].data instanceof Wiki)) return;
 	    this.sources[id].data.showWikiOnEditor();
 	},
-	uploadSrc: function(url, pjName) {
+	uploadSrc: function(url, pjName, lang) {
 	    this.uploaded = 0;
 	    for(var key in this.sources) {
 	        var data = null;
@@ -728,17 +728,17 @@ SourceManager.prototype = {
 	        // relative path
 	        if((type == "image" || type == "game" || type == "audio") && (!ext || ext == "")) {
 	            ++this.uploaded;
-	            this.updateSrcs(pjName);
+	            this.updateSrcs(pjName, lang);
 	            continue;
 	        }
 	        // Original content, upload it
 	        switch(type) {
 	        case "image": case "audio": case "game":
-	            data = "pj="+pjName+"&type="+type+"&name="+key+"&data="+this.sources[key].data;
+	            data = "pjName="+pjName+"&lang="+lang+"&type="+type+"&name="+key+"&data="+this.sources[key].data;
 	            break;
 	        case "wiki": case "anime": case "code": case "speaker":
 	            ++this.uploaded;
-	            this.updateSrcs(pjName);
+	            this.updateSrcs(pjName, lang);
 	            continue;
 	        }
 	        
@@ -752,24 +752,24 @@ SourceManager.prototype = {
 	                    var resp = msg.match(srcMgr.uploadResp);
 	                    if(msg == "SUCCESS"){
 	                        ++srcMgr.uploaded;
-	                        srcMgr.updateSrcs(pjName);
+	                        srcMgr.updateSrcs(pjName, lang);
 	                    }
 	                    else if(resp && resp[1] && srcMgr.pathCheck.test(resp[2])) {
 	                        srcMgr.sources[resp[1]].data = resp[2];
 	                        ++srcMgr.uploaded;
-	                        srcMgr.updateSrcs(pjName);
+	                        srcMgr.updateSrcs(pjName, lang);
 	                    }
 	                    else alert("Source upload errors: "+msg);
 	                }
 	            });
 	    }
 	},
-	updateSrcs: function(pjName){
+	updateSrcs: function(pjName, lang){
 	    var count = Object.keys(this.sources).length;
 	    if(this.uploaded < count) return;
-	    $.post("update_srcs.php", {"pj":pjName,"srcs":JSON.stringify(this.sources)}, function(msg){
+	    $.post("update_srcs.php", {"pjName":pjName,"lang":lang,"srcs":JSON.stringify(this.sources)}, function(msg){
 	            if(msg && msg != "") alert(msg);
-	        });
+	    });
 	}
 };
 
@@ -924,7 +924,7 @@ StepManager.prototype = {
 	    	curr.page.data('StepManager').activeStep($(this).data('stepN'));
 	    });
 	    // Del step button and Up down button
-	    expo.deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc).circleMenu({'addscript':['./images/UI/addscript.jpg',addScriptDialog]});
+	    expo.deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc);
 	    // Append expo to manager
 	    this.stepexpos[stepN] = expo;
 	    if(this.stepexpos[stepN-1]) this.stepexpos[stepN-1].before(expo);
@@ -1012,7 +1012,7 @@ StepManager.prototype = {
 			curr.page.data('StepManager').activeStep($(this).data('stepN'));
 		});
 		// Del step button and Up down button
-		expo.deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc).circleMenu();
+		expo.deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc);
 		// Append expo to manager
 		this.manager.prepend(expo);
 		this.stepexpos[this.currStepN] = expo;
@@ -1889,8 +1889,8 @@ var scriptMgr = function() {
             }
             if(listScript.length > 0) return listScript;
         },
-        upload: function(url, pjName){
-            var data = "pj="+pjName+"&type=scripts&data="+JSON.stringify(this.scripts);
+        upload: function(url, pjName, lang){
+            var data = "pjName="+pjName+"&lang="+lang+"&type=scripts&data="+JSON.stringify(this.scripts);
             
             $.ajax({
                 type: "POST",
@@ -3088,8 +3088,8 @@ var initTranslateTool = function() {
         }
     };
     
-    var article = null, newarticle = null, metas = null;
-    var untranslated = true;
+    var articles = null, article = null, newarticle = null, metas = null;
+    var untranslated = false;
     
     $.extend(tool, {
         left: $('<div id="transTool_left"></div>'),
@@ -3101,15 +3101,25 @@ var initTranslateTool = function() {
         newarticle: null,
         
         init: function(){
+            articles = $('.article');
+            // No article, no need to translate
+            if(articles.length <= 0) {
+                this.close();
+                return;
+            }
+        
             this.editor.append(this.left).append(this.center).append(this.right);
             
             if(metas && newarticle)
                 getArticleExpo(this.right, newarticle, metas);
             else 
                 this.right.append(this.textInput).append(this.inputBtn);
+                
+            // Set untranslated
+            untranslated = true;
             
             // Add an article resume to left panel
-            article = $( $('.article').get(0) );
+            article = $( articles.get(0) );
             metas = ArticleFormater.parseMetaText(article);
             getArticleExpo(this.left, article, metas);
         },
@@ -3138,12 +3148,15 @@ var initTranslateTool = function() {
         },
         
         close: function() {
-            if(newarticle && article) {
+            if(articles.length <= 0) {
+                untranslated = false;
+                CreatTool.prototype.close.call(this);
+            }
+            else if(newarticle && article) {
                 article.replaceWith(newarticle);
                 untranslated = false;
                 CreatTool.prototype.close.call(this);
             }
-            else return;
         },
         
         untranslated: function() {

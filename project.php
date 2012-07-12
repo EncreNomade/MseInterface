@@ -262,6 +262,22 @@ class MseProject {
         $pj = new MseProject($pjName, $lang);
         return $pj;
     }
+    
+    public static function getPjLanguages($pjName) {
+        if(!isset($_SESSION['uid'])) return;
+        $owner = $_SESSION['uid'];
+        $resp = mysql_query("SELECT language FROM Projects WHERE owner = '$owner' AND name = '$pjName' ORDER BY language");
+        if (!$resp) {
+           return false;
+        }
+        else {
+            $languages = array();
+            while ($row = mysql_fetch_assoc($resp)){
+                array_push($languages, $row['language']);
+            }
+            return $languages;
+        }
+    }
 }
 
 ?>

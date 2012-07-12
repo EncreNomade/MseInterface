@@ -28,10 +28,11 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
         else if(!checkSize($_POST['width'], $_POST['height']))
             echo '<script type="text/javascript">alert("Erreur de taille de projet.");</script>';
         else {
-            $project = new MseProject($_POST['pjName'], "", $_POST['width'], $_POST['height']);
-            $_SESSION[$pjName] = $project;
+            $project = new MseProject($pjName, "francais", "", $_POST['width'], $_POST['height']);
+            $pjid = $pjName."_francais";
+            $_SESSION[$pjid] = $project;
             
-            header("Location: gestion_page.php?pjName=$pjName", true);
+            header("Location: gestion_page.php?pjName=$pjName&lang=".$project->getLanguage(), true);
         }
     }
     else if( array_key_exists("uid", $_POST) ) {
@@ -143,7 +144,7 @@ function showOpenPj(){
         }
     }
   ?>
-    if(!pjList) {
+    if(!pjList || pjList.length == 0) {
         alert('load existing project fail : '+ sqlError);
         showCreatePj();
         return;
@@ -190,9 +191,9 @@ function showOpenPj(){
         var langue = $('#chooseLanguage').val();
         if(!name || name == "") return;
         
-        $.post("load_project.php", {'pjName':name, 'language':langue}, function(msg){
+        $.post("load_project.php", {'pjName':name, 'lang':langue}, function(msg){
             if(msg && msg == "SUCCESS")
-                window.location = "./main_page.php?pjName="+name+"&language="+langue;
+                window.location = "./main_page.php?pjName="+name+"&lang="+langue;
             else if(msg && msg != "") alert(msg);
         });
     });
