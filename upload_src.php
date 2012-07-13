@@ -42,15 +42,20 @@ function saveBase64Src($name, $encodedStr, $pj) {
 }
 
 // AJAX POST check
-if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && array_key_exists('pj', $_POST)) {
-    $pjname = $_POST['pj'];
+if( $_SERVER['REQUEST_METHOD'] === 'POST' && 
+    !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && 
+    array_key_exists('pjName', $_POST) && 
+    array_key_exists('lang', $_POST) ) 
+{
+    $pjid = $_POST['pjName']."_".$_POST['lang'];
     // If project doesn't exist in session, abondon
-    if( array_key_exists($pjname, $_SESSION) && array_key_exists('type', $_POST) && array_key_exists('data', $_POST) ) {
+    if( array_key_exists($pjid, $_SESSION) && array_key_exists('type', $_POST) && array_key_exists('data', $_POST) ) {
         // Read the input from stdin
         $type = $_POST['type'];
         $name = array_key_exists('name', $_POST) ? $_POST['name'] : "noname";
         $encodedStr = $_POST['data'];
-        $pj = $_SESSION[$pjname];
+        $pj = $_SESSION[$pjid];
         
         switch($type) {
         case "image":

@@ -13,11 +13,15 @@
  error_reporting(E_ALL);
  
  // AJAX POST check
- if($_SERVER['REQUEST_METHOD'] === 'GET' && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && array_key_exists('pj', $_GET)) {
-     $pjname = $_GET['pj'];
+ if( $_SERVER['REQUEST_METHOD'] === 'GET' && 
+     !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+     strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && 
+     array_key_exists('pjName', $_GET) &&
+     array_key_exists('lang', $_GET)) {
+     $pjid = $_GET['pjName']."_".$_GET['lang'];
      // If project doesn't exist in session, abondon
-     if( array_key_exists($pjname, $_SESSION) ) {
-         $pj = $_SESSION[$pjname];
+     if( array_key_exists($pjid, $_SESSION) ) {
+         $pj = $_SESSION[$pjid];
          $pj->resetSrcs(null);
          $pj->resetScripts(null);
      }

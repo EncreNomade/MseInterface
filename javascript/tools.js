@@ -718,7 +718,7 @@ SourceManager.prototype = {
 	    if(!this.sources[id] || !(this.sources[id].data instanceof Wiki)) return;
 	    this.sources[id].data.showWikiOnEditor();
 	},
-	uploadSrc: function(url, pjName) {
+	uploadSrc: function(url, pjName, lang) {
 	    this.uploaded = 0;
 	    for(var key in this.sources) {
 	        var data = null;
@@ -728,17 +728,17 @@ SourceManager.prototype = {
 	        // relative path
 	        if((type == "image" || type == "game" || type == "audio") && (!ext || ext == "")) {
 	            ++this.uploaded;
-	            this.updateSrcs(pjName);
+	            this.updateSrcs(pjName, lang);
 	            continue;
 	        }
 	        // Original content, upload it
 	        switch(type) {
 	        case "image": case "audio": case "game":
-	            data = "pj="+pjName+"&type="+type+"&name="+key+"&data="+this.sources[key].data;
+	            data = "pjName="+pjName+"&lang="+lang+"&type="+type+"&name="+key+"&data="+this.sources[key].data;
 	            break;
 	        case "wiki": case "anime": case "code": case "speaker":
 	            ++this.uploaded;
-	            this.updateSrcs(pjName);
+	            this.updateSrcs(pjName, lang);
 	            continue;
 	        }
 	        
@@ -752,24 +752,24 @@ SourceManager.prototype = {
 	                    var resp = msg.match(srcMgr.uploadResp);
 	                    if(msg == "SUCCESS"){
 	                        ++srcMgr.uploaded;
-	                        srcMgr.updateSrcs(pjName);
+	                        srcMgr.updateSrcs(pjName, lang);
 	                    }
 	                    else if(resp && resp[1] && srcMgr.pathCheck.test(resp[2])) {
 	                        srcMgr.sources[resp[1]].data = resp[2];
 	                        ++srcMgr.uploaded;
-	                        srcMgr.updateSrcs(pjName);
+	                        srcMgr.updateSrcs(pjName, lang);
 	                    }
 	                    else alert("Source upload errors: "+msg);
 	                }
 	            });
 	    }
 	},
-	updateSrcs: function(pjName){
+	updateSrcs: function(pjName, lang){
 	    var count = Object.keys(this.sources).length;
 	    if(this.uploaded < count) return;
-	    $.post("update_srcs.php", {"pj":pjName,"srcs":JSON.stringify(this.sources)}, function(msg){
+	    $.post("update_srcs.php", {"pjName":pjName,"lang":lang,"srcs":JSON.stringify(this.sources)}, function(msg){
 	            if(msg && msg != "") alert(msg);
-	        });
+	    });
 	}
 };
 
@@ -924,7 +924,7 @@ StepManager.prototype = {
 	    	curr.page.data('StepManager').activeStep($(this).data('stepN'));
 	    });
 	    // Del step button and Up down button
-	    expo.deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc).circleMenu({'addscript':['./images/UI/addscript.jpg',addScriptDialog]});
+	    expo.deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc);
 	    // Append expo to manager
 	    this.stepexpos[stepN] = expo;
 	    if(this.stepexpos[stepN-1]) this.stepexpos[stepN-1].before(expo);
@@ -1012,7 +1012,7 @@ StepManager.prototype = {
 			curr.page.data('StepManager').activeStep($(this).data('stepN'));
 		});
 		// Del step button and Up down button
-		expo.deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc).circleMenu();
+		expo.deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc);
 		// Append expo to manager
 		this.manager.prepend(expo);
 		this.stepexpos[this.currStepN] = expo;
@@ -1889,8 +1889,8 @@ var scriptMgr = function() {
             }
             if(listScript.length > 0) return listScript;
         },
-        upload: function(url, pjName){
-            var data = "pj="+pjName+"&type=scripts&data="+JSON.stringify(this.scripts);
+        upload: function(url, pjName, lang){
+            var data = "pjName="+pjName+"&lang="+lang+"&type=scripts&data="+JSON.stringify(this.scripts);
             
             $.ajax({
                 type: "POST",
@@ -3088,44 +3088,84 @@ var initTranslateTool = function() {
         }
     };
     
+    var articles = null, article = null, newarticle = null, metas = null;
+    var untranslated = false;
+    
     $.extend(tool, {
         left: $('<div id="transTool_left"></div>'),
         right: $('<div id="transTool_right"></div>'),
         center: $('<div id="transTool_center"></div>'),
         textInput: $('<textarea id="transTool_text" class="script_editor"></textarea>'),
         inputBtn: $('<div id="transTool_input">Confirmer</div>'),
+        generateBtn: $('#gene_trans'),
+        newarticle: null,
         
         init: function(){
+            articles = $('.article');
+            // No article, no need to translate
+            if(articles.length <= 0) {
+                this.close();
+                return;
+            }
+        
             this.editor.append(this.left).append(this.center).append(this.right);
-            this.right.append(this.textInput).append(this.inputBtn);
+            
+            if(metas && newarticle)
+                getArticleExpo(this.right, newarticle, metas);
+            else 
+                this.right.append(this.textInput).append(this.inputBtn);
+                
+            // Set untranslated
+            untranslated = true;
             
             // Add an article resume to left panel
-            this.article = $( $('.article').get(0) );
-            this.metas = ArticleFormater.parseMetaText(this.article);
-            getArticleExpo(this.left, this.article, this.metas);
+            article = $( articles.get(0) );
+            metas = ArticleFormater.parseMetaText(article);
+            getArticleExpo(this.left, article, metas);
         },
         
-        generateTranslation: function() {
+        showTranslation: function() {
             var content = this.textInput.val();
             if(content.trim() == "") return;
             
             this.right.children().remove();
             
-            var newarticle = $('<div class="article" defile="'+this.article.attr('defile')+'"></div>');
-            newarticle.css({'left':this.article.css('left'), 'top':this.article.css('top'), 
-            			    'width':this.article.width(), 'height':this.article.height(),
-            			    'line-height' : this.article.css('line-height'), 
-            			    'text-align' : this.article.css('text-align'),
-            			    'font-weight' : this.article.css('font-weight'),
-            			    'font-size' : this.article.css('font-size'),
-            			    'font-family' : this.article.css('font-family'),
-            			    'color' : this.article.css('color')});
-            newarticle.append( ArticleFormater.reverse(content, this.article, this.metas) );
-            getArticleExpo(this.right, newarticle, this.metas);
+            newarticle = $('<div class="article" defile="'+article.attr('defile')+'"></div>');
+            newarticle.css({'left':article.css('left'), 'top':article.css('top'), 
+            			    'width':article.width(), 'height':article.height(),
+            			    'line-height' : article.css('line-height'), 
+            			    'text-align' : article.css('text-align'),
+            			    'font-weight' : article.css('font-weight'),
+            			    'font-size' : article.css('font-size'),
+            			    'font-family' : article.css('font-family'),
+            			    'color' : article.css('color')});
+            ArticleFormater.reverse(newarticle, content, article, metas);
+            getArticleExpo(this.right, newarticle, metas);
+        },
+        
+        generateTranslation: function() {
+            this.close();
+        },
+        
+        close: function() {
+            if(articles.length <= 0) {
+                untranslated = false;
+                CreatTool.prototype.close.call(this);
+            }
+            else if(newarticle && article) {
+                article.replaceWith(newarticle);
+                untranslated = false;
+                CreatTool.prototype.close.call(this);
+            }
+        },
+        
+        untranslated: function() {
+            return untranslated;
         }
     });
     
-    tool.inputBtn.click(function(){tool.generateTranslation();});
+    tool.inputBtn.click(function(){tool.showTranslation();});
+    tool.generateBtn.click(function(){tool.generateTranslation();});
     
     return tool;
 }

@@ -17,14 +17,17 @@ session_start();
 if( !isset($_SESSION['uid']) )
     header("Location: index.php", true);
 // Request check
-else if( $_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists("pjName", $_GET) ) {
+else if( $_SERVER['REQUEST_METHOD'] === 'GET' && 
+         array_key_exists("pjName", $_GET) && 
+         array_key_exists("lang", $_GET) ) 
+{
     // Pj existance in session check
-    $pjName = $_GET["pjName"];
-    if(array_key_exists($pjName, $_SESSION)){
-        $pj = $_SESSION[$pjName];
+    $pjid = $_GET["pjName"]."_".$_GET["lang"];
+    if(array_key_exists($pjid, $_SESSION)){
+        $pj = $_SESSION[$pjid];
         // Page editable only if structure of project has never been initialized
         if(!$pj->isStructEmpty()) 
-            header("Location: main_page.php?pjName=".$pjName, true);
+            header("Location: main_page.php?pjName=".$pj->getName()."&lang=".$pj->getLanguage(), true);
     }
     else {
         header("Location: index.php", true);
@@ -38,28 +41,6 @@ else header("Location: index.php", true);
 <html>
 <head>
   <title>Gestion des pages</title>
-
-  <script type="text/javascript">
-  // Debug
-  var debugMsgAppend = window.debugMsgAppend = function(message) {
-	$("#debug").append(message);
-	$("#debug").fadeIn("1000");
-  };
-
-  var debugMsgRefresh = window.debugMsgRefresh = function(message) {
-	$("#debug").text("Debug: " + message);
-	$("#debug").fadeIn("1000");
-  };
-
-  window.onerror = function(msg, url, line){
-	if(onerror.num++ < onerror.max) {
-		alert("Error: " + msg + "\n" + url + ":" + line);
-		return true;
-	}
-  }
-  onerror.max = 3;
-  onerror.num = 0;
-  </script>
 
 <script src="./javascript/support/jquery-latest.js"></script>
 <script src="./javascript/tools.js"></script>
@@ -89,7 +70,8 @@ else header("Location: index.php", true);
 	
 	var uid = null;
 	<?php
-	    print("var pjName = '".$pjName."';");
+	    print("var pjName = '".$pj->getName()."';");
+	    print("var pjLanguage = '".$pj->getLanguage()."';");
 	    
 	    if(isset($_SESSION["uid"]) && $_SESSION["uid"] != "") {
 	        echo "uid = '".$_SESSION["uid"]."';";
@@ -114,7 +96,7 @@ var leftFunc = function() {
 	// Remove all hover buttons and readd
 	tar.children('.del_container').remove();
 	initPageButton(tar);
-		
+	
 	// Insert target before the left page
 	tar.insertBefore(left);
 };
@@ -144,7 +126,7 @@ var rightFunc = function() {
                 $('#new_page').before(newpage);
                 newpage.children('h5').editable();
             }*/
-            window.location = "./main_page.php?pjName="+pjName;
+            window.location = "./main_page.php?pjName="+pjName+"&lang="+pjLanguage;
         }
         else pjsave.pageSeri = {};
     }
@@ -153,6 +135,7 @@ var rightFunc = function() {
         pjsave.pageSeri = {};
         pjsave.objCurrId = 0;
         pjsave.srcCurrId = 0;
+        pjsave.lastModif = new Date().getTime();;
     }
 	
 	// Del page button and Up down button
@@ -175,8 +158,8 @@ var rightFunc = function() {
 		});
 		
 		// Local storage
-		localStorage.setItem(pjName, JSON.stringify(pjsave));
-		window.location = "./main_page.php?pjName="+pjName;
+		localStorage.setItem(pjName+" "+pjLanguage, JSON.stringify(pjsave));
+		window.location = "./main_page.php?pjName="+pjName+"&lang="+pjLanguage;
 	});
 
 </script>

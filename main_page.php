@@ -13,15 +13,21 @@ include 'dbconn.php';
 session_start();
 if( !isset($_SESSION['uid']) )
     header("Location: index.php", true);
-else if( $_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists("pjName", $_GET)  && array_key_exists("language", $_GET)) {
+else if( $_SERVER['REQUEST_METHOD'] === 'GET' && 
+         array_key_exists("pjName", $_GET)  && 
+         array_key_exists("lang", $_GET)) {
     // Pj existance in session check
     $pjName = $_GET["pjName"];
-    $langue = $_GET["language"];
-    if(array_key_exists($pjName, $_SESSION)){
-        $pj = $_SESSION[$pjName];
+    $langue = $_GET["lang"];
+    $pjid = $pjName."_".$langue;
+    if(array_key_exists($pjid, $_SESSION)){
+        $pj = $_SESSION[$pjid];
+        // Wrong session data
         if($pj->getLanguage() != $langue){
             ConnectDB();
             $pj = MseProject::getExistProject($pjName, $langue);
+            $_SESSION[$pjid] = $pj;
+// TODO: If retrieve project fail
         }
     }
     else {
@@ -199,10 +205,6 @@ else header("Location: index.php", true);
 	$('#saveProjet').click(saveProject);
 	
 	<?php
-        if($pj->getUntranslated())
-            print("var pjUntranslated = true;");
-        else
-            print("var pjUntranslated = false;");
 	    print("var pjName = '".$pj->getName()."';");
         print("var pjLanguage = '".$pj->getLanguage()."';");
 	    print("var imgPath = '".$pj->getSrcSavePath("image")."';");
@@ -273,14 +275,18 @@ function retrieveLocalInfo(pjsave) {
     if(isNaN(pjsave.lastModif)) curr.lastModif = lastModServer;
     else curr.lastModif = pjsave.lastModif;
     
-    window.translateTool = initTranslateTool();
-    window.translateTool.active();
+    <?php 
+        if($pj->getUntranslated()) {
+            print("window.translationTool.active();");
+        }
+    ?>
+    
 }
 	
 	// Compare server and local last modification info for Synchronization
 	var norecord = false;
 	var lastModLocal = -1;
-	var pjsavestr = localStorage.getItem(pjName);
+	var pjsavestr = localStorage.getItem(pjName+" "+pjLanguage);
 	if(!pjsavestr) norecord = true;
 	else {
 	    var pjsave = JSON.parse(pjsavestr);
@@ -292,7 +298,7 @@ function retrieveLocalInfo(pjsave) {
 	
 	// Update local with server storage
 	if(norecord || (lastModLocal < lastModServer)) {
-	    $.get("updateFromServer.php", {'pj':pjName}, function(msg){
+	    $.get("updateFromServer.php", {'pjName':pjName, 'lang':pjLanguage}, function(msg){
 	        //alert(msg);
 	        var pjsave = JSON.parse(msg);
 	        if(pjsave) {
@@ -303,7 +309,7 @@ function retrieveLocalInfo(pjsave) {
 	}
 	// Update server with local storage
 	else if(lastModLocal > lastModServer) {
-	    $.post("updateWithLocal.php", {"pj":pjName, "localStorage":pjsavestr}, function(msg){
+	    $.post("updateWithLocal.php", {"pjName":pjName, 'lang':pjLanguage, "localStorage":pjsavestr}, function(msg){
                 var modif = parseInt(msg);
                 if(!isNaN(modif)) pjsave.lastModif = modif;
                 else if(msg != "") alert(msg);

@@ -82,6 +82,7 @@ function init() {
 	window.wikiTool = initWikiTool();
 	window.animeTool = initAnimeTool();
 	window.scriptTool = initScriptTool();
+	window.translationTool = initTranslateTool();
 	
 	// Mouse event handler for the resize behavior
 	$('body').supportResize();
@@ -889,7 +890,7 @@ function dropToTargetZone(e) {
 function newTranslationDialog(){
     dialog.showPopup('Nouvelle langue pour '+pjName, 500, 260, 'Générer traduction');
     var htmlStr = '';
-    $.post('load_project.php', {'user': uid, 'project': pjName}, function(msg){
+    $.post('load_project.php', {'pjName': pjName}, function(msg){
         if(!msg || msg == 'FAIL')
             console.error('fail to retrieve existing language for the project : see load_project.php');
         else {
@@ -911,8 +912,6 @@ function newTranslationDialog(){
     dialog.confirm.click(function(){
         var jqNewLang = $('#newLanguage');
         window.newLang = jqNewLang.val().toLowerCase();
-        window.currLang = pjLanguage;
-        pjLanguage = newLang;
         var existLang = $('#language_list').children();
         window.autoOpen = $('#openNewLanguage').get(0).checked;
         for(var i = 0; i<existLang.length; i++){
@@ -927,19 +926,17 @@ function newTranslationDialog(){
             async:  false,
             type: 'POST', 
             url: 'create_translation.php', 
-            data: {'pj': pjName, 'newLang': newLang}, 
+            data: {'pjName': pjName, 'lang':pjLanguage, 'newLang': newLang}, 
             success: function(data, textStatus, jqXHR) {
                 if(data && data != '') {
                     alert('Error while creating translation : see console for info.');
                     console.log(data);
                 }
-                else if(autoOpen){
-                    window.open('main_page.php?pjName='+pjName+'&language='+window.newLang);
+                else if(window.autoOpen){
+                    window.open('main_page.php?pjName='+pjName+'&lang='+window.newLang);
                 }
-                pjLanguage = window.currLang;
-                delete window.currLang;
                 delete window.newLang;
-                delete autoOpen;
+                delete window.autoOpen;
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 // Une erreur s'est produite lors de la requete
@@ -1759,7 +1756,7 @@ formate : function( article , meta ){
 },
 
 // reverse	
-reverse : function( chaine , article , meta , font , width , lineHeight){ 
+reverse : function( parent, chaine , article , meta , font , width , lineHeight){ 
 	if( !article || !article.hasClass('article') ) return;
 	
 	var log = "";
@@ -1826,7 +1823,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		width = config.realX( article.width() );
 	if( !lineHeight )
 		lineHeight = config.realY( cssCoordToNumber( article.css('line-height') ) );
-	var res = $("<div>").append( generateSpeaks(chaine, font , width , lineHeight ) );
+	parent.append( generateSpeaks(chaine, font , width , lineHeight ) );
 	
 	// Deformat chiane
 	var realchaine = chaine.replace(/\[[^\[\]]*\]/g, "");
@@ -1836,7 +1833,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 	var table = [];
 	var cursor = 0;
 	var prefix = true;
-	res.find("div.textLine, paragraphtag").each(function(){
+	parent.find("div.textLine, paragraphtag").each(function(){
 		var line = $( this );
 		if(line.prop('tagName') == "PARAGRAPHTAG") {
 		    cursor++;
@@ -1907,7 +1904,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 					new_obj = table[ e ].obj;
 				
 					var id = meta[ i ].link.id;
-					var elem = srcMgr.generateChildDomElem(id, res);
+					var elem = srcMgr.generateChildDomElem(id, parent);
 					elem.attr('id', 'obj'+(curr.objId++));
 					elem.deletable(null, true)
 					    .selectable(selectP)
@@ -1916,9 +1913,9 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 					    .staticButton('./images/tools/anime.png', animeTool.animateObj)
 					    .staticButton('./images/UI/addscript.jpg', addScriptForObj)
 					    .children('.del_container').hide();
-					elem.insertAfter( new_obj );
+					elem.insertBefore( new_obj );
 					
-					log += meta[ i ].link.type+" "+id+" re inserée apres la ligne :\""+new_obj.children("p").text()+"\", ( il était précédement après \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
+					log += meta[ i ].link.type+" "+id+" re inserée avant la ligne :\""+new_obj.children("p").text()+"\", ( il était précédement après \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
 				}
 
 			break;
@@ -2017,7 +2014,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 	
 	console.log( log );
 	
-	return res.children();
+	return parent;
 	
 	
 	// share chaine, ( effet de bord )
@@ -2152,10 +2149,10 @@ function saveProject() {
     if(!pjName) return;
     loading.show(5000);
     // Clear server ressources
-    //$.get('clearSrcs.php', {'pj':pjName}, function(msg){if(msg != "") alert(msg);});
+    //$.get('clearSrcs.php', {'pjName':pjName, 'lang':pjLanguage}, function(msg){if(msg != "") alert(msg);});
     // Save ressources
-    srcMgr.uploadSrc('upload_src.php', pjName);
-    scriptMgr.upload('upload_src.php', pjName);
+    srcMgr.uploadSrc('upload_src.php', pjName, pjLanguage);
+    scriptMgr.upload('upload_src.php', pjName, pjLanguage);
 
     // Save structure
     var serializer = new XMLSerializer();
@@ -2179,7 +2176,13 @@ function saveProject() {
     var structStr = JSON.stringify(struct);
     
 	// Upload structure to server
-	$.post("save_project.php", {"pj":pjName, "struct":structStr, "objCurrId":curr.objId, "srcCurrId":srcMgr.currId, "language":pjLanguage, "untranslated":pjUntranslated}, function(msg){
+	$.post("save_project.php", {"pjName":pjName, 
+	                            "lang":pjLanguage, 
+	                            "struct":structStr, 
+	                            "objCurrId":curr.objId, 
+	                            "srcCurrId":srcMgr.currId, 
+	                            "untranslated":translationTool.untranslated()
+	                            }, function(msg){
 	       var modif = parseInt(msg);
 	       if(!isNaN(modif)) curr.lastModif = modif;
 	       else if(msg != ""){

@@ -330,7 +330,10 @@ class ProjectGenerator {
 }
 
 // AJAX POST check
-if($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && isset($_SESSION['currPj'])) {
+if( $_SERVER['REQUEST_METHOD'] === 'POST' && 
+    !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && 
+    isset($_SESSION['currPj']) ) {
     // Read the input from stdin
     $xmlstr = file_get_contents('php://input');
     // Parse to xml doc
