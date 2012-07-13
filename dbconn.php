@@ -1,10 +1,12 @@
 <?php
 
 function ConnectDB(){
-    require('server_config.php');
+    require 'server_config.php';
     require 'MseDataBase.class.php';
     
-	return MseDataBase::getInstance();
+    $instance =  MseDataBase::getInstance();
+    
+	return $instance->getDb();
 }
 
 function userLogin($uid, $mdp){

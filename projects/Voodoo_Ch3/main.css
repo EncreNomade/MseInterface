@@ -1,0 +1,370 @@
+body {
+    padding: 0px;
+    margin: 0px;
+    width: 100%;
+    height: 100%;
+    background: #E5E5E5;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.menu{
+	position:fixed;
+	top:0px;
+	left:0px;
+	width:100%;
+	height:35px;
+	border:0px;
+	margin:0px;
+	padding:0px;
+	font-family: 67.5% "Lucida Sans Unicode", "Bitstream Vera Sans", "Trebuchet Unicode MS", "Lucida Grande", Verdana, Helvetica, sans-serif;
+	font-size:14px;
+	font-weight:bold;
+	background:#4d4d4d;
+	list-style:none;
+}
+.menu li{
+	float:left;
+	padding:0px;
+}
+.menu li.id{
+    float: right;
+    position: relative;
+    color:#cccccc;
+    display:block;
+    font-weight:normal;
+    line-height:35px;
+    margin:0px;
+    padding:0px 25px;
+    text-align:center;
+    text-decoration:none;
+}
+.menu li.id:hover{
+    background: #2580a2;
+}
+
+.menu li a{
+	background:#4d4d4d url("../images/seperator.gif") bottom right no-repeat;
+	color:#cccccc;
+	display:block;
+	font-weight:normal;
+	line-height:35px;
+	margin:0px;
+	padding:0px 25px;
+	text-align:center;
+	text-decoration:none;
+}
+.menu li a:hover, .menu ul li:hover a{
+	background: #2580a2 url("../images/hover.gif") bottom center no-repeat;
+	color:#FFFFFF;
+	text-decoration:none;
+}
+.menu li ul{
+	background:#4d4d4d;
+	display:none;
+	height:auto;
+	padding:0px;
+	margin:0px;
+	border:0px;
+	position:absolute;
+	width:225px;
+	z-index:100;
+	/*top:1em;
+	/*left:0;*/
+}
+.menu li:hover ul{
+	display:block;
+}
+.menu li li {
+	background:url('../images/sub_sep.gif') bottom left no-repeat;
+	display:block;
+	float:none;
+	margin:0px;
+	padding:0px;
+	width:225px;
+}
+.menu li:hover li a{
+	background:none;
+}
+.menu li ul a{
+	display:block;
+	height:35px;
+	font-size:12px;
+	font-style:normal;
+	margin:0px;
+	padding:0px 10px 0px 15px;
+	text-align:left;
+}
+.menu li ul a:hover, .menu li ul li:hover a{
+	background:#2580a2;
+	border:0px;
+	color:#ffffff;
+	text-decoration:none;
+}
+
+div {
+    display: block;
+}
+
+#galery_body {
+    position: relative;
+    top: 100px;
+    width: 900px;
+    height: 550px;
+    padding: 0px;
+    margin-left: auto;
+    margin-right: auto;
+    border: 5px solid #f3cfb3;
+    white-space:nowrap;
+    overflow: hidden;
+    z-index: 10;
+}
+#galery_body div.frame_mask {
+    position: relative;
+    float: left;
+    width: 150px;
+    height: 550px;
+    display: none;
+    background: transparent url('../images/mask.png') no-repeat left top;
+    z-index: 3;
+}
+#left {
+    position: absolute;
+    left: 20px;
+    top: 80px;
+    width: 48px;
+    height: 48px;
+    z-index: 4;
+}
+#right {
+    position: absolute;
+    left: 832px;
+    top: 80px;
+    width: 48px;
+    height: 48px;
+    z-index: 4;
+}
+#handler {
+    position: absolute;
+    top: 640px;
+    width: 20px;
+    height: 121px;
+    margin: 0px;
+    padding: 0px;
+    background: url('../images/handler.png') no-repeat left top;
+    z-index: 1;
+    cursor: move;
+}
+#galery {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 2000px;
+    height: 550px;
+    padding: 0px;
+    margin: 0px;
+    overflow: visible;
+    white-space:nowrap;
+}
+#galery div.frame {
+    position: relative;
+    float: left;
+    top: 0px;
+    width: 150px;
+    height: 550px;
+    border: none;
+    padding: 0px;
+    margin: 0px;
+    /* set a transition effect */
+    -webkit-transition: opacity 500ms ease-in;
+    -moz-transition: opacity 500ms ease-in;
+    cursor: pointer;
+}
+#galery div.frame img{
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    opacity: inherit;
+    z-index: 1;
+}
+#galery div.frame h2{
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    margin: 0px;
+    padding: 10px 5px 10px 5px;
+    text-align: center;
+    font: bold 15px/20px Verdana, Arial;
+    white-space: normal;
+    color: #636363;
+    width: 140px;
+    height: 40px;
+    background: rgba(255,255,255,0.65);
+    text-align: center;
+    z-index: 2;
+}
+#galery div.frame h2.newarrive {
+    color: #48CD89;
+}
+.desactive {
+    opacity: 0.9;
+}
+#galery div.default:hover, #galery div.active {
+    width: 146px;
+    height: 546px;
+    border: 2px solid #fff;
+    -webkit-box-shadow: 0px 0px 15px #000;
+    -moz-box-shadow: 0px 0px 15px #000;
+    box-shadow: 0px 0px 15px #000;
+    z-index: 3;
+}
+#galery div.frame_info {
+    position: relative;
+    float: left;
+    top: 0px;
+    width: 0px;
+    height: 550px;
+    border: none;
+    padding: 0px;
+    margin: 0px;
+    /* set a transition effect */
+    -webkit-transition: width 500ms ease-out;
+    -moz-transition: width 500ms ease-out;
+    
+    background: #fff;
+}
+#galery div.info_showed {
+    width: 350px;
+}
+.frame_info img.expo {
+    position: relative;
+    float: left;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 262.5px;
+    -webkit-box-reflect: below 0px 
+        -webkit-gradient(linear, 
+            left top, 
+            left bottom, 
+            from(transparent), 
+            color-stop(.7, transparent), 
+            to(rgba(255, 255, 255, .5))
+        );
+}
+.frame_info h2 {
+    position: relative;
+    float: left;
+    width: 100%;
+    color: #000;
+    margin: 25px 0px 0px 20px;
+    font: bold 20px/30px Verdana, Arial;
+}
+.frame_info h3 {
+    position: relative;
+    float: left;
+    width: 100%;
+    color: #000;
+    margin: 25px 0px 0px 20px;
+    font: bold 16px/25px Verdana, Arial;
+}
+.btn{
+    position: relative;
+    float: left;
+    display: inline-block;
+    width: 140px;
+    height: 30px;
+    line-height: 30px;
+    background: #218FD8 url('../images/play.png') 8px center no-repeat;
+    color: #A8D5FE;
+    font-size: 10pt;
+    font-weight: bold;
+    text-indent: 24px;
+    text-decoration: none;
+    text-align: left;
+    border: 3px solid white;
+    -moz-border-radius: 6px;
+    -webkit-border-radius: 6px;
+    border-radius: 6px;
+    margin: 14px 0 0 14px;
+}
+.btn:hover{
+    border-color: #48CD89;
+    color: #fff;
+}
+
+.popup {
+    position: absolute;
+    z-index: 11;
+    padding: 30px 0px 30px 0px;
+    top: 50%;
+    left: 50%;
+    
+    border: 5px solid #48CD89;
+    -moz-border-radius: 12px;
+    -webkit-border-radius: 12px;
+    border-radius: 12px;
+    
+    -webkit-box-shadow: 0px 0px 20px #000;
+    -moz-box-shadow: 0px 0px 20px #000;
+    box-shadow: 0px 0px 20px #000;
+    
+    background-color: #fff;
+    color: #218FD8;
+}
+.popup div.close {
+    position: absolute;
+    right: -22.5px;
+    top: -22.5px;
+    width: 45px;
+    height: 45px;
+    background: url('../images/close.png') no-repeat center center;
+}
+.popup p {
+    margin:10px 5px 5px 5px;
+    width:100%;
+    float:left;
+}
+.popup input, .popup select{
+    float:left;
+    font-size:15px;
+    width: 160px;
+    height:22px;
+    margin:0px;
+    padding:0px;
+}
+.popup input.invalid {
+    background: url('../images/alert2.jpg') no-repeat 140px 0px;
+}
+.popup label{
+    display:block;
+	text-align:right;
+	width:120px;
+	float:left;
+	font: 15px/25px "Helvetica Neue", Arial;
+	margin:0px 10px 0px 10px;
+}
+.popup a{
+    position: relative;
+    float: right;
+    margin: 5px 20px 5px 5px;
+}
+#login {
+    margin-left: -175px;
+    margin-top: -110px;
+    width: 350px;
+    height: 150px;
+}
+#signup {
+    margin-left: -175px;
+    margin-top: -150px;
+    width: 350px;
+    height: 350px;
+}
+.datepicker {
+    position: fixed;
+    z-index: 12;
+}
