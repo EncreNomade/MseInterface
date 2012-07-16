@@ -7,7 +7,7 @@
  */
  
 include 'project.php';
-include 'dbconn.php';
+include_once 'dbconn.php';
 session_start();
 
 ini_set("display_errors","1");
@@ -23,7 +23,6 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' &&
     $pjid = $_POST['pjName']."_".$_POST['lang'];
     // If project doesn't exist in session, abondon
     if( array_key_exists($pjid, $_SESSION) && array_key_exists('localStorage', $_POST) ) {
-        ConnectDB();
         if(get_magic_quotes_gpc()) {
             $localStr = stripslashes($_POST['localStorage']);
         }

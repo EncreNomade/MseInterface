@@ -8,7 +8,6 @@
  
 include 'project.php';
 include 'generate_js.php';
-include 'dbconn.php';
 session_start();
 
 ini_set("display_errors","1");
@@ -30,7 +29,6 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' &&
      && array_key_exists('objCurrId', $_POST) 
      && array_key_exists('srcCurrId', $_POST)
      && array_key_exists('untranslated', $_POST) ) {
-        ConnectDB();
         // Read the input from stdin
         if(get_magic_quotes_gpc()) {
             $structStr = stripslashes($_POST['struct']);

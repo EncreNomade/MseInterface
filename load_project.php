@@ -7,7 +7,7 @@
  */
 
 include 'project.php';
-include 'dbconn.php';
+include_once 'dbconn.php';
 session_start();
 
 if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
@@ -15,7 +15,6 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
     if( array_key_exists("pjName", $_POST) && array_key_exists('lang', $_POST)) {
         $pjName = $_POST["pjName"];
         $lang = $_POST['lang'];
-        ConnectDB();
         if( checkPjExist($pjName, $lang) ) {
             $pj = MseProject::getExistProject($pjName, $lang);
             if($pj) {
@@ -32,7 +31,6 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
     else if( array_key_exists('pjName', $_POST) && !array_key_exists('lang', $_POST) ){ 
         $name = $_POST['pjName'];
         
-        ConnectDB();
         $languages = MseProject::getPjLanguages($name);
         
         if( is_array($languages) ) {

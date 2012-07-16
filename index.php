@@ -9,7 +9,7 @@
 header("content-type:text/html; charset=utf8");
 
 include 'project.php';
-include 'dbconn.php';
+include_once 'dbconn.php';
 session_start();
 
 function checkSize($w, $h) {
@@ -20,7 +20,6 @@ function checkSize($w, $h) {
 }
 
 if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
-    ConnectDB();
     if( array_key_exists("pjName", $_POST) ) {
         $pjName = $_POST["pjName"];
         if( checkPjExist($pjName) )
@@ -120,17 +119,19 @@ function showLogin(){
 
 function showOpenPj(){
   <?php
-    ConnectDB();
+    $db = ConnectDB();
     if (isset($_SESSION["uid"]) && $_SESSION["uid"] != ""){
         $owner = $_SESSION['uid'];
-        $rep = mysql_query("SELECT name, language FROM Projects WHERE owner='$owner' ORDER BY name");
+        $query = $db->prepare("SELECT name, language FROM Projects WHERE owner=? ORDER BY name");
+        $rep = $query->execute(array($owner));
+       
         if (!$rep) {
-           echo "var pjList = false; var sqlError=\"".addslashes(mysql_error())."\";\n";
+           echo "var pjList = false; var sqlError=\"".$query->errorInfo()."\";\n";
         }
         else {
             echo "var pjList = []; ";
             $prevName = '';
-            while ($row = mysql_fetch_assoc($rep)){
+            while ($row = $query->fetch()){
                 $name = $row['name'];
                 $lang = $row['language'];
                 if($name != $prevName){

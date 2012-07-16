@@ -9,6 +9,7 @@
 ini_set("display_errors","1");
 error_reporting(E_ALL);
 
+require_once 'dbconn.php';
 class MseProject {
     private $name;
     private $language;
@@ -28,16 +29,19 @@ class MseProject {
     private static $typeRegExp = "/(\w+)_((image)|(audio)|(game)|(anime)|(wiki))/";
 
 
-    function MseProject($pjName, $lang, $folder="", $width = 800, $height = 600, $orient = 'portrait') {
+    public function __construct($pjName, $lang, $folder="", $width = 800, $height = 600, $orient = 'portrait') {
+        $db = ConnectDB();
+        
         $numargs = func_num_args();
         // Initialization with only pjName && language
         if($numargs == 2) {
             $pjName = func_get_arg(0);
             $owner = $_SESSION['uid'];
-            $resp = mysql_query("SELECT * FROM Projects WHERE name='$pjName' AND owner='$owner' AND language='$lang' LIMIT 1");
-            if(!$resp) return FALSE; // No project exist
+            $query = $db->prepare("SELECT * FROM Projects WHERE name= ? AND owner= ? AND language= ? LIMIT 1");
+            $query->execute(array($pjName, $owner, $lang));
             
-            $pj = mysql_fetch_array($resp);            
+            $pj = $query->fetch();    
+            if(!$pj) return FALSE; // No project exist
             
             $this->name = $pj['name'];
             $this->folder = $pj['folder'];
@@ -88,18 +92,26 @@ class MseProject {
         else $owner = $_SESSION['uid'];
         $id = $owner."_".$this->name;
         
-        $query = sprintf("INSERT INTO Projects(owner,name,language,creation,folder,width,height,orientation,objId,srcId,lastModif) 
-                        Value('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s', '%s')",
-            mysql_real_escape_string($owner), 
-            mysql_real_escape_string($this->name),
-            mysql_real_escape_string($this->language),
-            $this->creation,
-            mysql_real_escape_string($this->folder),
-            $this->width, $this->height, $this->orientation, 
-            $this->currObjId, $this->currSrcId, $this->lastModif);
-        $resp = mysql_query($query);
-        if(!$resp) {
-            die("Fail to add the project record to database: ".$this->name.' '.$this->language.mysql_error());
+        $db = ConnectDB();
+        $query = $db->prepare("INSERT INTO Projects(owner,name,language,creation,folder,width,height,orientation,objId,srcId,lastModif) 
+                        VALUES(:owner, :name, :language, :creation, :folder, :width, :height, :orientation, :objId, :srcId, :lastModif)");
+                        
+        $query->bindValue('owner',      $owner,             PDO::PARAM_STR);
+        $query->bindValue('name',       $this->name,        PDO::PARAM_STR);
+        $query->bindValue('language',   $this->language,    PDO::PARAM_STR);
+        $query->bindValue('creation',   $this->creation,    PDO::PARAM_INT);
+        $query->bindValue('folder',     $this->folder,      PDO::PARAM_STR);
+        $query->bindValue('width',      $this->width,       PDO::PARAM_INT);
+        $query->bindValue('height',     $this->height,      PDO::PARAM_INT);
+        $query->bindValue('orientation',$this->orientation, PDO::PARAM_STR);
+        $query->bindValue('objId',      $this->currObjId,   PDO::PARAM_INT);
+        $query->bindValue('srcId',      $this->currSrcId,   PDO::PARAM_INT);
+        $query->bindValue('lastModif',  $this->lastModif,   PDO::PARAM_INT);
+        
+        $rep = $query->execute();
+        
+        if(!$rep) {
+            die("Fail to add the project record to database: ".$this->name.' '.$this->language .' error : ' . $query->errorInfo());
             return FALSE;
         }
     }
@@ -211,28 +223,50 @@ class MseProject {
         $lang = $this->language;
         $this->lastModif = time();
         
-        $resp = mysql_query("SELECT * FROM Projects WHERE owner='$owner' AND name='$name' AND language='$lang' LIMIT 1");
-        $exist = mysql_fetch_array($resp);
+        $db = ConnectDB();
+        $query = $db->prepare("SELECT * FROM Projects WHERE owner= ? AND name= ? AND language= ? LIMIT 1");
+        $query->execute(array($owner, $name, $lang));
         
+        $exist = $query->fetch();
         if($exist) {
-            $query = sprintf("UPDATE Projects SET width='%s', height='%s', struct='%s', sources='%s', scripts='%s', objId='%s', srcId='%s', lastModif='%s', untranslated='%s' WHERE owner='%s' AND name='%s' AND language='%s'", 
-                $this->width, $this->height, 
-                mysql_real_escape_string(json_encode($this->struct)), 
-                mysql_real_escape_string(json_encode($this->sources)), 
-                mysql_real_escape_string(json_encode($this->scripts)), 
-                $this->currObjId, $this->currSrcId, $this->lastModif, 
-                $this->untranslated,
-                mysql_real_escape_string($owner),
-                mysql_real_escape_string($name),
-                mysql_real_escape_string($lang));
-            $resp = mysql_query($query);
-            if(!$resp) {
-                echo "Fail to update the project record: ".mysql_error();
+            $query = $db->prepare("UPDATE Projects 
+                                   SET width= :width, 
+                                       height= :height, 
+                                       struct= :struct, 
+                                       sources= :sources, 
+                                       scripts= :scripts, 
+                                       objId= :objId, 
+                                       srcId= :srcId, 
+                                       lastModif= :lastModif, 
+                                       untranslated= :untranslated
+                                   WHERE owner= :owner 
+                                      AND name= :name 
+                                      AND language= :language");
+                                            
+            $query->bindValue('width', $this->width, PDO::PARAM_INT);  
+            $query->bindValue('height', $this->height, PDO::PARAM_INT);  
+            $query->bindValue('struct', json_encode($this->struct), PDO::PARAM_STR);  
+            $query->bindValue('sources', json_encode($this->sources), PDO::PARAM_STR);  
+            $query->bindValue('scripts', json_encode($this->scripts), PDO::PARAM_STR);  
+            $query->bindValue('objId', $this->currObjId, PDO::PARAM_INT);  
+            $query->bindValue('srcId', $this->currSrcId, PDO::PARAM_INT);  
+            $query->bindValue('lastModif', $this->lastModif, PDO::PARAM_INT);  
+            $query->bindValue('untranslated', $this->untranslated, PDO::PARAM_INT);  
+            $query->bindValue('owner', $owner, PDO::PARAM_STR);  
+            $query->bindValue('name', $name, PDO::PARAM_STR);  
+            $query->bindValue('language', $lang, PDO::PARAM_STR);
+            
+            $rep = $query->execute();
+            
+            if(!$rep) {
+                $error = $query->errorInfo();
+                echo "Fail to update the project record: " . $error[2];
                 return FALSE;
             }
         }
         else {
-            echo "Fail to add the project record to database";
+            $error = $query->errorInfo();
+            echo "Fail : the project is not in database: " . $error[2];
             return FALSE;
         }
         return $this->lastModif;
@@ -264,15 +298,19 @@ class MseProject {
     }
     
     public static function getPjLanguages($pjName) {
-        if(!isset($_SESSION['uid'])) return;
+        $db = ConnectDB();
+        if(!isset($_SESSION['uid'])) 
+            return;
         $owner = $_SESSION['uid'];
-        $resp = mysql_query("SELECT language FROM Projects WHERE owner = '$owner' AND name = '$pjName' ORDER BY language");
-        if (!$resp) {
+        $query = $db->prepare("SELECT language FROM Projects WHERE owner = ? AND name = ? ORDER BY language");
+        $rep = $query->execute(array($owner, $pjName));
+        
+        if (!$rep) {
            return false;
         }
         else {
             $languages = array();
-            while ($row = mysql_fetch_assoc($resp)){
+            while ($row = $query->fetch()){
                 array_push($languages, $row['language']);
             }
             return $languages;

@@ -8,7 +8,7 @@
 
 header("content-type:text/html; charset=utf8");
 include 'project.php';
-include 'dbconn.php';
+include_once 'dbconn.php';
 
 session_start();
 if( !isset($_SESSION['uid']) )
@@ -24,7 +24,6 @@ else if( $_SERVER['REQUEST_METHOD'] === 'GET' &&
         $pj = $_SESSION[$pjid];
         // Wrong session data
         if($pj->getLanguage() != $langue){
-            ConnectDB();
             $pj = MseProject::getExistProject($pjName, $langue);
             $_SESSION[$pjid] = $pj;
 // TODO: If retrieve project fail

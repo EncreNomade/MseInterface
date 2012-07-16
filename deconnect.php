@@ -6,7 +6,7 @@
  * Fevrier 2012
  */
 
-include 'dbconn.php';
+include_once 'dbconn.php';
 session_start();
 
 if( $_SERVER['REQUEST_METHOD'] === 'GET' ) {

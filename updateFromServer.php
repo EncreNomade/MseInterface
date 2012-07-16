@@ -7,7 +7,7 @@
  */
  
 include 'project.php';
-include 'dbconn.php';
+include_once 'dbconn.php';
 session_start();
 
 ini_set("display_errors","1");

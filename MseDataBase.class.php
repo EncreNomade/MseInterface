@@ -8,11 +8,12 @@ class MseDataBase{
     private $db;
     
     private function __construct() {
+        require_once 'server_config.php';
         $dsn = 'mysql:host='.$dbConfig['server'].';dbname='.$dbConfig['db'];
         $user = $dbConfig['login'];
         $password = $dbConfig['mdp'];
         try {
-            $this->db = new PDO($dsn, $username, $password, $options);;
+            $this->db = new PDO($dsn, $user, $password);
         }
         catch (PDOException $e) {
             die('Erreur : ' . $e->getMessage());

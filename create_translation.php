@@ -7,7 +7,6 @@
  */
  
 include 'project.php';
-include 'dbconn.php';
 session_start();
 
 ini_set("display_errors","1");
@@ -25,7 +24,6 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' &&
     $pjid = $pjName."_".$_POST['lang'];
     // If project doesn't exist in session, abondon
     if( array_key_exists($pjid, $_SESSION) ) {
-        ConnectDB();
         $currPj = $_SESSION[$pjid];
         $newlang = $_POST['newLang'];
         $translatedPj = $currPj->createTranslation($newlang);
