@@ -3,9 +3,9 @@
  * Encre Nomade
  *
  * Author: Lv Yuchang
- * Copyright 2011, MseEdition
+ * Copyright, Encre Nomade
  *
- * Date: 10/2011
+ * Date of creation: Octobre 2011
  */
  
 

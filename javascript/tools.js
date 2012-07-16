@@ -1,3 +1,14 @@
+/*!
+ * MseInterface library
+ * Encre Nomade
+ *
+ * Author: LING Huabin - lphuabin@gmail.com
+           Florent Baldino
+           Arthur Brongniart
+ * Copyright, Encre Nomade
+ */
+
+
 var tag = {
 	drawstarted: false
 };
@@ -505,15 +516,6 @@ SourceManager.prototype = {
 			//container.configurable({text:true,stroke:true});
 
 			return container;
-		/*case 'text': case 'obj':
-			var res = this.sources[id].clone(true);
-			res.children('.del_container, .ctrl_pt').remove();
-			res.deletable();
-			if(type != 'obj')
-				res.children('.del_container').css({
-					'position': 'relative',
-					'top': 2-res.height()+'px'});
-			return res;*/
 		case 'game':
 			var game = $('<div class="game" name="'+id+'">');
 			game.deletable();
@@ -3330,18 +3332,6 @@ function objChoosed(e){
     curr.chooser.choosed($(this));
     curr.chooser = null;
 }
-
-/*
-todo
-
-- fusionner fonction glue
-- afficher rectangle dans le svg
-- gerer les milieux ( de milieu a milieu )
-
-
-
-
-*/
 
 
 // magnetisme

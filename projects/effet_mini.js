@@ -1,3 +1,13 @@
+/*!
+ * Mse Graphic Effects Library (version mini)
+ * Encre Nomade
+ *
+ * Author: LING Huabin - lphuabin@gmail.com
+ * Copyright, Encre Nomade
+ *
+ * Date de creation: Fevrier 2012
+ */
+
 // effet : affectation des effets sur le texte ou l'image
 (function( mse ){
 

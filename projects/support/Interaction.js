@@ -1,5 +1,13 @@
-// Plugin jQuery of Interaction for MSEdition
-// Ref: http://docs.jquery.com/Plugins/Authoring
+/*!
+ * Plugin jQuery of Interaction
+ * Encre Nomade
+ *
+ * Author: LING Huabin - lphuabin@gmail.com
+ * Copyright, Encre Nomade
+ *
+ * Date de creation: 18/02/2011
+ * Ref: http://docs.jquery.com/Plugins/Authoring
+ */
 
 // Callback
 

@@ -1,9 +1,13 @@
 <?php
-/*
- * Author: LING Huabin @Pandamicro
- * Mail: lphuabin@gmail.com
- * Site: pandamicro.co.cc
- * Octobre 2011
+/*!
+ * MseInterface: Project class
+ * Encre Nomade
+ *
+ * Author: LING Huabin - lphuabin@gmail.com
+           Florent Baldino
+ * Copyright, Encre Nomade
+ *
+ * Date de creation: Octobre 2011
  */
 
 ini_set("display_errors","1");

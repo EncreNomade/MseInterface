@@ -1,3 +1,11 @@
+/*!
+ * Tools
+ * Encre Nomade
+ *
+ * Author: LING Huabin - lphuabin@gmail.com
+ * Copyright, Encre Nomade
+ */
+
 function angleForLine(x1, y1, x2, y2) {
 	var angle = 0;
 	var dx = x2 - x1;

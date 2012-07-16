@@ -1,11 +1,11 @@
 /*!
- * Encre Nomade Events Dispatch Library
+ * Events Dispatch Library
  * Encre Nomade
  *
  * Author: LING Huabin - lphuabin@gmail.com
- * Copyright 2012, Encre Nomade
+ * Copyright, Encre Nomade
  *
- * Date creation: 08/06/2012
+ * Date of creation: 08/06/2012
  */
 
 

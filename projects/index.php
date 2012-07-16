@@ -1,9 +1,12 @@
 <?php
-/*
- * Author: LING Huabin @Pandamicro
- * Mail: lphuabin@gmail.com
- * Site: pandamicro.co.cc
- * Octobre 2011
+/*!
+ * Book Reader index page
+ * Encre Nomade
+ *
+ * Author: LING Huabin - lphuabin@gmail.com
+ * Copyright, Encre Nomade
+ *
+ * Date of creation: Octobre 2011
  */
 
 header("content-type:text/html; charset=utf8");
