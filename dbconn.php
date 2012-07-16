@@ -1,4 +1,13 @@
 <?php
+/*!
+ * MseInterface: Database connection and manipulation
+ * Encre Nomade
+ *
+ * Author: LING Huabin - lphuabin@gmail.com
+ * Copyright, Encre Nomade
+ *
+ * Date de creation: Octobre 2011
+ */
 
 function ConnectDB(){
     require('server_config.php');

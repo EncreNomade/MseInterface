@@ -1,10 +1,11 @@
 /*
- * Mse 2D Game Engine
+ * 2D Game Graphic Engine
  * Encre Nomade
  *
- * Copyright 2011, MseEdition
+ * Author: LING Huabin - lphuabin@gmail.com
+ * Copyright, Encre Nomade
  *
- * Date: 25/11/2011
+ * Date of creation: 25/11/2011
  */
  
 

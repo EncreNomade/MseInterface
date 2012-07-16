@@ -1,3 +1,13 @@
+/*!
+ * GUI of MseInterface library
+ * Encre Nomade
+ *
+ * Author: LING Huabin - lphuabin@gmail.com
+           Florent Baldino
+           Arthur Brongniart
+ * Copyright, Encre Nomade
+ */
+
 var msgCenter =(function(){
     // private
     var $msgCenter =$('<div id="msgCenter"><ul></ul></div>');
@@ -351,63 +361,63 @@ function createPageDialog() {
 
 // edite speack dialog
 function editeSpeakDialog( speak ){
-			//  search the asoociate speaker
-			var speaker = speak.attr( "data-who" );
-			for( var i in srcMgr.sources )
-				if( srcMgr.sourceType( i ) == "speaker" && srcMgr.getSource( i ).name == speaker )
-					break;
-			var spkObj = srcMgr.getSource( i );
+	//  search the asoociate speaker
+	var speaker = speak.attr( "data-who" );
+	for( var i in srcMgr.sources )
+		if( srcMgr.sourceType( i ) == "speaker" && srcMgr.getSource( i ).name == speaker )
+			break;
+	var spkObj = srcMgr.getSource( i );
+	
+	// setUp the list of moods
+	var map = spkObj.portrait;
+	var comboBox = $( '<div style="width:100px;height:180px;overflow-y:auto;">' );
+	for( var i in map ){
+		var option = $( '<div style="background:none;"><img src="' +  spkObj.getMoodUrl( i ) + '" width:"30" height="30" style="width:30px; height:30px;"/>'+i+'</div>' );
+		option.click( function( e ){
+			var mood = $( e.currentTarget ).text();
+			speak.attr( "data-mood" , mood );
+			speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( mood ) );
+            if(spkObj.portrait[mood]) 
+                speak.children("img").attr( "name" , spkObj.portrait[mood]);
+            else speak.children("img").attr( "name" , "none");
 			
-			// setUp the list of moods
-			var map = spkObj.portrait;
-			var comboBox = $( '<div style="width:100px;height:180px;overflow-y:auto;">' );
-			for( var i in map ){
-				var option = $( '<div style="background:none;"><img src="' +  spkObj.getMoodUrl( i ) + '" width:"30" height="30" style="width:30px; height:30px;"/>'+i+'</div>' );
-				option.click( function( e ){
-					var mood = $( e.currentTarget ).text();
-					speak.attr( "data-mood" , mood );
-					speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( mood ) );
-                    if(spkObj.portrait[mood]) 
-                        speak.children("img").attr( "name" , spkObj.portrait[mood]);
-                    else speak.children("img").attr( "name" , "none");
-					
-					updateHightlight( mood );
-				});
-				comboBox.append( option );
-			}
-			updateHightlight( speak.attr( "data-mood") );
-			
-			function updateHightlight( mood ){
-				var c = comboBox.find( "div" );
-				for( var i =0 ; i < c.length ; i ++  ){
-					var option = $( c[ i ] );
-					if( option.text() == mood )
-						option.css( "background" , "blue" );
-					else
-						option.css( "background" , "none" );
-				}
-			}
-			
-			dialog.showPopup('éditer interlocuteur', 340, 250 , "ok");
-			dialog.main.append( comboBox  );
-			
-			
-			var initialMood = speak.attr("data-mood" );
-			dialog.confirm.click(function() {
-				var actualMood = speak.attr("data-mood" );
-				if( initialMood != actualMood )
-					CommandMgr.executeCmd( new ModifySpeakMoodCmd( speak , actualMood  , spkObj.getMoodUrl( actualMood ) ,  initialMood , spkObj.getMoodUrl( initialMood ) ) );
-				
-				dialog.close();
-			});
-			dialog.annuler.click(function() {
-				var actualMood = speak.attr("data-mood" );
-				if( initialMood != actualMood ){
-					speak.attr( "data-mood" , initialMood );
-					speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( initialMood ) );
-				}
-			});
+			updateHightlight( mood );
+		});
+		comboBox.append( option );
+	}
+	updateHightlight( speak.attr( "data-mood") );
+	
+	function updateHightlight( mood ){
+		var c = comboBox.find( "div" );
+		for( var i =0 ; i < c.length ; i ++  ){
+			var option = $( c[ i ] );
+			if( option.text() == mood )
+				option.css( "background" , "blue" );
+			else
+				option.css( "background" , "none" );
 		}
+	}
+	
+	dialog.showPopup('éditer interlocuteur', 340, 250 , "ok");
+	dialog.main.append( comboBox  );
+	
+	
+	var initialMood = speak.attr("data-mood" );
+	dialog.confirm.click(function() {
+		var actualMood = speak.attr("data-mood" );
+		if( initialMood != actualMood )
+			CommandMgr.executeCmd( new ModifySpeakMoodCmd( speak , actualMood  , spkObj.getMoodUrl( actualMood ) ,  initialMood , spkObj.getMoodUrl( initialMood ) ) );
+		
+		dialog.close();
+	});
+	dialog.annuler.click(function() {
+		var actualMood = speak.attr("data-mood" );
+		if( initialMood != actualMood ){
+			speak.attr( "data-mood" , initialMood );
+			speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( initialMood ) );
+		}
+	});
+}
 		
 
 // Add step dialog

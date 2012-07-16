@@ -1,3 +1,13 @@
+/*!
+ * GUI of Book Reader
+ * Encre Nomade
+ *
+ * Author: LING Huabin - lphuabin@gmail.com
+ * Copyright, Encre Nomade
+ *
+ * Date of creation: 23/06/2012
+ */
+
 var msgCenter =(function(){
     // private
     var messageList = false;

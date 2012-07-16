@@ -1,8 +1,7 @@
 <?php
 /*
- * Author: LING Huabin @Pandamicro
+ * Author: LING Huabin @pandamicro, Encre Nomade
  * Mail: lphuabin@gmail.com
- * Site: pandamicro.co.cc
  * Janvier 2012
  */
 

@@ -1,9 +1,12 @@
 <?php
-/*
- * Author: EncreNomade
- * Mail: lphuabin@gmail.com
- * Site: pandamicro.co.cc
- * Juin 2012
+/*!
+ * MseInterface API: Create new translation copy
+ * Encre Nomade
+ *
+ * Author: Florent Baldino, EncreNomade
+ * Copyright, Encre Nomade
+ *
+ * Date de creation: Juin 2012
  */
  
 include 'project.php';

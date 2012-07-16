@@ -1,9 +1,12 @@
 <?php
-/*
- * Author: LING Huabin @Pandamicro
- * Mail: lphuabin@gmail.com
- * Site: pandamicro.co.cc
- * Mars 2012
+/*!
+ * MseInterface API: Clear all sources of a project
+ * Encre Nomade
+ *
+ * Author: LING Huabin - lphuabin@gmail.com
+ * Copyright, Encre Nomade
+ *
+ * Date de creation: Mars 2012
  */
  
  include 'project.php';
