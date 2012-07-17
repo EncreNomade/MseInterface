@@ -1069,17 +1069,6 @@ function staticConfig(e){e.preventDefault();e.stopPropagation();showParameter($(
 // parse the raw texte,  match the speaker balise
 //use generateLines for creating object containing one text line, 
 
-function expressTrad(){
-	
-	var metas = ArticleFormater.parseMetaText($( ".article" ));
-	var a = ArticleFormater.formate( $( ".article" ), metas )
-	
-	var e  = ArticleFormater.reverse( a , $( ".article" ), metas )
-	
-	$( ".article" ).children().remove();
-	
-	$( ".article" ).append( e );
-}
 
 function generateSpeaks(content, font, width, lineHeight){
 	
@@ -1541,6 +1530,17 @@ function dropToWikiElemZone(e) {
 
 
 
+function expressTrad(){
+	
+	var metas = ArticleFormater.parseMetaText($( ".article" ));
+	var a = ArticleFormater.formate( $( ".article" ), metas )
+	
+	var e  = ArticleFormater.reverse( a , $( ".article" ), metas )
+	
+	$( ".article" ).children().remove();
+	
+	$( ".article" ).append( e );
+}
 var ArticleFormater = function() {
 	
 	var correspondanceType = { 	'audiolink' : 'audio' , 
@@ -1723,27 +1723,34 @@ formate : function( article , meta ){
 			s += "[ "+line.attr( "data-who")+" : "+line.attr( "data-mood")+" ]" + this.formate( line , meta )+"[end]\n";
 			wrapprefix = true;
 		}
-		else continue;
+		else {
+		    wrapprefix = false;
+		    continue;
+		}
 	}
 	
 	
 	return s;
 	function wrap( obj ){
+    	var r = obj.children("p").text();
+    	if(r.trim() == "") {r = r.trim();}
 		
-		var charge = [];
+		var charge = [], balise;
 		var id = obj.attr( "id" );
 		for( var i = 0 ; i< meta.length ; i ++ )
 			if( meta[ i ].objId == id )
 				if( meta[ i ].format == "link"){
 					// start balise
-					charge.push( { index : meta[ i ].index , b : chart.linkOpenA + " "+i + "  " + meta[i].link.type + " sur la source " + meta[i].link.id + chart.linkOpenB } );
+					balise = chart.linkOpenA + " "+i + "  " + meta[i].link.type + " sur la source " + meta[i].link.id + chart.linkOpenB;
+					charge.push( { index : meta[ i ].index , b : balise } );
 					// close balise
-					charge.unshift( { index : meta[ i ].index + meta[ i ].keyword.length , b : chart.linkCloseA  + " "+i+" " + chart.linkCloseB } );
+					balise = chart.linkCloseA  + " "+i+" " + chart.linkCloseB;
+					charge.unshift( { index : meta[ i ].index + meta[ i ].keyword.length , b : balise } );
 				}else {
 					// balise insertion
-					charge.push( { index : meta[ i ].index , b : chart.inserOpenA + " "+i + "  " + meta[i].link.type + " sur la source " + meta[i].link.id + chart.inserOpenB } );
+					balise = chart.inserOpenA + " "+i + "  " + meta[i].link.type + " sur la source " + meta[i].link.id + chart.inserOpenB;
+					charge.push( { index : meta[ i ].index , b : balise } );
 				}
-		var r = obj.children("p").text();
 		
 		for( var i = 0 ; i < charge.length ; i ++ ){
 			var avant = r.substring( 0 , charge[i].index );
@@ -1863,21 +1870,26 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		
 		var e = Math.floor( meta[ i ].offset / table[ table.length-1 ].cb * table.length );  // estimation
 		
-		while( meta[ i ].offset < table[ e ].ca )    // ajustement
+		while( meta[ i ].offset < table[ e ].ca  )    // ajustement
 			e --;
-		while( meta[ i ].offset >= table[ e ].cb && ( table[ e ].l > 0 || table[ e ].ca == meta[ i ].offset ) )	  // ajustement
+		while( meta[ i ].offset >= table[ e ].cb  )	  // ajustement
 			e ++;
 		
 		var new_obj;
 		var new_index;
 		var new_keyword;
 		
-		if( i == 21 ){
-			console.log( meta[ i ] );
-			console.log( "key : "+meta[ i ].keyword );
-			console.log( meta[ i ].offset );
+		if( meta[ i ].link.type == "image" ){
+			
+			console.log( table[ e -1] );
 			console.log( table[ e ] );
+			console.log( table[ e +1] );
+			console.log( meta[ i ].offset );
+			
+			
 		}
+		
+		
 		// rattrapage d'un saut d'origine inconnue
 		/*
 		var text = table[ e ].obj.children( "p" ).text();

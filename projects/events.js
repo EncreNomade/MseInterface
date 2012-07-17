@@ -239,6 +239,7 @@ mse.EventDelegateSystem.prototype = {
 	eventNotif: function(evtName, evt) {
 	    var res = {prevent: false, success: false};
         
+		
 		var arr = this.listeners[evtName];
 		if(!arr) return res;
 		
