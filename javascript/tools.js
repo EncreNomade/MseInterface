@@ -687,11 +687,14 @@ SourceManager.prototype = {
     rename: function(id, newName) {
         this.updateSource(id, newName);
         var t = this.sources[newName].type;
+        // Update expo
         if(t == 'image') this.expos[newName].children('img').attr('name',newName);
         else {
+            // Update data
             if(t == "wiki" || t == "anime" || t == "speaker" ) {
                 this.sources[newName].data.name = newName;
             }
+            // Update expo resume text
             var chaine = srcMgr.expos[newName].children("p").html().split(/: /);
             chaine = chaine[0]+ ": "+ this.expos[newName].data("srcId");
             this.expos[newName].children('p').replaceWith("<p>"+chaine+"</p>");

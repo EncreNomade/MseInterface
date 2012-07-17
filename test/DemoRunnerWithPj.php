@@ -11,7 +11,7 @@
 
 header("content-type:text/html; charset=utf8");
 include '../project.php';
-include '../dbconn.php';
+include_once '../dbconn.php';
 
 session_start();
 
@@ -63,30 +63,29 @@ $_SESSION["unittest_unittest"] = $pj;
 
 <script type="text/javascript">
 (function() {
-  var jasmineEnv = jasmine.getEnv();
-  jasmineEnv.updateInterval = 1000;
+    var jasmineEnv = jasmine.getEnv();
+    jasmineEnv.updateInterval = 1000;
 
-  var htmlReporter = new jasmine.HtmlReporter();
+    var htmlReporter = new jasmine.HtmlReporter();
 
-  jasmineEnv.addReporter(htmlReporter);
+    jasmineEnv.addReporter(htmlReporter);
 
-  jasmineEnv.specFilter = function(spec) {
-    return htmlReporter.specFilter(spec);
-  };
+    jasmineEnv.specFilter = function(spec) {
+        return htmlReporter.specFilter(spec);
+    };
 
-  var currentWindowOnload = window.onload;
+    var currentWindowOnload = window.onload;
 
-  window.onload = function() {
-    if (currentWindowOnload) {
-      currentWindowOnload();
+    window.onload = function() {
+        if (currentWindowOnload) {
+            currentWindowOnload();
+        }
+        execJasmine();
+    };
+
+    function execJasmine() {
+        jasmineEnv.execute();
     }
-    execJasmine();
-  };
-
-  function execJasmine() {
-    jasmineEnv.execute();
-  }
-
 })();
 </script>
 

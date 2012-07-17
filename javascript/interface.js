@@ -994,8 +994,6 @@ function addImageElem(id, data, page, step) {
     container.append(img);
     container.deletable();
 
-
-
     // Resize
     var ratiox = cw/w;
     var ratioy = ch/h;

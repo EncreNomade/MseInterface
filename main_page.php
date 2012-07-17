@@ -301,7 +301,6 @@ function retrieveLocalInfo(pjsave) {
 	// Update local with server storage
 	if(norecord || (lastModLocal < lastModServer)) {
 	    $.get("updateFromServer.php", {'pjName':pjName, 'lang':pjLanguage}, function(msg){
-	        //alert(msg);
 	        var pjsave = JSON.parse(msg);
 	        if(pjsave) {
 	            //saveToLocalStorage(pjName, msg);

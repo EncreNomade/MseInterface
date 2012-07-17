@@ -439,7 +439,7 @@ $.extend(DelScriptCmd.prototype, {
     undo: function(){
         if(this.state != "SUCCESS") return;
         
-        scriptMgr.addScript(this.name,this.src,this.srcType,this.action,this.target,this.reaction,this.immediate,this.supp);
+        scriptMgr.addScript(this.name, this.src, this.srcType, this.action, this.target, this.reaction, this.immediate ,this.supp);
         this.state = "CANCEL";
     },
 	toString : function(){
