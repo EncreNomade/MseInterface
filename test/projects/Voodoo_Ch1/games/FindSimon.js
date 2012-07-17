@@ -1,4 +1,3 @@
-// Game : Find Simon
 function angleFor2Point(p1, p2) {
 	var angle = 0;
 	var dx = p2.x - p1.x;
@@ -162,17 +161,18 @@ var NPC = function(sprite, course, dir) {
     };
 };
 
+
 var FindSimon = function() {
-    mse.Game.call(this);
+    mse.Game.call(this, {fillback:true});
     this.msg = {
         "INIT": "Clique pour aider Simon à échapper à la Meute.",//Utilise les flèches de direction pour diriger Simon dans le parc.
-        "WIN": "Bravo!!! Simon est sauvé."
+        "WIN": "Bravo!!! Tu as gagné."
     };
     this.state = "INIT";
     
-    mse.src.addSource('parc', 'Parc/Parc.jpg', 'img', true);
-    mse.src.addSource('perso_parc', 'Parc/personnages.png', 'img', true);
-    mse.src.addSource('notice_parc', 'Parc/points-persos.png', 'img', true);
+    mse.src.addSource('parc', 'games/Parc.jpg', 'img', true);
+    mse.src.addSource('perso_parc', 'games/personnages.png', 'img', true);
+    mse.src.addSource('notice_parc', 'games/points-persos.png', 'img', true);
     //var parc = new mse.Image(null, {pos:[0, 0]}, 'parc');
     var mechants = new Array();
     mechants[0] = new mse.Sprite(null, {}, 'perso_parc', 40,37, 0,37,280,37);
@@ -215,11 +215,6 @@ var FindSimon = function() {
         [[0],[180],[],[90,-90]]
     ];
     
-    // Init NPCs
-    this.npc = new Array();
-    for(var i = 0; i < 4; i++) {
-        this.npc[i] = new NPC(mechants[i], courses[i], dirs[i]);
-    }
     // Init Simon
     this.simon = new mse.Sprite(null, {}, 'perso_parc', 40,37, 0,0,280,37);
     this.simonrun = new mse.FrameAnimation(this.simon, [0,1,2,3,4,5], 0, 7);
@@ -227,13 +222,30 @@ var FindSimon = function() {
     // Spark frequence
     this.spark = 0;
     
+    // Vitural pad
+    if(MseConfig.iOS) {
+        mse.src.addSource('vPadBase', './UI/button/padbase.png', 'img', true);
+        mse.src.addSource('vPadHandler', './UI/button/padhandler.png', 'img', true);
+        this.padBase = new mse.Image(null, {pos:[46, this.height-103],size:[48,48],globalAlpha:0.6}, 'vPadBase');
+        this.padHandler = new mse.Image(null, {pos:[30, this.height-119],size:[80,80],globalAlpha:0.6}, 'vPadHandler');
+        this.touchZone = [30, this.height-119, 80, 80];
+    }
+    
     this.init = function() {
+		// Init NPCs
+	    this.npc = new Array();
+	    for(var i = 0; i < 4; i++) {
+	        this.npc[i] = new NPC(mechants[i], courses[i], dirs[i]);
+	    }
         this.npc[3].v = 3;
         
         this.simondir = 0;
         this.simonrun.stop();
         this.simonstand.start();
         this.onmove = false;
+        this.lazylose = false;
+        this.circleR = 0;
+        this.detectR = 50;
         // Init Parc draw parameters
         this.sx = this.sy = this.sw = this.sh = this.dx = this.dy = this.dw = this.dh = 0;
         
@@ -243,31 +255,42 @@ var FindSimon = function() {
         this.disx = this.disy = 0;
     	
     	// Key event listener
-    	mse.root.evtDistributor.addListener('keydown', this.movecb, true, this);
-    	mse.root.evtDistributor.addListener('keyup', this.moveovercb, true, this);
-    	if(MseConfig.mobile){
-    	    mse.root.evtDistributor.addListener('gestureUpdate', this.touchMovecb, true, this);
-    	    mse.root.evtDistributor.addListener('gestureEnd', this.moveovercb, true, this);
+    	this.getEvtProxy().addListener('keydown', this.movecb, true, this);
+    	this.getEvtProxy().addListener('keyup', this.moveovercb, true, this);
+    	if(MseConfig.iOS){
+    	    this.getEvtProxy().addListener('gestureStart', this.touchStartcb, true, this);
+    	    this.getEvtProxy().addListener('gestureUpdate', this.touchMovecb, true, this);
+    	    this.getEvtProxy().addListener('gestureEnd', this.moveovercb, true, this);
     	}
+    };
+    this.mobileLazyInit = function() {
+        // Position of parc
+        this.sp = new mse.Point2(225,725);
+        this.pos = new mse.Point2(this.width/2-this.sp.x,this.height/2-this.sp.y);
+        this.disx = this.disy = 0;
     };
     
     this.draw = function(ctx) {
         ctx.save();
-        ctx.translate(this.offx, this.offy);
-		// Clip masque for NPCs
-		ctx.beginPath();
-		ctx.moveTo(0,0);
-		ctx.lineTo(this.width-5,0);
-		ctx.lineTo(this.width-5,this.height-5);
-		ctx.lineTo(0,this.height-5);
-		ctx.closePath();
-		ctx.clip();
+		var parc = mse.src.getSrc('parc');
+		var scale = parc.width/1920;
 		// Background
-		ctx.drawImage(mse.src.getSrc('parc'), this.sx, this.sy, this.sw, this.sh, this.dx, this.dy, this.dw, this.dh);
+		ctx.drawImage(parc, this.sx*scale, this.sy*scale, this.sw*scale, this.sh*scale, this.dx, this.dy, this.dw, this.dh);
 		// Simon
 		ctx.save();
 		ctx.translate(this.width/2, this.height/2);
 		ctx.rotate(this.simondir*Math.PI/180);
+		if(this.onmove) {
+		    // Draw circle of detection around simon
+		    ctx.globalAlpha = (this.detectR - this.circleR) / 50;
+		    ctx.fillStyle = "rgba(255,255,255,0.6)";
+		    ctx.strokeStyle = "#fff";
+		    ctx.beginPath();
+		    ctx.arc(0, 0, this.circleR, 0, Math.PI*2, true); 
+		    ctx.closePath();
+		    ctx.fill();
+		    ctx.stroke();
+		}
 		ctx.translate(-20,-18);
 		this.simon.draw(ctx);
 		ctx.restore();
@@ -292,9 +315,19 @@ var FindSimon = function() {
 		}
 		else this.spark++;
 		ctx.restore();
+		if(MseConfig.iOS) {
+		    this.padBase.draw(ctx);
+		    this.padHandler.draw(ctx);
+		    ctx.globalAlpha = 1;
+		}
 	};
 	
 	this.logic = function(delta) {
+	    if(this.lazylose) {
+	        this.losecount--;
+	        if(this.losecount == 0) this.lose();
+	        return;
+	    }
 		// Parc visible part
 		if(this.pos.x > 0) {
 		    this.sx = 0;
@@ -324,24 +357,28 @@ var FindSimon = function() {
 		// Simon
 		this.pos.x += this.disx;
 		this.pos.y += this.disy;
-		// Ignore thé movement if collision
+		// Ignore the movement if collision
 		if(this.colliDetect()) {this.pos.x -= this.disx; this.pos.y -= this.disy;}
+		if(this.onmove) {
+		    if(this.circleR < this.detectR) this.circleR += 2;
+		    else this.circleR = 0;
+		}
 		
 		this.sp.x = this.width/2 - this.pos.x;
 		this.sp.y = this.height/2 - this.pos.y;
 		
 		// Win check
 		if(Math.abs(this.sp.x - 1690) <= 60 && Math.abs(this.sp.y - 290) <= 10) {
-		    mse.root.evtDistributor.removeListener('keydown', this.movecb);
-		    mse.root.evtDistributor.removeListener('keyup', this.moveoverc);
-		    if(MseConfig.mobile){
-		        mse.root.evtDistributor.removeListener('gestureUpdate', this.touchMovecb);
-		        mse.root.evtDistributor.removeListener('gestureEnd', this.moveovercb);
+		    this.getEvtProxy().removeListener('keydown', this.movecb);
+		    this.getEvtProxy().removeListener('keyup', this.moveoverc);
+		    if(MseConfig.iOS){
+		        this.getEvtProxy().removeListener('gestureStart', this.touchStartcb);
+		        this.getEvtProxy().removeListener('gestureUpdate', this.touchMovecb);
+		        this.getEvtProxy().removeListener('gestureEnd', this.moveovercb);
 		    }
 		    this.state = "WIN";
 		    this.end();
 		}
-		
 		// NPCs
 		for(var i = 0; i < 4; i++) {
 		    var n = this.npc[i];
@@ -352,16 +389,20 @@ var FindSimon = function() {
 		    var angle = angleFor2Point(n.pos,this.sp);
 		    var adis = Math.abs(angle-n.direction);
 		    if(adis > 180) adis = 360-adis;
-		    if(dis <= 170 && adis <= n.visiona) {
+		    if(dis < 50 || (dis <= 170 && adis <= n.visiona)) {
 		    // Simon is found!!!
+		        n.direction = angle;
 		        // Remove Key event listener
-		        mse.root.evtDistributor.removeListener('keydown', this.movecb);
-		        mse.root.evtDistributor.removeListener('keyup', this.moveovercb);
-		        if(MseConfig.mobile){
-		            mse.root.evtDistributor.removeListener('gestureUpdate', this.touchMovecb);
-		            mse.root.evtDistributor.removeListener('gestureEnd', this.moveovercb);
+		        this.getEvtProxy().removeListener('keydown', this.movecb);
+		        this.getEvtProxy().removeListener('keyup', this.moveovercb);
+		        if(MseConfig.iOS){
+		            this.getEvtProxy().removeListener('gestureStart', this.touchStartcb);
+		            this.getEvtProxy().removeListener('gestureUpdate', this.touchMovecb);
+		            this.getEvtProxy().removeListener('gestureEnd', this.moveovercb);
 		        }
-		        this.lose();
+		        this.lazylose = true;
+		        this.moveover();
+		        this.losecount = 40;
 		    }
 		}
 	};
@@ -411,40 +452,52 @@ var FindSimon = function() {
 	    }
 	    if(valid && !this.onmove) {
 	        this.onmove = true;
+	        this.circleR = 0;
 	        this.simonrun.start();
 	        this.simonstand.stop();
 	    }
 	};
+	this.touchStart = function(e) {
+	    if(inrect(e.offsetX, e.offsetY, this.touchZone))
+	        this.touchValid = true;
+	    this.disx = 0; this.disy = 0;
+	    this.onmove = false;
+	};
 	this.touchMove = function(e) {
-	    var valid = true;
-	    var start = {x:e.listX[0],y:e.listY[0]};
-	    var end = {x:e.offsetX,y:e.offsetY};
-	    var a = angleFor2Point(start, end);
-	    if((a >= 0 && a <= 15) || (a <= 0 && a >= -15)){
-	        //Left
-	        this.disx = -4; this.disy = 0;
-	        this.simondir = 0;
-	    }
-	    else if(a >= 75 && a <= 105) {
-	        // Down
-	        this.disy = -4; this.disx = 0;
-	        this.simondir = 90;
-	    }
-	    else if(a >= 165 || a <= -165) {
-	        // Left
-	        this.disx = 4; this.disy = 0;
-	        this.simondir = 180;
-	    }
-	    else if(a <= -75 && a >= -105) {
-	        // Up
-	        this.disy = 4; this.disx = 0;
-	        this.simondir = -90;
-	    }
-	    else valid = false;
-	    if(valid && !this.onmove) {
-	        this.onmove = true;
-	        this.simonrun.start();
-	        this.simonstand.stop();
+	    if(this.touchValid) {
+	        var ox = this.touchZone[0]+40, oy = this.touchZone[1]+40;
+	        var a = mseAngleForLine(ox, oy, e.offsetX, e.offsetY);
+	        var dis = distance2Pts(ox, oy, e.offsetX, e.offsetY);
+	        if(dis < 40) this.padHandler.setPos(e.offsetX-40, e.offsetY-40);
+	        else this.padHandler.setPos(ox+40/dis*(e.offsetX-ox)-40, oy+40/dis*(e.offsetY-oy)-40);
+	        
+	        var valid = true;
+	        if((a >= 0 && a <= 15) || (a <= 0 && a >= -15)){
+	            //Left
+	            this.disx = -4; this.disy = 0;
+	            this.simondir = 0;
+	        }
+	        else if(a >= 75 && a <= 105) {
+	            // Down
+	            this.disy = -4; this.disx = 0;
+	            this.simondir = 90;
+	        }
+	        else if(a >= 165 || a <= -165) {
+	            // RIGHT
+	            this.disx = 4; this.disy = 0;
+	            this.simondir = 180;
+	        }
+	        else if(a <= -75 && a >= -105) {
+	            // Up
+	            this.disy = 4; this.disx = 0;
+	            this.simondir = -90;
+	        }
+	        else valid = false;
+	        if(valid && !this.onmove) {
+	            this.onmove = true;
+	            this.simonrun.start();
+	            this.simonstand.stop();
+	        }
 	    }
 	};
 	this.moveover = function(e) {
@@ -452,122 +505,14 @@ var FindSimon = function() {
 	    this.onmove = false;
 	    this.simonrun.stop();
 	    this.simonstand.start();
+	    
+	    this.touchValid = false;
+	    if(this.padHandler) this.padHandler.setPos(this.touchZone[0], this.touchZone[1]);
 	};
 	// Init key listeners
 	this.movecb = new mse.Callback(this.move, this);
 	this.moveovercb = new mse.Callback(this.moveover, this);
+	this.touchStartcb = new mse.Callback(this.touchStart, this);
 	this.touchMovecb = new mse.Callback(this.touchMove, this);
 };
 extend(FindSimon, mse.Game);
-
-
-
-
-
-var RatGame = function() {
-	mse.Game.call(this);
-	
-	this.offx = 220; this.offy = 0;
-	this.width = 360; this.height = 600;
-	
-	mse.src.addSource('ratImg', 'rat.png', 'img');
-	var ratSit = new mse.Sprite(this,{pos:[30,this.height-80]}, 'ratImg', 80,50, 0,0,400,100);
-	var ratHead = new mse.Sprite(this,{pos:[20,this.height-96]}, 'ratImg', 39,34, 400,0,39,34);
-	var ratHang = new mse.Sprite(this, {pos:[45,this.height-80]}, 'ratImg', 40,113, 0,101,400,113);
-	mse.src.addSource('sacImg', 'sac.png', 'img');
-	var sac = new mse.Image(this, {pos:[this.width-160,20], insideRec:[60,40,60,60]}, 'sacImg');
-	var pochet = new mse.Sprite(this, {pos:[this.width-100,175]}, 'sacImg', 60,40, 60,155,60,40);
-	
-	var seq = [0,1,2,3,4,5,6,7,8,9];
-	var sitAnim = new mse.FrameAnimation(ratSit, seq, 0, 2);
-	var hangAnim = new mse.FrameAnimation(ratHang, seq, 0, 2);
-	
-	this.dragStart = function(e) {
-		var x = e.offsetX - this.offx;
-		var y = e.offsetY - this.offy;
-		if(x>30 && x<110 && y>this.height-80 && y<this.height-30) {
-			this.sit = false;
-			ratHang.offx = x-20; ratHang.offy = y-14;
-			
-			sitAnim.stop();
-			hangAnim.start();
-		}
-	};
-	this.dragMove = function(e) {
-		var x = e.offsetX - this.offx-20;
-		var y = e.offsetY - this.offy-14;
-		ratHang.offx = x; ratHang.offy = y;
-	};
-	this.dragEnd = function(e) {
-		var x = e.offsetX - this.offx;
-		var y = e.offsetY - this.offy;
-		if(this.sit) return;
-		if(sac.inObj(e.offsetX, e.offsetY)) {
-			var drop = new mse.KeyFrameAnimation(ratHang, {
-					frame	: [0, 25, 35],
-					pos		: [[x, y], [sac.offx+70,sac.offy+125], [sac.offx+70,sac.offy+125]]
-				}, 1);
-			drop.evtDeleg.addListener('end', new mse.Callback(this.end, this));
-			drop.start();
-			this.droped = true;
-			mse.root.evtDistributor.removeListener('gestureStart', cbStart);
-			mse.root.evtDistributor.removeListener('gestureUpdate', cbMove);
-			mse.root.evtDistributor.removeListener('gestureEnd', cbEnd);
-		}
-		else {
-			this.sit = true;
-			hangAnim.stop();
-			sitAnim.start();
-		}
-	};
-	
-	var cbStart = new mse.Callback(this.dragStart, this);
-	var cbMove = new mse.Callback(this.dragMove, this);
-	var cbEnd = new mse.Callback(this.dragEnd, this);
-	
-	this.init = function() {
-		mse.root.evtDistributor.addListener('gestureStart', cbStart, true, this);
-		mse.root.evtDistributor.addListener('gestureUpdate', cbMove, true, this);
-		mse.root.evtDistributor.addListener('gestureEnd', cbEnd, true, this);
-		
-		this.sit = true;
-		this.droped = false;
-		sitAnim.start();
-	};
-	
-	this.logic = function(delta) {
-		if(this.droped) {
-			var d = pochet.offy - ratHang.offy - 114;
-			ratHang.fh = d < 0 ? 114+d : 114;
-			ratHang.height = ratHang.fh;
-		}
-	};
-    
-	this.draw = function(ctx) {
-		sac.draw(ctx);
-		if(this.sit) {
-			ratSit.draw(ctx);
-			ratHead.draw(ctx);
-			// Draw text
-			ctx.save();
-			// Draw bull
-			ctx.fillStyle = "#FFF";
-			ctx.translate(ratHead.getX()+ratHead.getWidth()*1.2, ratHead.getY()-24);
-			ctx.beginPath();
-			ctx.moveTo(-10,30);
-			ctx.lineTo(0,30-15);
-			ctx.lineTo(10,30);
-			ctx.lineTo(-10,30);
-			ctx.fill();
-			ctx.fillRoundRect(0, 0, 240, 30, 10);
-			ctx.fillStyle = "#000";
-			ctx.font = "20px Verdana";
-			ctx.textBaseline = 'top';
-			ctx.fillText("Aide Simon, vite!", 10, 4);
-			ctx.restore();
-		}
-		else ratHang.draw(ctx);
-		if(this.droped) pochet.draw(ctx);
-	};
-};
-extend(RatGame, mse.Game);

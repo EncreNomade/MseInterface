@@ -1,3 +1,13 @@
+/*!
+ * GUI of Book Reader
+ * Encre Nomade
+ *
+ * Author: LING Huabin - lphuabin@gmail.com
+ * Copyright, Encre Nomade
+ *
+ * Date of creation: 23/06/2012
+ */
+
 var msgCenter =(function(){
     // private
     var messageList = false;
@@ -53,12 +63,12 @@ var msgCenter =(function(){
 var gui = {};
 
 gui.openComment = function(){
-    gui.center.append(gui.comment);
+    // gui.center.append(gui.comment);
     gui.comment.addClass('show');
 }
 gui.closeComment = function() {
     gui.comment.removeClass('show');
-    gui.comment.detach();
+    // gui.comment.detach();
 }
 
 gui.editImage = function(imgData, w, h) {
@@ -118,7 +128,7 @@ $(window).load(function() {
     gui.scriber = $('#scriber').detach();
     
     $('#comment_btn').click(gui.openComment);
-    $('#comment .close').click(gui.closeComment).click();
+    $('#comment .close').click(gui.closeComment);
     gui.capture.click(function() {
         gui.closeComment();
         mse.root.startCapture(new Callback(gui.editImage, window));

@@ -1,3 +1,13 @@
+/*!
+ * GUI of MseInterface library
+ * Encre Nomade
+ *
+ * Author: LING Huabin - lphuabin@gmail.com
+           Florent Baldino
+           Arthur Brongniart
+ * Copyright, Encre Nomade
+ */
+
 var msgCenter =(function(){
     // private
     var $msgCenter =$('<div id="msgCenter"><ul></ul></div>');
@@ -82,6 +92,7 @@ function init() {
 	window.wikiTool = initWikiTool();
 	window.animeTool = initAnimeTool();
 	window.scriptTool = initScriptTool();
+	window.translationTool = initTranslateTool();
 	
 	// Mouse event handler for the resize behavior
 	$('body').supportResize();
@@ -350,63 +361,63 @@ function createPageDialog() {
 
 // edite speack dialog
 function editeSpeakDialog( speak ){
-			//  search the asoociate speaker
-			var speaker = speak.attr( "data-who" );
-			for( var i in srcMgr.sources )
-				if( srcMgr.sourceType( i ) == "speaker" && srcMgr.getSource( i ).name == speaker )
-					break;
-			var spkObj = srcMgr.getSource( i );
+	//  search the asoociate speaker
+	var speaker = speak.attr( "data-who" );
+	for( var i in srcMgr.sources )
+		if( srcMgr.sourceType( i ) == "speaker" && srcMgr.getSource( i ).name == speaker )
+			break;
+	var spkObj = srcMgr.getSource( i );
+	
+	// setUp the list of moods
+	var map = spkObj.portrait;
+	var comboBox = $( '<div style="width:100px;height:180px;overflow-y:auto;">' );
+	for( var i in map ){
+		var option = $( '<div style="background:none;"><img src="' +  spkObj.getMoodUrl( i ) + '" width:"30" height="30" style="width:30px; height:30px;"/>'+i+'</div>' );
+		option.click( function( e ){
+			var mood = $( e.currentTarget ).text();
+			speak.attr( "data-mood" , mood );
+			speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( mood ) );
+            if(spkObj.portrait[mood]) 
+                speak.children("img").attr( "name" , spkObj.portrait[mood]);
+            else speak.children("img").attr( "name" , "none");
 			
-			// setUp the list of moods
-			var map = spkObj.portrait;
-			var comboBox = $( '<div style="width:100px;height:180px;overflow-y:auto;">' );
-			for( var i in map ){
-				var option = $( '<div style="background:none;"><img src="' +  spkObj.getMoodUrl( i ) + '" width:"30" height="30" style="width:30px; height:30px;"/>'+i+'</div>' );
-				option.click( function( e ){
-					var mood = $( e.currentTarget ).text();
-					speak.attr( "data-mood" , mood );
-					speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( mood ) );
-                    if(spkObj.portrait[mood]) 
-                        speak.children("img").attr( "name" , spkObj.portrait[mood]);
-                    else speak.children("img").attr( "name" , "none");
-					
-					updateHightlight( mood );
-				});
-				comboBox.append( option );
-			}
-			updateHightlight( speak.attr( "data-mood") );
-			
-			function updateHightlight( mood ){
-				var c = comboBox.find( "div" );
-				for( var i =0 ; i < c.length ; i ++  ){
-					var option = $( c[ i ] );
-					if( option.text() == mood )
-						option.css( "background" , "blue" );
-					else
-						option.css( "background" , "none" );
-				}
-			}
-			
-			dialog.showPopup('éditer interlocuteur', 340, 250 , "ok");
-			dialog.main.append( comboBox  );
-			
-			
-			var initialMood = speak.attr("data-mood" );
-			dialog.confirm.click(function() {
-				var actualMood = speak.attr("data-mood" );
-				if( initialMood != actualMood )
-					CommandMgr.executeCmd( new ModifySpeakMoodCmd( speak , actualMood  , spkObj.getMoodUrl( actualMood ) ,  initialMood , spkObj.getMoodUrl( initialMood ) ) );
-				
-				dialog.close();
-			});
-			dialog.annuler.click(function() {
-				var actualMood = speak.attr("data-mood" );
-				if( initialMood != actualMood ){
-					speak.attr( "data-mood" , initialMood );
-					speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( initialMood ) );
-				}
-			});
+			updateHightlight( mood );
+		});
+		comboBox.append( option );
+	}
+	updateHightlight( speak.attr( "data-mood") );
+	
+	function updateHightlight( mood ){
+		var c = comboBox.find( "div" );
+		for( var i =0 ; i < c.length ; i ++  ){
+			var option = $( c[ i ] );
+			if( option.text() == mood )
+				option.css( "background" , "blue" );
+			else
+				option.css( "background" , "none" );
 		}
+	}
+	
+	dialog.showPopup('éditer interlocuteur', 340, 250 , "ok");
+	dialog.main.append( comboBox  );
+	
+	
+	var initialMood = speak.attr("data-mood" );
+	dialog.confirm.click(function() {
+		var actualMood = speak.attr("data-mood" );
+		if( initialMood != actualMood )
+			CommandMgr.executeCmd( new ModifySpeakMoodCmd( speak , actualMood  , spkObj.getMoodUrl( actualMood ) ,  initialMood , spkObj.getMoodUrl( initialMood ) ) );
+		
+		dialog.close();
+	});
+	dialog.annuler.click(function() {
+		var actualMood = speak.attr("data-mood" );
+		if( initialMood != actualMood ){
+			speak.attr( "data-mood" , initialMood );
+			speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( initialMood ) );
+		}
+	});
+}
 		
 
 // Add step dialog
@@ -889,7 +900,7 @@ function dropToTargetZone(e) {
 function newTranslationDialog(){
     dialog.showPopup('Nouvelle langue pour '+pjName, 500, 260, 'Générer traduction');
     var htmlStr = '';
-    $.post('load_project.php', {'user': uid, 'project': pjName}, function(msg){
+    $.post('load_project.php', {'pjName': pjName}, function(msg){
         if(!msg || msg == 'FAIL')
             console.error('fail to retrieve existing language for the project : see load_project.php');
         else {
@@ -911,8 +922,6 @@ function newTranslationDialog(){
     dialog.confirm.click(function(){
         var jqNewLang = $('#newLanguage');
         window.newLang = jqNewLang.val().toLowerCase();
-        window.currLang = pjLanguage;
-        pjLanguage = newLang;
         var existLang = $('#language_list').children();
         window.autoOpen = $('#openNewLanguage').get(0).checked;
         for(var i = 0; i<existLang.length; i++){
@@ -927,19 +936,17 @@ function newTranslationDialog(){
             async:  false,
             type: 'POST', 
             url: 'create_translation.php', 
-            data: {'pj': pjName, 'newLang': newLang}, 
+            data: {'pjName': pjName, 'lang':pjLanguage, 'newLang': newLang}, 
             success: function(data, textStatus, jqXHR) {
                 if(data && data != '') {
                     alert('Error while creating translation : see console for info.');
                     console.log(data);
                 }
-                else if(autoOpen){
-                    window.open('main_page.php?pjName='+pjName+'&language='+window.newLang);
+                else if(window.autoOpen){
+                    window.open('main_page.php?pjName='+pjName+'&lang='+window.newLang);
                 }
-                pjLanguage = window.currLang;
-                delete window.currLang;
                 delete window.newLang;
-                delete autoOpen;
+                delete window.autoOpen;
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 // Une erreur s'est produite lors de la requete
@@ -986,8 +993,6 @@ function addImageElem(id, data, page, step) {
     var container = $('<div id="obj'+(curr.objId++)+'">');
     container.append(img);
     container.deletable();
-
-
 
     // Resize
     var ratiox = cw/w;
@@ -1077,14 +1082,6 @@ function generateSpeaks(content, font, width, lineHeight){
 	var balise ;
 	while( balise || ( balise=getNextBalise(rest) ) ){
 		
-		
-		// delete the \n just before the balise ( or before with space between )
-		var j = 1;
-		for( ; rest.charAt( balise.start - j ) == " " ; j ++ );
-		if( rest.charAt( balise.start - j ) == "\n" )
-			balise.start -= j;
-		
-		
 		//everything before the balise is normal text
 		var normalText = rest.substring( 0 , balise.start );
 		rest = rest.substring( balise.close );
@@ -1106,10 +1103,6 @@ function generateSpeaks(content, font, width, lineHeight){
 			// the speaked text end at the start of the closing balise
 			dialogueText = rest.substring( 0 , nbalise.start );
 			rest = rest.substring( nbalise.close );
-			// Delete the line break after the dialogs
-			var alinea = rest.indexOf( "\n" );
-			if( alinea == 0 )
-			    rest = rest.substring(1);
 			nbalise = null;
 		} else {
 			// if its not, the spearker text end at the next \n
@@ -1154,7 +1147,13 @@ function generateSpeaks(content, font, width, lineHeight){
 		if( dialogueText.length > 0 ){
 			var id = "obj"+(curr.objId++);
 			var withdrawal = 45;
-			var lines = generateSpeakLines( dialogueText, font, width, lineHeight , id_ressource , mood  , withdrawal);
+			// Prebreak detection
+			var last = res.children("div.textLine, paragraphtag").last();
+			var prebreak = false;
+			if(last.prop('tagName') == "PARAGRAPHTAG" || last.children('p').text().trim().length == 0)
+			    prebreak = true;
+			
+			var lines = generateSpeakLines( dialogueText, font, width, lineHeight , id_ressource , mood  , withdrawal, prebreak);
 			var color = srcMgr.getSource( id_ressource ).color;
 			res.append( $('<div id="'+ id +'" class="speaker" data-who="'+balise.id+'" data-withdrawal="'+ config.sceneX(withdrawal) + '" data-color="'+color+'" data-mood="'+mood+'" style="width:'+  config.sceneX( width )+'px; background-color:'+color+';" />')
                .append( lines ) );
@@ -1189,7 +1188,7 @@ function generateSpeaks(content, font, width, lineHeight){
 	}
 }
 // setUp the speak formate with img associate
-function generateSpeakLines( content, font, width, lineHeight, id , mood , decalage ){
+function generateSpeakLines( content, font, width, lineHeight, id , mood , decalage , prebreak ){
 		
 		if( !decalage )
 			decalage = 50;
@@ -1198,7 +1197,7 @@ function generateSpeakLines( content, font, width, lineHeight, id , mood , decal
 		
 		
 		
-		var first = generateLines( content , font, width - decalage , lineHeight );
+		var first = generateLines( content , font, width - decalage , lineHeight , prebreak );
 		
 		var rest = "";
 		
@@ -1211,22 +1210,32 @@ function generateSpeakLines( content, font, width, lineHeight, id , mood , decal
 		// append the firsts lines
 		var res_h = 0;
 		for( var i = 0 ; i < first.length ; i ++ ){
-			if( i< nline ){
-				$(first[i]).css("left" , config.sceneX( decalage )+"px" ); 
-				$(first[i]).css("position" , "relative" );
-				$(first[i]).css("width" , config.sceneX( width - decalage )+"px" );
-				res_h += $(first[i]).height();
-				res.append( $(first[i]) );
-			}else
+		    var line = $(first.get(i));
+		    // Ignore paragraphtag
+		    if(line.prop('tagName') == "PARAGRAPHTAG") {
+		        res.append( line );
+		        nline++;
+		    }
+			else if( i < nline ){
+				line.css("left" , config.sceneX( decalage )+"px" ); 
+				line.css("position" , "relative" );
+				line.css("width" , config.sceneX( width - decalage )+"px" );
+				res_h += line.height();
+				res.append( line );
+			}
+			else
 				rest += $(first[i]).text();
 		}
 		if( res_h < decalage )
 			res.append( $('<div style="height:'+ config.sceneX( decalage - res_h )+'px;" />' ) );
 			
 		// append the rest
-		if( rest.length > 0 )
-			res.append( generateLines( rest , font, width , lineHeight ) );
-		
+		if( rest.length > 0 ) {
+		    var last = generateLines( rest , font, width , lineHeight );
+		    // Delete the first paragraphtag
+		    if(last.get(0).tagName = "PARAGRAPHTAG") last.splice(0, 1);
+			res.append( last );
+		}
 		
         if( srcMgr.getSource( id ).portrait[ mood ] )
              img.attr('name', srcMgr.getSource( id ).portrait[ mood ]);
@@ -1246,7 +1255,7 @@ function generateSpeakLines( content, font, width, lineHeight, id , mood , decal
 		
 		return res.children();
 	}
-function generateLines(content, font, width, lineHeight){
+function generateLines(content, font, width, lineHeight, prebreak){
     
 	var res = '';
     // Content processing
@@ -1255,21 +1264,31 @@ function generateLines(content, font, width, lineHeight){
 
 	var arr = content.split('\n');
 	var sep = 0;
+	var prefix = prebreak == true ? true : false;
 	for(var i = 0; i < arr.length; i++) {
-	    // Paragraph blank
 	    if(arr[i].length == 0) {
-			res += '<div id="obj'+(curr.objId++)+'" class="textLine"/>';
-			sep++;continue;
+	        // Blank in head, don't add a line blank, add a paragraphtag
+	        if(i == 0) 
+	            res += '<paragraphtag></paragraphtag>';
+	        // Paragraph blank
+	        else if(i != arr.length-1){
+			    res += '<div id="obj'+(curr.objId++)+'" class="textLine"></div>';
+			    sep++;
+			}
+			prefix = true;
+			continue;
 		}
-
+		
+        // Separator paragraph
+        if(!prefix) res += '<paragraphtag></paragraphtag>';
+        prefix = false;
+        // Content paragraph
 		for(var j = 0; j < arr[i].length;) {
 			// Find the index of next line
 			var next = TextUtil.checkNextline(arr[i].substr(j), maxM, width);
 			res += '<div id="obj'+(curr.objId++)+'" class="textLine"><p>'+arr[i].substr(j, next)+'</p></div>';
 			j += next;
 		}
-		// Separator paragraph
-		res += '<paragraphtag></paragraphtag>';
 	}
 	res = $(res);
 	res.each(function() {
@@ -1723,10 +1742,8 @@ formate : function( article , meta ){
 			s += "[ "+line.attr( "data-who")+" : "+line.attr( "data-mood")+" ]" + this.formate( line , meta )+"[end]\n";
 			wrapprefix = true;
 		}
-		else {
-		    wrapprefix = false;
+		else 
 		    continue;
-		}
 	}
 	
 	
@@ -1769,7 +1786,7 @@ formate : function( article , meta ){
 },
 
 // reverse	
-reverse : function( chaine , article , meta , font , width , lineHeight){ 
+reverse : function( parent, chaine , article , meta , font , width , lineHeight){ 
 	if( !article || !article.hasClass('article') ) return;
 	
 	var log = "";
@@ -1822,16 +1839,6 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		start = end;
 	}
 	
-	// de même pour les retour chariot, ils ne sont plus présent post génération
-	start = 0;
-	while(  (next = chaine.indexOf( "\n" , start )) != -1 ){
-		for( var i = 0 ; i < meta.length ; i ++ )
-			if( meta[ i ].offset > next )
-				decalage[ i ] ++;
-		start = next+1;
-	}
-	
-	
 	// introduit le décalage
 	for( var i = 0 ; i < meta.length ; i ++ )
 		meta[ i ].offset -= decalage[ i ];
@@ -1846,20 +1853,46 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		width = config.realX( article.width() );
 	if( !lineHeight )
 		lineHeight = config.realY( cssCoordToNumber( article.css('line-height') ) );
-	var res = $("<div>").append( generateSpeaks(chaine, font , width , lineHeight ) );
+	parent.append( generateSpeaks(chaine, font , width , lineHeight ) );
+	
+	// Deformat chiane
+	var realchaine = chaine.replace(/\[[^\[\]]*\]/g, "");
+	realchaine = realchaine.replace(/<[^<>]*>/g, "");
 	
 	// numerote les objets lignes
 	var table = [];
 	var cursor = 0;
-	res.find( "div.textLine" ).each(function(){
+	var prefix = true;
+	parent.find("div.textLine, paragraphtag").each(function(){
 		var line = $( this );
-		var l = line.children("p").text().length ;
-		table.push( { 	obj : line ,
-						l : l,
-						ca : cursor ,
-						cb : ( cursor = cursor + l ),
-						b : []
-					} );
+		if(line.prop('tagName') == "PARAGRAPHTAG") {
+		    cursor++;
+		    prefix = true;
+		}
+		else {
+        	var text = line.children("p").text();
+        	// Line blank
+        	if(text.trim().length == 0) {
+        	    var size = prefix ? 1:2;
+        	    table.push( { 	obj : line,
+        	    				l : size,
+        	    				ca : cursor,
+        	    				cb : ( cursor = cursor + size ),
+        	    				b : []
+        	    			} );
+        	    prefix = true;
+        	}
+        	// Line with content
+        	else {
+            	table.push( { 	obj : line ,
+            					l : text.length,
+            					ca : cursor ,
+            					cb : ( cursor = cursor + text.length ),
+            					b : []
+            				} );
+                prefix = false;
+            }
+		}
 	});
 	
 	// recréer les référence vers les links ( ajout en deux temps )
@@ -1879,31 +1912,6 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 		var new_index;
 		var new_keyword;
 		
-		if( meta[ i ].link.type == "image" ){
-			
-			console.log( table[ e -1] );
-			console.log( table[ e ] );
-			console.log( table[ e +1] );
-			console.log( meta[ i ].offset );
-			
-			
-		}
-		
-		
-		// rattrapage d'un saut d'origine inconnue
-		/*
-		var text = table[ e ].obj.children( "p" ).text();
-		var l = meta[ i ].offset - table[ e ].ca ;
-		while(  meta[ i ].offset >= 0 
-				&& 	text.substring( l , l + meta[ i ].keyword.length ) != meta[ i ].keyword )
-				l -- ;
-		
-		while(  l <= table[ e ].l
-				&&	text.substring( l , l + meta[ i ].keyword.length ) != meta[ i ].keyword )
-				l ++ ;
-		
-		meta[ i ].offset =  table[ e ].ca + l;
-		*/
 		switch( meta[ i ].link.type ){
 			case "audio" : case "wiki" :
 				if( meta[ i ].format == "link" ){
@@ -1926,7 +1934,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 					new_obj = table[ e ].obj;
 					
 					var id = meta[ i ].link.id;
-					var elem = srcMgr.generateChildDomElem(id, res);
+					var elem = srcMgr.generateChildDomElem(id, parent);
 					elem.attr('id', 'obj'+(curr.objId++));
 					elem.deletable(null, true)
 					    .selectable(selectP)
@@ -1935,9 +1943,9 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 					    .staticButton('./images/tools/anime.png', animeTool.animateObj)
 					    .staticButton('./images/UI/addscript.jpg', addScriptForObj)
 					    .children('.del_container').hide();
-					elem.insertAfter( new_obj );
-
-					log += meta[ i ].link.type+" "+id+" re inserée apres la ligne :\""+new_obj.children("p").text()+"\", ( il était précédement après \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
+					elem.insertBefore( new_obj );
+					
+					log += meta[ i ].link.type+" "+id+" re inserée avant la ligne :\""+new_obj.children("p").text()+"\", ( il était précédement après \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
 				}
 
 			break;
@@ -2037,7 +2045,7 @@ reverse : function( chaine , article , meta , font , width , lineHeight){
 	
 	console.log( log );
 	
-	return res.children();
+	return parent;
 	
 	
 	// share chaine, ( effet de bord )
@@ -2172,10 +2180,10 @@ function saveProject() {
     if(!pjName) return;
     loading.show(5000);
     // Clear server ressources
-    //$.get('clearSrcs.php', {'pj':pjName}, function(msg){if(msg != "") alert(msg);});
+    //$.get('clearSrcs.php', {'pjName':pjName, 'lang':pjLanguage}, function(msg){if(msg != "") alert(msg);});
     // Save ressources
-    srcMgr.uploadSrc('upload_src.php', pjName);
-    scriptMgr.upload('upload_src.php', pjName);
+    srcMgr.uploadSrc('upload_src.php', pjName, pjLanguage);
+    scriptMgr.upload('upload_src.php', pjName, pjLanguage);
 
     // Save structure
     var serializer = new XMLSerializer();
@@ -2199,7 +2207,13 @@ function saveProject() {
     var structStr = JSON.stringify(struct);
     
 	// Upload structure to server
-	$.post("save_project.php", {"pj":pjName, "struct":structStr, "objCurrId":curr.objId, "srcCurrId":srcMgr.currId, "language":pjLanguage, "untranslated":pjUntranslated}, function(msg){
+	$.post("save_project.php", {"pjName":pjName, 
+	                            "lang":pjLanguage, 
+	                            "struct":structStr, 
+	                            "objCurrId":curr.objId, 
+	                            "srcCurrId":srcMgr.currId, 
+	                            "untranslated":translationTool.untranslated()
+	                            }, function(msg){
 	       var modif = parseInt(msg);
 	       if(!isNaN(modif)) curr.lastModif = modif;
 	       else if(msg != ""){

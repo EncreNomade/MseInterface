@@ -1,3 +1,14 @@
+/*!
+ * System of command library
+ * Encre Nomade
+ *
+ * Author: LING Huabin - lphuabin@gmail.com
+           Florent Baldino
+           Arthur Brongniart
+ * Copyright, Encre Nomade
+ */
+
+
 // Class extend utilitie function
 function extend(Child, Parent) {
     var F = function(){};
@@ -89,10 +100,7 @@ var CommandMgr = (function(capacity) {
     var reversable = false, undoable = false;
     return {
         executeCmd: function(command) {
-			
-			
-			
-            var result = command.execute();
+			var result = command.execute();
             // Fail to execute command
             if(command.state != "SUCCESS") return false;
             
@@ -110,8 +118,7 @@ var CommandMgr = (function(capacity) {
             return result;
         },
         undoCmd: function() {
-            
-			var command = undoStack.pop();
+            var command = undoStack.pop();
 			
             if(undoStack.count() == 0 && undoable) {
                 undoable = false;
@@ -142,10 +149,7 @@ var CommandMgr = (function(capacity) {
             return true;
         },
         reverseCmd: function() {
-            
-			
-			
-			var command = reverseStack.pop();
+            var command = reverseStack.pop();
 			
             if(reverseStack.count() == 0 && reversable) {
                 reversable = false;
@@ -435,7 +439,7 @@ $.extend(DelScriptCmd.prototype, {
     undo: function(){
         if(this.state != "SUCCESS") return;
         
-        scriptMgr.addScript(this.name,this.src,this.srcType,this.action,this.target,this.reaction,this.immediate,this.supp);
+        scriptMgr.addScript(this.name, this.src, this.srcType, this.action, this.target, this.reaction, this.immediate ,this.supp);
         this.state = "CANCEL";
     },
 	toString : function(){
@@ -1542,6 +1546,8 @@ $.extend(DelSrcCmd.prototype, {
 		return "suppression de la ressource "+ this.id +" de type "+this.type;
 	}
 });
+
+
 /*
  * Text Link Cmd
  * 1. AddLink

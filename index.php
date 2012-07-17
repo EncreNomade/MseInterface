@@ -1,15 +1,19 @@
 <?php
-/*
- * Author: LING Huabin @Pandamicro
- * Mail: lphuabin@gmail.com
- * Site: pandamicro.co.cc
- * Octobre 2011
+/*!
+ * MseInterface: Index page
+ * User inscription/connection, Project creation/edition
+ * Encre Nomade
+ *
+ * Author: LING Huabin - lphuabin@gmail.com
+ * Copyright, Encre Nomade
+ *
+ * Date de creation: Octobre 2011
  */
 
 header("content-type:text/html; charset=utf8");
 
 include 'project.php';
-include 'dbconn.php';
+include_once 'dbconn.php';
 session_start();
 
 function checkSize($w, $h) {
@@ -20,7 +24,6 @@ function checkSize($w, $h) {
 }
 
 if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
-    ConnectDB();
     if( array_key_exists("pjName", $_POST) ) {
         $pjName = $_POST["pjName"];
         if( checkPjExist($pjName) )
@@ -28,10 +31,11 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
         else if(!checkSize($_POST['width'], $_POST['height']))
             echo '<script type="text/javascript">alert("Erreur de taille de projet.");</script>';
         else {
-            $project = new MseProject($_POST['pjName'], "", $_POST['width'], $_POST['height']);
-            $_SESSION[$pjName] = $project;
+            $project = new MseProject($pjName, "francais", "", $_POST['width'], $_POST['height']);
+            $pjid = $pjName."_francais";
+            $_SESSION[$pjid] = $project;
             
-            header("Location: gestion_page.php?pjName=$pjName", true);
+            header("Location: gestion_page.php?pjName=$pjName&lang=".$project->getLanguage(), true);
         }
     }
     else if( array_key_exists("uid", $_POST) ) {
@@ -119,17 +123,19 @@ function showLogin(){
 
 function showOpenPj(){
   <?php
-    ConnectDB();
+    $db = ConnectDB();
     if (isset($_SESSION["uid"]) && $_SESSION["uid"] != ""){
         $owner = $_SESSION['uid'];
-        $rep = mysql_query("SELECT name, language FROM Projects WHERE owner='$owner' ORDER BY name");
+        $query = $db->prepare("SELECT name, language FROM Projects WHERE owner=? ORDER BY name");
+        $rep = $query->execute(array($owner));
+       
         if (!$rep) {
-           echo "var pjList = false; var sqlError=\"".addslashes(mysql_error())."\";\n";
+           echo "var pjList = false; var sqlError=\"".$query->errorInfo()."\";\n";
         }
         else {
             echo "var pjList = []; ";
             $prevName = '';
-            while ($row = mysql_fetch_assoc($rep)){
+            while ($row = $query->fetch()){
                 $name = $row['name'];
                 $lang = $row['language'];
                 if($name != $prevName){
@@ -143,7 +149,7 @@ function showOpenPj(){
         }
     }
   ?>
-    if(!pjList) {
+    if(!pjList || pjList.length == 0) {
         alert('load existing project fail : '+ sqlError);
         showCreatePj();
         return;
@@ -190,9 +196,9 @@ function showOpenPj(){
         var langue = $('#chooseLanguage').val();
         if(!name || name == "") return;
         
-        $.post("load_project.php", {'pjName':name, 'language':langue}, function(msg){
+        $.post("load_project.php", {'pjName':name, 'lang':langue}, function(msg){
             if(msg && msg == "SUCCESS")
-                window.location = "./main_page.php?pjName="+name+"&language="+langue;
+                window.location = "./main_page.php?pjName="+name+"&lang="+langue;
             else if(msg && msg != "") alert(msg);
         });
     });

@@ -1,24 +1,29 @@
 <?php
+/*!
+ * MseInterface: Database connection and manipulation
+ * Encre Nomade
+ *
+ * Author: LING Huabin - lphuabin@gmail.com
+ * Copyright, Encre Nomade
+ *
+ * Date de creation: Octobre 2011
+ */
 
 function ConnectDB(){
-    require('server_config.php');
-	$link = mysql_connect($dbConfig['server'],$dbConfig['login'],$dbConfig['mdp']);
-	if(!$link){
-		die("Impossible de se connecter à MySQL:".mysql_error());
-		return(FALSE);
-	}
-	$ok = mysql_select_db($dbConfig['db']);
-	if(!$ok){
-		die("Impossible de sélectionner la base de données:".mysql_error());
-		return(FALSE);
-	}
-	return(TRUE);
+    require_once 'MseDataBase.class.php';
+    
+    $instance =  MseDataBase::getInstance();
+    
+	return $instance->getDb();
 }
 
 function userLogin($uid, $mdp){
     //$mdp = md5($mdp);
-    $identite = mysql_query("SELECT * FROM EditorUsers WHERE id='$uid' AND mdp='$mdp' LIMIT 1;");
-    if($identite) {
+    $db = ConnectDB();
+    $query = $db->prepare("SELECT COUNT(*) AS n FROM EditorUsers WHERE id=? AND mdp=? LIMIT 1;");
+    $query->execute(array($uid, $mdp));
+    $count = $query->fetch();
+    if($count && $count['n'] != 0) {
         $_SESSION['uid'] = $uid;
         return true;
     }
@@ -28,8 +33,10 @@ function userLogin($uid, $mdp){
 function checkPjExist($pj, $lang='francais') {
     if(!isset($_SESSION['uid'])) return false;
     $owner = $_SESSION['uid'];
-    $resp = mysql_query("SELECT COUNT(*) AS n FROM Projects WHERE owner='$owner' AND name='$pj' AND language='$lang' LIMIT 1;");
-    $count = mysql_fetch_array($resp);
+    $db = ConnectDB();
+    $query = $db->prepare("SELECT COUNT(*) AS n FROM Projects WHERE owner=? AND name=? AND language=? LIMIT 1;");
+    $query->execute(array($owner, $pj, $lang));
+    $count = $query->fetch();
     if(!$count || $count['n'] == 0) return false;
     else return true;
 }
@@ -37,8 +44,10 @@ function checkPjExist($pj, $lang='francais') {
 function checkPjStruct($pj, $lang='francais'){
     if(!isset($_SESSION['uid'])) return false;
     $owner = $_SESSION['uid'];
-    $resp = mysql_query("SELECT struct FROM Projects WHERE owner='$owner' AND name='$pj' AND language='$lang' LIMIT 1;");
-    $struct = mysql_fetch_array($resp);
+    $db = ConnectDB();
+    $query = $db->prepare("SELECT struct FROM Projects WHERE owner=? AND name=? AND language=? LIMIT 1;");
+    $query->execute(array($owner, $pj, $lang));
+    $struct = $rep->fetch();
     if($struct) return $struct['struct'];
     else return false;
 }

@@ -1,12 +1,15 @@
 <?php
-/*
- * Author: LING Huabin @Pandamicro
- * Mail: lphuabin@gmail.com
- * Site: pandamicro.co.cc
- * Fevrier 2012
+/*!
+ * MseInterface API: User deconnection
+ * Encre Nomade
+ *
+ * Author: LING Huabin - lphuabin@gmail.com
+ * Copyright, Encre Nomade
+ *
+ * Date de creation: Fevrier 2012
  */
 
-include 'dbconn.php';
+include_once 'dbconn.php';
 session_start();
 
 if( $_SERVER['REQUEST_METHOD'] === 'GET' ) {

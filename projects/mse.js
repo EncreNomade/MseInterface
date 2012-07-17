@@ -1,11 +1,13 @@
 /*!
- * Encre Nomade Canvas JavaScript Library v0.9
+ * Canvas JavaScript Library v1.0.0
  * Encre Nomade
  *
  * Author: LING Huabin - lphuabin@gmail.com
- * Copyright 2011, Encre Nomade
+           Florent Baldino
+           Arthur Brongniart
+ * Copyright, Encre Nomade
  *
- * Date: 21/03/2011
+ * Date de creation: 21/03/2011
  */
 
 var __currContextOwner__;
@@ -3606,10 +3608,3 @@ $.extend(mse.Animation.prototype, {
     };
 
 })(window, mse);
-
-
-
-
-
-
-
