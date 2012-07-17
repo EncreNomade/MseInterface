@@ -746,6 +746,7 @@ SourceManager.prototype = {
 	        
 	        if(data)
     	        $.ajax({
+                    async: false,
 	                type: "POST",
 	                'url': url,
 	                processData: false,
@@ -769,9 +770,15 @@ SourceManager.prototype = {
 	updateSrcs: function(pjName, lang){
 	    var count = Object.keys(this.sources).length;
 	    if(this.uploaded < count) return;
-	    $.post("update_srcs.php", {"pjName":pjName,"lang":lang,"srcs":JSON.stringify(this.sources)}, function(msg){
-	            if(msg && msg != "") alert(msg);
-	    });
+        $.ajax({
+            async: false,
+            type: "POST",
+            url: "update_srcs.php",
+            data: {"pjName":pjName,"lang":lang,"srcs":JSON.stringify(this.sources)},
+            success: function(msg){
+                if(msg && msg != "") alert(msg);
+            }
+        });
 	}
 };
 
