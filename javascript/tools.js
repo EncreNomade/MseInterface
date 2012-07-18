@@ -119,7 +119,7 @@ function base64_encode (data) {
 }
 
 function objToClass(obj, classn) {
-    var o = new classn(); 
+    var o = new classn();
     for(var key in obj) {
         if(obj[key] !== null && obj[key] !== undefined) o[key] = obj[key];
     } 
@@ -127,9 +127,9 @@ function objToClass(obj, classn) {
 }
 
 var Callback = function(func, caller) {
-    if(!func) return null; 
+    if(typeof func != 'function') return null; 
 	this.func = func;
-	this.caller = caller;
+	this.caller = (typeof caller != 'object') ? window : caller;
 	if(arguments.length > 2) {
 		this.args = new Array();
 		for(var i = 2; i < arguments.length; i++)
@@ -224,34 +224,36 @@ var TextUtil = function() {
 			return ctx.measureText(text).width;
 		},
 		checkNextline : function(text, maxM, width) {
-			// Next line is the whole text remaining
-			if(maxM >= text.length) return text.length;
-			// Forward check
-			var prevId;
-			var nextId = maxM;
-			do {
-				prevId = nextId;
-				// Find next space
-				var index = text.indexOf(' ', prevId);
-				// No space after
-				if(index == -1) {
-					if(ctx.measureText(text).width <= width)
-						prevId = text.length;
-						break;
-					}
-				// Text length
-				var l = ctx.measureText(text.substr(0, index));
-				nextId = index+1;
-			} while(l.width < width);
-			// Forward check success
-			if(prevId != maxM) {
-				return prevId;
-			}
-			// Backward check when forward check failed
-			else // Find last space
-				var lastsp = text.lastIndexOf(' ', maxM);
-				if(lastsp == -1) return maxM;
-				else return (lastsp+1);
+		    // Next line is the whole text remaining
+		    if(maxM >= text.length) return text.length;
+		    // Forward check
+		    var prevId;
+		    var nextId = maxM;
+		    do {
+		    	prevId = nextId;
+		    	// Find next space
+		    	var index = text.substr(prevId).search(/[\s\n\r\-\/\\\:]/);
+		    	index = (index == -1) ? -1 : prevId+index;
+		    	// No space after
+		    	if(index == -1) {
+		    		if(ctx.measureText(text).width <= width)
+		    			prevId = text.length;
+		    		break;
+		    	}
+		    	// Text length
+		    	var l = ctx.measureText(text.substr(0, index));
+		    	nextId = index+1;
+		    } while(l.width < width);
+		    // Forward check success
+		    if(prevId != maxM) {
+		    	return prevId;
+		    }
+		    // Backward check when forward check failed
+		    else {// Find last space
+		    	var lastsp = text.lastIndexOf(' ', maxM);
+		    	if(lastsp == -1) return maxM;
+		    	else return (lastsp+1);
+		    }
 		},
 		editPrepaCb : new Callback(textEditPrepa, window),
 		editFinishCb : new Callback(textEditFinish, window)
@@ -1875,8 +1877,9 @@ var scriptMgr = function() {
                 if (srcType == "page") source = $('#pageBar li:contains("'+objId+'")');
                 else if (srcType == "anime") source = srcMgr.expos[objId];
                 if ($scriptCounter.length > 0) $scriptCounter.remove();
-                source.data('scriptsList', listScript);
-                if (listScript.length > 0 && source) {                    
+                
+                if (listScript.length > 0 && source) {
+                    source.data('scriptsList', listScript);
                     source.dblclick(function(e){
                         var $circleMenu = $('#circleMenu');
                         var nbScripts = $(this).data('scriptsList').length;
