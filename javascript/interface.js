@@ -1074,6 +1074,8 @@ function staticConfig(e){e.preventDefault();e.stopPropagation();showParameter($(
 
 // parse the raw texte,  match the speaker balise
 //use generateLines for creating object containing one text line, 
+
+
 function generateSpeaks(content, font, width, lineHeight){
 	
 	var res = $("<div/>");
@@ -1085,6 +1087,14 @@ function generateSpeaks(content, font, width, lineHeight){
 		var normalText = rest.substring( 0 , balise.start );
 		rest = rest.substring( balise.close );
 		
+		// check for line break just befor the speak
+		/*
+		var j = 1;
+		for( ; rest.charAt( balise.start - j ) == " " ; j ++ );
+		if( rest.charAt( balise.start - j ) == "\n" ){
+			normalText = normalText.substring( 0 , balise.start - j );
+		}
+		*/
 		// check the next balise 
 		var nbalise = getNextBalise( rest );
 		var dialogueText;
@@ -1540,6 +1550,17 @@ function dropToWikiElemZone(e) {
 
 
 
+function expressTrad(){
+	
+	var metas = ArticleFormater.parseMetaText($( ".article" ));
+	var a = ArticleFormater.formate( $( ".article" ), metas )
+	
+	var e  = ArticleFormater.reverse( a , $( ".article" ), metas )
+	
+	$( ".article" ).children().remove();
+	
+	$( ".article" ).append( e );
+}
 var ArticleFormater = function() {
 	
 	var correspondanceType = { 	'audiolink' : 'audio' , 
@@ -1755,6 +1776,7 @@ formate : function( article , meta ){
 			
 			r = avant + charge[i].b + apres;
 			
+			// décalage des suivants
 			for( var j = i+1 ; j < charge.length ; j ++ )
 				if( charge[ j ].index >  charge[i].index )
 					 charge[j].index += charge[i].b.length;	 
@@ -1796,9 +1818,9 @@ reverse : function( parent, chaine , article , meta , font , width , lineHeight)
 		meta[ next.i ].offset  = next.index; 		// offset est le numero de caractére par rapport au debut du texte ( et non pas au début de la ligne comme index )
 		meta[ next.i ].format  = next.format;
 		meta[ next.i ].valide  = true;
-		
-	}
 	
+	}
+
 	
 	// traitement des éléments de dialogue 
 	// les balises dialogue sont ignoré par le générateur de line, elle n'apparaissent plus post génération ce qui introduit des erreurs dans l'indexation des mots 
@@ -1882,9 +1904,9 @@ reverse : function( parent, chaine , article , meta , font , width , lineHeight)
 		
 		var e = Math.floor( meta[ i ].offset / table[ table.length-1 ].cb * table.length );  // estimation
 		
-		while( meta[ i ].offset < table[ e ].ca )    // ajustement
+		while( meta[ i ].offset < table[ e ].ca  )    // ajustement
 			e --;
-		while( meta[ i ].offset >= table[ e ].cb )	  // ajustement
+		while( meta[ i ].offset >= table[ e ].cb  )	  // ajustement
 			e ++;
 		
 		var new_obj;
@@ -1911,7 +1933,7 @@ reverse : function( parent, chaine , article , meta , font , width , lineHeight)
 				
 					new_index = 0;
 					new_obj = table[ e ].obj;
-				
+					
 					var id = meta[ i ].link.id;
 					var elem = srcMgr.generateChildDomElem(id, parent);
 					elem.attr('id', 'obj'+(curr.objId++));
@@ -2020,6 +2042,7 @@ reverse : function( parent, chaine , article , meta , font , width , lineHeight)
 		}
 		obj.get(0).innerHTML = r;
 	}
+	
 	
 	console.log( log );
 	
