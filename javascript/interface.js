@@ -1057,7 +1057,8 @@ function delPage(name) {
     // Delete in pages
     delete pages[name];
     // Active another page
-    $('#pageBar li:first-child').click();
+    var another = $('#pageBar li:first-child');
+    if(!another.hasClass('add')) another.click();
 };
 function delCurrentPage() {
     // Check number of the pages
@@ -1074,6 +1075,8 @@ function staticConfig(e){e.preventDefault();e.stopPropagation();showParameter($(
 
 // parse the raw texte,  match the speaker balise
 //use generateLines for creating object containing one text line, 
+
+
 function generateSpeaks(content, font, width, lineHeight){
 	
 	var res = $("<div/>");
@@ -1085,6 +1088,14 @@ function generateSpeaks(content, font, width, lineHeight){
 		var normalText = rest.substring( 0 , balise.start );
 		rest = rest.substring( balise.close );
 		
+		// check for line break just befor the speak
+		/*
+		var j = 1;
+		for( ; rest.charAt( balise.start - j ) == " " ; j ++ );
+		if( rest.charAt( balise.start - j ) == "\n" ){
+			normalText = normalText.substring( 0 , balise.start - j );
+		}
+		*/
 		// check the next balise 
 		var nbalise = getNextBalise( rest );
 		var dialogueText;
@@ -1540,6 +1551,17 @@ function dropToWikiElemZone(e) {
 
 
 
+function expressTrad(){
+	
+	var metas = ArticleFormater.parseMetaText($( ".article" ));
+	var a = ArticleFormater.formate( $( ".article" ), metas )
+	
+	var e  = ArticleFormater.reverse( a , $( ".article" ), metas )
+	
+	$( ".article" ).children().remove();
+	
+	$( ".article" ).append( e );
+}
 var ArticleFormater = function() {
 	
 	var correspondanceType = { 	'audiolink' : 'audio' , 
@@ -1755,6 +1777,7 @@ formate : function( article , meta ){
 			
 			r = avant + charge[i].b + apres;
 			
+			// décalage des suivants
 			for( var j = i+1 ; j < charge.length ; j ++ )
 				if( charge[ j ].index >  charge[i].index )
 					 charge[j].index += charge[i].b.length;	 
@@ -1796,9 +1819,9 @@ reverse : function( parent, chaine , article , meta , font , width , lineHeight)
 		meta[ next.i ].offset  = next.index; 		// offset est le numero de caractére par rapport au debut du texte ( et non pas au début de la ligne comme index )
 		meta[ next.i ].format  = next.format;
 		meta[ next.i ].valide  = true;
-		
-	}
 	
+	}
+
 	
 	// traitement des éléments de dialogue 
 	// les balises dialogue sont ignoré par le générateur de line, elle n'apparaissent plus post génération ce qui introduit des erreurs dans l'indexation des mots 
@@ -1882,9 +1905,9 @@ reverse : function( parent, chaine , article , meta , font , width , lineHeight)
 		
 		var e = Math.floor( meta[ i ].offset / table[ table.length-1 ].cb * table.length );  // estimation
 		
-		while( meta[ i ].offset < table[ e ].ca )    // ajustement
+		while( meta[ i ].offset < table[ e ].ca  )    // ajustement
 			e --;
-		while( meta[ i ].offset >= table[ e ].cb )	  // ajustement
+		while( meta[ i ].offset >= table[ e ].cb  )	  // ajustement
 			e ++;
 		
 		var new_obj;
@@ -1911,7 +1934,7 @@ reverse : function( parent, chaine , article , meta , font , width , lineHeight)
 				
 					new_index = 0;
 					new_obj = table[ e ].obj;
-				
+					
 					var id = meta[ i ].link.id;
 					var elem = srcMgr.generateChildDomElem(id, parent);
 					elem.attr('id', 'obj'+(curr.objId++));
@@ -2020,6 +2043,7 @@ reverse : function( parent, chaine , article , meta , font , width , lineHeight)
 		}
 		obj.get(0).innerHTML = r;
 	}
+	
 	
 	console.log( log );
 	
@@ -2130,6 +2154,53 @@ reverse : function( parent, chaine , article , meta , font , width , lineHeight)
 
 // Management of project =====================================
 
+function retrieveLocalInfo(pjsave) {
+    // Pages/Layers/Objects
+    var obj = null;
+    var maxid = 0, id = 0;
+    var pageseri = pjsave.pageSeri;
+    for(var pname in pageseri) {
+        var page = addPage(pname);
+        scriptMgr.countScripts(page.attr('id'),"page");
+        var steps = 0;
+        for(var sname in pageseri[pname]) {
+            steps++;
+            var step = $(pageseri[pname][sname]);
+            page.data('StepManager').addStepWithContent(sname, step);
+        }
+        if(steps == 0) page.data('StepManager').addStep(pname+'default', null, true);
+    }
+    
+    // Ressources
+    var src = pjsave.sources;
+    for(var key in src) {
+        var type = src[key].type;
+        var data = src[key].data;
+        if(type == "text" || type == "obj") continue;
+        else if(type == "anime") 
+            data = objToClass(data, Animation);
+		else if(type == "speaker"){
+            data = objToClass(data, Speaker);
+		}
+        else if(type == "wiki") 
+            data = objToClass(data, Wiki);
+        srcMgr.addSource(type, data, key);
+    }
+    if(!isNaN(pjsave.srcCurrId)) srcMgr.currId = pjsave.srcCurrId;
+    if(!isNaN(pjsave.objCurrId)) curr.objId = pjsave.objCurrId;
+    //else if(!isNaN(maxid)) curr.objId = maxid+1;
+    
+    // Scripts
+    if(pjsave.scripts) {
+        for(var key in pjsave.scripts)
+            pjsave.scripts[key] = objToClass(pjsave.scripts[key], Script);
+        scriptMgr.addScripts( pjsave.scripts );
+    }
+    
+    if(isNaN(pjsave.lastModif)) curr.lastModif = lastModServer;
+    else curr.lastModif = pjsave.lastModif;
+}
+
 function saveToLocalStorage(name, jsonstr){
     // Save to localStorage
     localStorage.setItem(name, jsonstr);
@@ -2192,30 +2263,29 @@ function saveProject() {
 	                            "srcCurrId":srcMgr.currId, 
 	                            "untranslated":translationTool.untranslated()
 	                            }, function(msg){
-	       var modif = parseInt(msg);
-	       if(!isNaN(modif)) curr.lastModif = modif;
-	       else if(msg != ""){
-				console.log( msg );
+            var modif = parseInt(msg);
+            if(!isNaN(modif)) curr.lastModif = modif;
+            else if(msg != ""){
 				alert(msg);
 			}
 	       
-	       // Save local storage
-	       if(!localStorage) return;
-	       var pjsave = {};
-	       // Save Obj CurrID
-	       pjsave.objCurrId = curr.objId;
-	       // Save Pages
-	       pjsave.pageSeri = struct;
-	       // Save sources
-	       pjsave.sources = srcMgr.sources;
-	       pjsave.srcCurrId = srcMgr.currId;
-	       // Save scripts
-	       pjsave.scripts = scriptMgr.saveLocal();
-	       // Save modify time
-	       pjsave.lastModif = curr.lastModif;
-	       var pjsavestr = JSON.stringify(pjsave);
-	       
-	       saveToLocalStorage(pjName+' '+pjLanguage, pjsavestr);
-	       loading.hide();
-	   });
+            // Save local storage
+            if(!localStorage) return;
+            var pjsave = {};
+            // Save Obj CurrID
+            pjsave.objCurrId = curr.objId;
+            // Save Pages
+            pjsave.pageSeri = struct;
+            // Save sources
+            pjsave.sources = srcMgr.sources;
+            pjsave.srcCurrId = srcMgr.currId;
+            // Save scripts
+            pjsave.scripts = scriptMgr.saveLocal();
+            // Save modify time
+            pjsave.lastModif = curr.lastModif;
+            var pjsavestr = JSON.stringify(pjsave);
+            
+            saveToLocalStorage(pjName+' '+pjLanguage, pjsavestr);
+            loading.hide();
+        });
 }

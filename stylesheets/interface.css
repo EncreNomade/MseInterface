@@ -119,10 +119,11 @@ body{
 	margin:0px;
 	padding:0px;
 	overflow:visible;
-	float:center;
 	line-height:inherit;
+	float:center;
 }
 .article div p {
+    position: absolute;
 	width:100%;
 	margin:0px;
 	padding:0px;
@@ -130,6 +131,7 @@ body{
 	overflow:visible;
 	line-height:inherit;
 	color: inherit;
+	left: 0px;
 }
 .article .game {
     position:relative;
@@ -764,16 +766,31 @@ body{
 }
 .del_container {
 	position:absolute;
-	left:100%;
+	display: block;
+	right:15px;
 	top:0%;
 	z-index:10;
+	width: 0px;
+	height: 100%;
+	overflow: visible;
+	padding: 0px;
+	margin: 0px;
+}
+.del_container li {
+    position:relative;
+    right:0px;
+    width:15px;
+    height:15px;
+    margin: 0px;
+    padding: 0px;
+    list-style: none;
 }
 .del_container img {
-	position:absolute;
-	left:-17px;
+	position:relative;
+	right:0px;
 	width:15px;
 	height:15px;
-	float:left;
+	float: left;
 	-webkit-border-radius: 6px;
 	-moz-border-radius: 6px;
 	border-radius: 6px;
@@ -1056,8 +1073,8 @@ div.big_button {
 
 .scriptCounter {
     border-radius: 5px;
-        -webkit-border-radius: 5px;
-        -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
     border:1px solid white;
     background-color: red;
     padding: 0px 3px 0px 3px !important;

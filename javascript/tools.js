@@ -119,7 +119,7 @@ function base64_encode (data) {
 }
 
 function objToClass(obj, classn) {
-    var o = new classn(); 
+    var o = new classn();
     for(var key in obj) {
         if(obj[key] !== null && obj[key] !== undefined) o[key] = obj[key];
     } 
@@ -127,9 +127,9 @@ function objToClass(obj, classn) {
 }
 
 var Callback = function(func, caller) {
-    if(!func) return null; 
+    if(typeof func != 'function') return null; 
 	this.func = func;
-	this.caller = caller;
+	this.caller = (typeof caller != 'object') ? window : caller;
 	if(arguments.length > 2) {
 		this.args = new Array();
 		for(var i = 2; i < arguments.length; i++)
@@ -224,34 +224,36 @@ var TextUtil = function() {
 			return ctx.measureText(text).width;
 		},
 		checkNextline : function(text, maxM, width) {
-			// Next line is the whole text remaining
-			if(maxM >= text.length) return text.length;
-			// Forward check
-			var prevId;
-			var nextId = maxM;
-			do {
-				prevId = nextId;
-				// Find next space
-				var index = text.indexOf(' ', prevId);
-				// No space after
-				if(index == -1) {
-					if(ctx.measureText(text).width <= width)
-						prevId = text.length;
-						break;
-					}
-				// Text length
-				var l = ctx.measureText(text.substr(0, index));
-				nextId = index+1;
-			} while(l.width < width);
-			// Forward check success
-			if(prevId != maxM) {
-				return prevId;
-			}
-			// Backward check when forward check failed
-			else // Find last space
-				var lastsp = text.lastIndexOf(' ', maxM);
-				if(lastsp == -1) return maxM;
-				else return (lastsp+1);
+		    // Next line is the whole text remaining
+		    if(maxM >= text.length) return text.length;
+		    // Forward check
+		    var prevId;
+		    var nextId = maxM;
+		    do {
+		    	prevId = nextId;
+		    	// Find next space
+		    	var index = text.substr(prevId).search(/[\s\n\r\-\/\\\:]/);
+		    	index = (index == -1) ? -1 : prevId+index;
+		    	// No space after
+		    	if(index == -1) {
+		    		if(ctx.measureText(text).width <= width)
+		    			prevId = text.length;
+		    		break;
+		    	}
+		    	// Text length
+		    	var l = ctx.measureText(text.substr(0, index));
+		    	nextId = index+1;
+		    } while(l.width < width);
+		    // Forward check success
+		    if(prevId != maxM) {
+		    	return prevId;
+		    }
+		    // Backward check when forward check failed
+		    else {// Find last space
+		    	var lastsp = text.lastIndexOf(' ', maxM);
+		    	if(lastsp == -1) return maxM;
+		    	else return (lastsp+1);
+		    }
 		},
 		editPrepaCb : new Callback(textEditPrepa, window),
 		editFinishCb : new Callback(textEditFinish, window)
@@ -950,7 +952,6 @@ StepManager.prototype = {
 	        obj = $(this);
 	        // Article
 	        if(obj.hasClass('article')) {
-	            obj.deletable().configurable();
 	            obj.children('div').each(function(){
                     function setArticleObjProp (jqObj){
                         jqObj.deletable(null, true)
@@ -963,7 +964,7 @@ StepManager.prototype = {
                         scriptMgr.countScripts($(this).attr('id'),'obj');
                         jqObj.children('.del_container').css({
                             'position': 'relative',
-                            'top': (jqObj.children('p').length == 0) ? '0%' : '-100%',
+                            'left': jqObj.width()-15+'px',
                             'display':'none'});
                     }
                     if ($(this).hasClass('speaker')){
@@ -979,9 +980,11 @@ StepManager.prototype = {
 								// if its not, its textLine
 								setArticleObjProp($(this));
 						});
-                    }else 
-						setArticleObjProp($(this))
+                    }
+                    else 
+						setArticleObjProp($(this));
 	            });
+	            obj.deletable().configurable();
 	        }
 	        // Other obj
 	        else {
@@ -1841,26 +1844,33 @@ var scriptMgr = function() {
                 var $obj = $('#'+objId);
                 var $scriptCounter = $obj.find('.scriptCounter');
                 if ($scriptCounter.length > 0)  // remove the existing icon
-                        $scriptCounter.remove();
+                    $scriptCounter.remove();
                 $obj.data('scriptsList', listScript);
                 if (listScript.length > 0) {
                     var $scriptIcon = $('#'+objId+' .del_container img[src="./images/UI/addscript.jpg"]');
                     var $delContainer = $obj.children('.del_container');
-                    var displayingHoverIc = $($delContainer.children()[0]).css('display');
-                    if (displayingHoverIc == 'none') $scriptCounter.hide();
+                    var hidingHoverIc = $scriptIcon.css('display') == 'none';
+                    if (hidingHoverIc) $scriptCounter.hide();
                     
                     $delContainer.append('<div class="scriptCounter">'+ listScript.length +'</div>');
                     $scriptCounter = $delContainer.children('.scriptCounter');
-                    
                     $scriptCounter.click(addScriptForObj);
-                    $scriptCounter.css('top', parseInt($scriptIcon.css('top'))+4); //positionning the notification icons
+                    
                     if($obj.parents('.article').length > 0){
+                        var top = 60 + 5;
                         $scriptCounter.css({
-                            'left': '-10px',
+                            'top': top,
+                            'width': 'auto',
+                            'left': '5px',
                             'line-height': 'initial'});
                     }
                     else {
-                        $scriptCounter.css('right', '-3px');
+                        //positionning the notification icons
+                        $delContainer.children().show();
+                        $scriptCounter.css('top', parseInt($scriptIcon.position().top)+5);
+                        if(hidingHoverIc) $delContainer.children().hide();
+                        
+                        $scriptCounter.css('left', '5px');
                         $obj.hover(function(){$scriptCounter.show();},
                                    function(){$scriptCounter.hide();});
                     }
@@ -1873,8 +1883,9 @@ var scriptMgr = function() {
                 if (srcType == "page") source = $('#pageBar li:contains("'+objId+'")');
                 else if (srcType == "anime") source = srcMgr.expos[objId];
                 if ($scriptCounter.length > 0) $scriptCounter.remove();
-                source.data('scriptsList', listScript);
-                if (listScript.length > 0 && source) {                    
+                
+                if (listScript.length > 0 && source) {
+                    source.data('scriptsList', listScript);
                     source.dblclick(function(e){
                         var $circleMenu = $('#circleMenu');
                         var nbScripts = $(this).data('scriptsList').length;
@@ -3540,28 +3551,30 @@ $(document).keyup(function (e) {
 
 
 // Add top right hover icon
-var hoverIcon = function(elem, func, img, data) {
+var hoverIcon = function(elem, func, img, data, prepend) {
 	var icons = elem.children('.del_container');
 	if(icons.length == 0) {
-		icons = $('<div class="del_container"></div>');
+		icons = $('<ul class="del_container"></ul>');
 		elem.append(icons);
 	}
-	var top = 5 + icons.children('img').length*17;
-	var icon = $('<img src="'+img+'", style="top:'+top+'px;"></img>');
-	icons.append(icon);
+	//var top = 5 + icons.children('img').length*17;
+	var icon = $('<img src="'+img+'"></img>');
+	if(prepend === true) icons.prepend(icon);
+	else icons.append(icon);
 	icon.hide().bind('click', data, func);
 	elem.hover(function(){ if( !tag.resizestarted && !tag.movestarted )icon.show();}, function(){icon.hide();});
 };
 // Icon always show up
-var staticIcon = function(elem, func, img, data) {
+var staticIcon = function(elem, func, img, data, prepend) {
 	var icons = elem.children('.del_container');
 	if(icons.length == 0) {
-		icons = $('<div class="del_container"></div>');
+		icons = $('<ul class="del_container"></ul>');
 		elem.append(icons);
 	}
-	var top = 2 + icons.children('img').length*17;
-	var icon = $('<img src="'+img+'", style="top:'+top+'px;"></img>');
-	icons.append(icon);
+	//var top = 2 + icons.children('img').length*17;
+	var icon = $('<img src="'+img+'"></img>');
+	if(prepend === true) icons.prepend(icon);
+	else icons.append(icon);
 	icon.bind('click', data, func);
 };
 	
@@ -3614,8 +3627,8 @@ $.fn.deletable = function(f, statiq) {
 	if(del.length > 0) del.remove();
 	if(f === false) return this;
 	var func = f || delParent;
-	if(statiq == true) staticIcon(this, func, './images/UI/del.png');
-	else hoverIcon(this, func, './images/UI/del.png');
+	if(statiq == true) staticIcon(this, func, './images/UI/del.png', true);
+	else hoverIcon(this, func, './images/UI/del.png', true);
 	return this;
 };
 $.fn.hideable = function(f) {
@@ -3636,22 +3649,22 @@ $.fn.configurable = function(disables, f) {
 	hoverIcon(this, func, './images/UI/config.png', {'list':disables});
 	return this;
 };
-$.fn.hoverButton = function(icon, f) {
+$.fn.hoverButton = function(icon, f, prepend) {
     if(f === false) {
     	this.find('img[src="'+icon+'"]').remove();
     	return this;
     }
 	if(!$.isFunction(f)) return this;
-	hoverIcon(this, f, icon);
+	hoverIcon(this, f, icon, null, prepend);
 	return this;
 }
-$.fn.staticButton = function(icon, f) {
+$.fn.staticButton = function(icon, f, prepend) {
     if(f === false) {
     	this.find('img[src="'+icon+'"]').remove();
     	return this;
     }
 	if(!$.isFunction(f)) return this;
-	staticIcon(this, f, icon);
+	staticIcon(this, f, icon, null, prepend);
 	return this;
 }
 $.fn.canGoDown = function(f, statiq) {

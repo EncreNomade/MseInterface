@@ -52,29 +52,7 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 <head>
 
   <title>Project</title>
-
-  <script type="text/javascript">
-  // Debug
-  var debugMsgAppend = window.debugMsgAppend = function(message) {
-	$("#debug").append(message);
-	$("#debug").fadeIn("1000");
-  };
-
-  var debugMsgRefresh = window.debugMsgRefresh = function(message) {
-	$("#debug").text("Debug: " + message);
-	$("#debug").fadeIn("1000");
-  };
-
-  window.onerror = function(msg, url, line){
-	if(onerror.num++ < onerror.max) {
-		alert("Error: " + msg + "\n" + url + ":" + line);
-		return true;
-	}
-  }
-  onerror.max = 3;
-  onerror.num = 0;
-  </script>
-
+  
 <script src="./javascript/support/jquery-latest.js"></script>
 <script src="./javascript/tools.js"></script>
 <script src="./javascript/interface.js"></script>
