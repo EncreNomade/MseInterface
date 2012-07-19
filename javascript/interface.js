@@ -61,9 +61,10 @@ var msgCenter =(function(){
         },
         getList: function(){
             if(!messageList) 
-                messageList = $('#msgCenter ul');
+                messageList = $msgCenter.children('ul');
             return messageList;
-        }
+        },
+        getMax: function(){ return max; }
     }
 })();
 var pages = {};
@@ -267,7 +268,7 @@ function drawRulers() {
 
 // Add source files dialog
 function addFileDialog() {
-	dialog.showPopup('Ajout de fichiers', 400, 330, 'Télécharger', 'Annuler');
+	dialog.showPopup('Ajout de fichiers', 400, 330, 'Télécharger');
 	dialog.main.html('<h2> - Image et son:</h2><p><label>Lien internet:</label><input id="addLink" type="text"></p><p><label>Fichiers locaux:</label><input id="addFile" type="file" multiple="multiple"></p>');
 	dialog.main.append('<h2> - Jeu</h2><p><label>Nom de classe:</label><input id="gamename" type="text"/></p><p><label>Code source:</label><input id="addjs" type="file" accept="text/javascript"/></p>');
 	// Upload file

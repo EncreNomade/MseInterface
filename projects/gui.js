@@ -47,7 +47,7 @@ var msgCenter =(function(){
             );
             
             messageList.children('li').each(function(i){
-                if(i >= max) 
+                if(i >= max)
                     hideTimeOut($(this));
             });
         },
@@ -55,7 +55,8 @@ var msgCenter =(function(){
             if(!messageList) 
                 messageList = $('#msgCenter ul');
             return messageList;
-        }
+        },
+        getMax: function(){ return max; }
     }
 })();
 

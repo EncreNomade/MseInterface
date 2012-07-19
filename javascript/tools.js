@@ -1764,8 +1764,9 @@ var scriptMgr = function() {
             this.addScriptObj(name, new Script(src, srcType, action, target, reaction, immediate, supp));
         },
         addScriptObj: function(name, script) {
-            if(!name || !nameValidation(name))
+            if(!name || !nameValidation(name) || !(script instanceof Script))
                 return;
+                
             // If we are overwriting an existing script which is related to another src
             // we have to update the scripts number of this old src.
             if(this.scripts[name])
@@ -1773,7 +1774,7 @@ var scriptMgr = function() {
             // Creation script
             this.scripts[name] = script;
             // New script expo
-            this.expos[name] = $('<div class="icon_src"><p>'+name+'</p></div>');
+            this.expos[name] = $('<div class="icon_src" id="'+name+'"><p>'+name+'</p></div>');
             $('#Scripts_panel').prepend(this.expos[name]);
             this.expos[name].click(function() { modifyScriptDialog([name]); });
             this.countScripts(script.src, script.srcType);
@@ -1795,11 +1796,9 @@ var scriptMgr = function() {
             this.countScripts(relatedObj, relatedType);
         },
         delRelatedScripts: function(objId){
-            for(var elem in this.scripts) {
-                if(this.scripts[elem].src == objId || this.scripts[elem].target == objId || this.scripts[elem].supp == objId) {
-                    this.delScript(elem);
-                }
-            }
+            var relScripts = this.getRelatedScripts(objId);
+            for(var i = 0; i < relScripts.length ; i++)
+                this.delScript(relScripts[i].id);
         },
         getRelatedScripts: function(objId) {
             var list = [];
@@ -1812,10 +1811,9 @@ var scriptMgr = function() {
         },
         getRelatedScriptsDesc: function(objId) {
             var list = [];
-            for(var elem in this.scripts) {
-                if(this.scripts[elem].src == objId || this.scripts[elem].target == objId || this.scripts[elem].supp == objId)
-                    list.push("Le script: "+elem);
-            }
+            var relScripts = this.getRelatedScripts(objId);
+            for(var i = 0; i < relScripts.length ; i++)
+                list.push("Le script: "+relScripts[i].id);
             return list;
         },
         updateRelatedScripts: function(objId, newId){
@@ -1845,7 +1843,7 @@ var scriptMgr = function() {
                 if ($scriptCounter.length > 0)  // remove the existing icon
                         $scriptCounter.remove();
                 $obj.data('scriptsList', listScript);
-                if (listScript.length > 0) {                    
+                if (listScript.length > 0) {
                     var $scriptIcon = $('#'+objId+' .del_container img[src="./images/UI/addscript.jpg"]');
                     var $delContainer = $obj.children('.del_container');
                     var displayingHoverIc = $($delContainer.children()[0]).css('display');
@@ -1868,7 +1866,7 @@ var scriptMgr = function() {
                     }
                 }
             }
-            else {
+            else { // circleMenu
                 var source = false;
                 var $circleMenu = $('#circleMenu');
                 var $scriptCounter = $('#circleMenu .scriptCounter');
@@ -3214,9 +3212,9 @@ Popup.prototype = {
 	    $('#popup_dialog').show();
 	},
 	close: function() {
-		$('.popup_back').hide();
-		$('#popup_dialog').hide();
-		this.caller = null;
+        var that = $("#popup_dialog").data('popUpObj');
+		that.hide();
+		that.caller = null;
 	},
 	addButton: function(btn) {
 	    this.buttons.prepend(btn);
@@ -3231,9 +3229,9 @@ Popup.prototype = {
 		this.titre.append(this.annuler);
 		this.titre.append('<span>');
 		$('body').append(this.back).append(this.dialog);
-		this.back.hide();
-		this.dialog.hide();
-		this.annuler.click(this.close);
+		this.hide();
+        this.dialog.data('popUpObj', this);
+		this.annuler.click({obj:this},this.close);
 		this.inited = true;
 	},
 	
@@ -3250,7 +3248,14 @@ Popup.prototype = {
 	},
 	
 	showPopup: function(msg, width, height, msgConfirm, caller) {
-		if(!msg || !width || !height) return;
+        if(typeof msg != 'string' 
+            || typeof width != 'number' 
+            || typeof height != 'number' 
+            || isNaN(parseInt(width)) 
+            || isNaN(parseInt(height)))
+        {
+            return;
+        }
 		this.main.html("");
 		this.buttons.children().remove();
 		this.caller = null;
@@ -3267,8 +3272,7 @@ Popup.prototype = {
 		}
 		if(caller) this.caller = caller;
 		
-		this.back.show();
-		this.dialog.show();
+		this.show();
 	}
 };
 

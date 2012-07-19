@@ -10,49 +10,84 @@
  */
 
 header("content-type:text/html; charset=utf8");
-include 'project.php';
-include_once 'dbconn.php';
+include '../project.php';
+include_once '../dbconn.php';
 
 session_start();
-if( !isset($_SESSION['uid']) )
-    header("Location: index.php", true);
-else if( $_SERVER['REQUEST_METHOD'] === 'GET' && 
-         array_key_exists("pjName", $_GET)  && 
-         array_key_exists("lang", $_GET)) {
-    // Pj existance in session check
-    $pjName = $_GET["pjName"];
-    $langue = $_GET["lang"];
-    $pjid = $pjName."_".$langue;
-    if(array_key_exists($pjid, $_SESSION)){
-        $pj = $_SESSION[$pjid];
-        // Wrong session data
-        if($pj->getLanguage() != $langue){
-            $pj = MseProject::getExistProject($pjName, $langue);
-            $_SESSION[$pjid] = $pj;
-// TODO: If retrieve project fail
-        }
-    }
-    else {
-        header("Location: index.php", true);
-    }
-}
-else header("Location: index.php", true);
+
+$_SESSION['uid'] = 'unittest';
+ConnectDB();
+$pj = MseProject::getExistProject('unittest', 'unittest');
+$_SESSION["unittest_unittest"] = $pj;
 
 ?>
 
-<!DOCTYPE html>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+  "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-  <title>Interface d'édition</title>
+  <title>Interface d'édition (Jasmine Spec Runner)</title>
 
-<script src="./javascript/support/jquery-latest.js"></script>
-<script src="./javascript/support/jquery.color.js"></script>
-<script src="./javascript/tools.js"></script>
-<script src="./javascript/interface.js"></script>
-<script src="./javascript/command.js"></script>
+<link rel="shortcut icon" type="image/png" href="lib/jasmine-1.2.0/jasmine_favicon.png">
+<link rel="stylesheet" type="text/css" href="lib/jasmine-1.2.0/jasmine.css">
+<script type="text/javascript" src="lib/jasmine-1.2.0/jasmine.js"></script>
+<script type="text/javascript" src="lib/jasmine-1.2.0/jasmine-html.js"></script>
 
-<link rel="stylesheet" type="text/css" href="./stylesheets/menu.css" />
-<link rel="stylesheet" type="text/css" href="./stylesheets/interface.css" />
+<STYLE type="text/css">
+    .jasmine_reporter {
+        background: #fff;
+        -webkit-box-shadow: 0px 0px 5px #4d4d4d;
+        -moz-box-shadow: 0px 0px 5px #4d4d4d;
+        box-shadow: 0px 0px 5px #4d4d4d;
+        z-index: 500;
+        position: absolute;
+        width: 100%;
+        height: auto;
+        left: 0px;
+        top: 0px;
+    }
+</STYLE>
+
+<!-- include source files here... -->
+<script src="../javascript/support/jquery-latest.js"></script>
+<script src="../javascript/support/jquery.color.js"></script>
+<script src="../javascript/tools.js"></script>
+<script src="../javascript/interface.js"></script>
+<script src="../javascript/command.js"></script>
+
+<link rel="stylesheet" type="text/css" href="../stylesheets/menu.css" />
+<link rel="stylesheet" type="text/css" href="../stylesheets/interface.css" />
+
+<!-- include spec files here... -->
+<script src="spec/interface/spec_msgCenter.js"></script>
+
+<script type="text/javascript">
+(function() {
+    var jasmineEnv = jasmine.getEnv();
+    jasmineEnv.updateInterval = 1000;
+
+    var htmlReporter = new jasmine.HtmlReporter();
+
+    jasmineEnv.addReporter(htmlReporter);
+
+    jasmineEnv.specFilter = function(spec) {
+        return htmlReporter.specFilter(spec);
+    };
+
+    var currentWindowOnload = window.onload;
+
+    window.onload = function() {
+        if (currentWindowOnload) {
+            currentWindowOnload();
+        }
+        execJasmine();
+    };
+
+    function execJasmine() {
+        jasmineEnv.execute();
+    }
+})();
+</script>
 
 </head>
 <body>
@@ -87,11 +122,11 @@ else header("Location: index.php", true);
 </nav>
 
 <ul id="tools">
-	<li id="texticon"><img src="./images/tools/pen.png"></img></li>
-	<li id="recticon"><img src="./images/tools/rule.png"></img></li>
-	<li id="wikiicon"><img src="./images/tools/wiki.png"></img></li>
-	<li id="animeicon"><img src="./images/tools/anime.png"></img></li>
-	<li id="scripticon"><img src="./images/UI/addscript.jpg"></img></li>
+	<li id="texticon"><img src="../images/tools/pen.png"></img></li>
+	<li id="recticon"><img src="../images/tools/rule.png"></img></li>
+	<li id="wikiicon"><img src="../images/tools/wiki.png"></img></li>
+	<li id="animeicon"><img src="../images/tools/anime.png"></img></li>
+	<li id="scripticon"><img src="../images/UI/addscript.jpg"></img></li>
 </ul>
 
 <div id="center_panel">
@@ -99,11 +134,11 @@ else header("Location: index.php", true);
 		<li id="newPage" class="add">+</li>
 	</ul>
 	<ul id="shapeTools" class="central_tools">
-		<li><img class="active" src="./images/tools/rect.png"></li>
-		<li><img src="./images/tools/rrect.png"></li>
-		<li><img src="./images/tools/elips.png"></li>
-		<li><img src="./images/tools/line.png"></li>
-		<li><img src="./images/tools/sep.png"></li>
+		<li><img class="active" src="../images/tools/rect.png"></li>
+		<li><img src="../images/tools/rrect.png"></li>
+		<li><img src="../images/tools/elips.png"></li>
+		<li><img src="../images/tools/line.png"></li>
+		<li><img src="../images/tools/sep.png"></li>
 		<li><h5>Paramètres:</h5></li>
 		<li><h5>Poids</h5><input id="shape_weight" style="width: 22px;" value="0" type="number"></li>
 		<li><h5>Radius</h5><input id="shape_radius" style="width: 22px;" value="0" type="number"></li>
@@ -147,8 +182,8 @@ else header("Location: index.php", true);
 	</ul>
 	<ul id="translateTool" class="central_tools">
 	    <li style="float: right;"><input id="gene_trans" type="button" value="Générer" /></li>
-	    <li style="float: left; margin: 2px 5px;"><img src="./images/tools/previous.png"></li>
-	    <li style="float: left; margin: 2px 5px;"><img src="./images/tools/next.png"></li>
+	    <li style="float: left; margin: 2px 5px;"><img src="../images/tools/previous.png"></li>
+	    <li style="float: left; margin: 2px 5px;"><img src="../images/tools/next.png"></li>
 	</ul>
 	<canvas id="rulerX" class="ruler"></canvas>
 	<canvas id="rulerY" class="ruler"></canvas>
@@ -157,7 +192,7 @@ else header("Location: index.php", true);
 </div>
 
 <div id="timeline">
-    <img id="addFrame" src="./images/UI/addframe.png">
+    <img id="addFrame" src="../images/UI/addframe.png">
 </div>
 
 <div id="right">
@@ -174,7 +209,7 @@ else header("Location: index.php", true);
 	</ul>
 
 	<div id="Ressources_panel" class="source">
-		<img id="srcAdd" class="icon_src" src="./images/UI/plus.png"></img>
+		<img id="srcAdd" class="icon_src" src="../images/UI/plus.png"></img>
 	</div>
 	<div id="Scripts_panel" class="source">
 	</div>
@@ -223,13 +258,6 @@ else header("Location: index.php", true);
         $(".menu li.id").text(uid);
     }
 	
-	$('#showProjet').click(function(){
-	    window.open('./projects/index.php?pj='+pjName+'&language='+pjLanguage);
-	});
-	$('#newProjet').click(function(){
-	    window.open('./index.php');
-	});
-	
 	var config = Config.getInstance();
 	init();
 	
@@ -271,8 +299,6 @@ function retrieveLocalInfo(pjsave) {
     
     // Scripts
     if(pjsave.scripts) {
-        for(var key in pjsave.scripts)
-            pjsave.scripts[key] = objToClass(pjsave.scripts[key], Script);
         scriptMgr.addScripts( pjsave.scripts );
     }
     
@@ -302,7 +328,8 @@ function retrieveLocalInfo(pjsave) {
 	
 	// Update local with server storage
 	if(norecord || (lastModLocal < lastModServer)) {
-	    $.get("updateFromServer.php", {'pjName':pjName, 'lang':pjLanguage}, function(msg){
+	    $.get("../updateFromServer.php", {'pjName':pjName, 'lang':pjLanguage}, function(msg){
+	        //alert(msg);
 	        var pjsave = JSON.parse(msg);
 	        if(pjsave) {
 	            //saveToLocalStorage(pjName, msg);
@@ -312,7 +339,7 @@ function retrieveLocalInfo(pjsave) {
 	}
 	// Update server with local storage
 	else if(lastModLocal > lastModServer) {
-	    $.post("updateWithLocal.php", {"pjName":pjName, 'lang':pjLanguage, "localStorage":pjsavestr}, function(msg){
+	    $.post("../updateWithLocal.php", {"pjName":pjName, 'lang':pjLanguage, "localStorage":pjsavestr}, function(msg){
                 var modif = parseInt(msg);
                 if(!isNaN(modif)) pjsave.lastModif = modif;
                 else if(msg != "") alert(msg);
