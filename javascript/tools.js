@@ -3693,7 +3693,7 @@ $.fn.canGoDown = function(f, statiq) {
 	var down = this.children('.del_container').children().filter('img[src="./images/UI/down.png"]');
 	if(down.length > 0) down.remove();
 	if(f === false) return this;
-	var func = f || goDown;
+	var func = (typeof f == 'function') ? f : goDown;
 	if(statiq == true) staticIcon(this, func, './images/UI/down.png');
 	else hoverIcon(this, func, './images/UI/down.png');
 	return this;

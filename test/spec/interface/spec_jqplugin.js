@@ -264,7 +264,6 @@ describe("Deletable, hideable, configurable test", function() {
 });
 
 
-
 describe("Editable function test", function() {
     var div, span, h1, h5, li, p, form, input;
     
@@ -377,3 +376,55 @@ describe("Editable function test", function() {
         expect($('#test h5').text()).toEqual('H5 modified');
     });
 });
+
+describe("canGoDown function test", function(){
+    var div1, div2;
+    var o = {};
+    
+    beforeEach(function(){  
+        o.customFunc = function(){};
+        spyOn(o, 'customFunc');
+        if(div1) div1.remove();
+        if(div2) div2.remove();
+        div1 = $('<div/>').css({
+                    position: 'absolute', 
+                    width: '70px', 
+                    height: '30px', 
+                    top: '0px',
+                    'z-index': 4,
+                    'background-color': 'green'});
+        div1.appendTo('body').canGoDown();
+        div2 = $('<div/>').css({
+                    position: 'absolute', 
+                    width: '30px', 
+                    height: '70px', 
+                    top: '0px',
+                    'z-index': 5,
+                    'background-color': 'blue'});
+        div2.appendTo('body').canGoDown();
+    });
+    
+    it("inverse z-index of 2 div in same layer", function(){
+        div2.find('img').click();
+        expect(parseInt(div2.css('z-index'))).toBe(4);        
+        expect(parseInt(div1.css('z-index'))).toBe(5);
+    });
+    
+    it("accept custom function as first parameter", function(){
+        div2.canGoDown(o.customFunc);        
+        div2.find('img').click();
+        expect(o.customFunc).toHaveBeenCalled();
+    });
+    
+    it("do nothing if 'false' is passed as first parameter", function(){
+        div2.canGoDown(false);        
+        div2.find('img').click();
+        expect( parseInt(div2.css('z-index')) ).toBe(5);        
+        expect( parseInt(div1.css('z-index')) ).toBe(4);
+    });
+    
+    
+    
+    
+});
+
