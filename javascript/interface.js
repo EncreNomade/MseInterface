@@ -688,7 +688,7 @@ function addScriptDialog(src, srcType){
     dialog.annuler.click(closeBottom);
     dialog.confirm.click({sourceId: srcid, sourceType: srcType},validScript);
     
-    var relScript = scriptMgr.getRelatedScripts(srcid);
+    var relScript = scriptMgr.getSameSrcScripts(srcid);
     if (relScript.length > 0){
         var scriptList = [];
         for(var i=0; i<relScript.length; i++)

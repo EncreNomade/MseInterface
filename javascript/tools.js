@@ -1680,7 +1680,7 @@ Script.prototype = {
     constructor: Script
 };
 
-var scriptMgr = function() {
+var scriptMgr = (function() {
     return {
         action: {
             obj: ["click", "doubleClick", "firstShow", "show", "disappear"],
@@ -1741,11 +1741,13 @@ var scriptMgr = function() {
             return select;
         },
         scriptSelectList: function(id, choosedElem){
-            if (choosedElem) var choosedScript = scriptMgr.scripts[choosedElem].target;
+            var choosedScript = null;
+            if(typeof choosedElem == 'undefined')
+                choosedElem = null;
             var select = '<select id="'+id+'">';
             for(var i in this.scripts) {
                 select += "<option value='"+i+"'";
-                if (choosedScript == i) select += " selected ";
+                if (choosedElem == i) select += " selected ";
                 select += ">"+i+"</option>";
             }
             select += '</select>';
@@ -1812,6 +1814,16 @@ var scriptMgr = function() {
             }
             return list;
         },
+        getSameSrcScripts: function(objId){
+            var list = [];
+            for(var elem in this.scripts) {
+                if(this.scripts[elem].src == objId){ // each related scripts
+                    list.push({'id':elem, 'elem':this.scripts[elem]});
+                }
+            }
+            
+            return list;
+        },
         getRelatedScriptsDesc: function(objId) {
             var list = [];
             var relScripts = this.getRelatedScripts(objId);
@@ -1833,82 +1845,85 @@ var scriptMgr = function() {
             return this.scripts;
         },
         countScripts: function(objId, srcType) {
-            var listScript = [];
-            for(var elem in this.scripts) {
-                if(this.scripts[elem].src == objId && this.scripts[elem].srcType){ // each related scripts
-                    listScript.push(elem);
-                }
-            }
+            var listScript = this.getSameSrcScripts(objId);           
             // display a little icon with the number of related script
-            if (srcType == "obj") {
-                var $obj = $('#'+objId);
-                var $scriptCounter = $obj.find('.scriptCounter');
-                if ($scriptCounter.length > 0)  // remove the existing icon
-                    $scriptCounter.remove();
-                $obj.data('scriptsList', listScript);
-                if (listScript.length > 0) {
-                    var $scriptIcon = $('#'+objId+' .del_container img[src="./images/UI/addscript.jpg"]');
-                    var $delContainer = $obj.children('.del_container');
-                    var hidingHoverIc = $scriptIcon.css('display') == 'none';
-                    if (hidingHoverIc) $scriptCounter.hide();
-                    
-                    $delContainer.append('<div class="scriptCounter">'+ listScript.length +'</div>');
-                    $scriptCounter = $delContainer.children('.scriptCounter');
-                    $scriptCounter.click(addScriptForObj);
-                    
-                    if($obj.parents('.article').length > 0){
-                        var top = 60 + 5;
-                        $scriptCounter.css({
-                            'top': top,
-                            'width': 'auto',
-                            'left': '5px',
-                            'line-height': 'initial'});
-                    }
-                    else {
-                        //positionning the notification icons
-                        $delContainer.children().show();
-                        $scriptCounter.css('top', parseInt($scriptIcon.position().top)+5);
-                        if(hidingHoverIc) $delContainer.children().hide();
-                        
-                        $scriptCounter.css('left', '5px');
-                        $obj.hover(function(){$scriptCounter.show();},
-                                   function(){$scriptCounter.hide();});
-                    }
-                }
-            }
-            else { // circleMenu
-                var source = false;
-                var $circleMenu = $('#circleMenu');
-                var $scriptCounter = $('#circleMenu .scriptCounter');
-                if (srcType == "page") source = $('#pageBar li:contains("'+objId+'")');
-                else if (srcType == "anime") source = srcMgr.expos[objId];
-                if ($scriptCounter.length > 0) $scriptCounter.remove();
-                
-                if (listScript.length > 0 && source) {
-                    source.data('scriptsList', listScript);
-                    source.dblclick(function(e){
-                        var $circleMenu = $('#circleMenu');
-                        var nbScripts = $(this).data('scriptsList').length;
-                        var countIcon = $('<div class="scriptCounter">'+nbScripts+'</div>');
-                        if (nbScripts > 0){
-                            var count = 0;
-                            $circleMenu.children().each(function(i){
-                                if ($(this).attr('src')=="./images/UI/addscript.jpg") count = i;
-                            });
-                            var x = e.clientX, y = e.clientY;
-                            var rx = x, ry = (y<115) ? y : y-25, r = 90;
-                            var alpha = (y<115) ? (Math.PI/180)*90/5 : -(Math.PI/180)*90/5;
-
-                            countIcon.css({'left':rx,'top':ry,'opacity':0});
-                            $circleMenu.append(countIcon);
-                            var iconx = r*Math.cos(alpha*count) + 15, icony = r*Math.sin(alpha*count) + 15;
-                            countIcon.animate({'left':"+="+iconx+"px",'top':"+="+icony+"px",'opacity':1}, 'normal', 'swing');
-                            countIcon.click({src: $(this)},function(e){addScriptDialog(e.data.src);});
-                        }
-                    });
-                }
-            }
+            if (srcType == "obj")
+                this.updateObjScCount(objId, listScript);
+            else // circleMenu
+                this.updateCircleMenuScCount(objId, srcType, listScript);
+            
             if(listScript.length > 0) return listScript;
+        },
+        updateObjScCount: function(objId, listScript){
+            var $obj = $('#'+objId);
+            var $scriptCounter = $obj.find('.scriptCounter');
+            if ($scriptCounter.length > 0)  // remove the existing icon
+                $scriptCounter.remove();
+            $obj.data('scriptsList', listScript);
+            if (listScript.length > 0) {
+                var $scriptIcon = $('#'+objId+' .del_container img[src="./images/UI/addscript.jpg"]');
+                var $delContainer = $obj.children('.del_container');
+                var hidingHoverIc = $scriptIcon.css('display') == 'none';
+                if (hidingHoverIc) $scriptCounter.hide();
+                
+                $delContainer.append('<div class="scriptCounter">'+ listScript.length +'</div>');
+                $scriptCounter = $delContainer.children('.scriptCounter');
+                $scriptCounter.click(addScriptForObj);
+                
+                if($obj.parents('.article').length > 0){
+                    var top = 60 + 5;
+                    $scriptCounter.css({
+                        'top': top,
+                        'width': 'auto',
+                        'left': '5px',
+                        'line-height': 'initial'});
+                }
+                else {
+                    //positionning the notification icons
+                    $delContainer.children().show();
+                    $scriptCounter.css('top', parseInt($scriptIcon.position().top)+5);
+                    if(hidingHoverIc) $delContainer.children().hide();
+                    
+                    $scriptCounter.css('left', '5px');
+                    $obj.hover(function(){$scriptCounter.show();},
+                               function(){$scriptCounter.hide();});
+                }
+            }
+        
+        },
+        updateCircleMenuScCount: function(objId, srcType, listScript){
+            var source = false;
+            var $circleMenu = $('#circleMenu');
+            var $scriptCounter = $('#circleMenu .scriptCounter');
+            if (srcType == "page") source = $('#pageBar li:contains("'+objId+'")');
+            else if (srcType == "anime") source = srcMgr.expos[objId];
+            
+            if (listScript.length > 0 && source) {
+                source.data('scriptsList', listScript);
+                source.dblclick(function(e){
+                    var $circleMenu = $('#circleMenu');
+                    var nbScripts = $(this).data('scriptsList').length;
+                    var countIcon = $('#circleMenu .scriptCounter')
+                    if (countIcon.length > 0) countIcon.remove();
+                    
+                    countIcon = $('<div class="scriptCounter">'+nbScripts+'</div>');
+                    if(nbScripts > 0){
+                        var count = 0;
+                        $circleMenu.children().each(function(i){
+                            if ($(this).attr('src')=="./images/UI/addscript.jpg") count = i;
+                        });
+                        var x = e.clientX, y = e.clientY;
+                        var rx = x, ry = (y<115) ? y : y-25, r = 90;
+                        var alpha = (y<115) ? (Math.PI/180)*90/5 : -(Math.PI/180)*90/5;
+
+                        countIcon.css({'left':rx,'top':ry,'opacity':0});
+                        $circleMenu.append(countIcon);
+                        var iconx = r*Math.cos(alpha*count) + 15, icony = r*Math.sin(alpha*count) + 15;
+                        countIcon.animate({'left':"+="+iconx+"px",'top':"+="+icony+"px",'opacity':1}, 'normal', 'swing');
+                        countIcon.click({src: $(this)},function(e){addScriptDialog(e.data.src);});
+                    }
+                });
+            }
         },
         upload: function(url, pjName, lang){
             var data = "pjName="+pjName+"&lang="+lang+"&type=scripts&data="+JSON.stringify(this.scripts);
@@ -1920,11 +1935,14 @@ var scriptMgr = function() {
                 'data': data,
                 success: function(msg) {
                     if(msg && msg != "") alert("script upload errors: "+msg);
+                },
+                error: function(data) {
+                    alert('ajax error on script upload, code : ' + data.status+', message : '+ data.statusText);
                 }
             });
         }
     };
-}();
+})();
 
 
 
