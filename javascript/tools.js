@@ -3579,6 +3579,8 @@ var hoverIcon = function(elem, func, img, data, prepend) {
 	var icon = $('<img src="'+img+'"></img>');
 	if(prepend === true) icons.prepend(icon);
 	else icons.append(icon);
+	
+	if(typeof data != "object" || data instanceof Array) data = null;
 	icon.hide().bind('click', data, func);
 	elem.hover(function(){ if( !tag.resizestarted && !tag.movestarted )icon.show();}, function(){icon.hide();});
 };
@@ -3593,6 +3595,8 @@ var staticIcon = function(elem, func, img, data, prepend) {
 	var icon = $('<img src="'+img+'"></img>');
 	if(prepend === true) icons.prepend(icon);
 	else icons.append(icon);
+	
+	if(typeof data != "object" || data instanceof Array) data = null;
 	icon.bind('click', data, func);
 };
 	
@@ -3623,7 +3627,7 @@ function goDown(e) {
 		var temp = objInf.css('z-index');
 		objInf.css('z-index', currObj.css('z-index'));
 		currObj.css('z-index', temp);
-                CommandMgr.executeCmd( new GoDownCmd(currObj, objInf));
+        CommandMgr.executeCmd( new GoDownCmd(currObj, objInf));
 	}
 }
 
@@ -3645,8 +3649,8 @@ $.fn.deletable = function(f, statiq) {
 	if(del.length > 0) del.remove();
 	if(f === false) return this;
 	var func = f || delParent;
-	if(statiq == true) staticIcon(this, func, './images/UI/del.png', true);
-	else hoverIcon(this, func, './images/UI/del.png', true);
+	if(statiq == true) staticIcon(this, func, './images/UI/del.png', null, true);
+	else hoverIcon(this, func, './images/UI/del.png', null, true);
 	return this;
 };
 $.fn.hideable = function(f) {
@@ -3655,7 +3659,7 @@ $.fn.hideable = function(f) {
 	if(f === false) return this;
 	var func = f || hideParent;
 	this.unbind('click', func);
-	staticIcon(this, func, './images/UI/sclose.png');
+	staticIcon(this, func, './images/UI/sclose.png', null, true);
 	return this;
 };
 $.fn.configurable = function(disables, f) {
@@ -3667,22 +3671,22 @@ $.fn.configurable = function(disables, f) {
 	hoverIcon(this, func, './images/UI/config.png', {'list':disables});
 	return this;
 };
-$.fn.hoverButton = function(icon, f, prepend) {
+$.fn.hoverButton = function(icon, f, data, prepend) {
     if(f === false) {
     	this.find('img[src="'+icon+'"]').remove();
     	return this;
     }
 	if(!$.isFunction(f)) return this;
-	hoverIcon(this, f, icon, null, prepend);
+	hoverIcon(this, f, icon, data, prepend);
 	return this;
 }
-$.fn.staticButton = function(icon, f, prepend) {
+$.fn.staticButton = function(icon, f, data, prepend) {
     if(f === false) {
     	this.find('img[src="'+icon+'"]').remove();
     	return this;
     }
 	if(!$.isFunction(f)) return this;
-	staticIcon(this, f, icon, null, prepend);
+	staticIcon(this, f, icon, data, prepend);
 	return this;
 }
 $.fn.canGoDown = function(f, statiq) {
@@ -3784,7 +3788,6 @@ $.fn.moveable = function(supp) {
 	if(supp !== false)
 		this.mousedown( choose ).mousedown(startMove).mouseup(cancelMove);
 		
-	
 	return this;
 }
 
@@ -4038,17 +4041,23 @@ $.fn.addStepManager = function() {
 
 // Editable for the text tags
 $.fn.editable = function(callback, prepa, dblclick) {
-	var tagName = this[0].tagName;
+	var tagName = $(this).prop('tagName');
 	// Don't support
-	if( $.inArray(tagName.toUpperCase(), editSupportTag) == -1 ) return;
+	if( $.inArray(tagName.toUpperCase(), editSupportTag) == -1 ) return this;
 	
 	var editfn = function(e) {
 	    e.preventDefault();
 	    e.stopPropagation();
+	    var prepa = $(this).data('editprepa');
+	    var callback = $(this).data('editcb');
+	    var dblclick = $(this).data('editdbl');
+	        
 	    // Invoke the prepa function
-	    if(prepa) prepa.invoke($(this));
+	    if(prepa instanceof Callback) prepa.invoke($(this));
 	    
 	    var content = $(this).html();
+	    // Get id
+	    var id = $(this).prop('id');
 	    // Get classes
 	    var className = this.className;
 	    // Get style
@@ -4063,25 +4072,36 @@ $.fn.editable = function(callback, prepa, dblclick) {
 		editfield.css({'width':width, 'height':height, 'color':color, 'background':'rgba(255,255,255,0.3)', 'top':$(this).css('top'), 'left':$(this).css('left'), 'position':$(this).css('position'), 'font-family':$(this).css('font-family'), 'font-size':$(this).css('font-size'), 'text-align':$(this).css('text-align')});
 		$(this).replaceWith(editfield);
 		
-		var finishedit = function() {
+		var finishedit = function(e) {
+		    var prepa = editfield.data('editprepa');
+		    var callback = editfield.data('editcb');
+		    var dblclick = editfield.data('editdbl');
+		
 			var newcontent = editfield.val();
 			var newtext = $('<'+tagName+'>'+newcontent+'</'+tagName+'>');
+			newtext.prop('id', id);
 			newtext.attr('style', style);
 			newtext.get(0).className = className;
 			editfield.replaceWith(newtext);
-			if(callback) {
+			if(callback instanceof Callback) {
 			    callback.invoke(newcontent, newtext);
 			}
 			newtext.editable(callback, prepa, dblclick);
 			$('body').unbind('click', finishedit);
 		}
 		
-		editfield.blur(finishedit).click(function(e){e.stopPropagation();});
-		$('body').click(finishedit);
+		editfield.data({'editcb':callback, 'editprepa':prepa, 'editdbl':dblclick})
+		         .bind('blur', finishedit)
+		         .click(function(e){e.stopPropagation();});
+		$('body').bind('click', finishedit);
 	};
 	
-	if(dblclick === true) $(this).dblclick(editfn);
-	else $(this).click(editfn);
+	$(this).data({'editcb':callback, 'editprepa':prepa, 'editdbl':dblclick})
+	       .unbind('dblclick.editable')
+           .unbind('click.editable');
+	
+	if(dblclick === true) $(this).bind('dblclick.editable', editfn);
+	else $(this).bind('click.editable', editfn);
 	return this;
 }
 
