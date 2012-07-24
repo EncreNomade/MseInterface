@@ -26,7 +26,7 @@ $_SESSION["unittest_unittest"] = $pj;
   "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-  <title>Interface d'édition (Jasmine Spec Runner)</title>
+  <title>Interface Spec Runner</title>
 
 <link rel="shortcut icon" type="image/png" href="lib/jasmine-1.2.0/jasmine_favicon.png">
 <link rel="stylesheet" type="text/css" href="lib/jasmine-1.2.0/jasmine.css">
@@ -44,7 +44,8 @@ $_SESSION["unittest_unittest"] = $pj;
 <link rel="stylesheet" type="text/css" href="../stylesheets/interface.css" />
 
 <!-- include spec files here... -->
-<script src="spec/demo.js"></script>
+<script src="spec/interface/spec_project_data.js"></script>
+<script src="spec/interface/spec_interface.js"></script>
 
 <script type="text/javascript">
 (function() {
@@ -267,69 +268,6 @@ $_SESSION["unittest_unittest"] = $pj;
     }
 	
 	var config = Config.getInstance();
-	init();
-	
-	// Compare server and local last modification info for Synchronization
-	var norecord = false;
-	var lastModLocal = -1;
-	var pjsavestr = localStorage.getItem(pjName+" "+pjLanguage);
-	if(!pjsavestr) norecord = true;
-	else {
-	    var pjsave = JSON.parse(pjsavestr);
-	    if(!pjsave) norecord = true;
-	    else {
-	        if(pjsave.lastModif) lastModLocal = pjsave.lastModif;
-	    }
-	}
-	
-	// Update local with server storage
-	if(norecord || (lastModLocal < lastModServer)) {
-	    $.get("../updateFromServer.php", {'pjName':pjName, 'lang':pjLanguage}, function(msg){
-	        //alert(msg);
-	        var pjsave = JSON.parse(msg);
-	        if(pjsave) {
-	            //saveToLocalStorage(pjName, msg);
-	            retrieveLocalInfo(pjsave);
-	            
-	            <?php 
-	                if($pj->getUntranslated()) {
-	                    print("window.translationTool.active();");
-	                }
-	            ?>
-	        }
-	    });
-	}
-	// Update server with local storage
-	else if(lastModLocal > lastModServer) {
-	    $.post("../updateWithLocal.php", {"pjName":pjName, 'lang':pjLanguage, "localStorage":pjsavestr}, function(msg){
-                var modif = parseInt(msg);
-                if(!isNaN(modif)) pjsave.lastModif = modif;
-                else if(msg != "") alert(msg);
-                
-                // Retrieve the information of pages in local storage
-                if(pjsave) {
-                    retrieveLocalInfo(pjsave);
-                    
-                    <?php 
-                        if($pj->getUntranslated()) {
-                            print("window.translationTool.active();");
-                        }
-                    ?>
-                }
-            });
-	}
-	else {
-	    // Retrieve the information of pages in local storage
-	    if(pjsave) {
-	        retrieveLocalInfo(pjsave);
-	        
-	        <?php 
-	            if($pj->getUntranslated()) {
-	                print("window.translationTool.active();");
-	            }
-	        ?>
-	    }
-	}
 </script>
 
 </body>

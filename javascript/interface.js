@@ -440,7 +440,7 @@ function createStepDialog() {
 		
 		if(!name || !nameValidation(name) || stepExist(name)) {
 			dialog.showAlert('Nom choisi invalid ou nom existe déjà');
-			return;
+    			return;
 		}
 		
 		if(this == $('#normalStep').get(0)) {
@@ -533,7 +533,7 @@ function showParameter(obj, conf) {
 	dialog.main.append('<p><label>Position:</label><input id="pm_x" size="10" value="'+x+'" placeholder="x" type="text"><span>px</span><input id="pm_y" size="10" value="'+y+'" placeholder="y" type="text"><span>px</span></p>');
 	dialog.main.append('<p><label>Taille</label><input id="pm_width" size="10" value="'+width+'" placeholder="Largeur" type="text"><span>px</span><input id="pm_height" size="10" value="'+height+'" placeholder="hauteur" type="text"><span>px</span></p>');
 	dialog.main.append('<h2> - Texte</h2>');
-	dialog.main.append('<p><label>Police:</label><input id="pm_font" size="10" value="'+font+'" placeholder="famille" type="text"><input id="pm_fsize" style="width: 28px;" value="'+fsize+'" type="number"><span>px</span><select id="pm_fstyle" value="'+fstyle+'"><option value="normal">normal</option><option value="bold">bold</option></select></p>');
+	dialog.main.append('<p><label>Police:</label><input id="pm_font" size="10" value="'+font+'" placeholder="famille" type="text"><input id="pm_fsize" style="width: 28px;" value="'+fsize+'" type="number"><span>px</span><select id="pm_fstyle" value="normal"><option value="normal">normal</option><option value="bold">bold</option></select></p>');
 	dialog.main.append('<p><label>Alignement:</label><select id="pm_align"><option value="left">left</option><option value="center">center</option><option value="right">right</option></select></p>');
 	dialog.main.append('<h2> - Couleur</h2>');
 	dialog.main.append('<p><label>Opacity:</label><input id="pm_opac" style="width: 28px;" value="'+opac+'" type="number"></p>');
@@ -550,7 +550,8 @@ function showParameter(obj, conf) {
 	if(disables.back) $('#pm_back').attr('disabled', 'true');
 	if(disables.color) $('#pm_color').attr('disabled', 'true');
 	if(disables.stroke) $('#pm_stroke').attr('disabled', 'true');
-	$('#pm_align').val(align);
+	$('#popup_dialog #pm_fstyle').val(fstyle);
+	$('#popup_dialog #pm_align').val(align);
 	
 	dialog.confirm.click(function(){
 		var res = {};
@@ -566,7 +567,7 @@ function showParameter(obj, conf) {
 		res['background-color'] = $('#pm_back').val();
 		res.color = $('#pm_color').val();
 		res['border-color'] = $('#pm_stroke').val();
-                CommandMgr.executeCmd(new ConfigObjCmd(obj, res));
+        CommandMgr.executeCmd(new ConfigObjCmd(obj, res));
 		dialog.close();
 	});
 }
@@ -574,9 +575,9 @@ function showParameter(obj, conf) {
 
 // Insert obj in Article dialog
 function insertElemDialog(e) {
-	dialog.showPopup('Inserer les éléments dans l\'article', 400, 300, 'Inserer', $(this).parent().parent());
+	dialog.showPopup('Inserer les éléments dans l\'article', 400, 300, 'Inserer');
 	// show ressource panel
-	$('#bottom').css('z-index','110');
+	showBottom();
 	dialog.annuler.click(closeBottom);
 	// Insert Zone
 	var insert = $('<div class="insert_cont"></div>');
@@ -601,13 +602,13 @@ function insertElemDialog(e) {
 	    }
 	});
 	
-	dialog.confirm.click(function() {
+	dialog.confirm.click({'target':$(this).parent().parent()}, function(e) {
 	    closeBottom();
-	    var last = dialog.caller;
+	    var last = e.data.target;
 		var prepared = dzone.children();
 		for(var i = prepared.length-1; i >= 0; i--) {
 			var id = $(prepared.get(i)).data('srcId');
-			var elem = srcMgr.generateChildDomElem(id, dialog.caller.parent());
+			var elem = srcMgr.generateChildDomElem(id, e.data.target.parent());
 			elem.attr('id', 'obj'+(curr.objId++));
 			elem.deletable(null, true)
 			    .selectable(selectP)
@@ -621,10 +622,10 @@ function insertElemDialog(e) {
 		}
 		var text = tzone.val();
 		if(text && text != "") {
-		    var font = dialog.caller.css('font-weight');
-		    font += " "+config.realX( cssCoordToNumber( dialog.caller.css('font-size') ) )+"px";
-		    font += " "+dialog.caller.css('font-family');
-			last.after(generateSpeaks(text, font , config.realX( dialog.caller.width() ) , config.realY( dialog.caller.height()) ));
+		    var font = e.data.target.css('font-weight');
+		    font += " "+config.realX( cssCoordToNumber( e.data.target.css('font-size') ) )+"px";
+		    font += " "+e.data.target.css('font-family');
+			last.after(generateSpeaks(text, font , config.realX( e.data.target.width() ) , config.realY( e.data.target.height()) ));
 		}
 		dialog.close();
 	});
@@ -652,14 +653,22 @@ function addScriptForObj(e){
     addScriptDialog(obj, "obj");
 };
 function addScriptDialog(src, srcType){
+    if(!(src instanceof jQuery) || src.length == 0) return;
     var name = "";
     var tagName = src[0].tagName;
     var srcid = "";
     if(srcType != "obj") {
         // Page label event
-        if(tagName == "LI") {srcid = name = src.text(); srcType = "page";}
-        // Layer expo event
+        if(tagName == "LI") {
+            srcid = name = src.text();
+            var page = $('#'+srcid);
+            if(page.length == 0 || !page.hasClass('scene'))
+                return;
+            srcType = "page";
+        }
+        // No layer expo event
         else if(src.hasClass('layer_expo')) {
+            return;
             name = src.children('h1').text(); 
             srcType = "layer"; 
             srcid = src.find('span').text();
@@ -667,9 +676,12 @@ function addScriptDialog(src, srcType){
         // Anime obj event
         else if(src.hasClass('icon_src')) {
             srcid = src.data('srcId');
+            if(srcMgr.sourceType(srcid) != "anime") 
+                return;
             name = src.children('p').text(); 
             srcType = "anime";
         }
+        else return;
     }
     else {
         name = "Object";
@@ -678,27 +690,29 @@ function addScriptDialog(src, srcType){
     if(!srcType || !srcid || srcid == "") return;
     
     
-    dialog.showPopup('Ajouter un script pour '+name, 400, 390, 'Confirmer', src);
+    dialog.showPopup('Ajouter un script pour '+name, 400, 410, 'Confirmer');
     dialog.main.append('<p><label>Ajout automatique:</label><input id="ajout_auto" type="checkbox" style="margin-top:12px;" checked></p>');
     dialog.main.append('<p><label>Name:</label><input id="script_name" type="text" size="20"></p>');
+    dialog.main.append('<p><label>Source:</label><cite>id: '+srcid+', type: '+srcType+'</cite></p>');
     dialog.main.append('<p><label>Action:</label>'+scriptMgr.actionSelectList('script_action', srcType)+'</p>');
     dialog.main.append('<p><label>Réaction:</label>'+scriptMgr.reactionList('script_reaction')+'</p>');
     dialog.main.append('<p><label>Cible de réaction:</label></p>');
     $('#script_reaction').change(tarDynamic).blur(tarDynamic).change();
     dialog.annuler.click(closeBottom);
-    dialog.confirm.click({sourceId: srcid, sourceType: srcType},validScript);
+    dialog.confirm.click({sourceId: srcid, sourceType: srcType}, validScript);
     
-    var relScript = scriptMgr.getSameSrcScripts(srcid);
-    if (relScript.length > 0){
+    var relatScript = scriptMgr.getRelatedScripts(srcid);
+    if (relatScript.length > 0){
         var scriptList = [];
-        for(var i=0; i<relScript.length; i++)
-            scriptList.push(relScript[i].id);
+        for(var i=0; i<relatScript.length; i++)
+            scriptList.push(relatScript[i].id);
         var modifyScriptsButton = dialog.addButton($('<input type="button" value="Modifier les scripts existants"></input>'));
         modifyScriptsButton.click(function(){ modifyScriptDialog(scriptList, null, src, srcType); });
     }
 };
 // Modify a script related to an obj
-function modifyScriptDialog(scriptsList, defaultScript, relatSrc, relatSrcType) {
+function modifyScriptDialog(scriptsList, defaultScript, relatSrc) {
+    if(!(scriptsList instanceof Array) || scriptsList.length == 0) return;
     if (typeof(defaultScript) === 'undefined') defaultScript = scriptsList[0];
     dialog.showPopup('Modifier les scripts',400, 410,'Modifier');
     
@@ -708,7 +722,7 @@ function modifyScriptDialog(scriptsList, defaultScript, relatSrc, relatSrcType) 
          if (scriptsList[i] == defaultScript) select += ' selected ';
          select += '>'+scriptsList[i]+'</option>';
     }
-       
+
     select += '</select></p>';
     dialog.main.append(select);
     $('#script_name').parent().css('font-weight', 'bold');
@@ -726,10 +740,12 @@ function modifyScriptDialog(scriptsList, defaultScript, relatSrc, relatSrcType) 
     var relatedReaction = scriptMgr.scripts[choosedScript].reaction;
     var srcid = scriptMgr.scripts[$('#script_name').val()].src;
     var srcType = scriptMgr.scripts[$('#script_name').val()].srcType;
+    dialog.main.append('<p><label>Source:</label><cite>id: '+srcid+', type: '+srcType+'</cite></p>');
     dialog.main.append('<p><label>Action:</label>'+scriptMgr.actionSelectList('script_action', srcType, relatedAction)+'</p>');
     dialog.main.append('<p><label>Réaction:</label>'+scriptMgr.reactionList('script_reaction', relatedReaction)+'</p>');
     dialog.main.append('<p><label>Cible de réaction:</label></p>');
     $('#script_reaction').change(tarDynamic).blur(tarDynamic).change();
+    dialog.annuler.click(closeBottom);
     
     var delScriptButton = dialog.addButton($('<input type="button" value="Supprimer" />'));
     delScriptButton.click(function(){
@@ -742,7 +758,7 @@ function modifyScriptDialog(scriptsList, defaultScript, relatSrc, relatSrcType) 
         // Last script removed
         else { 
             // When delete the last script --> return on addScriptDialog
-            if(relatSrc) addScriptDialog(src, srcType);
+            if(relatSrc) addScriptDialog(relatSrc, srcType);
             else dialog.close();
         }
     });
@@ -750,7 +766,7 @@ function modifyScriptDialog(scriptsList, defaultScript, relatSrc, relatSrcType) 
         var addScriptButton = dialog.addButton($('<input type="button" value="Nouveau script"></input>'));
         addScriptButton.click(function(){
             dialog.close(); 
-            addScriptDialog(relatSrc, relatSrcType);
+            addScriptDialog(relatSrc, srcType);
         });
     }
     
@@ -800,7 +816,10 @@ function validScript(e){
     closeBottom();
     dialog.close();
 }
-    
+
+var showBottom = function() {
+    $('#bottom').css('z-index','110');
+};
 var closeBottom = function() {
 	$('#bottom').css('z-index','6');
 };
@@ -840,7 +859,7 @@ function tarDynamic(e) {
         }
         
         // show ressource panel
-        $('#bottom').css('z-index','110');
+        showBottom();
         break;
     case "cursor":
         var choosedCursor = false;
@@ -849,7 +868,7 @@ function tarDynamic(e) {
         $('#script_tar').change(function(){
             if($(this).val() == "autre") {
                 // show ressource panel
-                $('#bottom').css('z-index','110');
+                showBottom();
                 var supp = $('<p><label>Cursor personalisé</label></p>');
                 var dz = (new DropZone(dropToTargetZone, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "script_supp")).jqObj;
                 dz.data('type', "image");
@@ -869,7 +888,7 @@ function tarDynamic(e) {
     case "audio":
     case "code":
         // show ressource panel
-        $('#bottom').css('z-index','110');
+        showBottom();
         var dz = (new DropZone(dropToTargetZone, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "script_tar")).jqObj;
         dz.data('type', type);
         cible.append(dz);

@@ -267,11 +267,17 @@ describe("Deletable, hideable, configurable test", function() {
 describe("Editable function test", function() {
     var div, span, h1, h5, li, p, form, input;
     
-    var a = {};
-    a.n = 0;
-    a.fn = function() {
-        a.n++;
-    }
+    var a = {
+        n : 0,
+        fn : function(newtext, newobj) {
+            a.n++;
+            a.newtext = newtext;
+            a.newobj = newobj;
+        },
+        newtext : "",
+        newobj : null
+        
+    };
     a.cb = new Callback(a.fn, a);
     
     beforeEach(function() {
@@ -286,6 +292,8 @@ describe("Editable function test", function() {
         input = $('input').editable();
         
         a.n = 0;
+        a.newtext = "";
+        a.newobj = null;
     });
 
     it("Editable should support only SPAN, H, LI, DIV, P", function() {
@@ -338,15 +346,18 @@ describe("Editable function test", function() {
         expect($('#test li').text()).toEqual('LI modified');
     });
     
-    it("Editable may have a callback", function() {
+    it("Editable may have a callback and callback can receieve modified text and the new object", function() {
         p.editable(a.cb);
         
         p.click();
         var editfield = $('textarea');
         editfield.val('P modified');
         editfield.blur();
+        p = $('#test p');
         
         expect(a.n).toEqual(1);
+        expect(a.newtext).toEqual('P modified');
+        expect(a.newobj.get(0)).toEqual(p.get(0));
     });
     
     it("Editable may have a prepare function", function() {
@@ -375,7 +386,17 @@ describe("Editable function test", function() {
         editfield.blur();
         expect($('#test h5').text()).toEqual('H5 modified');
     });
+    
+    it("Editable can be canceled", function() {
+        h5.editable(false);
+        h5.click();
+        expect($('#test h5').length).toEqual(1);
+        h5.dblclick();
+        expect($('#test h5').length).toEqual(1);
+    });
 });
+
+
 
 describe("canGoDown function test", function(){
     var div1, div2;
@@ -421,10 +442,78 @@ describe("canGoDown function test", function(){
         div2.find('img').click();
         expect( parseInt(div2.css('z-index')) ).toBe(5);        
         expect( parseInt(div1.css('z-index')) ).toBe(4);
-    });
-    
-    
-    
-    
+    });    
 });
 
+
+
+describe("Circle menu test", function() {
+    var a = {
+        n : 0,
+        fn1 : function() {
+            a.n++;
+        },
+        fn2 : function() {
+            a.n += 10;
+        },
+        fn3 : function() {
+            a.n += 100;
+        }
+    };
+    a.cb = new Callback(a.fn, a);
+    var div, h5;
+    var buttonmap = {'addscript':['./images/UI/addscript.jpg', a.fn1],
+                     'rename':['./images/UI/config.png', a.fn2],
+                     'delete':['./images/UI/del.png', a.fn3]};
+    
+    beforeEach(function() {
+        div = $('#div1');
+        h5 = $('#test h5');
+        a.n = 0;
+    });
+    
+    it("Circle menu should accept a button function mapping object, save it to the data, and change the cursor of object", function() {
+        // Init
+        div.editable(false);
+        div.circleMenu(buttonmap);
+        
+        expect(div.data('circleMenu')).toEqual(buttonmap);
+        expect(div.css('cursor')).toMatch(/images\/UI\/circlemenuptr\.cur/);
+    });
+    
+    it("Circle menu should be shown when double click happens to object", function() {
+        expect($('#circleMenu').length).toEqual(0);
+        div.dblclick();
+        var menu = $('#circleMenu');
+        expect(menu.length).toEqual(1);
+        expect(menu.children('img').length).toEqual(3);
+        expect(menu.css('display')).not.toEqual('none');
+        
+        div.click();
+        waitsFor(function(){
+                return ($('#circleMenu').length == 0);
+            }, "Circle menu should be removed", 2000);
+    });
+    
+    it("Circle menu could be removed", function() {
+        // Init for h5
+        h5.editable(false);
+        h5.circleMenu(buttonmap);
+        expect(h5.data('circleMenu')).toEqual(buttonmap);
+        
+        h5.circleMenu(false);
+        expect(h5.data('circleMenu')).toBeUndefined();
+        expect(h5.css('cursor')).toEqual('default');
+    });
+    
+    it("Circle menu buttons should work", function() {
+        div.dblclick();
+        $('#circleMenu img[src="./images/UI/addscript.jpg"]').click();
+        expect(a.n).toEqual(1);
+        $('#circleMenu img[src="./images/UI/config.png"]').click();
+        expect(a.n).toEqual(11);
+        $('#circleMenu img[src="./images/UI/del.png"]').click();
+        expect(a.n).toEqual(111);
+    });
+});
+>>>>>>> Circle menu test & Interface runner(intermediaire)

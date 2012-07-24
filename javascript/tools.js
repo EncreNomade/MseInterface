@@ -4045,6 +4045,13 @@ $.fn.editable = function(callback, prepa, dblclick) {
 	// Don't support
 	if( $.inArray(tagName.toUpperCase(), editSupportTag) == -1 ) return this;
 	
+	if(callback === false) {
+	    $(this).removeData('editcb editprepa editdbl')
+	           .unbind('dblclick.editable')
+	           .unbind('click.editable');
+	    return this;
+	}
+	
 	var editfn = function(e) {
 	    e.preventDefault();
 	    e.stopPropagation();
@@ -4113,6 +4120,7 @@ $.fn.circleMenu = function(buttonmap) {
         tar.css('cursor', 'default');
         tar.removeData('circleMenu');
         tar.unbind('dblclick');
+        return this;
     }
     
     tar.css('cursor', 'url("./images/UI/circlemenuptr.cur"), auto');
@@ -4122,7 +4130,9 @@ $.fn.circleMenu = function(buttonmap) {
         var x = e.clientX, y = e.clientY;
         var rx = x, ry = (y<115) ? y : y-25, r = 90;
         var alpha = (y<115) ? (Math.PI/180)*90/5 : -(Math.PI/180)*90/5;
-        $('body').append("<div id='circleMenu'></div>");
+        var menu = $("<div id='circleMenu'></div>");
+        $('body').append(menu);
+        menu.css({left:rx, top:ry});
         var buttonmap = $(this).data('circleMenu');
         var count = 0;
         for(var i in buttonmap) {
@@ -4130,11 +4140,11 @@ $.fn.circleMenu = function(buttonmap) {
             if(buttonmap[i][1]){
                 icon.data("func", buttonmap[i][1]);
                 icon.click(function(){
-                        $(this).data("func").call(window, tar);
+                    $(this).data("func").call(window, tar);
                 });
             }
             icon.css({'left':rx,'top':ry,'opacity':0});
-            $('#circleMenu').append(icon);
+            menu.append(icon);
             // Animation
             var iconx = r*Math.cos(alpha*count), icony = r*Math.sin(alpha*count);
             icon.animate({'left':"+="+iconx+"px",'top':"+="+icony+"px",'opacity':1}, 'normal', 'swing');
@@ -4142,9 +4152,11 @@ $.fn.circleMenu = function(buttonmap) {
         }
         
         $('body').click(function(){
-            if ($('#circleMenu').css('display') != 'none') $('#circleMenu').fadeOut("normal", function(){$('#circleMenu').remove();});
+            var menu = $('#circleMenu');
+            if (menu.css('display') != 'none') menu.fadeOut("normal", function(){menu.remove();});
         });
     });
+    return this;
 }
 
 })(jQuery);
