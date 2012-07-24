@@ -714,7 +714,7 @@ function addScriptDialog(src, srcType){
 function modifyScriptDialog(scriptsList, defaultScript, relatSrc) {
     if(!(scriptsList instanceof Array) || scriptsList.length == 0) return;
     if (typeof(defaultScript) === 'undefined') defaultScript = scriptsList[0];
-    dialog.showPopup('Modifier les scripts',400, 410,'Modifier');
+    dialog.showPopup('Modifier les scripts',400, 430,'Modifier');
     
     var select = '<p><label>Choix du script:</label><select id="script_name">';
     for(var i = 0; i<scriptsList.length; i++) {
@@ -827,7 +827,7 @@ function tarDynamic(e) {
     if ($('#script_name').is('select')) var choosedScript = $('#script_name').val();
     closeBottom();
     var react = $(this).val();
-    var cible = $('.popup_body p:eq(4)');
+    var cible = $('.popup_body p:contains("Cible de réaction")');
     cible.children('label').nextAll().remove();
     cible.nextAll().remove();
     var type = scriptMgr.reactionTarget(react);
