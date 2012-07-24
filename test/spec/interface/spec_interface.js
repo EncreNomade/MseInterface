@@ -290,11 +290,13 @@ describe("Dialogs test", function() {
             
             // It should open the dialog if the target is a animation source expo
             addScriptDialog($('.icon_src:contains("example")'));
-            expect(dialog.showPopup.mostRecentCall.args[0]).toEqual('Ajouter un script pour '+$('p:contains("example")').text());
+            expect(dialog.showPopup.mostRecentCall.args[0]).toEqual('Ajouter un script pour '+$('.icon_src p:contains("example")').text());
             
             // It should open the dialog if the target is an object with id
             addScriptDialog($('.article div:first'), 'obj');
             expect(dialog.showPopup.mostRecentCall.args[0]).toEqual('Ajouter un script pour Object');
+            
+            li.remove();
         });
         
         it(" - Form content check", function() {
@@ -422,8 +424,8 @@ describe("Dialogs test", function() {
             dialog.close();
             
             // Relat src not given (dialog opened by the scripts panel)
-            var list = scriptMgr.getRelatedScripts('example');
-            modifyScriptDialog(list);
+            var relatScript = scriptMgr.getRelatedScriptids('example');
+            modifyScriptDialog(relatScript);
             expect($('#popup_dialog #script_name').prop('tagName')).toEqual('SELECT');
             expect($('#popup_dialog #ajout_auto').prop('type')).toEqual('checkbox');
             expect($('#popup_dialog #script_action').prop('tagName')).toEqual('SELECT');
@@ -433,12 +435,38 @@ describe("Dialogs test", function() {
         });
         
         it(" - The dialog should call 'tarDynamic' when reaction changed", function() {
+            spyOn(window, 'tarDynamic').andCallThrough();
+            
+            var relatScript = scriptMgr.getRelatedScriptids('example');
+            modifyScriptDialog(relatScript);
+        
+            $('#popup_dialog #script_reaction').change();
+            expect(tarDynamic).toHaveBeenCalled();
         });
         
         it(" - Delete script button should execute 'DelScriptCmd', the popup target changed to next script or add script dialog when no more script found", function() {
+            spyOn(CommandMgr, 'executeCmd').andCallThrough();
+            spyOn(window, 'addScriptDialog');
+            
+            var relatScript = scriptMgr.getRelatedScriptids('example');
+            modifyScriptDialog(relatScript);
+        
+            var del = $('#popup_dialog input[value="Supprimer"]');
+            del.click();
+            expect(CommandMgr.executeCmd).toHaveBeenCalledWith(jasmine.any(DelScriptCmd));
+            expect(addScriptDialog).not.toHaveBeenCalled();
         });
         
         it(" - Add script button should change dialog to 'addScriptDialog'", function() {
+            addScriptDialog(animexpo);
+            var modbtn = $('#popup_dialog input[value="Modifier les scripts existants"]');
+            modbtn.click();
+            
+            spyOn(window, 'addScriptDialog');
+            var addbtn = $('#popup_dialog input[value="Nouveau script"]');
+            expect(addbtn.length).toEqual(1);
+            addbtn.click();
+            expect(addScriptDialog).toHaveBeenCalled();
         });
         
         it(" - The dialog cancel button will call 'closeBottom', confirm button will call 'validScript'", function() {
@@ -456,12 +484,33 @@ describe("Dialogs test", function() {
             dialog.confirm.click();
             expect(validScript).toHaveBeenCalled();
             expect(CommandMgr.executeCmd).toHaveBeenCalledWith(jasmine.any(ModifyScriptCmd));
+            
+            srcMgr.delSource('example');
         });
     });
     
     
     describe("New translation dialog test", function() {
+        it(" - Dialog should contain 'newLanguage' and 'openNewLanguage' tag, it should send post request to retrieve languages", function() {
+            spyOn($, 'post').andCallThrough();
+            newTranslationDialog();
         
+            expect($('#popup_dialog #newLanguage').prop('type')).toEqual('text');
+            expect($('#popup_dialog #openNewLanguage').prop('type')).toEqual('checkbox');
+            expect($.post).toHaveBeenCalledWith('load_project.php', {'pjName': pjName}, jasmine.any(Function));
+        });
+        
+        it(" - Confirm button should send informations to server to create the new language", function(){
+            newTranslationDialog();
+            
+            spyOn($, 'ajax');
+            dialog.confirm.click();
+            expect($.ajax).not.toHaveBeenCalled();
+            
+            $('#popup_dialog #newLanguage').val("french");
+            dialog.confirm.click();
+            expect($.ajax).toHaveBeenCalled();
+        });
     });
 });
 
@@ -542,5 +591,189 @@ describe("'ConfigObjCmd' test", function() {
         expect(article.css('background-color')).toEqual('rgb(0, 0, 255)');
         expect(article.css('color')).toEqual('rgb(0, 255, 0)');
         expect(article.css('border-top-color') == 'rgb(255, 0, 0)' || article.css('border-color') == 'rgb(255, 0, 0)').toBeTruthy();
+    });
+});
+
+
+
+describe("Add image element test", function() {
+    var currid, page, step;
+
+    beforeEach(function() {
+        srcMgr.addSource('image', './images/bigimage1.jpg', 'big1');
+        srcMgr.addSource('image', './images/bigimage2.jpg', 'big2');
+        currid = curr.objId;
+        
+        page = $('.scene:first');
+        step = page.children('.layer:first');
+    });
+    
+    afterEach(function() {
+        srcMgr.delSource('big1');
+        srcMgr.delSource('big2');
+    });
+    
+    it(" - Add image element should make the element moveable/resizable/deletable/configurable/canGoDown and possible to add script, defineZ should also be called", function() {
+        srcMgr.delSource('example');
+        
+        spyOn($.fn, 'moveable').andCallThrough();
+        spyOn($.fn, 'resizable').andCallThrough();
+        spyOn($.fn, 'deletable').andCallThrough();
+        spyOn($.fn, 'configurable').andCallThrough();
+        spyOn($.fn, 'canGoDown').andCallThrough();
+        spyOn($.fn, 'hoverButton').andCallThrough();
+        spyOn(window, 'defineZ').andCallThrough();
+        
+        addImageElem('big1', './images/bigimage1.jpg', page, step);
+        
+        expect($.fn.moveable).toHaveBeenCalled();
+        expect($.fn.resizable).toHaveBeenCalled();
+        expect($.fn.deletable).toHaveBeenCalled();
+        expect($.fn.configurable).toHaveBeenCalled();
+        expect($.fn.canGoDown).toHaveBeenCalled();
+        expect($.fn.hoverButton).toHaveBeenCalledWith(jasmine.any(String), addScriptForObj);
+        expect(defineZ).toHaveBeenCalled();
+    });
+    
+    it(" - Add image element should execute 'CreateElemCmd'", function() {
+        spyOn(CommandMgr, 'executeCmd');
+        addImageElem('big1', './images/bigimage1.jpg', page, step);
+        expect(CommandMgr.executeCmd).toHaveBeenCalledWith(jasmine.any(CreateElemCmd));
+    });
+    
+    it(" - Add image element should add a <img> tag into a <div> container", function() {
+        addImageElem('big1', './images/bigimage1.jpg', page, step);
+        
+        var container = step.children('#obj'+currid);
+        expect(container.length).toEqual(1);
+        var img = container.children('img');
+        expect(img.length).toEqual(1);
+        expect(img.attr('src')).toEqual('./images/bigimage1.jpg');
+    });
+    
+    it(" - Final container size should be little than page size, and secondly not bigger than its original size", function(){
+        var pw = page.width(), ph = page.height();
+        
+        // Big image 1
+        addImageElem('big1', './images/bigimage1.jpg', page, step);
+        
+        var container = step.children('#obj'+currid);
+        var img = container.children('img');
+        var ow = img.prop('naturalWidth'), oh = img.prop('naturalHeight');
+        var w = container.width(), h = container.height();
+        
+        expect(w).not.toBeGreaterThan(pw);
+        expect(h).not.toBeGreaterThan(ph);
+        expect(w).not.toBeGreaterThan(ow);
+        expect(h).not.toBeGreaterThan(ow);
+        
+        // Big image 2
+        currid = curr.objId;
+        addImageElem('big2', './images/bigimage2.jpg', page, step);
+        
+        var container = step.children('#obj'+currid);
+        var img = container.children('img');
+        var ow = img.prop('naturalWidth'), oh = img.prop('naturalHeight');
+        var w = container.width(), h = container.height();
+        
+        expect(w).not.toBeGreaterThan(pw);
+        expect(h).not.toBeGreaterThan(ph);
+        expect(w).not.toBeGreaterThan(ow);
+        expect(h).not.toBeGreaterThan(ow);
+        
+        // Small image
+        currid = curr.objId;
+        addImageElem('imgsrc', './images/UI/addscript.jpg', page, step);
+        
+        var container = step.children('#obj'+currid);
+        var img = container.children('img');
+        var ow = img.prop('naturalWidth'), oh = img.prop('naturalHeight');
+        var w = container.width(), h = container.height();
+        
+        expect(w).not.toBeGreaterThan(pw);
+        expect(h).not.toBeGreaterThan(ph);
+        expect(w).not.toBeGreaterThan(ow);
+        expect(h).not.toBeGreaterThan(ow);
+    });
+    
+    it(" - Object counter should increment after add a image element", function() {
+        addImageElem('big1', './images/bigimage1.jpg', page, step);
+        
+        expect(curr.objId).toEqual(currid+1);
+        
+        addImageElem('big1', './images/bigimage1.jpg', page, step);
+        
+        expect(curr.objId).toEqual(currid+2);
+        
+        addImageElem('imgsrc', './images/UI/addscript.jpg', page, step);
+        
+        expect(curr.objId).toEqual(currid+3);
+    });
+});
+
+
+
+describe("Bottom panel show/hide test", function() {
+    it(" - Close bottom function should make bottom panel behind the mask of popup", function() {
+        showBottom();
+        closeBottom();
+        expect(parseInt($('#bottom').css('z-index'))).toBeLessThan(parseInt($('.popup_back').css('z-index')));
+    });
+    
+    it(" - Close bottom function should make bottom panel upon the mask of popup", function() {
+        closeBottom();
+        showBottom();
+        expect(parseInt($('#bottom').css('z-index'))).toBeGreaterThan(parseInt($('.popup_back').css('z-index')));
+    });
+});
+
+
+
+describe("Active bar label function test", function() {
+    it(" - Click on page bar label should call this function", function() {
+        // Add pages
+        CommandMgr.executeCmd(new AddPageCmd('mario'));
+        CommandMgr.executeCmd(new AddPageCmd('pitch'));
+    
+        spyOn(activeBarLabel, 'apply').andCallThrough();
+        
+        var labels = $('#pageBar').children('li');
+        var count = 0;
+        
+        for(var i = 0; i < labels.length; ++i) {
+            var label = $(labels.get(i));
+            label.click();
+            if(!label.hasClass('add'))
+                count++;
+            expect(activeBarLabel.apply.calls.length).toEqual(count);
+        }
+    });
+    
+    it(" - This function will add class 'active' to page label, change z-index order of pages, update curr.page and active current step manager", function() {
+        var pagebar = $('#pageBar');
+        var labels = $('#pageBar').children('li');
+        var count = 0;
+        
+        for(var i = 0; i < labels.length; ++i) {
+            var label = $(labels.get(i));
+            label.click();
+            
+            if(!label.hasClass('add')) {
+                // Active
+                expect(pagebar.children('.active').get(0)).toEqual(label.get(0));
+                expect(pagebar.children('.active').length).toEqual(1);
+                // z-index
+                var name = label.text();
+                var page = $('#'+name+'.scene');
+                expect(parseInt(page.css('z-index'))).toEqual(2);
+                page.siblings('.scene').each(function(){
+                    expect(parseInt($(this).css('z-index'))).toEqual(1);
+                })
+                // curr.page
+                expect(curr.page.get(0)).toEqual(page.get(0));
+                // Step manager
+                expect(parseInt(page.data('StepManager').manager.css('z-index'))).toEqual(2);
+            }
+        }
     });
 });

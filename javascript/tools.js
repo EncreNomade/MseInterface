@@ -354,7 +354,7 @@ SourceManager.prototype = {
 		    this.currId++;
 		}
 		else if(this.sources[id] != null && type != "wiki" && type != "anime" && type != "code") {
-		    alert("Le nom de source exist déjà...");
+		    alert("Le nom de source existe déjà...");
 		    return false;
 		}
 		// Source structure
@@ -537,6 +537,7 @@ SourceManager.prototype = {
 	},
 	delSource: function(id) {
 	    var src = srcMgr.sources[id];
+	    if(!src) return;
 	    var t = src.type;
 	    // Delete all dependency to this source
 	    // Script dependency
@@ -1804,6 +1805,15 @@ var scriptMgr = (function() {
             var relScripts = this.getRelatedScripts(objId);
             for(var i = 0; i < relScripts.length ; i++)
                 this.delScript(relScripts[i].id);
+        },
+        getRelatedScriptids: function(objId) {
+            var list = [];
+            for(var elemid in this.scripts) {
+                var elem = this.scripts[elemid];
+                if(elem.src == objId || elem.target == objId || elem.supp == objId)
+                    list.push(elemid);
+            }
+            return list;
         },
         getRelatedScripts: function(objId) {
             var list = [];

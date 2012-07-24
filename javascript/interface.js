@@ -707,7 +707,7 @@ function addScriptDialog(src, srcType){
         for(var i=0; i<relatScript.length; i++)
             scriptList.push(relatScript[i].id);
         var modifyScriptsButton = dialog.addButton($('<input type="button" value="Modifier les scripts existants"></input>'));
-        modifyScriptsButton.click(function(){ modifyScriptDialog(scriptList, null, src, srcType); });
+        modifyScriptsButton.click(function(){ modifyScriptDialog(scriptList, null, src); });
     }
 };
 // Modify a script related to an obj
@@ -944,6 +944,10 @@ function newTranslationDialog(){
         window.newLang = jqNewLang.val().toLowerCase();
         var existLang = $('#language_list').children();
         window.autoOpen = $('#openNewLanguage').get(0).checked;
+        
+        // Language check
+        if(!newLang || newLang == "") return;
+        
         for(var i = 0; i<existLang.length; i++){
             if(existLang[i].innerHTML.toLowerCase() == newLang){
                 jqNewLang.siblings('label').css('color','red');
@@ -1028,8 +1032,7 @@ function addImageElem(id, data, page, step) {
     // Choose Resize Move
     container.resizable().moveable().configurable({text:true,stroke:true}).hoverButton('./images/UI/addscript.jpg', addScriptForObj);
     container.canGoDown();
-
-//    step.append(container);
+    
     CommandMgr.executeCmd(new CreateElemCmd(step, container));
 }
 
@@ -1394,22 +1397,19 @@ function defineZ(step, obj) {
 // Active one label in the tab bar
 function activeBarLabel() {
 	if($(this).hasClass('add')) return;
-	var name = $(this).html();
+	var name = $(this).text();
 	var pagebar = $('#pageBar');
 	pagebar.children('.active').removeClass('active');
 	$(this).addClass('active');
 	pagebar.children().each(function() {
 		if(!$(this).hasClass('add'))
-			pages[$(this).html()].css('z-index','1');
+			pages[$(this).text()].css('z-index','1');
 	});
 	pages[name].css('z-index','2');
 	curr.page = pages[name];
 	
 	// Active current step manager
 	curr.page.data('StepManager').active();
-	
-	// Editable name
-	//$(this).editable();
 };
 
 // Drag over
