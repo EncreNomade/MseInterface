@@ -1931,10 +1931,8 @@ reverse : function( parent , chaine , article , meta , font , width , lineHeight
 		else
 			meta = this.parseMetaText( article );
 	
-	// 
+	// prevent the navigator to delete tag content because its not visible ( <span>    </span> is saved as <span></spans>  )
 	chaine = chaine.replace( /\n(( |\r|\t)*)\n/g , "\n\n" )
-	
-	var originChaine = chaine;
 	
 	// parsing de la chaine
 	// suppression des balises, stockage des index et keywords
@@ -2061,9 +2059,9 @@ reverse : function( parent , chaine , article , meta , font , width , lineHeight
 		while( meta[ i ].offset >= table[ e ].cb  )	  // ajustement
 			e ++;
 		
-		var new_obj;
-		var new_index;
-		var new_keyword;
+		var new_obj= null;
+		var new_index = null;
+		var new_keyword= null;
 		
 		switch( meta[ i ].link.type ){
 			case "audio" : case "wiki" :
