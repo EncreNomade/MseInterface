@@ -818,19 +818,9 @@ StepManager.prototype = {
 	    this.stepexpos = null;
 	    delete managers[this.page.prop('id')];
 	},
-	reinitForPage: function(page) {
-	    this.page = page;
-	    this.manager = $('<div class="expos"></div>');
-	    this.steps = {};
-	    this.stepexpos = {};
-	    this.currStepN = 1;
-	    
-	    managers[page.prop('id')] = this;
-	    page.data('StepManager', this);
-	    // Append to right panel
-	    $('#right_panel').append(this.manager);
-	    this.active();
-	},
+	reinitForPage: function(page){
+        return this.constructor(page);
+    },
 	deleteFunc: function(e) {
 		e.preventDefault();e.stopPropagation();
 		var stepN = $(this).parents('.layer_expo').data('stepN');
