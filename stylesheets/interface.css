@@ -900,6 +900,10 @@ body{
 	float:left;
 	color:#888;
 }
+.popup_body cite{
+	line-height:20px;
+	float:left;
+}
 .popup_buttons {
 	position:absolute;
 	right:50px;

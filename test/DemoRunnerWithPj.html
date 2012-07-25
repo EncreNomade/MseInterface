@@ -1,38 +1,15 @@
-<?php
-/*!
- * MseInterface main page of book edition
- * Encre Nomade
- *
- * Author: LING Huabin - lphuabin@gmail.com
- * Copyright, Encre Nomade
- *
- * Date de creation: Octobre 2011
- */
-
-header("content-type:text/html; charset=utf8");
-include '../project.php';
-include_once '../dbconn.php';
-
-session_start();
-
-$_SESSION['uid'] = 'unittest';
-ConnectDB();
-$pj = MseProject::getExistProject('unittest', 'unittest');
-$_SESSION["unittest_unittest"] = $pj;
-
-?>
-
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
   "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
   <title>Interface d'édition (Jasmine Spec Runner)</title>
 
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
 <link rel="shortcut icon" type="image/png" href="lib/jasmine-1.2.0/jasmine_favicon.png">
 <link rel="stylesheet" type="text/css" href="lib/jasmine-1.2.0/jasmine.css">
 <script type="text/javascript" src="lib/jasmine-1.2.0/jasmine.js"></script>
 <script type="text/javascript" src="lib/jasmine-1.2.0/jasmine-html.js"></script>
-
 
 <!-- include source files here... -->
 <script src="../javascript/support/jquery-latest.js"></script>
@@ -40,17 +17,25 @@ $_SESSION["unittest_unittest"] = $pj;
 <script src="../javascript/tools.js"></script>
 <script src="../javascript/interface.js"></script>
 <script src="../javascript/command.js"></script>
-<script src="spec/interface/spec_project_data.js"></script>
+<script src="support/project_data.js"></script>
 
 <link rel="stylesheet" type="text/css" href="../stylesheets/menu.css" />
 <link rel="stylesheet" type="text/css" href="../stylesheets/interface.css" />
+
+<!-- include spec files here... -->
+<script src="spec/demo.js"></script>
+
 <STYLE type="text/css">
     body {
-        position: absolute;
+        position:absolute;
+        margin:0px;
+        padding:0px;
+        width:100%;
+        height: auto;
         overflow: auto;
     }
     .jasmine_reporter {
-        background-color : rgba(255, 255, 255, 0.9);
+        background: #fff;
         -webkit-box-shadow: 0px 0px 5px #4d4d4d;
         -moz-box-shadow: 0px 0px 5px #4d4d4d;
         box-shadow: 0px 0px 5px #4d4d4d;
@@ -62,37 +47,6 @@ $_SESSION["unittest_unittest"] = $pj;
         top: 0px;
     }
 </STYLE>
-
-<!-- include spec files here... -->
-<script src="spec/interface/spec_scripts.js"></script>
-
-<script type="text/javascript">
-(function() {
-    var jasmineEnv = jasmine.getEnv();
-    jasmineEnv.updateInterval = 1000;
-
-    var htmlReporter = new jasmine.HtmlReporter();
-
-    jasmineEnv.addReporter(htmlReporter);
-
-    jasmineEnv.specFilter = function(spec) {
-        return htmlReporter.specFilter(spec);
-    };
-
-    var currentWindowOnload = window.onload;
-
-    window.onload = function() {
-        if (currentWindowOnload) {
-            currentWindowOnload();
-        }
-        execJasmine();
-    };
-
-    function execJasmine() {
-        jasmineEnv.execute();
-    }
-})();
-</script>
 
 </head>
 <body>
@@ -234,37 +188,62 @@ $_SESSION["unittest_unittest"] = $pj;
 
 
 <script type="text/javascript">
-	
-	$('#center_panel.tabBar li').click(activeBarLabel);
-	
-	$('#newPage, #createPage').click(createPageDialog);
-	$('#removePage').click(delCurrentPage);
-	$('#newCalque').click(createStepDialog);
-	
-    $('#newTranslation').click(newTranslationDialog);
-    
-	$('#srcAdd').click(addFileDialog);
-	$('#saveProjet').click(saveProject);
-	
-	<?php
-	    print("var pjName = '".$pj->getName()."';\n");
-        print("var pjLanguage = '".$pj->getLanguage()."';\n");
-	    print("var imgPath = '".$pj->getSrcSavePath("image")."';\n");
-	    print("var audPath = '".$pj->getRelatSrcPath("audio")."';\n");
-	    print("var gamePath = '".$pj->getRelatSrcPath("game")."';\n");
-	    print("var lastModServer = ".$pj->getLastModTS().";\n");
-	    print("Config.init({width:".$pj->getWidth().", height:".$pj->getHeight()."});\n");
 
-        if(isset($_SESSION["uid"]) && $_SESSION["uid"] != "") {
-            echo "uid = '".$_SESSION["uid"]."';\n";
-        }
-    ?>
-    if(uid && uid != "") {
-        $(".menu li.id").text(uid);
+$('#center_panel.tabBar li').click(activeBarLabel);
+
+$('#newPage, #createPage').click(createPageDialog);
+$('#removePage').click(delCurrentPage);
+$('#newCalque').click(createStepDialog);
+
+$('#newTranslation').click(newTranslationDialog);
+
+$('#srcAdd').click(addFileDialog);
+$('#saveProjet').click(saveProject);
+
+var pjName = 'unittest';
+var pjLanguage = 'unittest';
+var imgPath = './projects/Voodoo_Ch1/images/';
+var audPath = './Voodoo_Ch1/audios/';
+var gamePath = './Voodoo_Ch1/games/';
+var uid = 'unittest';
+$(".menu li.id").text(uid);
+Config.init({width:800, height:600});
+
+if(uid && uid != "") {
+    $(".menu li.id").text(uid);
+}
+
+var config = Config.getInstance();
+init();
+
+var data = JSON.parse(localdata);
+retrieveLocalInfo(data);
+
+(function(){
+var jasmineEnv = jasmine.getEnv();
+jasmineEnv.updateInterval = 1000;
+
+var htmlReporter = new jasmine.HtmlReporter();
+
+jasmineEnv.addReporter(htmlReporter);
+
+jasmineEnv.specFilter = function(spec) {
+    return htmlReporter.specFilter(spec);
+};
+
+var currentWindowOnload = window.onload;
+
+window.onload = function() {
+    if (currentWindowOnload) {
+        currentWindowOnload();
     }
-	
-	var config = Config.getInstance();
-	init();
+    execJasmine();
+};
+
+function execJasmine() {
+    jasmineEnv.execute();
+}
+})();
 
 </script>
 
