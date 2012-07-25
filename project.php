@@ -203,10 +203,10 @@ class MseProject {
     }
     
     function getRelatJSPath(){
-        return './projects/'.$this->name.'/content_'.$this->language.'.js';
+        return './projects/'.$this->folder.'/content_'.$this->language.'.js';
     }
     function getPackedJSPath(){
-        return './projects/'.$this->name.'/content_'.$this->language.'.min.js';
+        return './projects/'.$this->folder.'/content_'.$this->language.'.min.js';
     }
     
     function getJSONProject(){

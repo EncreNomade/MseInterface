@@ -119,7 +119,7 @@ function base64_encode (data) {
 }
 
 function objToClass(obj, classn) {
-    var o = new classn(); 
+    var o = new classn();
     for(var key in obj) {
         if(obj[key] !== null && obj[key] !== undefined) o[key] = obj[key];
     } 
@@ -127,9 +127,9 @@ function objToClass(obj, classn) {
 }
 
 var Callback = function(func, caller) {
-    if(!func) return null; 
+    if(typeof func != 'function') return null; 
 	this.func = func;
-	this.caller = caller;
+	this.caller = (typeof caller != 'object') ? window : caller;
 	if(arguments.length > 2) {
 		this.args = new Array();
 		for(var i = 2; i < arguments.length; i++)
@@ -354,7 +354,7 @@ SourceManager.prototype = {
 		    this.currId++;
 		}
 		else if(this.sources[id] != null && type != "wiki" && type != "anime" && type != "code") {
-		    alert("Le nom de source exist déjà...");
+		    alert("Le nom de source existe déjà...");
 		    return false;
 		}
 		// Source structure
@@ -538,6 +538,7 @@ SourceManager.prototype = {
 	},
 	delSource: function(id) {
 	    var src = srcMgr.sources[id];
+	    if(!src) return;
 	    var t = src.type;
 	    // Delete all dependency to this source
 	    // Script dependency
@@ -819,19 +820,9 @@ StepManager.prototype = {
 	    this.stepexpos = null;
 	    delete managers[this.page.prop('id')];
 	},
-	reinitForPage: function(page) {
-	    this.page = page;
-	    this.manager = $('<div class="expos"></div>');
-	    this.steps = {};
-	    this.stepexpos = {};
-	    this.currStepN = 1;
-	    
-	    managers[page.prop('id')] = this;
-	    page.data('StepManager', this);
-	    // Append to right panel
-	    $('#right_panel').append(this.manager);
-	    this.active();
-	},
+	reinitForPage: function(page){
+        return this.constructor(page);
+    },
 	deleteFunc: function(e) {
 		e.preventDefault();e.stopPropagation();
 		var stepN = $(this).parents('.layer_expo').data('stepN');
@@ -953,7 +944,6 @@ StepManager.prototype = {
 	        obj = $(this);
 	        // Article
 	        if(obj.hasClass('article')) {
-	            obj.deletable().configurable();
 	            obj.children('div').each(function(){
                     function setArticleObjProp (jqObj){
                         jqObj.deletable(null, true)
@@ -966,7 +956,7 @@ StepManager.prototype = {
                         scriptMgr.countScripts($(this).attr('id'),'obj');
                         jqObj.children('.del_container').css({
                             'position': 'relative',
-                            'top': (jqObj.children('p').length == 0) ? '0%' : '-100%',
+                            'left': jqObj.width()-15+'px',
                             'display':'none'});
                     }
                     if ($(this).hasClass('speaker')){
@@ -982,9 +972,11 @@ StepManager.prototype = {
 								// if its not, its textLine
 								setArticleObjProp($(this));
 						});
-                    }else 
-						setArticleObjProp($(this))
+                    }
+                    else 
+						setArticleObjProp($(this));
 	            });
+	            obj.deletable().configurable();
 	        }
 	        // Other obj
 	        else {
@@ -1680,7 +1672,7 @@ Script.prototype = {
     constructor: Script
 };
 
-var scriptMgr = function() {
+var scriptMgr = (function() {
     return {
         action: {
             obj: ["click", "doubleClick", "firstShow", "show", "disappear"],
@@ -1741,11 +1733,13 @@ var scriptMgr = function() {
             return select;
         },
         scriptSelectList: function(id, choosedElem){
-            if (choosedElem) var choosedScript = scriptMgr.scripts[choosedElem].target;
+            var choosedScript = null;
+            if(typeof choosedElem == 'undefined')
+                choosedElem = null;
             var select = '<select id="'+id+'">';
             for(var i in this.scripts) {
                 select += "<option value='"+i+"'";
-                if (choosedScript == i) select += " selected ";
+                if (choosedElem == i) select += " selected ";
                 select += ">"+i+"</option>";
             }
             select += '</select>';
@@ -1767,8 +1761,9 @@ var scriptMgr = function() {
             this.addScriptObj(name, new Script(src, srcType, action, target, reaction, immediate, supp));
         },
         addScriptObj: function(name, script) {
-            if(!name || !nameValidation(name))
+            if(!name || !nameValidation(name) || !(script instanceof Script))
                 return;
+                
             // If we are overwriting an existing script which is related to another src
             // we have to update the scripts number of this old src.
             if(this.scripts[name])
@@ -1776,7 +1771,7 @@ var scriptMgr = function() {
             // Creation script
             this.scripts[name] = script;
             // New script expo
-            this.expos[name] = $('<div class="icon_src"><p>'+name+'</p></div>');
+            this.expos[name] = $('<div class="icon_src" id="'+name+'"><p>'+name+'</p></div>');
             $('#Scripts_panel').prepend(this.expos[name]);
             this.expos[name].click(function() { modifyScriptDialog([name]); });
             this.countScripts(script.src, script.srcType);
@@ -1798,11 +1793,18 @@ var scriptMgr = function() {
             this.countScripts(relatedObj, relatedType);
         },
         delRelatedScripts: function(objId){
-            for(var elem in this.scripts) {
-                if(this.scripts[elem].src == objId || this.scripts[elem].target == objId || this.scripts[elem].supp == objId) {
-                    this.delScript(elem);
-                }
+            var relScripts = this.getRelatedScripts(objId);
+            for(var i = 0; i < relScripts.length ; i++)
+                this.delScript(relScripts[i].id);
+        },
+        getRelatedScriptids: function(objId) {
+            var list = [];
+            for(var elemid in this.scripts) {
+                var elem = this.scripts[elemid];
+                if(elem.src == objId || elem.target == objId || elem.supp == objId)
+                    list.push(elemid);
             }
+            return list;
         },
         getRelatedScripts: function(objId) {
             var list = [];
@@ -1813,12 +1815,21 @@ var scriptMgr = function() {
             }
             return list;
         },
-        getRelatedScriptsDesc: function(objId) {
+        getSameSrcScripts: function(objId){
             var list = [];
             for(var elem in this.scripts) {
-                if(this.scripts[elem].src == objId || this.scripts[elem].target == objId || this.scripts[elem].supp == objId)
-                    list.push("Le script: "+elem);
+                if(this.scripts[elem].src == objId){ // each related scripts
+                    list.push({'id':elem, 'elem':this.scripts[elem]});
+                }
             }
+            
+            return list;
+        },
+        getRelatedScriptsDesc: function(objId) {
+            var list = [];
+            var relScripts = this.getRelatedScripts(objId);
+            for(var i = 0; i < relScripts.length ; i++)
+                list.push("Le script: "+relScripts[i].id);
             return list;
         },
         updateRelatedScripts: function(objId, newId){
@@ -1835,74 +1846,85 @@ var scriptMgr = function() {
             return this.scripts;
         },
         countScripts: function(objId, srcType) {
-            var listScript = [];
-            for(var elem in this.scripts) {
-                if(this.scripts[elem].src == objId && this.scripts[elem].srcType){ // each related scripts
-                    listScript.push(elem);
-                }
-            }
+            var listScript = this.getSameSrcScripts(objId);           
             // display a little icon with the number of related script
-            if (srcType == "obj") {
-                var $obj = $('#'+objId);
-                var $scriptCounter = $obj.find('.scriptCounter');
-                if ($scriptCounter.length > 0)  // remove the existing icon
-                        $scriptCounter.remove();
-                $obj.data('scriptsList', listScript);
-                if (listScript.length > 0) {                    
-                    var $scriptIcon = $('#'+objId+' .del_container img[src="./images/UI/addscript.jpg"]');
-                    var $delContainer = $obj.children('.del_container');
-                    var displayingHoverIc = $($delContainer.children()[0]).css('display');
-                    if (displayingHoverIc == 'none') $scriptCounter.hide();
-                    
-                    $delContainer.append('<div class="scriptCounter">'+ listScript.length +'</div>');
-                    $scriptCounter = $delContainer.children('.scriptCounter');
-                    
-                    $scriptCounter.click(addScriptForObj);
-                    $scriptCounter.css('top', parseInt($scriptIcon.css('top'))+4); //positionning the notification icons
-                    if($obj.parents('.article').length > 0){
-                        $scriptCounter.css({
-                            'left': '-10px',
-                            'line-height': 'initial'});
-                    }
-                    else {
-                        $scriptCounter.css('right', '-3px');
-                        $obj.hover(function(){$scriptCounter.show();},
-                                   function(){$scriptCounter.hide();});
-                    }
-                }
-            }
-            else {
-                var source = false;
-                var $circleMenu = $('#circleMenu');
-                var $scriptCounter = $('#circleMenu .scriptCounter');
-                if (srcType == "page") source = $('#pageBar li:contains("'+objId+'")');
-                else if (srcType == "anime") source = srcMgr.expos[objId];
-                if ($scriptCounter.length > 0) $scriptCounter.remove();
-                source.data('scriptsList', listScript);
-                if (listScript.length > 0 && source) {                    
-                    source.dblclick(function(e){
-                        var $circleMenu = $('#circleMenu');
-                        var nbScripts = $(this).data('scriptsList').length;
-                        var countIcon = $('<div class="scriptCounter">'+nbScripts+'</div>');
-                        if (nbScripts > 0){
-                            var count = 0;
-                            $circleMenu.children().each(function(i){
-                                if ($(this).attr('src')=="./images/UI/addscript.jpg") count = i;
-                            });
-                            var x = e.clientX, y = e.clientY;
-                            var rx = x, ry = (y<115) ? y : y-25, r = 90;
-                            var alpha = (y<115) ? (Math.PI/180)*90/5 : -(Math.PI/180)*90/5;
-
-                            countIcon.css({'left':rx,'top':ry,'opacity':0});
-                            $circleMenu.append(countIcon);
-                            var iconx = r*Math.cos(alpha*count) + 15, icony = r*Math.sin(alpha*count) + 15;
-                            countIcon.animate({'left':"+="+iconx+"px",'top':"+="+icony+"px",'opacity':1}, 'normal', 'swing');
-                            countIcon.click({src: $(this)},function(e){addScriptDialog(e.data.src);});
-                        }
-                    });
-                }
-            }
+            if (srcType == "obj")
+                this.updateObjScCount(objId, listScript);
+            else // circleMenu
+                this.updateCircleMenuScCount(objId, srcType, listScript);
+            
             if(listScript.length > 0) return listScript;
+        },
+        updateObjScCount: function(objId, listScript){
+            var $obj = $('#'+objId);
+            var $scriptCounter = $obj.find('.scriptCounter');
+            if ($scriptCounter.length > 0)  // remove the existing icon
+                $scriptCounter.remove();
+            $obj.data('scriptsList', listScript);
+            if (listScript.length > 0) {
+                var $scriptIcon = $('#'+objId+' .del_container img[src="./images/UI/addscript.jpg"]');
+                var $delContainer = $obj.children('.del_container');
+                var hidingHoverIc = $scriptIcon.css('display') == 'none';
+                if (hidingHoverIc) $scriptCounter.hide();
+                
+                $delContainer.append('<div class="scriptCounter">'+ listScript.length +'</div>');
+                $scriptCounter = $delContainer.children('.scriptCounter');
+                $scriptCounter.click(addScriptForObj);
+                
+                if($obj.parents('.article').length > 0){
+                    var top = 60 + 5;
+                    $scriptCounter.css({
+                        'top': top,
+                        'width': 'auto',
+                        'left': '5px',
+                        'line-height': 'initial'});
+                }
+                else {
+                    //positionning the notification icons
+                    $delContainer.children().show();
+                    $scriptCounter.css('top', parseInt($scriptIcon.position().top)+5);
+                    if(hidingHoverIc) $delContainer.children().hide();
+                    
+                    $scriptCounter.css('left', '5px');
+                    $obj.hover(function(){$scriptCounter.show();},
+                               function(){$scriptCounter.hide();});
+                }
+            }
+        
+        },
+        updateCircleMenuScCount: function(objId, srcType, listScript){
+            var source = false;
+            var $circleMenu = $('#circleMenu');
+            var $scriptCounter = $('#circleMenu .scriptCounter');
+            if (srcType == "page") source = $('#pageBar li:contains("'+objId+'")');
+            else if (srcType == "anime") source = srcMgr.expos[objId];
+            
+            if (listScript.length > 0 && source) {
+                source.data('scriptsList', listScript);
+                source.dblclick(function(e){
+                    var $circleMenu = $('#circleMenu');
+                    var nbScripts = $(this).data('scriptsList').length;
+                    var countIcon = $('#circleMenu .scriptCounter')
+                    if (countIcon.length > 0) countIcon.remove();
+                    
+                    countIcon = $('<div class="scriptCounter">'+nbScripts+'</div>');
+                    if(nbScripts > 0){
+                        var count = 0;
+                        $circleMenu.children().each(function(i){
+                            if ($(this).attr('src')=="./images/UI/addscript.jpg") count = i;
+                        });
+                        var x = e.clientX, y = e.clientY;
+                        var rx = x, ry = (y<115) ? y : y-25, r = 90;
+                        var alpha = (y<115) ? (Math.PI/180)*90/5 : -(Math.PI/180)*90/5;
+
+                        countIcon.css({'left':rx,'top':ry,'opacity':0});
+                        $circleMenu.append(countIcon);
+                        var iconx = r*Math.cos(alpha*count) + 15, icony = r*Math.sin(alpha*count) + 15;
+                        countIcon.animate({'left':"+="+iconx+"px",'top':"+="+icony+"px",'opacity':1}, 'normal', 'swing');
+                        countIcon.click({src: $(this)},function(e){addScriptDialog(e.data.src);});
+                    }
+                });
+            }
         },
         upload: function(url, pjName, lang){
             var data = "pjName="+pjName+"&lang="+lang+"&type=scripts&data="+JSON.stringify(this.scripts);
@@ -1910,15 +1932,17 @@ var scriptMgr = function() {
             $.ajax({
                 type: "POST",
                 'url': url,
-                processData: false,
                 'data': data,
                 success: function(msg) {
                     if(msg && msg != "") alert("script upload errors: "+msg);
+                },
+                error: function(data) {
+                    alert('ajax error on script upload, code : ' + data.status+', message : '+ data.statusText);
                 }
             });
         }
     };
-}();
+})();
 
 
 
@@ -3217,9 +3241,9 @@ Popup.prototype = {
 	    $('#popup_dialog').show();
 	},
 	close: function() {
-		$('.popup_back').hide();
-		$('#popup_dialog').hide();
-		this.caller = null;
+        var that = $("#popup_dialog").data('popUpObj');
+		that.hide();
+		that.caller = null;
 	},
 	addButton: function(btn) {
 	    this.buttons.prepend(btn);
@@ -3234,9 +3258,9 @@ Popup.prototype = {
 		this.titre.append(this.annuler);
 		this.titre.append('<span>');
 		$('body').append(this.back).append(this.dialog);
-		this.back.hide();
-		this.dialog.hide();
-		this.annuler.click(this.close);
+		this.hide();
+        this.dialog.data('popUpObj', this);
+		this.annuler.click({obj:this},this.close);
 		this.inited = true;
 	},
 	
@@ -3253,7 +3277,14 @@ Popup.prototype = {
 	},
 	
 	showPopup: function(msg, width, height, msgConfirm, caller) {
-		if(!msg || !width || !height) return;
+        if(typeof msg != 'string' 
+            || typeof width != 'number' 
+            || typeof height != 'number' 
+            || isNaN(parseInt(width)) 
+            || isNaN(parseInt(height)))
+        {
+            return;
+        }
 		this.main.html("");
 		this.buttons.children().remove();
 		this.caller = null;
@@ -3270,8 +3301,7 @@ Popup.prototype = {
 		}
 		if(caller) this.caller = caller;
 		
-		this.back.show();
-		this.dialog.show();
+		this.show();
 	}
 };
 
@@ -3539,28 +3569,34 @@ $(document).keyup(function (e) {
 
 
 // Add top right hover icon
-var hoverIcon = function(elem, func, img, data) {
+var hoverIcon = function(elem, func, img, data, prepend) {
 	var icons = elem.children('.del_container');
 	if(icons.length == 0) {
-		icons = $('<div class="del_container"></div>');
+		icons = $('<ul class="del_container"></ul>');
 		elem.append(icons);
 	}
-	var top = 5 + icons.children('img').length*17;
-	var icon = $('<img src="'+img+'", style="top:'+top+'px;"></img>');
-	icons.append(icon);
+	//var top = 5 + icons.children('img').length*17;
+	var icon = $('<img src="'+img+'"></img>');
+	if(prepend === true) icons.prepend(icon);
+	else icons.append(icon);
+	
+	if(typeof data != "object" || data instanceof Array) data = null;
 	icon.hide().bind('click', data, func);
 	elem.hover(function(){ if( !tag.resizestarted && !tag.movestarted )icon.show();}, function(){icon.hide();});
 };
 // Icon always show up
-var staticIcon = function(elem, func, img, data) {
+var staticIcon = function(elem, func, img, data, prepend) {
 	var icons = elem.children('.del_container');
 	if(icons.length == 0) {
-		icons = $('<div class="del_container"></div>');
+		icons = $('<ul class="del_container"></ul>');
 		elem.append(icons);
 	}
-	var top = 2 + icons.children('img').length*17;
-	var icon = $('<img src="'+img+'", style="top:'+top+'px;"></img>');
-	icons.append(icon);
+	//var top = 2 + icons.children('img').length*17;
+	var icon = $('<img src="'+img+'"></img>');
+	if(prepend === true) icons.prepend(icon);
+	else icons.append(icon);
+	
+	if(typeof data != "object" || data instanceof Array) data = null;
 	icon.bind('click', data, func);
 };
 	
@@ -3591,7 +3627,7 @@ function goDown(e) {
 		var temp = objInf.css('z-index');
 		objInf.css('z-index', currObj.css('z-index'));
 		currObj.css('z-index', temp);
-                CommandMgr.executeCmd( new GoDownCmd(currObj, objInf));
+        CommandMgr.executeCmd( new GoDownCmd(currObj, objInf));
 	}
 }
 
@@ -3613,8 +3649,8 @@ $.fn.deletable = function(f, statiq) {
 	if(del.length > 0) del.remove();
 	if(f === false) return this;
 	var func = f || delParent;
-	if(statiq == true) staticIcon(this, func, './images/UI/del.png');
-	else hoverIcon(this, func, './images/UI/del.png');
+	if(statiq == true) staticIcon(this, func, './images/UI/del.png', null, true);
+	else hoverIcon(this, func, './images/UI/del.png', null, true);
 	return this;
 };
 $.fn.hideable = function(f) {
@@ -3623,7 +3659,7 @@ $.fn.hideable = function(f) {
 	if(f === false) return this;
 	var func = f || hideParent;
 	this.unbind('click', func);
-	staticIcon(this, func, './images/UI/sclose.png');
+	staticIcon(this, func, './images/UI/sclose.png', null, true);
 	return this;
 };
 $.fn.configurable = function(disables, f) {
@@ -3635,29 +3671,29 @@ $.fn.configurable = function(disables, f) {
 	hoverIcon(this, func, './images/UI/config.png', {'list':disables});
 	return this;
 };
-$.fn.hoverButton = function(icon, f) {
+$.fn.hoverButton = function(icon, f, data, prepend) {
     if(f === false) {
     	this.find('img[src="'+icon+'"]').remove();
     	return this;
     }
 	if(!$.isFunction(f)) return this;
-	hoverIcon(this, f, icon);
+	hoverIcon(this, f, icon, data, prepend);
 	return this;
 }
-$.fn.staticButton = function(icon, f) {
+$.fn.staticButton = function(icon, f, data, prepend) {
     if(f === false) {
     	this.find('img[src="'+icon+'"]').remove();
     	return this;
     }
 	if(!$.isFunction(f)) return this;
-	staticIcon(this, f, icon);
+	staticIcon(this, f, icon, data, prepend);
 	return this;
 }
 $.fn.canGoDown = function(f, statiq) {
 	var down = this.children('.del_container').children().filter('img[src="./images/UI/down.png"]');
 	if(down.length > 0) down.remove();
 	if(f === false) return this;
-	var func = f || goDown;
+	var func = (typeof f == 'function') ? f : goDown;
 	if(statiq == true) staticIcon(this, func, './images/UI/down.png');
 	else hoverIcon(this, func, './images/UI/down.png');
 	return this;
@@ -3752,7 +3788,6 @@ $.fn.moveable = function(supp) {
 	if(supp !== false)
 		this.mousedown( choose ).mousedown(startMove).mouseup(cancelMove);
 		
-	
 	return this;
 }
 
@@ -4006,17 +4041,30 @@ $.fn.addStepManager = function() {
 
 // Editable for the text tags
 $.fn.editable = function(callback, prepa, dblclick) {
-	var tagName = this[0].tagName;
+	var tagName = $(this).prop('tagName');
 	// Don't support
-	if( $.inArray(tagName.toUpperCase(), editSupportTag) == -1 ) return;
+	if( $.inArray(tagName.toUpperCase(), editSupportTag) == -1 ) return this;
+	
+	if(callback === false) {
+	    $(this).removeData('editcb editprepa editdbl')
+	           .unbind('dblclick.editable')
+	           .unbind('click.editable');
+	    return this;
+	}
 	
 	var editfn = function(e) {
 	    e.preventDefault();
 	    e.stopPropagation();
+	    var prepa = $(this).data('editprepa');
+	    var callback = $(this).data('editcb');
+	    var dblclick = $(this).data('editdbl');
+	        
 	    // Invoke the prepa function
-	    if(prepa) prepa.invoke($(this));
+	    if(prepa instanceof Callback) prepa.invoke($(this));
 	    
 	    var content = $(this).html();
+	    // Get id
+	    var id = $(this).prop('id');
 	    // Get classes
 	    var className = this.className;
 	    // Get style
@@ -4031,25 +4079,36 @@ $.fn.editable = function(callback, prepa, dblclick) {
 		editfield.css({'width':width, 'height':height, 'color':color, 'background':'rgba(255,255,255,0.3)', 'top':$(this).css('top'), 'left':$(this).css('left'), 'position':$(this).css('position'), 'font-family':$(this).css('font-family'), 'font-size':$(this).css('font-size'), 'text-align':$(this).css('text-align')});
 		$(this).replaceWith(editfield);
 		
-		var finishedit = function() {
+		var finishedit = function(e) {
+		    var prepa = editfield.data('editprepa');
+		    var callback = editfield.data('editcb');
+		    var dblclick = editfield.data('editdbl');
+		
 			var newcontent = editfield.val();
 			var newtext = $('<'+tagName+'>'+newcontent+'</'+tagName+'>');
+			newtext.prop('id', id);
 			newtext.attr('style', style);
 			newtext.get(0).className = className;
 			editfield.replaceWith(newtext);
-			if(callback) {
+			if(callback instanceof Callback) {
 			    callback.invoke(newcontent, newtext);
 			}
 			newtext.editable(callback, prepa, dblclick);
 			$('body').unbind('click', finishedit);
 		}
 		
-		editfield.blur(finishedit).click(function(e){e.stopPropagation();});
-		$('body').click(finishedit);
+		editfield.data({'editcb':callback, 'editprepa':prepa, 'editdbl':dblclick})
+		         .bind('blur', finishedit)
+		         .click(function(e){e.stopPropagation();});
+		$('body').bind('click', finishedit);
 	};
 	
-	if(dblclick === true) $(this).dblclick(editfn);
-	else $(this).click(editfn);
+	$(this).data({'editcb':callback, 'editprepa':prepa, 'editdbl':dblclick})
+	       .unbind('dblclick.editable')
+           .unbind('click.editable');
+	
+	if(dblclick === true) $(this).bind('dblclick.editable', editfn);
+	else $(this).bind('click.editable', editfn);
 	return this;
 }
 
@@ -4061,6 +4120,7 @@ $.fn.circleMenu = function(buttonmap) {
         tar.css('cursor', 'default');
         tar.removeData('circleMenu');
         tar.unbind('dblclick');
+        return this;
     }
     
     tar.css('cursor', 'url("./images/UI/circlemenuptr.cur"), auto');
@@ -4070,7 +4130,9 @@ $.fn.circleMenu = function(buttonmap) {
         var x = e.clientX, y = e.clientY;
         var rx = x, ry = (y<115) ? y : y-25, r = 90;
         var alpha = (y<115) ? (Math.PI/180)*90/5 : -(Math.PI/180)*90/5;
-        $('body').append("<div id='circleMenu'></div>");
+        var menu = $("<div id='circleMenu'></div>");
+        $('body').append(menu);
+        menu.css({left:rx, top:ry});
         var buttonmap = $(this).data('circleMenu');
         var count = 0;
         for(var i in buttonmap) {
@@ -4078,11 +4140,11 @@ $.fn.circleMenu = function(buttonmap) {
             if(buttonmap[i][1]){
                 icon.data("func", buttonmap[i][1]);
                 icon.click(function(){
-                        $(this).data("func").call(window, tar);
+                    $(this).data("func").call(window, tar);
                 });
             }
             icon.css({'left':rx,'top':ry,'opacity':0});
-            $('#circleMenu').append(icon);
+            menu.append(icon);
             // Animation
             var iconx = r*Math.cos(alpha*count), icony = r*Math.sin(alpha*count);
             icon.animate({'left':"+="+iconx+"px",'top':"+="+icony+"px",'opacity':1}, 'normal', 'swing');
@@ -4090,9 +4152,11 @@ $.fn.circleMenu = function(buttonmap) {
         }
         
         $('body').click(function(){
-            if ($('#circleMenu').css('display') != 'none') $('#circleMenu').fadeOut("normal", function(){$('#circleMenu').remove();});
+            var menu = $('#circleMenu');
+            if (menu.css('display') != 'none') menu.fadeOut("normal", function(){menu.remove();});
         });
     });
+    return this;
 }
 
 })(jQuery);

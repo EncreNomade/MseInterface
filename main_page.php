@@ -232,59 +232,7 @@ else header("Location: index.php", true);
 	
 	var config = Config.getInstance();
 	init();
-	
-function retrieveLocalInfo(pjsave) {
-    // Pages/Layers/Objects
-    var obj = null;
-    var maxid = 0, id = 0;
-    var pageseri = pjsave.pageSeri;
-    for(var pname in pageseri) {
-        var page = addPage(pname);
-        scriptMgr.countScripts(page.attr('id'),"page");
-        var steps = 0;
-        for(var sname in pageseri[pname]) {
-            steps++;
-            var step = $(pageseri[pname][sname]);
-            page.data('StepManager').addStepWithContent(sname, step);
-        }
-        if(steps == 0) page.data('StepManager').addStep(pname+'default', null, true);
-    }
     
-    // Ressources
-    var src = pjsave.sources;
-    for(var key in src) {
-        var type = src[key].type;
-        var data = src[key].data;
-        if(type == "text" || type == "obj") continue;
-        else if(type == "anime") 
-            data = objToClass(data, Animation);
-		else if(type == "speaker"){
-            data = objToClass(data, Speaker);
-		}
-        else if(type == "wiki") 
-            data = objToClass(data, Wiki);
-        srcMgr.addSource(type, data, key);
-    }
-    if(!isNaN(pjsave.srcCurrId)) srcMgr.currId = pjsave.srcCurrId;
-    if(!isNaN(pjsave.objCurrId)) curr.objId = pjsave.objCurrId;
-    //else if(!isNaN(maxid)) curr.objId = maxid+1;
-    
-    // Scripts
-    if(pjsave.scripts) {
-        scriptMgr.addScripts( pjsave.scripts );
-    }
-    
-    if(isNaN(pjsave.lastModif)) curr.lastModif = lastModServer;
-    else curr.lastModif = pjsave.lastModif;
-    
-    <?php 
-        if($pj->getUntranslated()) {
-            print("window.translationTool.active();");
-        }
-    ?>
-    
-}
-	
 	// Compare server and local last modification info for Synchronization
 	var norecord = false;
 	var lastModLocal = -1;
@@ -305,6 +253,12 @@ function retrieveLocalInfo(pjsave) {
 	        if(pjsave) {
 	            //saveToLocalStorage(pjName, msg);
 	            retrieveLocalInfo(pjsave);
+	            
+	            <?php 
+	                if($pj->getUntranslated()) {
+	                    print("window.translationTool.active();");
+	                }
+	            ?>
 	        }
 	    });
 	}
@@ -316,12 +270,28 @@ function retrieveLocalInfo(pjsave) {
                 else if(msg != "") alert(msg);
                 
                 // Retrieve the information of pages in local storage
-                if(pjsave) retrieveLocalInfo(pjsave);
+                if(pjsave) {
+                    retrieveLocalInfo(pjsave);
+                    
+                    <?php 
+                        if($pj->getUntranslated()) {
+                            print("window.translationTool.active();");
+                        }
+                    ?>
+                }
             });
 	}
 	else {
 	    // Retrieve the information of pages in local storage
-	    if(pjsave) retrieveLocalInfo(pjsave);
+	    if(pjsave) {
+	        retrieveLocalInfo(pjsave);
+	        
+	        <?php 
+	            if($pj->getUntranslated()) {
+	                print("window.translationTool.active();");
+	            }
+	        ?>
+	    }
 	}
 </script>
 

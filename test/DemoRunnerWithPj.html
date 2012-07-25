@@ -1,0 +1,251 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+  "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <title>Interface d'édition (Jasmine Spec Runner)</title>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+<link rel="shortcut icon" type="image/png" href="lib/jasmine-1.2.0/jasmine_favicon.png">
+<link rel="stylesheet" type="text/css" href="lib/jasmine-1.2.0/jasmine.css">
+<script type="text/javascript" src="lib/jasmine-1.2.0/jasmine.js"></script>
+<script type="text/javascript" src="lib/jasmine-1.2.0/jasmine-html.js"></script>
+
+<!-- include source files here... -->
+<script src="../javascript/support/jquery-latest.js"></script>
+<script src="../javascript/support/jquery.color.js"></script>
+<script src="../javascript/tools.js"></script>
+<script src="../javascript/interface.js"></script>
+<script src="../javascript/command.js"></script>
+<script src="support/project_data.js"></script>
+
+<link rel="stylesheet" type="text/css" href="../stylesheets/menu.css" />
+<link rel="stylesheet" type="text/css" href="../stylesheets/interface.css" />
+
+<!-- include spec files here... -->
+<script src="spec/demo.js"></script>
+
+<STYLE type="text/css">
+    body {
+        position:absolute;
+        margin:0px;
+        padding:0px;
+        width:100%;
+        height: auto;
+        overflow: auto;
+    }
+    .jasmine_reporter {
+        background: #fff;
+        -webkit-box-shadow: 0px 0px 5px #4d4d4d;
+        -moz-box-shadow: 0px 0px 5px #4d4d4d;
+        box-shadow: 0px 0px 5px #4d4d4d;
+        z-index: 500;
+        position: absolute;
+        width: 100%;
+        height: auto;
+        left: 0px;
+        top: 0px;
+    }
+</STYLE>
+
+</head>
+<body>
+
+<nav class="menu">
+	<li><a href="#">Projet</a>
+		<ul>
+			<li><a id="newProjet">Nouveau projet</a></li>
+			<li><a id="saveProjet">Sauvegarder projet</a></li>
+			<li><a id="showProjet">Visualiser le livre (sauvegardez d'abord)</a></li>
+		</ul>
+	</li>
+	<li><a href="#">Page</a>
+		<ul>
+			<li><a id="createPage">Nouvelle page</a></li>
+			<li><a id="removePage">Supprimer la page activée</a></li>
+			<li><a id="gestionPage">Modifier les relations</a></li>
+		</ul>
+	</li>
+	<li><a href="#">Étape</a>
+		<ul>
+			<li><a id="newCalque">Nouvelle étape</a></li>
+		</ul>
+	</li>
+    <li><a href="#">Outils</a>
+		<ul>
+			<li><a id="newTranslation">Nouvelle traduction</a></li>
+		</ul>
+	</li>
+	<li class="id">Connexion</li>
+	<div id="menu_mask"></div>
+</nav>
+
+<ul id="tools">
+	<li id="texticon"><img src="../images/tools/pen.png"></img></li>
+	<li id="recticon"><img src="../images/tools/rule.png"></img></li>
+	<li id="wikiicon"><img src="../images/tools/wiki.png"></img></li>
+	<li id="animeicon"><img src="../images/tools/anime.png"></img></li>
+	<li id="scripticon"><img src="../images/UI/addscript.jpg"></img></li>
+</ul>
+
+<div id="center_panel">
+	<ul id="pageBar" class="tabBar">
+		<li id="newPage" class="add">+</li>
+	</ul>
+	<ul id="shapeTools" class="central_tools">
+		<li><img class="active" src="../images/tools/rect.png"></li>
+		<li><img src="../images/tools/rrect.png"></li>
+		<li><img src="../images/tools/elips.png"></li>
+		<li><img src="../images/tools/line.png"></li>
+		<li><img src="../images/tools/sep.png"></li>
+		<li><h5>Paramètres:</h5></li>
+		<li><h5>Poids</h5><input id="shape_weight" style="width: 22px;" value="0" type="number"></li>
+		<li><h5>Radius</h5><input id="shape_radius" style="width: 22px;" value="0" type="number"></li>
+		<li><h5>Opaque</h5><input id="shape_opac" style="width: 32px;" value="100" min="0" max="100" step="1" type="number"></li>
+		<li><h5>Rempli</h5><input id="shape_fill" size="5" value="#000" type="color"></li>
+		<li><h5>Trait</h5><input id="shape_stroke" size="5" type="color"></li>
+	</ul>
+	<ul id="textTools" class="central_tools">
+		<li><h5>Paramètres:</h5></li>
+		<li><h5>Color</h5><input id="text_color" size="5" value="#000" type="color"></li>
+		<li><h5>Police</h5><input id="text_font" size="5" type="text"></li>
+		<li><h5>Taille</h5><input id="text_size" style="width: 28px;" value="16" type="number"><span>px</span></li>
+		<li><h5>Style</h5><select id="text_style">
+			<option value="normal">normal</option>
+			<option value="bold">gras</option>
+			<option value="italic">italique</option></select>
+		</li>
+		<li><h5>Align</h5><select id="text_align">
+			<option value="left">left</option>
+			<option value="center">center</option>
+			<option value="right">right</option></select>
+		</li>
+	</ul>
+	<ul id="wikiTools" class="central_tools">
+		<li><h5>Paramètres:</h5></li>
+		<li><h5>Color</h5><input id="wiki_color" size="5" value="#000" type="color"></li>
+		<li><h5>Police</h5><input id="wiki_font" size="5" type="text" value="Arial"></li>
+		<li><h5>Taille</h5><input id="wiki_size" style="width: 28px;" value="14" type="number"><span>px</span></li>
+	</ul>
+	<ul id="animeTools" class="central_tools">
+		<li><h5>Paramètres: </h5></li>
+		<li><h5>Bloquant:</h5><input id="animeBlock" type="checkbox" checked="true"></li>
+		<li><h5>Boucle:</h5><input id="animeRepeat" style="width: 28px;" type="number" value="1"></li>
+		<li><h5>Nom:</h5><input id="animeName" size="5" type="text"></li>
+		<li><input type="button" id="createAnime" value="Sauvegarder"></input></li>
+	</ul>
+	<ul id="scriptTool" class="central_tools">
+	    <li><h5>Extraire objet: </h5></li>
+	    <li><h5>Nom:</h5><input id="code_name" size="5" type="text"></li>
+	    <li><input id="code_save" type="button" value="Sauvegarder" /></li>
+	</ul>
+	<ul id="translateTool" class="central_tools">
+	    <li style="float: right;"><input id="gene_trans" type="button" value="Générer" /></li>
+	    <li style="float: left; margin: 2px 5px;"><img src="../images/tools/previous.png"></li>
+	    <li style="float: left; margin: 2px 5px;"><img src="../images/tools/next.png"></li>
+	</ul>
+	<canvas id="rulerX" class="ruler"></canvas>
+	<canvas id="rulerY" class="ruler"></canvas>
+	
+	<div id="editor"></div>
+</div>
+
+<div id="timeline">
+    <img id="addFrame" src="../images/UI/addframe.png">
+</div>
+
+<div id="right">
+<div id="right_panel">
+</div>
+</div>
+
+<div id="bottom">
+<div id="bottom_panel">
+	<ul class="tabBar">
+		<li class="active">Ressources</li>
+		<li>Scripts</li>
+		<li class="add">⋁</li>
+	</ul>
+
+	<div id="Ressources_panel" class="source">
+		<img id="srcAdd" class="icon_src" src="../images/UI/plus.png"></img>
+	</div>
+	<div id="Scripts_panel" class="source">
+	</div>
+</div>
+</div>
+
+<div id="linkSetter">
+    <div id="linkSetterAnchor"></div>
+    <h5>Type de lien:</h5>
+    <select id="linkType">
+        <option value="audio">Audio</option>
+        <option value="wiki">Wiki</option>
+        <option value="fb">Facebook</option>
+    </select>
+    <input id="addLinkBn" type="button" value="Ajouter ce lien" style="position:absolute;left:60px;top:120px;"/>
+</div>
+
+
+<script type="text/javascript">
+
+$('#center_panel.tabBar li').click(activeBarLabel);
+
+$('#newPage, #createPage').click(createPageDialog);
+$('#removePage').click(delCurrentPage);
+$('#newCalque').click(createStepDialog);
+
+$('#newTranslation').click(newTranslationDialog);
+
+$('#srcAdd').click(addFileDialog);
+$('#saveProjet').click(saveProject);
+
+var pjName = 'unittest';
+var pjLanguage = 'unittest';
+var imgPath = './projects/Voodoo_Ch1/images/';
+var audPath = './Voodoo_Ch1/audios/';
+var gamePath = './Voodoo_Ch1/games/';
+var uid = 'unittest';
+$(".menu li.id").text(uid);
+Config.init({width:800, height:600});
+
+if(uid && uid != "") {
+    $(".menu li.id").text(uid);
+}
+
+var config = Config.getInstance();
+init();
+
+var data = JSON.parse(localdata);
+retrieveLocalInfo(data);
+
+(function(){
+var jasmineEnv = jasmine.getEnv();
+jasmineEnv.updateInterval = 1000;
+
+var htmlReporter = new jasmine.HtmlReporter();
+
+jasmineEnv.addReporter(htmlReporter);
+
+jasmineEnv.specFilter = function(spec) {
+    return htmlReporter.specFilter(spec);
+};
+
+var currentWindowOnload = window.onload;
+
+window.onload = function() {
+    if (currentWindowOnload) {
+        currentWindowOnload();
+    }
+    execJasmine();
+};
+
+function execJasmine() {
+    jasmineEnv.execute();
+}
+})();
+
+</script>
+
+</body>
+</html>
