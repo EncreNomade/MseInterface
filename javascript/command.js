@@ -166,7 +166,13 @@ var CommandMgr = (function(capacity) {
             }
             
             return result;
-        }
+        },
+		reset : function(){
+			reverseStack.clear();
+			undoStack.clear();
+			reversable = false;
+			undoable = false;
+		}
     }
 })(30);
 (function(document, CommandMgr){
@@ -222,9 +228,12 @@ $.extend(CommandMulti.prototype, {
 		// execute from 0 to n
 		for( var i = 0 ; i < this.cmds.length ; i ++ ){
 			this.cmds[ i ].execute();
-			if( this.cmds[ i ].state != "SUCCESS")
+			if( this.cmds[ i ].state != "SUCCESS"){
 				this.state = this.cmds[ i ].state;
+				return false;
+			}
 		}
+		return true;
     },
     undo: function() {
         if(this.state != "SUCCESS") return;
@@ -233,8 +242,10 @@ $.extend(CommandMulti.prototype, {
         // execute from n to 0
 		for( var i = this.cmds.length-1 ; i >= 0 ; i -- ){
 			this.cmds[ i ].undo();
-			if( this.cmds[ i ].state != "CANCEL")
+			if( this.cmds[ i ].state != "CANCEL"){
 				this.state = this.cmds[ i ].state;
+				return false;
+			}
 		}
         return true;
     },
@@ -246,9 +257,12 @@ $.extend(CommandMulti.prototype, {
 		// execute from 0 to n
 		for( var i = 0 ; i < this.cmds.length ; i ++ ){
 			this.cmds[ i ].redo();
-			if( this.cmds[ i ].state != "SUCCESS")
+			if( this.cmds[ i ].state != "SUCCESS"){
 				this.state = this.cmds[ i ].state;
+				return false;
+			}
 		}
+		return true;
     },
 	toString : function(){
 		var rep = "Commande multiple : ";
@@ -1139,7 +1153,8 @@ $.extend( AddMoodCmd.prototype, {
 			$( this.speaks[ i ] ).attr( "data-mood" , "neutre" );
 			$( this.speaks[ i ] ).children("img").attr( "src" , this.speaker.getMoodUrl( "neutre" ) );
 		}
-		delete this.speaker.portrait[ this.key ];
+		if( this.key != "neutre" )
+			delete this.speaker.portrait[ this.key ];
 		
         this.state = 'CANCEL';
     },
@@ -1168,7 +1183,8 @@ $.extend( DelMoodCmd.prototype, {
 		
 		this.imgsrc = this.speaker.portrait[ this.mood ];
 		
-		delete this.speaker.portrait[ this.mood ];
+		if( this.mood != "neutre" )
+			delete this.speaker.portrait[ this.mood ];
 		
         this.state = 'SUCCESS';
     },
@@ -1202,7 +1218,8 @@ $.extend( ModifyMoodSrcCmd.prototype, {
         
 		this.oldSrc = this.speaker.portrait[ this.mood ];
 		this.speaker.portrait[ this.mood ] = this.newSrc;
-        
+
+		
 		this.speaks = this.speaker.getAssociateSpeak( this.mood );
 		var src = this.speaker.getMoodUrl(this.mood);     
 		for( var i = 0 ; i < this.speaks.length ; i ++ ){

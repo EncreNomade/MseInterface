@@ -223,7 +223,7 @@ var TextUtil = function() {
 		measure : function(text) {
 			return ctx.measureText(text).width;
 		},
-		checkNextline : function(text, maxM, width) {
+		checkNextline : function( text, maxM, width){
 			// Next line is the whole text remaining
 			if(maxM >= text.length) return text.length;
 			// Forward check
@@ -232,13 +232,14 @@ var TextUtil = function() {
 			do {
 				prevId = nextId;
 				// Find next space
-				var index = text.indexOf(' ', prevId);
+				var index = text.substr(prevId).search(/[\s\n\r\-\/\\\:]/);
+				index = (index == -1) ? -1 : prevId+index;
 				// No space after
 				if(index == -1) {
 					if(ctx.measureText(text).width <= width)
 						prevId = text.length;
-						break;
-					}
+					break;
+				}
 				// Text length
 				var l = ctx.measureText(text.substr(0, index));
 				nextId = index+1;
@@ -248,10 +249,11 @@ var TextUtil = function() {
 				return prevId;
 			}
 			// Backward check when forward check failed
-			else // Find last space
+			else {// Find last space
 				var lastsp = text.lastIndexOf(' ', maxM);
 				if(lastsp == -1) return maxM;
 				else return (lastsp+1);
+			}
 		},
 		editPrepaCb : new Callback(textEditPrepa, window),
 		editFinishCb : new Callback(textEditFinish, window)
@@ -514,7 +516,7 @@ SourceManager.prototype = {
 
 			// Choose Resize Move
 			//container.configurable({text:true,stroke:true});
-
+			container.attr( "id" , "obj"+(curr.objId++) );
 			return container;
 		case 'game':
 			var game = $('<div class="game" name="'+id+'">');
@@ -524,6 +526,7 @@ SourceManager.prototype = {
 			var w = parent.width()*0.8, h = w*0.6/0.8;
 			game.css({'width':w+'px', 'height':h+'px'});
 		    game.append('<h3>Game: '+id+'</h3>');
+			game.attr( "id" , "obj"+(curr.objId++) );
 		    return game;
 		default: 
 		}
@@ -1619,7 +1622,7 @@ Speaker.prototype = {
         dialog.close();
     },
     clearPortraits: function(){
-        this.portrait = {};
+        this.portrait = { neutre : null };
     },
 	getPictSrc : function( key ){
 		if( !key )
