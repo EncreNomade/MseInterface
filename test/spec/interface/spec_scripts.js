@@ -712,31 +712,31 @@ describe("",function(){
             runs(function(){
                 scriptMgr.upload('../upload_src.php', 'unitTest', 'unitTest');
             });
-            waits(1000)
+            waits(1000);
             
             runs(function(){
                 expect($.ajax).toHaveBeenCalled();
             });
         });
-        
+        /*
         it("don't makes alert on success", function(){     
             runs(function(){
                 scriptMgr.upload('../upload_src.php', 'unitTest', 'unitTest');
             });
             
-            waits(1500)
+            waits(1500);
             
             runs(function(){
                 expect(window.alert).not.toHaveBeenCalled();
             });
         });
-        
+        */
         it("alert on called with not existing URL", function(){
             runs(function(){
                 scriptMgr.upload('../upload_srrc.php', 'fakePjName', 'fakeLang');
             });
             
-            waits(1500)
+            waits(1500);
             
             runs(function(){
                 expect(window.alert).toHaveBeenCalled();

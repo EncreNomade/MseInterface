@@ -2,7 +2,9 @@
   "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-  <title>Interface Spec Runner</title>
+  <title>Interface d'édition (Jasmine Spec Runner)</title>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
 <link rel="shortcut icon" type="image/png" href="lib/jasmine-1.2.0/jasmine_favicon.png">
 <link rel="stylesheet" type="text/css" href="lib/jasmine-1.2.0/jasmine.css">
@@ -15,40 +17,13 @@
 <script src="../javascript/tools.js"></script>
 <script src="../javascript/interface.js"></script>
 <script src="../javascript/command.js"></script>
+<script src="support/project_data.js"></script>
 
 <link rel="stylesheet" type="text/css" href="../stylesheets/menu.css" />
 <link rel="stylesheet" type="text/css" href="../stylesheets/interface.css" />
 
 <!-- include spec files here... -->
 <script src="spec/interface/spec_source.js"></script>
-
-<script type="text/javascript">
-(function() {
-    var jasmineEnv = jasmine.getEnv();
-    jasmineEnv.updateInterval = 1000;
-
-    var htmlReporter = new jasmine.HtmlReporter();
-
-    jasmineEnv.addReporter(htmlReporter);
-
-    jasmineEnv.specFilter = function(spec) {
-        return htmlReporter.specFilter(spec);
-    };
-
-    var currentWindowOnload = window.onload;
-
-    window.onload = function() {
-        if (currentWindowOnload) {
-            currentWindowOnload();
-        }
-        execJasmine();
-    };
-
-    function execJasmine() {
-        jasmineEnv.execute();
-    }
-})();
-</script>
 
 <STYLE type="text/css">
     body {
@@ -213,31 +188,63 @@
 
 
 <script type="text/javascript">
-	
-	$('#center_panel.tabBar li').click(activeBarLabel);
-	
-	$('#newPage, #createPage').click(createPageDialog);
-	$('#removePage').click(delCurrentPage);
-	$('#newCalque').click(createStepDialog);
-	
-    $('#newTranslation').click(newTranslationDialog);
-    
-	$('#srcAdd').click(addFileDialog);
-	$('#saveProjet').click(saveProject);
-	
-	var pjName = 'unittest';
-	var pjLanguage = 'unittest';
-	var imgPath = './projects/Voodoo_Ch1/images/';
-	var audPath = './Voodoo_Ch1/audios/';
-	var gamePath = './Voodoo_Ch1/games/';
-	var uid = 'unittest';
-	$(".menu li.id").text(uid);
-	Config.init({width:800, height:600});
-	
-	var config = Config.getInstance();
-	init();
-	
-	CommandMgr.executeCmd(new AddPageCmd('testpage'));
+
+$('#center_panel.tabBar li').click(activeBarLabel);
+
+$('#newPage, #createPage').click(createPageDialog);
+$('#removePage').click(delCurrentPage);
+$('#newCalque').click(createStepDialog);
+
+$('#newTranslation').click(newTranslationDialog);
+
+$('#srcAdd').click(addFileDialog);
+$('#saveProjet').click(saveProject);
+
+var pjName = 'unittest';
+var pjLanguage = 'unittest';
+var imgPath = './projects/Voodoo_Ch1/images/';
+var audPath = './Voodoo_Ch1/audios/';
+var gamePath = './Voodoo_Ch1/games/';
+var uid = 'unittest';
+$(".menu li.id").text(uid);
+Config.init({width:800, height:600});
+
+if(uid && uid != "") {
+    $(".menu li.id").text(uid);
+}
+
+var config = Config.getInstance();
+init();
+
+var data = JSON.parse(localdata);
+retrieveLocalInfo(data);
+
+(function(){
+var jasmineEnv = jasmine.getEnv();
+jasmineEnv.updateInterval = 1000;
+
+var htmlReporter = new jasmine.HtmlReporter();
+
+jasmineEnv.addReporter(htmlReporter);
+
+jasmineEnv.specFilter = function(spec) {
+    return htmlReporter.specFilter(spec);
+};
+
+var currentWindowOnload = window.onload;
+
+window.onload = function() {
+    if (currentWindowOnload) {
+        currentWindowOnload();
+    }
+    execJasmine();
+};
+
+function execJasmine() {
+    jasmineEnv.execute();
+}
+})();
+
 </script>
 
 </body>

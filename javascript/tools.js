@@ -1941,7 +1941,6 @@ var scriptMgr = (function() {
             $.ajax({
                 type: "POST",
                 'url': url,
-                processData: false,
                 'data': data,
                 success: function(msg) {
                     if(msg && msg != "") alert("script upload errors: "+msg);
