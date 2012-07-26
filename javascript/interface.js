@@ -1302,7 +1302,8 @@ function generateSpeakLines( content, font, width, lineHeight, id , mood , decal
 function generateLines( content, font, width, lineHeight ){
     
 	//cut the espace when its between 
-	content = content.replace( /\n(( |\r|\t)*)\n/g , "\n\n" );
+	while( content.match( /(^|\n)(( |\r|\t)+)(\n|$)/ ) )
+		content = content.replace( /\n(( |\r|\t)+)\n/g , "\n\n" ).replace( /^(( |\r|\t)+)\n/g , "\n" ).replace( /\n(( |\r|\t)+)$/g , "\n" );
 	
 	var res = '';
     // Content processing
@@ -1932,7 +1933,8 @@ reverse : function( parent , chaine , article , meta , font , width , lineHeight
 			meta = this.parseMetaText( article );
 	
 	// prevent the navigator to delete tag content because its not visible ( <span>    </span> is saved as <span></spans>  )
-	chaine = chaine.replace( /\n(( |\r|\t)*)\n/g , "\n\n" )
+	while( chaine.match( /(^|\n)(( |\r|\t)+)(\n|$)/ ) )
+		content = content.replace( /\n(( |\r|\t)+)\n/g , "\n\n" ).replace( /^(( |\r|\t)+)\n/g , "\n" ).replace( /\n(( |\r|\t)+)$/g , "\n" );
 	
 	// parsing de la chaine
 	// suppression des balises, stockage des index et keywords
