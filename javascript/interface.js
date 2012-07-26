@@ -1201,12 +1201,12 @@ function generateSpeaks(content, font, width, lineHeight){
 		// append the textLine object
 		// append the normal text , the text before the dialogues
 		if( baliseInfo.outsidebefore.length > 0 )
-			res.append( generateLines(  baliseInfo.outsidebefore , font, width, true ) );	
+			res.append( generateLines(  baliseInfo.outsidebefore , font, width, lineHeight ) );	
 		
 		if( baliseInfo.inside.length > 0 ){
 			var id = "obj"+(curr.objId++);
 			var withdrawal = 45;
-			var lines = generateSpeakLines( baliseInfo.inside , font, width, lineHeight , id_ressource , mood  , withdrawal , true );
+			var lines = generateSpeakLines( baliseInfo.inside , font, width, lineHeight , id_ressource , mood  , withdrawal  );
 			var color = srcMgr.getSource( id_ressource ).color;
 			res.append( $('<div id="'+ id +'" class="speaker" data-who="'+baliseInfo.id+'" data-withdrawal="'+ config.sceneX(withdrawal) + '" data-color="'+color+'" data-mood="'+mood+'" style="width:'+  config.sceneX( width )+'px; background-color:'+color+';" />')
                .append( lines ) );

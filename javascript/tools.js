@@ -3178,7 +3178,7 @@ var initTranslateTool = function() {
             			    'font-size' : article.css('font-size'),
             			    'font-family' : article.css('font-family'),
             			    'color' : article.css('color')});
-            ArticleFormater.reverse(newarticle, content, article, metas);
+            ArticleFormater.reverse( newarticle, content, article, metas);
             getArticleExpo(this.right, newarticle, metas);
         },
         
