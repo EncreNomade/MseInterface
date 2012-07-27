@@ -1198,6 +1198,8 @@ Wiki.prototype = {
         }
     },
     getDependency: function(id) {
+		if( !id )
+			return false;
         for(var i = 0; i < this.cards.length; ++i) {
             var card = this.cards[i];
             if(card.type == 'img' && card.image == id)
@@ -2421,7 +2423,7 @@ var initWikiTool = function() {
             return true;
         },
         saveWiki: function(e) {
-            var name = $('#wiki_name').val();
+			var name = $('#wiki_name').val();
 				var editor = e.data.editor;
             if(!name || !nameValidation(name)) {
                 alert('Échec à sauvegarder, nom de wiki invalid');
@@ -2433,7 +2435,7 @@ var initWikiTool = function() {
             var cards = editor.children('div:last-child').prevAll();
             if(cards.length == 0) return false;
             // Other parameters
-            var wiki = new Wiki(name, cards.clone(), $('#wiki_font').val(), $('#wiki_size').val(), $('#wiki_color').val());
+            var wiki = new Wiki(name, cards.clone(), $('#wiki_font').val(), parseInt( $('#wiki_size').val() ), $('#wiki_color').val());
             var nomExiste = false;
             for (elem in srcMgr.sources) {
                     if (srcMgr.sources[elem].type == 'wiki' && elem == name) nomExiste = true;
