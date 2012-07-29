@@ -701,13 +701,10 @@ function addScriptDialog(src, srcType){
     dialog.annuler.click(closeBottom);
     dialog.confirm.click({sourceId: srcid, sourceType: srcType}, validScript);
     
-    var relatScript = scriptMgr.getRelatedScripts(srcid);
+    var relatScript = scriptMgr.getRelatedScriptids(srcid);
     if (relatScript.length > 0){
-        var scriptList = [];
-        for(var i=0; i<relatScript.length; i++)
-            scriptList.push(relatScript[i].id);
         var modifyScriptsButton = dialog.addButton($('<input type="button" value="Modifier les scripts existants"></input>'));
-        modifyScriptsButton.click(function(){ modifyScriptDialog(scriptList, null, src); });
+        modifyScriptsButton.click(function(){ modifyScriptDialog(relatScript, null, src); });
     }
 };
 // Modify a script related to an obj
@@ -854,7 +851,7 @@ function tarDynamic(e) {
         if (typeof(choosedScript) !== 'undefined' && scriptMgr.scripts[choosedScript].reaction == "objTrans") {
             var choosedTarget = scriptMgr.scripts[choosedScript].target;
             $('#script_tar').children('h5').text(choosedTarget);
-            dz.html(srcMgr.getExpo(scriptMgr.scripts[choosedScript].supp));
+            dz.html(srcMgr.getExpoClone(scriptMgr.scripts[choosedScript].supp));
             dz.attr('target', scriptMgr.scripts[choosedScript].supp);
         }
         
@@ -873,7 +870,7 @@ function tarDynamic(e) {
                 var dz = (new DropZone(dropToTargetZone, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "script_supp")).jqObj;
                 dz.data('type', "image");
                 $('.popup_body p:eq(4)').after(supp.append(dz));
-                if (typeof(choosedScript) !== 'undefined') dz.html(srcMgr.getExpo(scriptMgr.scripts[choosedScript].supp));
+                if (typeof(choosedScript) !== 'undefined') dz.html(srcMgr.getExpoClone(scriptMgr.scripts[choosedScript].supp));
             }
             else {
                 closeBottom();
@@ -893,7 +890,7 @@ function tarDynamic(e) {
         dz.data('type', type);
         cible.append(dz);
         if (typeof(choosedScript) !== 'undefined'){
-            dz.html(srcMgr.getExpo(scriptMgr.scripts[choosedScript].target));
+            dz.html(srcMgr.getExpoClone(scriptMgr.scripts[choosedScript].target));
             dz.attr('target', scriptMgr.scripts[choosedScript].target);
         }
         break;
@@ -913,7 +910,7 @@ function dropToTargetZone(e) {
 	var type = srcMgr.sourceType(id);
 	if(!id || type != $(this).data('type')) return;
 	// Place in the elem zone
-	$(this).html(srcMgr.getExpo(id));
+	$(this).html(srcMgr.getExpoClone(id));
 	$(this).attr('target', id);
 };
 
@@ -1504,7 +1501,7 @@ function dropToInsertZone(e) {
 	// Verification
 	if(!data || (type != "image" && type != "game")) return;
 	// Append to elem zone
-	$(this).append(srcMgr.getExpo(id));
+	$(this).append(srcMgr.getExpoClone(id));
 };
 
 // Select words to set link
@@ -1566,7 +1563,7 @@ function dropToAudioElemZone(e) {
 	// Verification
 	if(!id || (type != "audio")) return;
 	// Place in the elem zone
-	$(this).append(srcMgr.getExpo(id));
+	$(this).append(srcMgr.getExpoClone(id));
 	$(this).attr('link', id);
 };
 // Wiki resource drop zone interaction
@@ -1580,7 +1577,7 @@ function dropToWikiElemZone(e) {
     // Verification
     if(!id || (type != "wiki")) return;
     // Place in the elem zone
-    $(this).append(srcMgr.getExpo(id));
+    $(this).append(srcMgr.getExpoClone(id));
     $(this).attr('link', id);
 };
 
