@@ -1397,7 +1397,9 @@ Animation.prototype = {
                         container.hoverButton('./images/UI/spritecut.png', animeTool.spriteCut);
                         break;
                     case "spriteRecut":
-                        elem.css({'position':'relative', 'left':-100*param.sx/param.dw+'%', 'top':-100*param.sy/param.dh+'%', 'width':100*param.w/param.sw+'%', 'height':100*param.h/param.sh+'%'});
+						// the ratio was relative to the d- ( width on the scene ), i think it must be relative to the natural width and height
+                        //elem.css({'position':'relative', 'left':-100*param.sx/param.dw+'%', 'top':-100*param.sy/param.dh+'%', 'width':100*param.w/param.sw+'%', 'height':100*param.h/param.sh+'%'});
+                        elem.css({'position':'relative', 'left':-100*param.sx/param.w+'%', 'top':-100*param.sy/param.h+'%', 'width':100*param.w/param.sw+'%', 'height':100*param.h/param.sh+'%'});
                         container.hoverButton('./images/UI/recut.png', animeTool.recutAnimeObj);
                         break;
                     case "image":
