@@ -1379,7 +1379,7 @@ extend(RenameSrcCmd, Command);
 $.extend(RenameSrcCmd.prototype, {
     execute: function() {
         if(this.state != "WAITING") return;
-        if(!srcMgr.sources[this.oldname] || srcMgr.sources[this.newname]) {
+        if(!srcMgr.sources[this.oldname] || srcMgr.sources[this.newname] || !nameValidation(this.newname)) {
             this.state = "FAILEXE";
             return;
         }
@@ -1387,7 +1387,7 @@ $.extend(RenameSrcCmd.prototype, {
         this.state = "SUCCESS";
     },
     undo: function() {
-        if(!srcMgr.sources[this.newname] || srcMgr.sources[this.oldname]) {
+        if(!srcMgr.sources[this.newname] || srcMgr.sources[this.oldname] || !nameValidation(this.newname)) {
             this.state = "FAILUNDO";
             return;
         }
@@ -1410,7 +1410,7 @@ var DelSrcCmd = function(id) {
     this.type = src.type;
     this.data = src.data;
     // All dependencies
-    var scripts = [];
+    var scripts= {};
     var links = [];
     var doms = [];
     var wikianimes = [];
@@ -1449,7 +1449,7 @@ var DelSrcCmd = function(id) {
             }
             doms.push({'obj':container, 'related':related, 'relation':relation});
         });
-        // Animation & Wiki
+        // Animation & Wiki & speaks
         for(var srcid in srcMgr.sources) {
             var type = srcMgr.sources[srcid].type;
             if( (type == "wiki" || type == "anime") && srcMgr.sources[srcid].data.getDependency(id) ) {
@@ -1524,12 +1524,9 @@ $.extend(DelSrcCmd.prototype, {
         
         srcMgr.addSource(this.type, this.data, this.id);
         // Add all dependencies
-        for(var i = 0; i < this.scripts.length; ++i) {
-            var script = this.scripts[i];
-            if(scriptMgr.scripts[script.id]) continue;
-            scriptMgr.scripts[script.id] = script.elem;
-            scriptMgr.countScripts(script.elem.src, script.elem.srcType);
-        }
+        if(Object.keys(this.scripts).length > 0)
+            scriptMgr.addScripts(this.scripts);
+        
         for(var i = 0; i < this.links.length; ++i) {
             var link = this.links[i];
             var linkspan = '<span class="'+link.type+'" link="'+this.id+'">'+link.text+'</span>';

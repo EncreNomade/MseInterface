@@ -188,6 +188,12 @@ var Config = (function() {
 		// Wiki Card size
 		this.wikiWidth = this.sceneX(250);
 		this.wikiHeight = this.sceneY(320);
+		
+		// Z-index list
+		this.zid = {
+		    'CreatTool' : 7,
+		    'EditableTool' : 8
+		};
 	}
 	
 	var instance;
@@ -315,7 +321,8 @@ SourceManager.prototype = {
 	sources: {},
 	expos: {},
 	acceptType: new Array('image', 'audio', 'game', 'anime', 'wiki', 'code' , 'speaker' ),
-	extCheck: /data:\s*(\w+)\/(\w+);/,
+	rewritable: new Array('anime', 'wiki', 'code', 'speaker'),
+	extCheck: /^data:\s*(\w+)\/(\w+)[;,]/,
 	pathCheck: /^(\.\/)?([\w\_\s]+\/)*([\w\_\s\.]+)$/,
 	uploadResp: /^([\w\_\s]+)\&\&([\w\_\s\.\/]+)/,
 	
@@ -337,9 +344,9 @@ SourceManager.prototype = {
 		}
 		else return "none";
 	},
-	dataExtension: function(id) {
-	    if(!this.sources[id] || typeof this.sources[id].data != "string") return null;
-	    var res = this.sources[id].data.match(this.extCheck);
+	dataExtension: function(str) {
+	    if(typeof str != "string") return null;
+	    var res = str.match(this.extCheck);
 	    if(res != null && (res[1] == "image" || res[1] == "audio" || res[1] == "game")) 
 	        return res[2];
 	    else return null;
@@ -349,14 +356,34 @@ SourceManager.prototype = {
 	},
 	addSource: function(type, data, id) {
 		if($.inArray(type, this.acceptType) == -1) return false;
+		// Data verification
+		switch(type) {
+		case 'image':
+		case 'audio':
+		case 'game':
+		case 'code':
+		    if(!(typeof data == "string")) return false;
+		    break;
+		case 'wiki':
+		    if(!(data instanceof Wiki)) return false;
+		    break;
+		case 'anime':
+		    if(!(data instanceof Animation)) return false;
+		    break;
+		case 'speaker':
+		    if(!(data instanceof Speaker)) return false;
+		    break;
+		}
+		
 		if(!id) {
 		    id = 'src'+this.currId;
 		    this.currId++;
 		}
-		else if(this.sources[id] != null && type != "wiki" && type != "anime" && type != "code") {
+		else if(this.sources[id] != null && $.inArray(type, this.rewritable) == -1) {
 		    alert("Le nom de source existe déjà...");
 		    return false;
 		}
+		
 		// Source structure
 		var src = {'type':type, 'data':null};
 		// Generate expo
@@ -372,8 +399,10 @@ SourceManager.prototype = {
 			// Securely get the image width and height in Webkit
 			var imageSrc = new Image();
 			imageSrc.addEventListener('load', function(){
-			    src.width = imageSrc.width;
-			    src.height = imageSrc.height;
+			    if(src) {
+			        src.width = imageSrc.width;
+			        src.height = imageSrc.height;
+			    }
 			}, false);
 			imageSrc.src = data;
 			img[0].src = imageSrc.src;
@@ -442,6 +471,7 @@ SourceManager.prototype = {
 		        delete this.sources[id];
 		        src.data = data;
 		        this.sources[id] = src;
+		        this.expos[id].children('p').text('Speaker: '+data.name);
 		        return id;
 		    }
 		    src.data = data;
@@ -449,8 +479,7 @@ SourceManager.prototype = {
             data.srcId = id;
 			expo.append('<img class="srcicon_back" src="' + data.getMoodUrl("neutre") +'" name="'+id+'">');
 		    expo.append('<p>Speaker: '+data.name+'</p>');
-		    expo.circleMenu({'config':['./images/UI/config.png',data.showSpeakerOnEditor],
-		                     'delete':['./images/UI/del.png',this.prepareDelSource]});
+		    expo.circleMenu({'config':['./images/UI/config.png',data.showSpeakerOnEditor]});
 		    // expo.click(function(){
 		        // srcMgr.getSource($(this).data('srcId')).showSpeakerOnEditor();
 		    // });
@@ -495,7 +524,7 @@ SourceManager.prototype = {
 	    return res;
 	},
 	generateChildDomElem: function(id, parent) {
-	    if(!this.sources[id]) return;
+	    if(!this.sources[id]) return null;
 		var type = this.sources[id].type;
 		switch(type) {
 		case 'image':
@@ -529,9 +558,11 @@ SourceManager.prototype = {
 			game.attr( "id" , "obj"+(curr.objId++) );
 		    return game;
 		default: 
+		    return null;
 		}
 	},
-	getExpo: function(id) {
+	getExpoClone: function(id) {
+	    if(!this.expos[id]) return null;
 		var expo = this.expos[id].clone(true);
 		expo.deletable();
 		return expo;
@@ -542,7 +573,7 @@ SourceManager.prototype = {
 	    var t = src.type;
 	    // Delete all dependency to this source
 	    // Script dependency
-	    if(t != "wiki") {
+	    if(t != "wiki" && t != "speaker") {
 	        scriptMgr.delRelatedScripts(id);
 	    }
 	    // Text link dependency
@@ -602,7 +633,7 @@ SourceManager.prototype = {
 	            $('.scene img[name="'+id+'"]:not(.illu_speaker)').each(function(){
 	                list.push("Image utilisant cette ressource dans l'étape: "+$(this).parents('.layer').prop('id'));
 	            });
-	            // Animation & Wiki
+	            // Animation & Wiki & Speaker
 	            for(var srcid in srcMgr.sources) {
 	                var type = srcMgr.sources[srcid].type;
 	                if(type == "wiki" || type == "anime" || type == "speaker") {
@@ -640,10 +671,6 @@ SourceManager.prototype = {
 	    }
 	},
 	updateSource: function(id, newName) {
-	    if(!this.sources[id] || this.sources[newName]) {
-	        alert("Echec à changer de nom pour la source");
-	        return;
-	    }
 	    this.expos[newName] = this.expos[id];
 	    this.sources[newName] = this.sources[id];
 	    this.expos[newName].data('srcId', newName);
@@ -689,6 +716,10 @@ SourceManager.prototype = {
 		this.uploaded = 0;
 	},
     rename: function(id, newName) {
+        if(!this.sources[id] || this.sources[newName]) {
+            alert("Echec à changer de nom pour la source");
+            return id;
+        }
         this.updateSource(id, newName);
         var t = this.sources[newName].type;
         // Update expo
@@ -703,6 +734,7 @@ SourceManager.prototype = {
             chaine = chaine[0]+ ": "+ this.expos[newName].data("srcId");
             this.expos[newName].children('p').replaceWith("<p>"+chaine+"</p>");
         }
+        return newName;
     },
 	renameDialog: function(src) {
 	    var id = src.data('srcId');
@@ -733,7 +765,7 @@ SourceManager.prototype = {
 	        var data = null;
 	        var type = this.sources[key].type;
 	        // Check if data is original content or the relative path
-	        var ext = this.dataExtension(key);
+	        var ext = this.dataExtension(this.sources[key].data);
 	        // relative path
 	        if((type == "image" || type == "game" || type == "audio") && (!ext || ext == "")) {
 	            ++this.uploaded;
@@ -1363,8 +1395,11 @@ Animation.prototype = {
     },
     showAnimeOnEditor: function(){
         var editor = $('#editor');
-        editor.html("");
-        var timeline = $('#timeline');
+        if(editor.css('display') != 'none' && $('#animeName').val() == this.name)
+            return;
+    
+        // Reinit
+        animeTool.close();
         $('#animeRepeat').val(this.repeat);
         $('#animeName').val(this.name);
         $('#animeBlock').val(this.block);
@@ -1673,6 +1708,9 @@ var Script = function(src, srcType, action, target, reaction, immediate, supp){
     if(supp) this.supp = supp;
 };
 Script.prototype = {
+    relatedWith: function(id) {
+        return (this.src == id || this.target == id || this.supp == id);
+    },
     constructor: Script
 };
 
@@ -1796,44 +1834,45 @@ var scriptMgr = (function() {
             delete this.scripts[name];
             this.countScripts(relatedObj, relatedType);
         },
-        delRelatedScripts: function(objId){
-            var relScripts = this.getRelatedScripts(objId);
-            for(var i = 0; i < relScripts.length ; i++)
-                this.delScript(relScripts[i].id);
-        },
         getRelatedScriptids: function(objId) {
             var list = [];
             for(var elemid in this.scripts) {
                 var elem = this.scripts[elemid];
-                if(elem.src == objId || elem.target == objId || elem.supp == objId)
+                if(elem.relatedWith(objId))
                     list.push(elemid);
             }
             return list;
         },
         getRelatedScripts: function(objId) {
-            var list = [];
+            var list = {};
             for(var elemid in this.scripts) {
                 var elem = this.scripts[elemid];
-                if(elem.src == objId || elem.target == objId || elem.supp == objId)
-                    list.push({'id':elemid, 'elem':elem});
+                if(elem.relatedWith(objId))
+                    list[elemid] = elem;
             }
             return list;
+        },
+        delRelatedScripts: function(objId){
+            var relScripts = this.getRelatedScriptids(objId);
+            for(var i = 0; i < relScripts.length ; i++)
+                this.delScript(relScripts[i]);
         },
         getSameSrcScripts: function(objId){
             var list = [];
             for(var elem in this.scripts) {
                 if(this.scripts[elem].src == objId){ // each related scripts
-                    list.push({'id':elem, 'elem':this.scripts[elem]});
+                    list.push(elem);
                 }
             }
-            
             return list;
         },
         getRelatedScriptsDesc: function(objId) {
             var list = [];
-            var relScripts = this.getRelatedScripts(objId);
-            for(var i = 0; i < relScripts.length ; i++)
-                list.push("Le script: "+relScripts[i].id);
+            for(var elemid in this.scripts) {
+                var elem = this.scripts[elemid];
+                if(elem.relatedWith(objId))
+                    list.push("Le script: "+elemid);
+            }
             return list;
         },
         updateRelatedScripts: function(objId, newId){
@@ -1865,13 +1904,14 @@ var scriptMgr = (function() {
             if ($scriptCounter.length > 0)  // remove the existing icon
                 $scriptCounter.remove();
             $obj.data('scriptsList', listScript);
-            if (listScript.length > 0) {
+            var $nbscripts = listScript.length;
+            if ($nbscripts > 0) {
                 var $scriptIcon = $('#'+objId+' .del_container img[src="./images/UI/addscript.jpg"]');
                 var $delContainer = $obj.children('.del_container');
                 var hidingHoverIc = $scriptIcon.css('display') == 'none';
                 if (hidingHoverIc) $scriptCounter.hide();
                 
-                $delContainer.append('<div class="scriptCounter">'+ listScript.length +'</div>');
+                $delContainer.append('<div class="scriptCounter">'+ $nbscripts +'</div>');
                 $scriptCounter = $delContainer.children('.scriptCounter');
                 $scriptCounter.click(addScriptForObj);
                 
@@ -1921,7 +1961,7 @@ var scriptMgr = (function() {
                         var rx = x, ry = (y<115) ? y : y-25, r = 90;
                         var alpha = (y<115) ? (Math.PI/180)*90/5 : -(Math.PI/180)*90/5;
 
-                        countIcon.css({'left':rx,'top':ry,'opacity':0});
+                        countIcon.css({'left':0,'top':0,'opacity':0});
                         $circleMenu.append(countIcon);
                         var iconx = r*Math.cos(alpha*count) + 15, icony = r*Math.sin(alpha*count) + 15;
                         countIcon.animate({'left':"+="+iconx+"px",'top':"+="+icony+"px",'opacity':1}, 'normal', 'swing');
@@ -1958,7 +1998,7 @@ var EditableTool = function(jqToolsPanel, activeButton){
     if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools')) return;
     if(!activeButton || !activeButton.click) return;
     this.toolsPanel = jqToolsPanel;
-    this.toolsPanel.css('z-index', 8);
+    this.toolsPanel.css('z-index', config.zid.EditableTool);
     this.toolsPanel.data('editTool', this);
     this.activeBn = activeButton;
     this.activeBn.data('editTool', this);
@@ -2226,9 +2266,12 @@ var initShapeTool = function() {
 // Editable tools
 var CreatTool = function(jqToolsPanel, activeButton, unhideable){
 // Verify tools panel
-    if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools')) return;
+    if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools')) {
+        console.error("Fail to initialize a create tool, tools panel isn't valid");
+        return;
+    }
     this.toolsPanel = jqToolsPanel;
-    this.toolsPanel.css('z-index', 7);
+    this.toolsPanel.css('z-index', config.zid.CreatTool);
     this.toolsPanel.data('creatTool', this);
     
     if(activeButton && activeButton.click) {
@@ -3122,7 +3165,7 @@ var initTranslateTool = function() {
             
             // For insertions
             if(format == "inser") {
-                var expo = srcMgr.getExpo(link.id);
+                var expo = srcMgr.getExpoClone(link.id);
                 expo.deletable(false);
                 expo.circleMenu(false);
                 expo.css({'position':'absolute', 'top':obj.position().top-20, 'right':'0px'});
@@ -4147,7 +4190,7 @@ $.fn.circleMenu = function(buttonmap) {
                     $(this).data("func").call(window, tar);
                 });
             }
-            icon.css({'left':rx,'top':ry,'opacity':0});
+            icon.css({'left':0,'top':0,'opacity':0});
             menu.append(icon);
             // Animation
             var iconx = r*Math.cos(alpha*count), icony = r*Math.sin(alpha*count);

@@ -262,7 +262,7 @@ describe("Dialogs test", function() {
             
             // Add source exemple
             srcMgr.addSource('image', './images/UI/addscript.jpg', 'imgsrc');
-            srcMgr.addSource('anime', {}, 'example');
+            srcMgr.addSource('anime', new Animation('example', 1, true, false), 'example');
             
             // It should not open the dialog if target is not a jquery object
             addScriptDialog("a page");
