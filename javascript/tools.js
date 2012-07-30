@@ -188,6 +188,12 @@ var Config = (function() {
 		// Wiki Card size
 		this.wikiWidth = this.sceneX(250);
 		this.wikiHeight = this.sceneY(320);
+		
+		// Z-index list
+		this.zid = {
+		    'CreatTool' : 7,
+		    'EditableTool' : 8
+		};
 	}
 	
 	var instance;
@@ -1389,8 +1395,11 @@ Animation.prototype = {
     },
     showAnimeOnEditor: function(){
         var editor = $('#editor');
-        editor.html("");
-        var timeline = $('#timeline');
+        if(editor.css('display') != 'none' && $('#animeName').val() == this.name)
+            return;
+    
+        // Reinit
+        animeTool.close();
         $('#animeRepeat').val(this.repeat);
         $('#animeName').val(this.name);
         $('#animeBlock').val(this.block);
@@ -1987,7 +1996,7 @@ var EditableTool = function(jqToolsPanel, activeButton){
     if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools')) return;
     if(!activeButton || !activeButton.click) return;
     this.toolsPanel = jqToolsPanel;
-    this.toolsPanel.css('z-index', 8);
+    this.toolsPanel.css('z-index', config.zid.EditableTool);
     this.toolsPanel.data('editTool', this);
     this.activeBn = activeButton;
     this.activeBn.data('editTool', this);
@@ -2255,9 +2264,12 @@ var initShapeTool = function() {
 // Editable tools
 var CreatTool = function(jqToolsPanel, activeButton, unhideable){
 // Verify tools panel
-    if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools')) return;
+    if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools')) {
+        console.error("Fail to initialize a create tool, tools panel isn't valid");
+        return;
+    }
     this.toolsPanel = jqToolsPanel;
-    this.toolsPanel.css('z-index', 7);
+    this.toolsPanel.css('z-index', config.zid.CreatTool);
     this.toolsPanel.data('creatTool', this);
     
     if(activeButton && activeButton.click) {
