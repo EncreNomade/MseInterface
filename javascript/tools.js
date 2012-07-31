@@ -1995,35 +1995,42 @@ var scriptMgr = (function() {
 // Editable tools
 var EditableTool = function(jqToolsPanel, activeButton){
     // Verify tools panel
-    if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools')) return;
-    if(!activeButton || !activeButton.click) return;
+    if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools') || jqToolsPanel.data('relatTool') != undefined) {
+        console.error("Fail to initialize a editable tool, tools panel isn't valid");
+        return;
+    }
     this.toolsPanel = jqToolsPanel;
     this.toolsPanel.css('z-index', config.zid.EditableTool);
-    this.toolsPanel.data('editTool', this);
-    this.activeBn = activeButton;
-    this.activeBn.data('editTool', this);
-    // Active process
-    this.activeBn.click(function() {
-        var tool = $(this).data('editTool');
-        if(tool instanceof EditableTool) {
-            tool.active();
-        }
-    });
+    this.toolsPanel.data('relatTool', this);
+    
+    if(activeButton && activeButton.click) {
+        this.activeBn = activeButton;
+        this.activeBn.data('relatTool', this);
+        // Active process
+        this.activeBn.click(function() {
+            var tool = $(this).data('relatTool');
+            if(tool instanceof EditableTool) {
+                tool.active();
+            }
+        });
+    }
     // Verify the existance of del container
     if(jqToolsPanel.find('.del_container img').length == 0) {
         jqToolsPanel.hideable(function() {
-            var tool = $(this).parents('.central_tools').data('editTool');
+            var tool = $(this).parents('.central_tools').data('relatTool');
             tool.close();
         });
     }
     
     // Init editor
     this.editor = $('<div class="direct_editor">');
-    this.editor.data('editTool', this);
+    this.editor.data('relatTool', this);
     
     // Register this tool
-    if(!this.constructor.prototype.allTools) this.constructor.prototype.allTools = '#'+this.toolsPanel.prop('id');
-    else this.constructor.prototype.allTools += ', #'+this.toolsPanel.prop('id');
+    var id = this.toolsPanel.prop('id');
+    if(!this.constructor.prototype.allTools) this.constructor.prototype.allTools = '#'+id;
+    else if(this.constructor.prototype.allTools.indexOf(id) == -1)
+        this.constructor.prototype.allTools += ', #'+id;
 };
 EditableTool.prototype = {
     constructor: EditableTool,
@@ -2266,30 +2273,25 @@ var initShapeTool = function() {
 // Editable tools
 var CreatTool = function(jqToolsPanel, activeButton, unhideable){
 // Verify tools panel
-    if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools')) {
+    if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools') || jqToolsPanel.data('relatTool') != undefined) {
         console.error("Fail to initialize a create tool, tools panel isn't valid");
         return;
     }
     this.toolsPanel = jqToolsPanel;
     this.toolsPanel.css('z-index', config.zid.CreatTool);
-    this.toolsPanel.data('creatTool', this);
+    this.toolsPanel.data('relatTool', this);
     
     if(activeButton && activeButton.click) {
         this.activeBn = activeButton;
-        this.activeBn.data('creatTool', this);
+        this.activeBn.data('relatTool', this);
         // Active process
-        this.activeBn.click(function() {
-            var tool = $(this).data('creatTool');
-            if(tool instanceof CreatTool) {
-                tool.active();
-            }
-        });
+        this.activeBn.click(this.activefn);
     }
     if(unhideable !== true) {
         // Verify the existance of del container
         if(jqToolsPanel.find('.del_container img').length == 0) {
             jqToolsPanel.hideable(function() {
-                var tool = $(this).parents('.central_tools').data('creatTool');
+                var tool = $(this).parents('.central_tools').data('relatTool');
                 tool.close();
             });
         }
@@ -2301,9 +2303,15 @@ CreatTool.prototype = {
     constructor: EditableTool,
     allTools: '',
     init: function() {},
+    activefn: function() {
+        var tool = $(this).data('relatTool');
+        if(tool instanceof CreatTool) {
+            tool.active();
+        }
+    },
     active: function() {
         // Register
-        this.editor.data('creatTool', this);
+        this.editor.data('relatTool', this);
         // Trigger close event if center panel is showing up
         $('.central_tools').filter(':visible').find('.del_container img:first').click();
         this.toolsPanel.show();
@@ -2315,6 +2323,7 @@ CreatTool.prototype = {
     finishEdit: function(elems) {},
     close: function() {
         this.finishEdit(this.editor.children());
+        this.editor.removeData('relatTool');
         this.editor.unbind().hide().children().remove();
         this.toolsPanel.hide();
         this.menuMask.hide();
