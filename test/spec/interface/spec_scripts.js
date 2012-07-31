@@ -708,15 +708,15 @@ describe("",function(){
                 console.log('fake alert : ' + msg);
             });
         });
-        it("make an ajax request",function(){
-            runs(function(){
-                scriptMgr.upload('../upload_src.php', 'unitTest', 'unitTest');
-            });
-            waits(1000);
-            
-            runs(function(){
-                expect($.ajax).toHaveBeenCalled();
-            });
+        it("make an ajax request with good data",function(){
+            scriptMgr.upload('../upload_src.php', 'unitTest', 'unitTestLang');
+
+            expect($.ajax).toHaveBeenCalled();
+            // control params given to ajax
+            var args = $.ajax.calls[0].args[0];
+            expect(args.data.pjName).toBe('unitTest');
+            expect(args.data.lang).toBe('unitTestLang');
+            expect(args.data.data).toBe(JSON.stringify(scriptMgr.scripts));
         });
         /*
         it("don't makes alert on success", function(){     

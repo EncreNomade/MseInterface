@@ -893,13 +893,32 @@ StepManager.prototype = {
 	    }
 	    CommandMgr.executeCmd(new RenameStepCmd(this, stepN, name));
 	},
+    createExpo: function(stepN, name){
+        // Add a Step expo
+		var expo = $('<div class="layer_expo"><h1>Étape '+stepN+'</h1><h5>Name: <span>'+name+'</span></h5></div>');
+		expo.data('name', name);
+		expo.data('stepN', stepN);
+		expo.find('span').editable(new Callback(this.renameStep, this, expo));
+		// Step chooser function
+		expo.click(function(e) {
+			e.preventDefault();e.stopPropagation();
+			curr.page.data('StepManager').activeStep($(this).data('stepN'));
+		});
+		// Del step button and Up down button
+		expo.deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc);
+		// DnD listenerts to step expo
+		expo.bind('dragover', dragOverExpo).bind('dragleave', dragLeaveExpo).bind('drop', dropToExpo);
+		
+        return expo;
+    },
 	
 	addStepWithContent: function(name, step) {
 	    if(!name || !nameValidation(name) || stepExist(name)) return false;
+        step.prop('id', name); // change the step name
 	    var stepN = parseInt(step.css('z-index'));
 	    
 	    // Insert stepin the right place
-	    for(var i = this.currStepN-1; i >= stepN; --i) {
+	    for(var i = this.currStepN-1; i >= stepN; --i){
 	        this.steps[i].css('z-index', i+1);
 	        this.stepexpos[i].children('h1').replaceWith('<h1>Étape '+(i+1)+'</h1>');
 	        // Change stepN in data
@@ -919,40 +938,27 @@ StepManager.prototype = {
 	    else this.page.append(step);
 	    
 	    // Add a Step expo
-	    var expo = $('<div class="layer_expo"><h1>Étape '+stepN+'</h1><h5>Name: <span>'+name+'</span></h5></div>');
-	    expo.data('name', name);
-	    expo.data('stepN', stepN);
-	    expo.find('span').editable(new Callback(this.renameStep, this, expo));
-	    // Step chooser function
-	    expo.click(function(e) {
-	    	e.preventDefault();e.stopPropagation();
-	    	curr.page.data('StepManager').activeStep($(this).data('stepN'));
-	    });
-	    // Del step button and Up down button
-	    expo.deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc);
-	    // Append expo to manager
+        var expo = this.createExpo(stepN, name);
 	    this.stepexpos[stepN] = expo;
 	    if(this.stepexpos[stepN-1]) this.stepexpos[stepN-1].before(expo);
 	    else if(this.stepexpos[stepN+1]) this.stepexpos[stepN+1].after(expo);
 	    else this.manager.append(expo);
-	    // DnD listenerts to step expo
-	    expo.bind('dragover', dragOverExpo).bind('dragleave', dragLeaveExpo).bind('drop', dropToExpo);
 	    
 	    // Step content processing
 	    step.children().each(function(){
-	        obj = $(this);
+	        var obj = $(this);
 	        // Article
 	        if(obj.hasClass('article')) {
 	            obj.children('div').each(function(){
-                    function setArticleObjProp (jqObj){
+                    function setArticleObjProp(jqObj){
                         jqObj.deletable(null, true)
-                               .selectable(selectP)
-                               .staticButton('./images/UI/insertbelow.png', insertElemDialog)
-                               .staticButton('./images/UI/config.png', staticConfig)
-                               .staticButton('./images/tools/anime.png', animeTool.animateObj)
-                               .staticButton('./images/UI/addscript.jpg', addScriptForObj)
-                               .css({'z-index':'0','background':'none'});
-                        scriptMgr.countScripts($(this).attr('id'),'obj');
+                             .selectable(selectP)
+                             .staticButton('./images/UI/insertbelow.png', insertElemDialog)
+                             .staticButton('./images/UI/config.png', staticConfig)
+                             .staticButton('./images/tools/anime.png', animeTool.animateObj)
+                             .staticButton('./images/UI/addscript.jpg', addScriptForObj)
+                             .css({'z-index':'0','background':'none'});
+                        scriptMgr.countScripts(jqObj.attr('id'),'obj', jqObj);
                         jqObj.children('.del_container').css({
                             'position': 'relative',
                             'left': jqObj.width()-15+'px',
@@ -986,7 +992,7 @@ StepManager.prototype = {
 	            // Editable for text object   
                 if(obj.children('p').length > 0)
                     obj.children('p').editable(TextUtil.editFinishCb, TextUtil.editPrepaCb, true);
-	            scriptMgr.countScripts(obj.attr('id'),'obj');
+	            scriptMgr.countScripts(obj.attr('id'),'obj', $(this));
 	        }
 	    });
 	    
@@ -1008,22 +1014,10 @@ StepManager.prototype = {
 		this.steps[this.currStepN] = step;
 		
 		// Add a Step expo
-		var expo = $('<div class="layer_expo"><h1>Étape '+this.currStepN+'</h1><h5>Name: <span>'+name+'</span></h5></div>');
-		expo.data('name', name);
-		expo.data('stepN', this.currStepN);
-		expo.find('span').editable(new Callback(this.renameStep, this, expo));
-		// Step chooser function
-		expo.click(function(e) {
-			e.preventDefault();e.stopPropagation();
-			curr.page.data('StepManager').activeStep($(this).data('stepN'));
-		});
-		// Del step button and Up down button
-		expo.deletable(this.deleteFunc).hoverButton('./images/UI/up.png', this.upFunc).hoverButton('./images/UI/down.png', this.downFunc);
+        var expo = this.createExpo(this.currStepN, name);
 		// Append expo to manager
 		this.manager.prepend(expo);
 		this.stepexpos[this.currStepN] = expo;
-		// DnD listenerts to step expo
-		expo.bind('dragover', dragOverExpo).bind('dragleave', dragLeaveExpo).bind('drop', dropToExpo);
 		
 		this.currStepN++;
 		if(active || this.manager.children('.expo_active').length==0) {
@@ -1085,7 +1079,7 @@ StepManager.prototype = {
 	},
 	
 	removeStep: function(stepN) {
-		if(this.currStepN <= 2) return; // Only one step left
+		if(this.currStepN <= 2) return false; // Only one step left
 		var step = this.steps[stepN];
 		// Current Layer removed
 		if(step == curr.step) {
@@ -1100,7 +1094,8 @@ StepManager.prototype = {
 		for(var i = stepN; i < this.currStepN-1; i++) {
 			this.steps[i] = this.steps[i+1];
 			// Update z-index
-			this.steps[i].css({'z-index':i});
+			this.steps[i].css('z-index', i);
+            this.steps[i].data('stepN', i);
 			// Update step expo
 			this.stepexpos[i] = this.stepexpos[i+1];
 			this.stepexpos[i].data('stepN', i);
@@ -1844,24 +1839,24 @@ var scriptMgr = (function() {
         saveLocal: function(){
             return this.scripts;
         },
-        countScripts: function(objId, srcType) {
+        countScripts: function(objId, srcType, jQCaller) {
             var listScript = this.getSameSrcScripts(objId);           
             // display a little icon with the number of related script
             if (srcType == "obj")
-                this.updateObjScCount(objId, listScript);
+                this.updateObjScCount(objId, listScript, jQCaller);
             else // circleMenu
-                this.updateCircleMenuScCount(objId, srcType, listScript);
+                this.updateCircleMenuScCount(objId, srcType, listScript, jQCaller);
             
             if(listScript.length > 0) return listScript;
         },
-        updateObjScCount: function(objId, listScript){
-            var $obj = $('#'+objId);
+        updateObjScCount: function(objId, listScript, jQCaller){
+            var $obj = jQCaller ? jQCaller : $('#'+objId);
             var $scriptCounter = $obj.find('.scriptCounter');
             if ($scriptCounter.length > 0)  // remove the existing icon
                 $scriptCounter.remove();
             $obj.data('scriptsList', listScript);
             if (listScript.length > 0) {
-                var $scriptIcon = $('#'+objId+' .del_container img[src="./images/UI/addscript.jpg"]');
+                var $scriptIcon = $obj.find('.del_container img[src="./images/UI/addscript.jpg"]');
                 var $delContainer = $obj.children('.del_container');
                 var hidingHoverIc = $scriptIcon.css('display') == 'none';
                 if (hidingHoverIc) $scriptCounter.hide();
@@ -1891,12 +1886,14 @@ var scriptMgr = (function() {
             }
         
         },
-        updateCircleMenuScCount: function(objId, srcType, listScript){
+        updateCircleMenuScCount: function(objId, srcType, listScript, jQCaller){
             var source = false;
             var $circleMenu = $('#circleMenu');
             var $scriptCounter = $('#circleMenu .scriptCounter');
-            if (srcType == "page") source = $('#pageBar li:contains("'+objId+'")');
-            else if (srcType == "anime") source = srcMgr.expos[objId];
+            if (srcType == "page") 
+                source = $('#pageBar li:contains("'+objId+'")');
+            else if (srcType == "anime") 
+                source = srcMgr.expos[objId];
             
             if (listScript.length > 0 && source) {
                 source.data('scriptsList', listScript);
@@ -1926,7 +1923,11 @@ var scriptMgr = (function() {
             }
         },
         upload: function(url, pjName, lang){
-            var data = "pjName="+pjName+"&lang="+lang+"&type=scripts&data="+JSON.stringify(this.scripts);
+            var data = {
+                'pjName': pjName,
+                'lang': lang,
+                'data': JSON.stringify(this.scripts)
+            };
             
             $.ajax({
                 type: "POST",
