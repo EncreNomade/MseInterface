@@ -102,7 +102,7 @@ describe("Dialogs test", function() {
             expect(font.prop('type')).toEqual('text');
             expect(fsize.prop('type')).toEqual('number');
             expect(fontw.prop('tagName')).toEqual('SELECT');
-            expect(color.prop('type')).toEqual('color');
+            expect(color.prop('type')).toEqual('text');
             expect(align.prop('tagName')).toEqual('SELECT');
             expect(content.prop('tagName')).toEqual('TEXTAREA');
             
@@ -114,7 +114,7 @@ describe("Dialogs test", function() {
             font.val('MONACO');
             fontw.val('bold');
             fsize.val(23);
-            color.val('#F00');
+            color.val('#f00');
             align.val('center');
             
             // Validation tests
@@ -160,7 +160,7 @@ describe("Dialogs test", function() {
             expect(font.val()).toEqual('MONACO');
             expect(parseFloat(fsize.val())).toBeCloseTo(23, 0.9);
             expect(fstyle.val()).toEqual('bold');
-            expect(color.val() == '#F00' || color.val() == 'rgb(255, 0, 0)').toBeTruthy();
+            expect(getColorHex(color.val() ) ).toBe( '#ff0000');
             expect(align.val()).toEqual('center');
         });
         

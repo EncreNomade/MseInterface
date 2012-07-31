@@ -461,7 +461,7 @@ function articleStepDialog(name, params) {
 	dialog.main.append('<p><label>Location:</label><input id="articlex" size="10" placeholder="x" type="text"><span>px</span><input id="articley" size="10" placeholder="y" type="text"><span>px</span></p>');
 	dialog.main.append('<p><label>Ligne de texte:</label><input id="linew" size="10" placeholder="Largeur" type="text"><span>px</span><input id="lineh" size="10" placeholder="hauteur" type="text"><span>px</span></p>');
 	dialog.main.append('<p><label>Police:</label><input id="articleFont" size="10" placeholder="famille" type="text"><input id="articleFsize" style="width: 28px;" type="number"><span>px</span><select id="articleFontw"><option value="normal">normal</option><option value="bold">bold</option></select></p>');
-	dialog.main.append('<p><label>Couleur:</label><input id="articleColor" size="10" type="color"></p>');
+	dialog.main.append('<p><label>Couleur:</label><input id="articleColor" size="10" type="text"></p>');
 	dialog.main.append('<p><label>Alignement:</label><select id="articleAlign"><option value="left">left</option><option value="center">center</option><option value="right">right</option></select></p>');
 	
 	dialog.main.append('<h2> - Contenu de l\'article</h2>');
@@ -537,9 +537,9 @@ function showParameter(obj, conf) {
 	dialog.main.append('<p><label>Alignement:</label><select id="pm_align"><option value="left">left</option><option value="center">center</option><option value="right">right</option></select></p>');
 	dialog.main.append('<h2> - Couleur</h2>');
 	dialog.main.append('<p><label>Opacity:</label><input id="pm_opac" style="width: 28px;" value="'+opac+'" type="number"></p>');
-	dialog.main.append('<p><label>Fond:</label><input id="pm_back" size="10" value="'+back+'" type="color"></p>');
-	dialog.main.append('<p><label>Color:</label><input id="pm_color" size="10" value="'+color+'" type="color"></p>');
-	dialog.main.append('<p><label>Trace:</label><input id="pm_stroke" size="10" value="'+stroke+'" type="color"></p>');
+	dialog.main.append('<p><label>Fond:</label><input id="pm_back" size="10" value="'+back+'" type="text"></p>');
+	dialog.main.append('<p><label>Color:</label><input id="pm_color" size="10" value="'+color+'" type="text"></p>');
+	dialog.main.append('<p><label>Trace:</label><input id="pm_stroke" size="10" value="'+stroke+'" type="text"></p>');
 	//dialog.main.append('<h2> - Les autres</h2>');
 	
 	// Disables
