@@ -1,38 +1,39 @@
+<?php
+/*!
+ * MseInterface main page of book edition
+ * Encre Nomade
+ *
+ * Author: LING Huabin - lphuabin@gmail.com
+ * Copyright, Encre Nomade
+ *
+ * Date de creation: Octobre 2011
+ */
+
+header("content-type:text/html; charset=utf8");
+include '../project.php';
+include_once '../dbconn.php';
+
+session_start();
+
+$_SESSION['uid'] = 'unittest';
+ConnectDB();
+$pj = MseProject::getExistProject('unittest', 'unittest');
+$_SESSION["unittest_unittest"] = $pj;
+
+?>
+
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
   "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-  <title>Interface Spec Runner</title>
-  
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Interface d'édition (Jasmine Spec Runner)</title>
 
 <link rel="shortcut icon" type="image/png" href="lib/jasmine-1.2.0/jasmine_favicon.png">
 <link rel="stylesheet" type="text/css" href="lib/jasmine-1.2.0/jasmine.css">
 <script type="text/javascript" src="lib/jasmine-1.2.0/jasmine.js"></script>
 <script type="text/javascript" src="lib/jasmine-1.2.0/jasmine-html.js"></script>
 
-<!-- include source files here... -->
-<script src="../javascript/support/jquery-latest.js"></script>
-<script src="../javascript/support/jquery.color.js"></script>
-<script src="../javascript/tools.js"></script>
-<script src="../javascript/interface.js"></script>
-<script src="../javascript/command.js"></script>
-
-<link rel="stylesheet" type="text/css" href="../stylesheets/menu.css" />
-<link rel="stylesheet" type="text/css" href="../stylesheets/interface.css" />
-
-<!-- include spec files here... -->
-<script src="spec/demo.js"></script>
-
 <STYLE type="text/css">
-    body {
-        position:absolute;
-        margin:0px;
-        padding:0px;
-        width:100%;
-        height: auto;
-        overflow: auto;
-    }
     .jasmine_reporter {
         background: #fff;
         -webkit-box-shadow: 0px 0px 5px #4d4d4d;
@@ -46,6 +47,47 @@
         top: 0px;
     }
 </STYLE>
+
+<!-- include source files here... -->
+<script src="../javascript/support/jquery-latest.js"></script>
+<script src="../javascript/support/jquery.color.js"></script>
+<script src="../javascript/tools.js"></script>
+<script src="../javascript/interface.js"></script>
+<script src="../javascript/command.js"></script>
+
+<link rel="stylesheet" type="text/css" href="../stylesheets/menu.css" />
+<link rel="stylesheet" type="text/css" href="../stylesheets/interface.css" />
+
+<!-- include spec files here... -->
+<script src="spec/interface/spec_speaks.js"></script>
+
+<script type="text/javascript">
+(function() {
+    var jasmineEnv = jasmine.getEnv();
+    jasmineEnv.updateInterval = 1000;
+
+    var htmlReporter = new jasmine.HtmlReporter();
+
+    jasmineEnv.addReporter(htmlReporter);
+
+    jasmineEnv.specFilter = function(spec) {
+        return htmlReporter.specFilter(spec);
+    };
+
+    var currentWindowOnload = window.onload;
+
+    window.onload = function() {
+        if (currentWindowOnload) {
+            currentWindowOnload();
+        }
+        execJasmine();
+    };
+
+    function execJasmine() {
+        jasmineEnv.execute();
+    }
+})();
+</script>
 
 </head>
 <body>
@@ -199,46 +241,117 @@
 	$('#srcAdd').click(addFileDialog);
 	$('#saveProjet').click(saveProject);
 	
-	var pjName = 'unittest';
-	var pjLanguage = 'unittest';
-	var imgPath = './projects/Voodoo_Ch1/images/';
-	var audPath = './Voodoo_Ch1/audios/';
-	var gamePath = './Voodoo_Ch1/games/';
-	var uid = 'unittest';
-	$(".menu li.id").text(uid);
-	Config.init({width:800, height:600});
+	<?php
+	    print("var pjName = '".$pj->getName()."';\n");
+        print("var pjLanguage = '".$pj->getLanguage()."';\n");
+	    print("var imgPath = '".$pj->getSrcSavePath("image")."';\n");
+	    print("var audPath = '".$pj->getRelatSrcPath("audio")."';\n");
+	    print("var gamePath = '".$pj->getRelatSrcPath("game")."';\n");
+	    print("var lastModServer = ".$pj->getLastModTS().";\n");
+	    print("Config.init({width:".$pj->getWidth().", height:".$pj->getHeight()."});\n");
+
+        if(isset($_SESSION["uid"]) && $_SESSION["uid"] != "") {
+            echo "uid = '".$_SESSION["uid"]."';\n";
+        }
+    ?>
+    if(uid && uid != "") {
+        $(".menu li.id").text(uid);
+    }
 	
 	var config = Config.getInstance();
 	init();
 	
-	CommandMgr.executeCmd(new AddPageCmd('testpage'));
+function retrieveLocalInfo(pjsave) {
+    // Pages/Layers/Objects
+    var obj = null;
+    var maxid = 0, id = 0;
+    var pageseri = pjsave.pageSeri;
+    for(var pname in pageseri) {
+        var page = addPage(pname);
+        scriptMgr.countScripts(page.attr('id'),"page");
+        var steps = 0;
+        for(var sname in pageseri[pname]) {
+            steps++;
+            var step = $(pageseri[pname][sname]);
+            page.data('StepManager').addStepWithContent(sname, step);
+        }
+        if(steps == 0) page.data('StepManager').addStep(pname+'default', null, true);
+    }
+    
+    // Ressources
+    var src = pjsave.sources;
+    for(var key in src) {
+        var type = src[key].type;
+        var data = src[key].data;
+        if(type == "text" || type == "obj") continue;
+        else if(type == "anime") 
+            data = objToClass(data, Animation);
+		else if(type == "speaker"){
+            data = objToClass(data, Speaker);
+		}
+        else if(type == "wiki") 
+            data = objToClass(data, Wiki);
+        srcMgr.addSource(type, data, key);
+    }
+    if(!isNaN(pjsave.srcCurrId)) srcMgr.currId = pjsave.srcCurrId;
+    if(!isNaN(pjsave.objCurrId)) curr.objId = pjsave.objCurrId;
+    //else if(!isNaN(maxid)) curr.objId = maxid+1;
+    
+    // Scripts
+    if(pjsave.scripts) {
+        scriptMgr.addScripts( pjsave.scripts );
+    }
+    
+    if(isNaN(pjsave.lastModif)) curr.lastModif = lastModServer;
+    else curr.lastModif = pjsave.lastModif;
+    
+    <?php 
+        if($pj->getUntranslated()) {
+            print("window.translationTool.active();");
+        }
+    ?>
+    
+}
 	
-	(function() {
-	    var jasmineEnv = jasmine.getEnv();
-	    jasmineEnv.updateInterval = 1000;
-	
-	    var htmlReporter = new jasmine.HtmlReporter();
-	
-	    jasmineEnv.addReporter(htmlReporter);
-	
-	    jasmineEnv.specFilter = function(spec) {
-	        return htmlReporter.specFilter(spec);
-	    };
-	
-	    var currentWindowOnload = window.onload;
-	
-	    window.onload = function() {
-	        if (currentWindowOnload) {
-	            currentWindowOnload();
-	        }
-	        execJasmine();
-	    };
-	
-	    function execJasmine() {
-	        jasmineEnv.execute();
+	// Compare server and local last modification info for Synchronization
+	var norecord = false;
+	var lastModLocal = -1;
+	var pjsavestr = localStorage.getItem(pjName+" "+pjLanguage);
+	if(!pjsavestr) norecord = true;
+	else {
+	    var pjsave = JSON.parse(pjsavestr);
+	    if(!pjsave) norecord = true;
+	    else {
+	        if(pjsave.lastModif) lastModLocal = pjsave.lastModif;
 	    }
-	})();
+	}
 	
+	// Update local with server storage
+	if(norecord || (lastModLocal < lastModServer)) {
+	    $.get("../updateFromServer.php", {'pjName':pjName, 'lang':pjLanguage}, function(msg){
+	        //alert(msg);
+	        var pjsave = JSON.parse(msg);
+	        if(pjsave) {
+	            //saveToLocalStorage(pjName, msg);
+	            retrieveLocalInfo(pjsave);
+	        }
+	    });
+	}
+	// Update server with local storage
+	else if(lastModLocal > lastModServer) {
+	    $.post("../updateWithLocal.php", {"pjName":pjName, 'lang':pjLanguage, "localStorage":pjsavestr}, function(msg){
+                var modif = parseInt(msg);
+                if(!isNaN(modif)) pjsave.lastModif = modif;
+                else if(msg != "") alert(msg);
+                
+                // Retrieve the information of pages in local storage
+                if(pjsave) retrieveLocalInfo(pjsave);
+            });
+	}
+	else {
+	    // Retrieve the information of pages in local storage
+	    if(pjsave) retrieveLocalInfo(pjsave);
+	}
 </script>
 
 </body>

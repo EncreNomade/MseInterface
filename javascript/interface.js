@@ -701,13 +701,10 @@ function addScriptDialog(src, srcType){
     dialog.annuler.click(closeBottom);
     dialog.confirm.click({sourceId: srcid, sourceType: srcType}, validScript);
     
-    var relatScript = scriptMgr.getRelatedScripts(srcid);
+    var relatScript = scriptMgr.getRelatedScriptids(srcid);
     if (relatScript.length > 0){
-        var scriptList = [];
-        for(var i=0; i<relatScript.length; i++)
-            scriptList.push(relatScript[i].id);
         var modifyScriptsButton = dialog.addButton($('<input type="button" value="Modifier les scripts existants"></input>'));
-        modifyScriptsButton.click(function(){ modifyScriptDialog(scriptList, null, src); });
+        modifyScriptsButton.click(function(){ modifyScriptDialog(relatScript, null, src); });
     }
 };
 // Modify a script related to an obj
@@ -854,7 +851,7 @@ function tarDynamic(e) {
         if (typeof(choosedScript) !== 'undefined' && scriptMgr.scripts[choosedScript].reaction == "objTrans") {
             var choosedTarget = scriptMgr.scripts[choosedScript].target;
             $('#script_tar').children('h5').text(choosedTarget);
-            dz.html(srcMgr.getExpo(scriptMgr.scripts[choosedScript].supp));
+            dz.html(srcMgr.getExpoClone(scriptMgr.scripts[choosedScript].supp));
             dz.attr('target', scriptMgr.scripts[choosedScript].supp);
         }
         
@@ -873,7 +870,7 @@ function tarDynamic(e) {
                 var dz = (new DropZone(dropToTargetZone, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "script_supp")).jqObj;
                 dz.data('type', "image");
                 $('.popup_body p:eq(4)').after(supp.append(dz));
-                if (typeof(choosedScript) !== 'undefined') dz.html(srcMgr.getExpo(scriptMgr.scripts[choosedScript].supp));
+                if (typeof(choosedScript) !== 'undefined') dz.html(srcMgr.getExpoClone(scriptMgr.scripts[choosedScript].supp));
             }
             else {
                 closeBottom();
@@ -893,7 +890,7 @@ function tarDynamic(e) {
         dz.data('type', type);
         cible.append(dz);
         if (typeof(choosedScript) !== 'undefined'){
-            dz.html(srcMgr.getExpo(scriptMgr.scripts[choosedScript].target));
+            dz.html(srcMgr.getExpoClone(scriptMgr.scripts[choosedScript].target));
             dz.attr('target', scriptMgr.scripts[choosedScript].target);
         }
         break;
@@ -913,7 +910,7 @@ function dropToTargetZone(e) {
 	var type = srcMgr.sourceType(id);
 	if(!id || type != $(this).data('type')) return;
 	// Place in the elem zone
-	$(this).html(srcMgr.getExpo(id));
+	$(this).html(srcMgr.getExpoClone(id));
 	$(this).attr('target', id);
 };
 
@@ -1098,118 +1095,125 @@ function staticConfig(e){e.preventDefault();e.stopPropagation();showParameter($(
 // parse the raw texte,  match the speaker balise
 //use generateLines for creating object containing one text line, 
 
-
 function generateSpeaks(content, font, width, lineHeight){
 	
-	var res = $("<div/>");
-	var rest = content;
-	var balise ;
-	while( balise || ( balise=getNextBalise(rest) ) ){
+	// match [ <string> : <string> ]
+	var regEx = /\[( *[a-zA-Z0-9]* *( *: *[a-zA-Z0-9]* *)?)\]/g;
+	var regExEnd = /^ *(end|fin|\/.*) *$/;
+	var regExId = /^ *([a-zA-Z0-9]*)/
+	var regExParam = /^ *[a-zA-Z0-9]* *: *([a-zA-Z0-9]*) *$/
+	var prev = 0;
+	function getNextBalise(){
+		var s , sa , sb , next , snext , alinea , primar , send ,
+		id , param , closed , inside , outsidebefore , outsideafter ;
+		if( !( s = regEx.exec( content ) ) )
+			return null;
+			
+		s = s[ 1 ];							// s the contnent of the balise ( without [ and  ] )
+		sa = regEx.lastIndex;				// the index of the character just before the balise
 		
-		//everything before the balise is normal text
-		var normalText = rest.substring( 0 , balise.start );
-		rest = rest.substring( balise.close );
+		// text before the balise
+		outsidebefore = content.substring( prev , sa - s.length -2 );	// -2 for [ and ] 
 		
-		// check for line break just befor the speak
-		/*
-		var j = 1;
-		for( ; rest.charAt( balise.start - j ) == " " ; j ++ );
-		if( rest.charAt( balise.start - j ) == "\n" ){
-			normalText = normalText.substring( 0 , balise.start - j );
+		
+		id 		= ( regExId.exec( s ) || [ null , null ] )[1];
+		param 	= ( regExParam.exec( s ) || [ null , null ] )[1];
+		
+		// search for the end of the balise
+		// check the next balise
+		next  = ( regEx.exec( content ) || [ null , null ] )[1] ;
+		snext = regEx.lastIndex;
+		closed = next != null && next.match( regExEnd );
+		
+		alinea = content.indexOf( "\n" , sa )+1;
+		if( alinea == 0 )
+			alinea = content.length;
+		
+		if( closed ){
+			// the balise begin at sa , and end at snext with a closure balise
+			inside = content.substring( sa  , snext - next.length -2 )+"\n"; // notice that as the closure balise have to have a \n after it
+			prev = snext+1;
+		}else {
+			// the balise begin at sa , and end at alinea with a alinea
+			inside = content.substring( sa  , alinea ); // notice that the inside does contains the \n
+			prev = alinea;
+			
+			// the next balise wasnt a closed one , so it need to be analysed next loop
+			if( next )
+				regEx.lastIndex = snext - next.length - 2;
+			else
+				regEx.lastIndex = content.length-1;
 		}
-		*/
-		// check the next balise 
-		var nbalise = getNextBalise( rest );
-		var dialogueText;
 		
-		// if the next balise is a closing one
-		if( nbalise && nbalise.endBalise ){
-			// the speaked text end at the start of the closing balise
-			dialogueText = rest.substring( 0 , nbalise.start );
-			rest = rest.substring( nbalise.close );
-			nbalise = null;
-		} else {
-			// if its not, the spearker text end at the next \n
-			var alinea = rest.indexOf( "\n" );
-			if( alinea == -1 )
-				alinea = rest.length;
-			// if another speaking balise ( which is not a closing one ) is before the \n
-			if( nbalise && nbalise.start <  alinea ){
-				// the speaker text end at the start of the other balise ( instead of the next \n )
-				alinea = nbalise.start - 1;
-				dialogueText = rest.substring( 0 , nbalise.start );
-			} else
-				dialogueText = rest.substring( 0 , alinea );
-			rest = rest.substring( alinea+1 );
-			// update the next balise we have checked, we dont have to recalculate it for the next loop
-			if( nbalise ){
-				nbalise.start -= alinea+1;
-				nbalise.close -= alinea+1;
+		return { 
+			inside : inside , 
+			outsidebefore : outsidebefore , 
+			id : id , 
+			param : param 
+			};
+	}
+	
+	
+	// first , check for syntax validity
+	var b = null;
+	while( b = regEx.exec( content ) )
+		if( b[1].match( regExEnd )  ){
+			if( content.charAt( regEx.lastIndex ) != "\n" ){
+				console.log( '"'+content.replace( /\n/g , "\\n")+'"' )
+				throw "invalide syntax, missing \\n after "+b[0]+", found \""+content.charAt( regEx.lastIndex )+"\" ";
+			}
+		}else{
+			var indexBeforeBalise = regEx.lastIndex - b[0].length-1;
+			if( indexBeforeBalise > 0 && content.charAt( indexBeforeBalise ) != "\n" ){
+				console.log( '"'+content.replace( /\n/g , "\\n")+'"' )
+				throw "invalide syntax, missing \\n before "+b[0]+", found \""+content.charAt( indexBeforeBalise )+"\" ";
 			}
 		}
+	
+	
+	var res = $("<div/>");
+	var baliseInfo ;
+	var prev_end = "";
+	while( baliseInfo = getNextBalise() ){
 		
 		// automaticly add the linked ressource speaker
 		var alreadyExist = false;
 		var id_ressource;
 		for( var i in srcMgr.sources )
-			if( srcMgr.sourceType( i ) == "speaker" && srcMgr.getSource( i ).name == balise.id ){
+			if( srcMgr.sourceType( i ) == "speaker" && srcMgr.getSource( i ).name == baliseInfo.id ){
 				alreadyExist = true;
 				id_ressource = i;
 				break;
 			}
 		if( !alreadyExist )
-			id_ressource = srcMgr.addSource( "speaker" , new Speaker( balise.id ) );
+			id_ressource = srcMgr.addSource( "speaker" , new Speaker( baliseInfo.id ) );
 		// and the mood
-		var mood = balise.param ? balise.param : "neutre";
+		var mood = baliseInfo.param ? baliseInfo.param : "neutre";
 		var data = srcMgr.getSource( id_ressource );
 		if( !data.hasMood( mood ) )
 				data.addMood( mood );
 		
+		
+		
 		// append the textLine object
-		if( normalText.length > 0 )
-			res.append( generateLines(  normalText , font, width, lineHeight) );	
-		if( dialogueText.length > 0 ){
+		// append the normal text , the text before the dialogues
+		if( baliseInfo.outsidebefore.length > 0 )
+			res.append( generateLines(  baliseInfo.outsidebefore , font, width, lineHeight ) );	
+		
+		if( baliseInfo.inside.length > 0 ){
 			var id = "obj"+(curr.objId++);
 			var withdrawal = 45;
-			// Prebreak detection
-			var last = res.children("div.textLine, paragraphtag").last();
-			var prebreak = false;
-			if(last.prop('tagName') == "PARAGRAPHTAG" || last.children('p').text().trim().length == 0)
-			    prebreak = true;
-			
-			var lines = generateSpeakLines( dialogueText, font, width, lineHeight , id_ressource , mood  , withdrawal, prebreak);
+			var lines = generateSpeakLines( baliseInfo.inside , font, width, lineHeight , id_ressource , mood  , withdrawal  );
 			var color = srcMgr.getSource( id_ressource ).color;
-			res.append( $('<div id="'+ id +'" class="speaker" data-who="'+balise.id+'" data-withdrawal="'+ config.sceneX(withdrawal) + '" data-color="'+color+'" data-mood="'+mood+'" style="width:'+  config.sceneX( width )+'px; background-color:'+color+';" />')
+			res.append( $('<div id="'+ id +'" class="speaker" data-who="'+baliseInfo.id+'" data-withdrawal="'+ config.sceneX(withdrawal) + '" data-color="'+color+'" data-mood="'+mood+'" style="width:'+  config.sceneX( width )+'px; background-color:'+color+';" />')
                .append( lines ) );
 		}
-		
-		// for the next loop, we dont want to calculate it twice
-		if( nbalise ) 
-			balise = nbalise;
-		else
-			balise = null;
 	}
-	if( rest.length > 0 )
-		res.append( generateLines( rest , font, width, lineHeight) );
-	return res.children();
 	
-	function getNextBalise( rest ){
-		// match [ <string> : <string> ]
-		var regEx = /\[( *[a-z0-9]* *( *: *[a-z0-9]* *)?)\]/i;
-		var regExEnd = /^(end|fin|\/.*)$/;
-		var next = 0;
-		var id , param;
-		if( ( next = rest.search( regEx )  ) != -1 ){
-			var close = rest.indexOf( "]" , next );
-			var separator = next+1;
-			for( ; separator < close && rest.charAt( separator ) != ":" ; separator ++ );
-			id = rest.substring( next+1 , separator ).replace( / */g , "" ).toLowerCase();
-			if( separator != close )
-			param = rest.substring( separator+1 , close ).replace( / */g , "" ).toLowerCase();
-			return { start : next  , close: close+1 , id:id, param:param , endBalise: regExEnd.test( id ) };
-		}
-		return null;
-	}
+	var outsideAfter = content.substring( prev );
+	if( outsideAfter.length > 0 )
+			res.append( generateLines(  outsideAfter , font, width, lineHeight) );
+	return res.children();
 }
 // setUp the speak formate with img associate
 function generateSpeakLines( content, font, width, lineHeight, id , mood , decalage , prebreak ){
@@ -1233,31 +1237,44 @@ function generateSpeakLines( content, font, width, lineHeight, id , mood , decal
 		
 		// append the firsts lines
 		var res_h = 0;
+		var breakline = false;
 		for( var i = 0 ; i < first.length ; i ++ ){
 		    var line = $(first.get(i));
 		    // Ignore paragraphtag
-		    if(line.prop('tagName') == "PARAGRAPHTAG") {
-		        res.append( line );
-		        nline++;
-		    }
-			else if( i < nline ){
-				line.css("left" , config.sceneX( decalage )+"px" ); 
-				line.css("position" , "relative" );
-				line.css("width" , config.sceneX( width - decalage )+"px" );
-				res_h += line.height();
-				res.append( line );
-			}
-			else
-				rest += $(first[i]).text();
+			if(line.prop('tagName') == "PARAGRAPHTAG") {  
+				if( i <= nline ){
+				   res.append( line );
+			       nline++;
+				} else 
+					rest += "\n";
+				 breakline = true
+			} else 
+				if( i < nline ){
+					line.css("left" , config.sceneX( decalage )+"px" ); 
+					line.css("position" , "relative" );
+					line.css("width" , config.sceneX( width - decalage )+"px" );
+					res_h += line.height();
+					res.append( line );
+				}else
+					if( line.children("p").length == 0 || line.children("p").text().trim() == "" ){
+						if( breakline )
+							rest += "\n";
+						else
+							rest += "\n\n";
+						breakline = true;
+					}else {
+						rest += line.children("p").text();
+						breakline = false;
+					}
 		}
+		
+		// what
 		if( res_h < decalage )
 			res.append( $('<div style="height:'+ config.sceneX( decalage - res_h )+'px;" />' ) );
 			
 		// append the rest
 		if( rest.length > 0 ) {
 		    var last = generateLines( rest , font, width , lineHeight );
-		    // Delete the first paragraphtag
-		    if(last.get(0).tagName = "PARAGRAPHTAG") last.splice(0, 1);
 			res.append( last );
 		}
 		
@@ -1279,8 +1296,12 @@ function generateSpeakLines( content, font, width, lineHeight, id , mood , decal
 		
 		return res.children();
 	}
-function generateLines(content, font, width, lineHeight, prebreak){
+function generateLines( content, font, width, lineHeight ){
     
+	//cut the espace when its between 
+	while( content.match( /(^|\n)(( |\r|\t)+)(\n|$)/ ) )
+		content = content.replace( /\n(( |\r|\t)+)\n/g , "\n\n" ).replace( /^(( |\r|\t)+)\n/g , "\n" ).replace( /\n(( |\r|\t)+)$/g , "\n" );
+	
 	var res = '';
     // Content processing
 	TextUtil.config(font);
@@ -1288,24 +1309,13 @@ function generateLines(content, font, width, lineHeight, prebreak){
 
 	var arr = content.split('\n');
 	var sep = 0;
-	var prefix = prebreak == true ? true : false;
+	var prefix = true;
 	for(var i = 0; i < arr.length; i++) {
-	    if(arr[i].length == 0) {
-	        // Blank in head, don't add a line blank, add a paragraphtag
-	        if(i == 0) 
-	            res += '<paragraphtag></paragraphtag>';
-	        // Paragraph blank
-	        else if(i != arr.length-1){
-			    res += '<div id="obj'+(curr.objId++)+'" class="textLine"></div>';
-			    sep++;
-			}
-			prefix = true;
-			continue;
+	    if(arr[i].trim().length == 0 ) {
+			if( i != arr.length-1 )
+				res += '<div id="obj'+(curr.objId++)+'" class="textLine"></div>';
+	       continue;
 		}
-		
-        // Separator paragraph
-        if(!prefix) res += '<paragraphtag></paragraphtag>';
-        prefix = false;
         // Content paragraph
 		for(var j = 0; j < arr[i].length;) {
 			// Find the index of next line
@@ -1313,6 +1323,7 @@ function generateLines(content, font, width, lineHeight, prebreak){
 			res += '<div id="obj'+(curr.objId++)+'" class="textLine"><p>'+arr[i].substr(j, next)+'</p></div>';
 			j += next;
 		}
+		res += '<paragraphtag></paragraphtag>';
 	}
 	res = $(res);
 	res.each(function() {
@@ -1331,6 +1342,8 @@ function generateLines(content, font, width, lineHeight, prebreak){
 	});
 	return res;
 }
+
+
 function addArticle(manager, name, params, content) {
     if(!params) params = {};
     params.type = 'ArticleLayer';
@@ -1468,7 +1481,7 @@ function dropToInsertZone(e) {
 	// Verification
 	if(!data || (type != "image" && type != "game")) return;
 	// Append to elem zone
-	$(this).append(srcMgr.getExpo(id));
+	$(this).append(srcMgr.getExpoClone(id));
 };
 
 // Select words to set link
@@ -1530,7 +1543,7 @@ function dropToAudioElemZone(e) {
 	// Verification
 	if(!id || (type != "audio")) return;
 	// Place in the elem zone
-	$(this).append(srcMgr.getExpo(id));
+	$(this).append(srcMgr.getExpoClone(id));
 	$(this).attr('link', id);
 };
 // Wiki resource drop zone interaction
@@ -1544,7 +1557,7 @@ function dropToWikiElemZone(e) {
     // Verification
     if(!id || (type != "wiki")) return;
     // Place in the elem zone
-    $(this).append(srcMgr.getExpo(id));
+    $(this).append(srcMgr.getExpoClone(id));
     $(this).attr('link', id);
 };
 
@@ -1594,14 +1607,33 @@ parseMetaText : function( article ){
 	var meta = [];
 		
 	// the links
-	var spans = article.children( "div.textLine, div.speaker div.textLine" ).find( "span.audiolink, span.wikilink" );
+	//var spans = article.children( "div.textLine, div.speaker div.textLine" ).find( "span.audiolink, span.wikilink" );
+	var spans = article.find( "div.textLine, div.speaker div.textLine" ).find( "span.audiolink, span.wikilink" );
 	for( var i = 0 ; i < spans.length ; i ++ ){
 		var span = $( spans.get(i) );
 		var textLine = span.parents( "div.textLine" );
+		
+		// retourne le text qui se trouve avant l'element, 
+		// utilise previous sibling de dom element ( JQuery n'interprete pas le texte non encapsulé )
+		function getTextBeforeMe( el , container ){
+			if( el == container )
+				return ""
+			var e = el;
+			var s = "";
+			while( ( e = e.previousSibling ) != null )
+				if( e instanceof Text )
+					s = e.data + s;
+				else
+					s = e.innerText + s ;
+			return getTextBeforeMe( el.parentNode  , container )+s;
+		}
+		
+		var index = getTextBeforeMe( span[0] , span.parents( "p" )[0] ).length;
+		
 		meta.push( {objId : textLine.prop( "id" ) ,
 					keyword : span.text(),
 					format : "link",
-					index : textLine.children("p").text().indexOf( span.text() ),
+					index : index,
 					link :  { 	type : correspondanceType[ span.attr( "class" ) ] ,
 								id : span.attr( "link" ) } 
 				} );
@@ -1611,27 +1643,26 @@ parseMetaText : function( article ){
 	for( var i in srcMgr.sources ) {
 		if( srcMgr.sources[ i ].type == "anime" ){
 			var anime = srcMgr.getSource( i );
-			for( var obj in anime.objs )
-				if( $( "#"+obj ).hasClass( "textLine" ) 
-				&&  $( "#"+obj ).parents( ".article").get(0) == article.get(0) )
-					meta.push( {objId : obj ,
-        						keyword : anime.objs[ obj ].content,
-        						index : $( "#"+obj ).children("p").text().indexOf( anime.objs[ obj ].content ),
+			for( var objId in anime.objs ){
+				var obj = article.find( "#"+objId );
+				if( obj.hasClass( "textLine" ) )
+					meta.push( {objId : objId ,
+        						keyword : anime.objs[ objId ].content,
+        						index : obj.children("p").text().indexOf( anime.objs[ objId ].content ),
         						format : "link",
         						link :  { 	type : "anime" ,
         									id : i } 
         					} );
-			
+			}
 		}
 	}
 	
 	// the scripts
 	for( var i in scriptMgr.scripts ){
 		var script = scriptMgr.scripts[ i ];
-		var src = $( "#"+script.src );
+		var src = article.find( "#"+script.src );
 		if( script.srcType == "obj"
-		&& 	src.hasClass( "textLine" ) 
-		&& 	src.parents( ".article").get(0) == article.get(0) ) {
+		&& 	src.hasClass( "textLine" )  ) {
 			meta.push( {objId : script.src,
             			keyword : src.children('p').text(),
             			index : 0,
@@ -1642,9 +1673,8 @@ parseMetaText : function( article ){
             		} );
         }
         
-        var tar = $( "#"+script.target );
-		if( tar.hasClass( "textLine" ) 
-		&& 	tar.parents( ".article").get(0) == article.get(0) ) {
+        var tar = article.find( "#"+script.target );
+		if( tar.hasClass( "textLine" )  ) {
 			meta.push( {objId : script.target,
         				keyword : tar.children('p').text(),
         				index : 0,
@@ -1655,9 +1685,8 @@ parseMetaText : function( article ){
         			} );
         }
         
-        var supp = $( "#"+script.supp );
-		if( supp.hasClass( "textLine" ) 
-		&& 	supp.parents( ".article").get(0) == article.get(0) ) {
+        var supp = article.find( "#"+script.supp );
+		if( supp.hasClass( "textLine" )  ) {
 			meta.push( {objId : script.supp ,
         				keyword : supp.children('p').text(),
         				index : 0,
@@ -1674,13 +1703,10 @@ parseMetaText : function( article ){
 	for( var i = 0 ; i < illus.length ; i ++ ){
 		var illu = $( illus.get(i) );
 		var img  = $( illu.children("img").get(0) );
-		var prev = illu.prev(".textLine");
-		if(prev.length == 0)
-		    prev = illu.prev(".speaker").children("div.textLine:last");
-		meta.push( {objId : prev.prop( "id" ) ,
+		meta.push( {objId : illu.prop( "id" ) ,
         			keyword : "",
         			format : "inser",
-        			index : prev.children("p").text().length,
+        			index : 0,
         			link :  { 	type : "image" ,
         						id : img.attr( "name" ) } 
         		} );
@@ -1690,24 +1716,21 @@ parseMetaText : function( article ){
 	var games = article.children( "div.game" );
 	for( var i = 0 ; i < games.length ; i ++ ){
 		var game = $( games.get(i) );
-		var prev = game.prev(".textLine");
-		if(prev.length == 0)
-		    prev = game.prev(".speaker").children("div.textLine:last");
-		meta.push( {objId : prev.prop( "id" ),
+		meta.push( {objId : game.attr( "id" ),
     				keyword : "",
     				format : "inser",
-    				index : prev.children("p").text().length,
+    				index : 0,
     				link :  { 	type : "game" ,
     							id : game.attr( "name" ) } 
     			} );
 	}
-	
 	return meta;
 },
 
 
 //generate metaTextArticle
-formate : function( article , meta ){ 
+// assume that the article doesnt have \n espace\n issue ( true until it generate by generate line )
+formate : function( article , meta , breakline ){ 
 
 	if( !article || (!article.hasClass('article') && !article.hasClass('speaker')) )
 		return;
@@ -1715,33 +1738,42 @@ formate : function( article , meta ){
 		meta = this.parseMetaText( article );
 	
 	var s = "";
+	if(breakline == null )
+		breakline = true;
 	var lines = article.children();
-	var wrapprefix = false;
 	for( var i = 0 ; i < lines.length ; i ++ ){
 		var line = $( lines.get(i) );
 		if( line.prop('tagName') == "PARAGRAPHTAG" ) {
 		    s += '\n';
-		    wrapprefix = true;
+			breakline = true;
 		}
 		else if( line.hasClass( "textLine" ) ) {
 		    // Line gap
-			if( line.children('p').text().trim() == "" ) {
-			    // Add a prefix of line wrap
-			    if(!wrapprefix) s += '\n';
-				s += '\n';
-				wrapprefix = true;
+			if( line.children('p').text().trim() == "" )
+			   if( breakline )
+					s += '\n';
+				else{
+					s += '\n\n';
+					breakline = true;
+				}
+			else{
+				s += wrap( line );
+				breakline = false;
 			}
-			// Line with content
-			else {
-				wrapprefix = false;
-			}
-			s += wrap( line );
-		}
+		}	
 		else if( line.hasClass( "speaker" ) ) {
-		    // Add a prefix of line wrap
-		    if(!wrapprefix) s += '\n';
-			s += "[ "+line.attr( "data-who")+" : "+line.attr( "data-mood")+" ]" + this.formate( line , meta )+"[end]\n";
-			wrapprefix = true;
+			var formatedSpeak = this.formate( line , meta , breakline );
+			formatedSpeak = formatedSpeak.substring( 0 , formatedSpeak.length - 1 ); // on supprime le \n, pour le placer apres le [end]
+			s += "[ "+line.attr( "data-who")+" : "+line.attr( "data-mood")+" ]" + formatedSpeak +"[end]\n";
+			breakline = true;			// un dialogue se termine toujours pas un \n
+		}
+		else if( line.hasClass( "game" ) || line.hasClass( "illu" ) ) {
+			// retreive the game in meta ( by chance the objId will match )
+			for( var j = 0 ; j < meta.length ; j ++ )
+				if( meta[j].objId == line.prop( "id" ) ){
+					s+= chart.inserOpenA + " "+j + "  " + meta[j].link.type + " sur la source " + meta[j].link.id +" "+ chart.inserOpenB;
+					break;
+				}
 		}
 		else 
 		    continue;
@@ -1749,6 +1781,7 @@ formate : function( article , meta ){
 	
 	
 	return s;
+	/*
 	function wrap( obj ){
     	var r = obj.children("p").text();
     	if(r.trim() == "") {r = r.trim();}
@@ -1784,10 +1817,88 @@ formate : function( article , meta ){
 		
 		return r;
 	}
+	*/
+	function wrap( obj ){
+    	var r = obj.children("p").text();
+    	if(r.trim() == "") {r = r.trim();}
+		
+		var charge = [], balise;
+		var id = obj.attr( "id" );
+		for( var i = 0 ; i< meta.length ; i ++ )
+			if( meta[ i ].objId == id )
+				if( meta[ i ].format == "link"){
+					// start balise
+					balise = chart.linkOpenA + " "+i + "  " + meta[i].link.type + " sur la source " + meta[i].link.id + chart.linkOpenB;
+					charge.push( { index : meta[ i ].index , b : balise , o:"ouv" , i:i} );
+					// close balise
+					balise = chart.linkCloseA  + " "+i+" " + chart.linkCloseB;
+					charge.push( { index : meta[ i ].index + meta[ i ].keyword.length , b : balise , o:"fer" , i:i } );
+				}else {
+					// balise insertion
+					balise = chart.inserOpenA + " "+i + "  " + meta[i].link.type + " sur la source " + meta[i].link.id + chart.inserOpenB;
+					charge.push( { index : meta[ i ].index , b : balise , o:"aut"} );
+				}
+		
+		charge.sort( function(a,b){
+			if( a.index != b.index || a.o != "ouv" || b.o != "ouv" )
+				return a.index - b.index;
+			var af , bf;
+			for( var k = 0 ; k < charge.length ; k ++ )
+				if( charge[ k ].i == a.i )
+					af = charge[ k ];
+				else 
+				if( charge[ k ].i == b.i )
+					bf = charge[ k ];
+					
+			return bf.index - af.index;
+		});
+		var i=0 , j , curr ;
+		var stack = [];
+		while(  charge.length > 0 ){
+			curr = charge[ 0 ].index;
+			for( j = 0 ; stack.length > 0 && j < charge.length && charge[ j ].index == curr ; j ++ ){	// pour toutes les charges qui ont le même index
+				if( charge[ j ].o == "fer" && stack[0] == charge[ j ].i ){			// celle qui sont fermante et qui doivent se fermer maintenant ( car il y en a une ouverte avant )
+					// early push
+					var avant = r.substring( 0 , charge[j].index );
+					var apres = r.substring( charge[j].index );
+					
+					r = avant + charge[j].b + apres;
+					
+					
+					
+					// décalage des suivants
+					for( var k = 0 ; k < charge.length ; k ++ )
+						charge[k].index += charge[j].b.length;	 
+					
+					charge.splice( j , 1 );
+					
+					stack.shift();
+				}
+			}
+			if(  charge.length > 0 && curr == charge[ 0 ].index ){
+				var avant = r.substring( 0 , charge[0].index );
+				var apres = r.substring( charge[0].index );
+					
+				r = avant + charge[0].b + apres;
+					
+				if( charge[ 0 ].o == "ouv" )
+					stack.unshift( charge[ 0 ].i );
+				
+				
+				// décalage des suivants
+				for( var k = 0 ; k < charge.length ; k ++ )
+					charge[k].index += charge[0].b.length;	
+					
+				charge.shift();
+			}
+		}
+		
+		return r;
+	}
 },
 
 // reverse	
-reverse : function( parent, chaine , article , meta , font , width , lineHeight){ 
+reverse : function( parent , chaine , article , meta , font , width , lineHeight){ 
 	if( !article || !article.hasClass('article') ) return;
 	
 	var log = "";
@@ -1798,11 +1909,15 @@ reverse : function( parent, chaine , article , meta , font , width , lineHeight)
 		else
 			meta = this.parseMetaText( article );
 	
+	// prevent the navigator to delete tag content because its not visible ( <span>    </span> is saved as <span></spans>  )
+	while( chaine.match( /(^|\n)(( |\r|\t)+)(\n|$)/ ) )
+		content = content.replace( /\n(( |\r|\t)+)\n/g , "\n\n" ).replace( /^(( |\r|\t)+)\n/g , "\n" ).replace( /\n(( |\r|\t)+)$/g , "\n" );
 	
 	// parsing de la chaine
 	// suppression des balises, stockage des index et keywords
 	var next;
 	var lastIndex=0;
+	var sortedMeta = [];
 	while( (next = shiftNextBalise() ) ){
 		
 		if( !meta[ next.i ] ){
@@ -1818,7 +1933,455 @@ reverse : function( parent, chaine , article , meta , font , width , lineHeight)
 		meta[ next.i ].offset  = next.index; 		// offset est le numero de caractére par rapport au debut du texte ( et non pas au début de la ligne comme index )
 		meta[ next.i ].format  = next.format;
 		meta[ next.i ].valide  = true;
+		
+		sortedMeta.push( meta[ next.i ] );
+		
+	}
 	
+	meta = sortedMeta;
+	
+	// traitement des éléments de dialogue 
+	// les balises dialogue sont ignoré par le générateur de line, elle n'apparaissent plus post génération ce qui introduit des erreurs dans l'indexation des mots 
+	// on corrige 
+	
+	var decalage = [];
+	for( var i = 0 ; i < meta.length ; i ++ )
+		decalage[ i ] = 0;
+	
+	var next;
+	var start = 0;
+	while(  (next = chaine.indexOf( "[" , start )) != -1 ){
+		var end = chaine.indexOf( "]" , next )+1;	
+		for( var i = 0 ; i < meta.length ; i ++ )
+			if( meta[ i ].offset > next )
+				decalage[ i ] -= next - end;
+		start = end;
+	}
+	
+	// introduit le décalage
+	for( var i = 0 ; i < meta.length ; i ++ )
+		meta[ i ].offset -= decalage[ i ];
+	
+	
+	// genere les objets lines
+	if( !font ){
+		font = article.css('font-weight');
+		font += " "+config.realX( cssCoordToNumber( article.css('font-size') ) )+"px";
+		font += " "+article.css('font-family');
+	}
+	if( !width )
+		width = config.realX( article.width() );
+	if( !lineHeight )
+		lineHeight = config.realY( cssCoordToNumber( article.css('line-height') ) );
+	
+	parent.append( generateSpeaks( chaine, font , width , lineHeight ) );
+	
+	// Deformat chiane
+	var realchaine = chaine.replace(/\[[^\[\]]*\]/g, "");
+	realchaine = realchaine.replace(/<[^<>]*>/g, "");
+	
+	
+	// numerote les objets lignes
+	parent.append( $("<div class=\"textLine\">") );			// on ajoute un element vide, pour pouvoir se repérer lorsque l'on place le dernier élément
+	var table = [];
+	var cursor = 0;
+	var breakline = true;
+	parent.find("div.textLine, paragraphtag").each(function(){
+		var line = $( this );
+		if(line.prop('tagName').toLowerCase() == "paragraphtag") {
+			 table.push( { 	obj : line,
+							l : 1,
+        	    			ca : cursor,
+        	    			cb : ( cursor = cursor + 1 ),
+        	    			b : []
+        	    		} );
+		    breakline = true;
+		}
+		else {
+        	var text = line.children("p").text();
+        	// Line blank
+        	if(text.trim().length == 0) {
+        	    var size = breakline ? 1:2;
+        	    table.push( { 	obj : line,
+        	    				l : size,
+        	    				ca : cursor,
+        	    				cb : ( cursor = cursor + size ),
+        	    				b : []
+        	    			} );
+        	    breakline = true;
+        	}
+        	// Line with content
+        	else {
+            	table.push( { 	obj : line ,
+            					l : text.length,
+            					ca : cursor ,
+            					cb : ( cursor = cursor + text.length ),
+            					b : []
+            				} );
+                breakline = false;
+            }
+		}
+	});
+	
+		
+	
+	// recréer les référence vers les links ( ajout en deux temps )
+	for( var i = 0 ; i < meta.length ; i ++ ){
+		
+		if( !meta[ i ] || !meta[ i ].valide )
+			continue;
+		
+		var e = Math.floor( meta[ i ].offset / table[ table.length-1 ].cb * table.length );  // estimation
+		
+		while( meta[ i ].offset < table[ e ].ca  )    // ajustement
+			e --;
+		while( meta[ i ].offset >= table[ e ].cb  )	  // ajustement
+			e ++;
+		
+		var new_obj= null;
+		var new_index = null;
+		var new_keyword= null;
+		
+		switch( meta[ i ].link.type ){
+			case "audio" : case "wiki" :
+				if( meta[ i ].format == "link" ){
+					
+					new_index = meta[ i ].offset - table[ e ].ca  	// relatif au debut de la ligne
+					new_obj = table[ e ].obj;
+					
+					table[ e ].b.push( { index : new_index  , b : '<span class="'+ correspondanceClass[ meta[ i ].link.type ] +'" link="'+meta[ i ].link.id+'">' , o:"ouv" , i:i } );
+					table[ e ].b.unshift( { 
+						index : Math.min( new_index + meta[ i ].keyword.length , table[ e ].l ) ,  		// le span est sur une seule ligne, si le groupe de mot occupe 2 lignes,  le span sera sur le début du groupe 
+						b : '</span>' ,
+						o:"fer" , i:i
+					} );
+					
+				}	
+			break;
+			case "image" : case "game" :
+				if( meta[ i ].format == "inser" ){
+					
+					new_index = 0;
+					new_obj = table[ e ].obj;
+					
+					
+					var id = meta[ i ].link.id;
+					var elem = srcMgr.generateChildDomElem(id, parent);
+					elem.deletable(null, true)
+					    .selectable(selectP)
+					    .staticButton('./images/UI/insertbelow.png', insertElemDialog)
+					    .staticButton('./images/UI/config.png', staticConfig)
+					    .staticButton('./images/tools/anime.png', animeTool.animateObj)
+					    .staticButton('./images/UI/addscript.jpg', addScriptForObj)
+					    .children('.del_container').hide();
+						
+					
+					var objParent = new_obj.parents( ".speaker" );
+					if( objParent.length > 0 ){
+						if( new_obj.prev()[0].tagName.toLowerCase() == "img" )
+							new_obj = objParent;
+						else
+							throw " image or game in speak is forbidden"
+					}
+					
+					elem.insertBefore( new_obj );
+					
+					log += meta[ i ].link.type+" "+id+" re inserée avant la ligne :\""+new_obj.children("p").text()+"\", ( il était précédement après \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
+				}
+
+			break;
+			case "script" :
+				var lastIndex = meta[ i ].offset + meta[ i ].keyword.length;
+				var lastLine = e;
+				
+				new_index = meta[ i ].offset - table[ e ].ca;
+				
+				while( lastIndex > table[ lastLine ].cb ){
+					lastLine ++;
+					new_index = 0;
+				}
+				
+				new_index = 0;
+				new_obj = table[ lastLine ].obj;
+				new_keyword = new_obj.children("p").text().substring( new_index );
+				
+				scriptMgr.scripts[  meta[ i ].link.id ][   meta[ i ].link.dep  ] = new_obj.attr( "id" );
+				
+				log += "maintient de "+meta[ i ].link.dep+" du script "+meta[ i ].link.id+", celui ci est maintenant lié à la ligne :\""+new_obj.children("p").text()+"\", ( il était précédement lié à \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
+				
+			break;
+			case "anime" :
+				var lastIndex = meta[ i ].offset + meta[ i ].keyword.length;
+				var lastLine = e;
+				
+				new_index = meta[ i ].offset - table[ e ].ca;
+				
+				while( lastIndex > table[ lastLine ].cb ){
+					lastLine ++;
+					new_index = 0;
+				}
+				
+				new_index = 0;
+				new_obj = table[ lastLine ].obj;
+				new_keyword = new_obj.children("p").text().substring( new_index );
+				
+				if( !meta[ i ].prev_objId ){
+					console.log( "encounter error parsing the metaText, missing information relative to the previous link" );
+					return;
+				}
+				
+				var ex_id = meta[ i ].prev_objId;
+				var new_id = new_obj.prop( "id" );
+				
+				var anim = srcMgr.getSource( meta[ i ].link.id );
+				
+				// change the obj id
+				anim.objs[ new_id ] = { };
+				for( var key in anim.objs[ ex_id ] )
+					anim.objs[ new_id ][ key ] = anim.objs[ ex_id ][ key ];
+				anim.objs[ new_id ].content = new_obj.children("p").text(); 
+				
+				// search occurence of the ex objid , replace it by the new
+				for( var j = 0 ; j < anim.frames.length ; j ++ ){
+					if( $.inArray( ex_id , Object.keys( anim.frames[ j ].objs )) != -1 ){
+						anim.frames[ j ].objs[ new_id ] = {};
+						for( var key in anim.frames[ j ].objs[ ex_id ] )
+							anim.frames[ j ].objs[ new_id ][ key ] = anim.frames[ j ].objs[ ex_id ][ key ];
+						delete anim.frames[ j ].objs[ ex_id ];
+					}
+				}
+				
+				delete srcMgr.getSource( meta[ i ].link.id ).objs[ ex_id ];
+				
+				log += "maintient de l'animation "+meta[ i ].link.id+", celle ci est maintenant lié à la ligne :\""+new_obj.children("p").text()+"\", ( il était précédement lié à \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
+				
+			break;
+		}
+
+		// remplace avec les nouveaux index , objId et keyword
+		meta[ i ].index = new_index;
+		meta[ i ].objId = new_obj.prop('id');
+		if( new_keyword )
+			meta[ i ].keyword = new_keyword;
+	}
+	
+	
+	
+	
+	
+	for( var e = 0 ; e < table.length ; e ++ ){
+		var obj = $( table[ e ].obj ).children("p");
+		if( !obj || obj.length < 1 ) 		// if its a blank textLine, there is no p balise
+			continue
+		var r = obj.text();
+		
+		// insertion
+		var charge = table[ e ].b;
+		charge.sort( function(a,b){
+			if( a.index != b.index  )
+				return a.index - b.index;
+			if( a.o == "fer" )
+				return 1;
+			if( b.o == "fer" )
+				return -1;
+			if( a.o != "ouv" || b.o != "ouv" )
+				return 0;
+			var af , bf;
+			for( var k = 0 ; k < charge.length ; k ++ )
+				if( charge[ k ].i == a.i )
+					af = charge[ k ];
+				else 
+				if( charge[ k ].i == b.i )
+					bf = charge[ k ];
+					
+			return bf.index - af.index;
+		});
+		var i=0 , j , curr ;
+		var stack = [];
+		while(  charge.length > 0 ){
+			curr = charge[ 0 ].index;
+			for( j = 0 ; stack.length > 0 && j < charge.length && charge[ j ].index == curr ; j ++ ){	// pour toutes les charges qui ont le même index
+				if( charge[ j ].o == "fer" && stack[0] == charge[ j ].i ){			// celle qui sont fermante et qui doivent se fermer maintenant ( car il y en a une ouverte avant )
+					// early push
+					var avant = r.substring( 0 , charge[j].index );
+					var apres = r.substring( charge[j].index );
+					
+					r = avant + charge[j].b + apres;
+
+					// décalage des suivants
+					for( var k = 0 ; k < charge.length ; k ++ )
+						charge[k].index += charge[j].b.length;	 
+					
+					charge.splice( j , 1 );
+					
+					stack.shift();
+				}
+			}
+			if(  charge.length > 0 && curr == charge[ 0 ].index ){
+				var avant = r.substring( 0 , charge[0].index );
+				var apres = r.substring( charge[0].index );
+					
+				r = avant + charge[0].b + apres;
+					
+				if( charge[ 0 ].o == "ouv" )
+					stack.unshift( charge[ 0 ].i );
+				
+				
+				// décalage des suivants
+				for( var k = 0 ; k < charge.length ; k ++ )
+					charge[k].index += charge[0].b.length;	
+					
+				charge.shift();
+			}
+		}
+		
+		
+		obj.get(0).innerHTML = r;
+	}
+	parent.children(":last").remove();
+	
+	//console.log( log );
+	
+	return parent;
+	
+	
+	// share chaine, ( effet de bord )
+	function shiftNextBalise(){
+		
+		// détermine la prochaine occurence d'une balise de type link et de type inser
+		if( chart.linkOpenA != chart.inserOpenA ){
+			var nlin = chaine.indexOf( chart.linkOpenA , lastIndex );
+			var nins = chaine.indexOf( chart.inserOpenA , lastIndex  );
+		} else {
+			// si les debut de balise sont les mêmes, il faut tester la fin
+			// on va faire un bricolage pour rester compatible avec la suite
+			var nlin = chaine.indexOf( chart.linkOpenA , lastIndex );
+			
+			if( nlin == -1 )
+				return;
+			
+			var endlin = chaine.indexOf( chart.linkOpenB , nlin ) ;
+			var endins = chaine.indexOf( chart.inserOpenB , nlin ) ;
+			
+			if( endlin <= -1 || ( endins >= 0 && endins < endlin ) ){
+				nins = nlin;
+				nlin = -1;
+			}else 
+				nins = -1;
+			
+		}
+		var i;
+		var format;
+		
+		if( nlin <= -1 && nins <= -1 ) {
+			return false;
+		}
+		
+		
+		if( nins <= -1 || ( nlin >= 0 && nlin < nins ) ){
+			
+			// si la balise la plus proche est une link
+			format = "link";
+			
+			var iboA = nlin;
+			var iboB = chaine.indexOf( chart.linkOpenB , iboA )+chart.linkOpenB.length;
+			
+			
+			var b = chaine.substring( iboA + chart.linkOpenA.length , iboB - chart.linkOpenB.length );
+			i = chart.i.exec( b ) || [ null , null ] ;
+			if( !i[1] ){
+				console.log( "encounter error parsing the metaText, missing i" );
+				return false;
+			}
+			var reg =  new RegExp( chart.linkCloseA+" *" + i[1] +" *[^0-9]+.*"+chart.linkCloseB   );
+			var ibfA = chaine.substring( iboA ).search( reg ); 
+			if( ibfA < 0 ){
+				console.log( "encounter error parsing the metaText, " );
+				return false;
+			}
+			
+			ibfA  += iboA;
+			
+			var ibfB = chaine.indexOf( chart.linkCloseB , ibfA )+chart.linkCloseB.length;
+			
+			var middle = chaine.substring(  iboB , ibfA );
+			
+			chaine = chaine.substring( 0 , iboA ) + middle + chaine.substring( ibfB );
+			
+			keyword = middle.replace( chart.all , "");
+			
+		} else {
+			
+			// la balise la plus proche est une inser
+			format = "inser";
+			
+			var iboA = nins;
+			
+			var keyword = "";
+			
+			var iboB = chaine.indexOf( chart.inserOpenB , iboA )+chart.inserOpenB.length;
+			
+			var b = chaine.substring( iboA + chart.inserOpenA.length , iboB - chart.inserOpenB.length );
+			
+			chaine = chaine.substring( 0 , iboA ) + chaine.substring( iboB );
+			
+			lastIndex = iboA;
+			
+			i = chart.i.exec( b ) || [ null , null ] ;
+			if ( !i[1] ){
+				console.log( "encounter error parsing the metaText, missing i" );
+				return false;
+			}
+		}
+		
+			
+		var id = chart.id.exec( b ) || [ null , null ] ;
+		var type = chart.type.exec( b ) || [ null , null ];
+		
+		return { i:parseInt( i[1] ) , type:type[1] , id:id[1] , index:iboA , keyword : keyword , format:format };
+	}
+}
+
+
+/*
+reverse_ : function( parent , chaine , article , meta , font , width , lineHeight){ 
+	if( !article || !article.hasClass('article') ) return;
+	
+	var log = "";
+
+	if( !meta )
+		if( !article  )
+			meta = [];
+		else
+			meta = this.parseMetaText( article );
+	
+	
+	// parsing de la chaine
+	// suppression des balises, stockage des index et keywords
+	
+	
+	function getNextSpeak( i ){
+		var save = chart.all.lastIndex;
+		chart.all.lastIndex = i;
+		var res = chart.all.exec( chaine );
+		var ind = chart.all.lastIndex;
+		chart.all.lastIndex = save;
+		if( res == null )
+			return { i:null };
+	}
+	function getNextSpace( i ){
+		var res = chaine.indexOf( " " , i );
+		return {i: i==-1?null:i };
+	}
+	function getNextAlinea( i ){
+		var res = chaine.indexOf( "\n" , i );
+		return {i: i==-1?null:i };
+	}
+	
+	
+	while( true ){
+		
+		
 	}
 
 	
@@ -1861,27 +2424,33 @@ reverse : function( parent, chaine , article , meta , font , width , lineHeight)
 	realchaine = realchaine.replace(/<[^<>]*>/g, "");
 	
 	// numerote les objets lignes
+	parent.append( $("<div class=\"textLine\">") );			// on ajoute un element vide, pour pouvoir se repérer lorsque l'on place le dernier élément
 	var table = [];
 	var cursor = 0;
-	var prefix = true;
+	var breakline = true;
 	parent.find("div.textLine, paragraphtag").each(function(){
 		var line = $( this );
-		if(line.prop('tagName') == "PARAGRAPHTAG") {
-		    cursor++;
-		    prefix = true;
+		if(line.prop('tagName').toLowerCase() == "paragraphtag") {
+			 table.push( { 	obj : line,
+							l : 1,
+        	    			ca : cursor,
+        	    			cb : ( cursor = cursor + 1 ),
+        	    			b : []
+        	    		} );
+		    breakline = true;
 		}
 		else {
         	var text = line.children("p").text();
         	// Line blank
         	if(text.trim().length == 0) {
-        	    var size = prefix ? 1:2;
+        	    var size = breakline ? 1:2;
         	    table.push( { 	obj : line,
         	    				l : size,
         	    				ca : cursor,
         	    				cb : ( cursor = cursor + size ),
         	    				b : []
         	    			} );
-        	    prefix = true;
+        	    breakline = true;
         	}
         	// Line with content
         	else {
@@ -1891,10 +2460,12 @@ reverse : function( parent, chaine , article , meta , font , width , lineHeight)
             					cb : ( cursor = cursor + text.length ),
             					b : []
             				} );
-                prefix = false;
+                breakline = false;
             }
 		}
 	});
+	
+		
 	
 	// recréer les référence vers les links ( ajout en deux temps )
 	for( var i = 0 ; i < meta.length ; i ++ ){
@@ -1930,7 +2501,10 @@ reverse : function( parent, chaine , article , meta , font , width , lineHeight)
 			break;
 			case "image" : case "game" :
 				if( meta[ i ].format == "inser" ){
-				
+					
+					if( table[ e ].ca == meta[ i ].offset )
+						e = Math.max( 0 , e-1 );
+					
 					new_index = 0;
 					new_obj = table[ e ].obj;
 					
@@ -1944,6 +2518,7 @@ reverse : function( parent, chaine , article , meta , font , width , lineHeight)
 					    .staticButton('./images/tools/anime.png', animeTool.animateObj)
 					    .staticButton('./images/UI/addscript.jpg', addScriptForObj)
 					    .children('.del_container').hide();
+					
 					elem.insertBefore( new_obj );
 					
 					log += meta[ i ].link.type+" "+id+" re inserée avant la ligne :\""+new_obj.children("p").text()+"\", ( il était précédement après \""+ $('#'+meta[ i ].prev_objId ).children("p").text()+"\" )\n";
@@ -2044,7 +2619,8 @@ reverse : function( parent, chaine , article , meta , font , width , lineHeight)
 	}
 	
 	
-	console.log( log );
+	//console.log( log );
+	parent.children(":last").remove();
 	
 	return parent;
 	
@@ -2142,9 +2718,10 @@ reverse : function( parent, chaine , article , meta , font , width , lineHeight)
 		var id = chart.id.exec( b ) || [ null , null ] ;
 		var type = chart.type.exec( b ) || [ null , null ];
 		
-		return { i:i[1] , type:type[1] , id:id[1] , index:iboA , keyword : keyword , format:format };
+		return { i:parseInt( i[1] ) , type:type[1] , id:id[1] , index:iboA , keyword : keyword , format:format };
 	}
 }
+*/
 
 	};
 }();

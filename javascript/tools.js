@@ -188,6 +188,12 @@ var Config = (function() {
 		// Wiki Card size
 		this.wikiWidth = this.sceneX(250);
 		this.wikiHeight = this.sceneY(320);
+		
+		// Z-index list
+		this.zid = {
+		    'CreatTool' : 7,
+		    'EditableTool' : 8
+		};
 	}
 	
 	var instance;
@@ -223,37 +229,37 @@ var TextUtil = function() {
 		measure : function(text) {
 			return ctx.measureText(text).width;
 		},
-		checkNextline : function(text, maxM, width) {
-		    // Next line is the whole text remaining
-		    if(maxM >= text.length) return text.length;
-		    // Forward check
-		    var prevId;
-		    var nextId = maxM;
-		    do {
-		    	prevId = nextId;
-		    	// Find next space
-		    	var index = text.substr(prevId).search(/[\s\n\r\-\/\\\:]/);
-		    	index = (index == -1) ? -1 : prevId+index;
-		    	// No space after
-		    	if(index == -1) {
-		    		if(ctx.measureText(text).width <= width)
-		    			prevId = text.length;
-		    		break;
-		    	}
-		    	// Text length
-		    	var l = ctx.measureText(text.substr(0, index));
-		    	nextId = index+1;
-		    } while(l.width < width);
-		    // Forward check success
-		    if(prevId != maxM) {
-		    	return prevId;
-		    }
-		    // Backward check when forward check failed
-		    else {// Find last space
-		    	var lastsp = text.lastIndexOf(' ', maxM);
-		    	if(lastsp == -1) return maxM;
-		    	else return (lastsp+1);
-		    }
+		checkNextline : function( text, maxM, width){
+			// Next line is the whole text remaining
+			if(maxM >= text.length) return text.length;
+			// Forward check
+			var prevId;
+			var nextId = maxM;
+			do {
+				prevId = nextId;
+				// Find next space
+				var index = text.substr(prevId).search(/[\s\n\r\-\/\\\:]/);
+				index = (index == -1) ? -1 : prevId+index;
+				// No space after
+				if(index == -1) {
+					if(ctx.measureText(text).width <= width)
+						prevId = text.length;
+					break;
+				}
+				// Text length
+				var l = ctx.measureText(text.substr(0, index));
+				nextId = index+1;
+			} while(l.width < width);
+			// Forward check success
+			if(prevId != maxM) {
+				return prevId;
+			}
+			// Backward check when forward check failed
+			else {// Find last space
+				var lastsp = text.lastIndexOf(' ', maxM);
+				if(lastsp == -1) return maxM;
+				else return (lastsp+1);
+			}
 		},
 		editPrepaCb : new Callback(textEditPrepa, window),
 		editFinishCb : new Callback(textEditFinish, window)
@@ -315,7 +321,8 @@ SourceManager.prototype = {
 	sources: {},
 	expos: {},
 	acceptType: new Array('image', 'audio', 'game', 'anime', 'wiki', 'code' , 'speaker' ),
-	extCheck: /data:\s*(\w+)\/(\w+);/,
+	rewritable: new Array('anime', 'wiki', 'code', 'speaker'),
+	extCheck: /^data:\s*(\w+)\/(\w+)[;,]/,
 	pathCheck: /^(\.\/)?([\w\_\s]+\/)*([\w\_\s\.]+)$/,
 	uploadResp: /^([\w\_\s]+)\&\&([\w\_\s\.\/]+)/,
 	
@@ -337,9 +344,9 @@ SourceManager.prototype = {
 		}
 		else return "none";
 	},
-	dataExtension: function(id) {
-	    if(!this.sources[id] || typeof this.sources[id].data != "string") return null;
-	    var res = this.sources[id].data.match(this.extCheck);
+	dataExtension: function(str) {
+	    if(typeof str != "string") return null;
+	    var res = str.match(this.extCheck);
 	    if(res != null && (res[1] == "image" || res[1] == "audio" || res[1] == "game")) 
 	        return res[2];
 	    else return null;
@@ -349,14 +356,34 @@ SourceManager.prototype = {
 	},
 	addSource: function(type, data, id) {
 		if($.inArray(type, this.acceptType) == -1) return false;
+		// Data verification
+		switch(type) {
+		case 'image':
+		case 'audio':
+		case 'game':
+		case 'code':
+		    if(!(typeof data == "string")) return false;
+		    break;
+		case 'wiki':
+		    if(!(data instanceof Wiki)) return false;
+		    break;
+		case 'anime':
+		    if(!(data instanceof Animation)) return false;
+		    break;
+		case 'speaker':
+		    if(!(data instanceof Speaker)) return false;
+		    break;
+		}
+		
 		if(!id) {
 		    id = 'src'+this.currId;
 		    this.currId++;
 		}
-		else if(this.sources[id] != null && type != "wiki" && type != "anime" && type != "code") {
+		else if(this.sources[id] != null && $.inArray(type, this.rewritable) == -1) {
 		    alert("Le nom de source existe déjà...");
 		    return false;
 		}
+		
 		// Source structure
 		var src = {'type':type, 'data':null};
 		// Generate expo
@@ -372,8 +399,10 @@ SourceManager.prototype = {
 			// Securely get the image width and height in Webkit
 			var imageSrc = new Image();
 			imageSrc.addEventListener('load', function(){
-			    src.width = imageSrc.width;
-			    src.height = imageSrc.height;
+			    if(src) {
+			        src.width = imageSrc.width;
+			        src.height = imageSrc.height;
+			    }
 			}, false);
 			imageSrc.src = data;
 			img[0].src = imageSrc.src;
@@ -442,6 +471,7 @@ SourceManager.prototype = {
 		        delete this.sources[id];
 		        src.data = data;
 		        this.sources[id] = src;
+		        this.expos[id].children('p').text('Speaker: '+data.name);
 		        return id;
 		    }
 		    src.data = data;
@@ -449,8 +479,7 @@ SourceManager.prototype = {
             data.srcId = id;
 			expo.append('<img class="srcicon_back" src="' + data.getMoodUrl("neutre") +'" name="'+id+'">');
 		    expo.append('<p>Speaker: '+data.name+'</p>');
-		    expo.circleMenu({'config':['./images/UI/config.png',data.showSpeakerOnEditor],
-		                     'delete':['./images/UI/del.png',this.prepareDelSource]});
+		    expo.circleMenu({'config':['./images/UI/config.png',data.showSpeakerOnEditor]});
 		    // expo.click(function(){
 		        // srcMgr.getSource($(this).data('srcId')).showSpeakerOnEditor();
 		    // });
@@ -495,7 +524,7 @@ SourceManager.prototype = {
 	    return res;
 	},
 	generateChildDomElem: function(id, parent) {
-	    if(!this.sources[id]) return;
+	    if(!this.sources[id]) return null;
 		var type = this.sources[id].type;
 		switch(type) {
 		case 'image':
@@ -516,7 +545,7 @@ SourceManager.prototype = {
 
 			// Choose Resize Move
 			//container.configurable({text:true,stroke:true});
-
+			container.attr( "id" , "obj"+(curr.objId++) );
 			return container;
 		case 'game':
 			var game = $('<div class="game" name="'+id+'">');
@@ -526,11 +555,14 @@ SourceManager.prototype = {
 			var w = parent.width()*0.8, h = w*0.6/0.8;
 			game.css({'width':w+'px', 'height':h+'px'});
 		    game.append('<h3>Game: '+id+'</h3>');
+			game.attr( "id" , "obj"+(curr.objId++) );
 		    return game;
 		default: 
+		    return null;
 		}
 	},
-	getExpo: function(id) {
+	getExpoClone: function(id) {
+	    if(!this.expos[id]) return null;
 		var expo = this.expos[id].clone(true);
 		expo.deletable();
 		return expo;
@@ -541,7 +573,7 @@ SourceManager.prototype = {
 	    var t = src.type;
 	    // Delete all dependency to this source
 	    // Script dependency
-	    if(t != "wiki") {
+	    if(t != "wiki" && t != "speaker") {
 	        scriptMgr.delRelatedScripts(id);
 	    }
 	    // Text link dependency
@@ -601,7 +633,7 @@ SourceManager.prototype = {
 	            $('.scene img[name="'+id+'"]:not(.illu_speaker)').each(function(){
 	                list.push("Image utilisant cette ressource dans l'étape: "+$(this).parents('.layer').prop('id'));
 	            });
-	            // Animation & Wiki
+	            // Animation & Wiki & Speaker
 	            for(var srcid in srcMgr.sources) {
 	                var type = srcMgr.sources[srcid].type;
 	                if(type == "wiki" || type == "anime" || type == "speaker") {
@@ -639,10 +671,6 @@ SourceManager.prototype = {
 	    }
 	},
 	updateSource: function(id, newName) {
-	    if(!this.sources[id] || this.sources[newName]) {
-	        alert("Echec à changer de nom pour la source");
-	        return;
-	    }
 	    this.expos[newName] = this.expos[id];
 	    this.sources[newName] = this.sources[id];
 	    this.expos[newName].data('srcId', newName);
@@ -688,6 +716,10 @@ SourceManager.prototype = {
 		this.uploaded = 0;
 	},
     rename: function(id, newName) {
+        if(!this.sources[id] || this.sources[newName]) {
+            alert("Echec à changer de nom pour la source");
+            return id;
+        }
         this.updateSource(id, newName);
         var t = this.sources[newName].type;
         // Update expo
@@ -702,6 +734,7 @@ SourceManager.prototype = {
             chaine = chaine[0]+ ": "+ this.expos[newName].data("srcId");
             this.expos[newName].children('p').replaceWith("<p>"+chaine+"</p>");
         }
+        return newName;
     },
 	renameDialog: function(src) {
 	    var id = src.data('srcId');
@@ -732,7 +765,7 @@ SourceManager.prototype = {
 	        var data = null;
 	        var type = this.sources[key].type;
 	        // Check if data is original content or the relative path
-	        var ext = this.dataExtension(key);
+	        var ext = this.dataExtension(this.sources[key].data);
 	        // relative path
 	        if((type == "image" || type == "game" || type == "audio") && (!ext || ext == "")) {
 	            ++this.uploaded;
@@ -1192,6 +1225,8 @@ Wiki.prototype = {
         }
     },
     getDependency: function(id) {
+		if( !id )
+			return false;
         for(var i = 0; i < this.cards.length; ++i) {
             var card = this.cards[i];
             if(card.type == 'img' && card.image == id)
@@ -1355,8 +1390,11 @@ Animation.prototype = {
     },
     showAnimeOnEditor: function(){
         var editor = $('#editor');
-        editor.html("");
-        var timeline = $('#timeline');
+        if(editor.css('display') != 'none' && $('#animeName').val() == this.name)
+            return;
+    
+        // Reinit
+        animeTool.close();
         $('#animeRepeat').val(this.repeat);
         $('#animeName').val(this.name);
         $('#animeBlock').val(this.block);
@@ -1389,7 +1427,9 @@ Animation.prototype = {
                         container.hoverButton('./images/UI/spritecut.png', animeTool.spriteCut);
                         break;
                     case "spriteRecut":
-                        elem.css({'position':'relative', 'left':-100*param.sx/param.dw+'%', 'top':-100*param.sy/param.dh+'%', 'width':100*param.w/param.sw+'%', 'height':100*param.h/param.sh+'%'});
+						// the ratio was relative to the d- ( width on the scene ), i think it must be relative to the natural width and height
+                        //elem.css({'position':'relative', 'left':-100*param.sx/param.dw+'%', 'top':-100*param.sy/param.dh+'%', 'width':100*param.w/param.sw+'%', 'height':100*param.h/param.sh+'%'});
+                        elem.css({'position':'relative', 'left':-100*param.sx/param.w+'%', 'top':-100*param.sy/param.h+'%', 'width':100*param.w/param.sw+'%', 'height':100*param.h/param.sh+'%'});
                         container.hoverButton('./images/UI/recut.png', animeTool.recutAnimeObj);
                         break;
                     case "image":
@@ -1608,7 +1648,7 @@ Speaker.prototype = {
         dialog.close();
     },
     clearPortraits: function(){
-        this.portrait = {};
+        this.portrait = { neutre : null };
     },
 	getPictSrc : function( key ){
 		if( !key )
@@ -1663,6 +1703,9 @@ var Script = function(src, srcType, action, target, reaction, immediate, supp){
     if(supp) this.supp = supp;
 };
 Script.prototype = {
+    relatedWith: function(id) {
+        return (this.src == id || this.target == id || this.supp == id);
+    },
     constructor: Script
 };
 
@@ -1786,44 +1829,45 @@ var scriptMgr = (function() {
             delete this.scripts[name];
             this.countScripts(relatedObj, relatedType);
         },
-        delRelatedScripts: function(objId){
-            var relScripts = this.getRelatedScripts(objId);
-            for(var i = 0; i < relScripts.length ; i++)
-                this.delScript(relScripts[i].id);
-        },
         getRelatedScriptids: function(objId) {
             var list = [];
             for(var elemid in this.scripts) {
                 var elem = this.scripts[elemid];
-                if(elem.src == objId || elem.target == objId || elem.supp == objId)
+                if(elem.relatedWith(objId))
                     list.push(elemid);
             }
             return list;
         },
         getRelatedScripts: function(objId) {
-            var list = [];
+            var list = {};
             for(var elemid in this.scripts) {
                 var elem = this.scripts[elemid];
-                if(elem.src == objId || elem.target == objId || elem.supp == objId)
-                    list.push({'id':elemid, 'elem':elem});
+                if(elem.relatedWith(objId))
+                    list[elemid] = elem;
             }
             return list;
+        },
+        delRelatedScripts: function(objId){
+            var relScripts = this.getRelatedScriptids(objId);
+            for(var i = 0; i < relScripts.length ; i++)
+                this.delScript(relScripts[i]);
         },
         getSameSrcScripts: function(objId){
             var list = [];
             for(var elem in this.scripts) {
                 if(this.scripts[elem].src == objId){ // each related scripts
-                    list.push({'id':elem, 'elem':this.scripts[elem]});
+                    list.push(elem);
                 }
             }
-            
             return list;
         },
         getRelatedScriptsDesc: function(objId) {
             var list = [];
-            var relScripts = this.getRelatedScripts(objId);
-            for(var i = 0; i < relScripts.length ; i++)
-                list.push("Le script: "+relScripts[i].id);
+            for(var elemid in this.scripts) {
+                var elem = this.scripts[elemid];
+                if(elem.relatedWith(objId))
+                    list.push("Le script: "+elemid);
+            }
             return list;
         },
         updateRelatedScripts: function(objId, newId){
@@ -1855,13 +1899,15 @@ var scriptMgr = (function() {
             if ($scriptCounter.length > 0)  // remove the existing icon
                 $scriptCounter.remove();
             $obj.data('scriptsList', listScript);
-            if (listScript.length > 0) {
+            
+            var $nbscripts = listScript.length;
+            if ($nbscripts > 0) {
                 var $scriptIcon = $obj.find('.del_container img[src="./images/UI/addscript.jpg"]');
                 var $delContainer = $obj.children('.del_container');
                 var hidingHoverIc = $scriptIcon.css('display') == 'none';
                 if (hidingHoverIc) $scriptCounter.hide();
                 
-                $delContainer.append('<div class="scriptCounter">'+ listScript.length +'</div>');
+                $delContainer.append('<div class="scriptCounter">'+ $nbscripts +'</div>');
                 $scriptCounter = $delContainer.children('.scriptCounter');
                 $scriptCounter.click(addScriptForObj);
                 
@@ -1913,7 +1959,7 @@ var scriptMgr = (function() {
                         var rx = x, ry = (y<115) ? y : y-25, r = 90;
                         var alpha = (y<115) ? (Math.PI/180)*90/5 : -(Math.PI/180)*90/5;
 
-                        countIcon.css({'left':rx,'top':ry,'opacity':0});
+                        countIcon.css({'left':0,'top':0,'opacity':0});
                         $circleMenu.append(countIcon);
                         var iconx = r*Math.cos(alpha*count) + 15, icony = r*Math.sin(alpha*count) + 15;
                         countIcon.animate({'left':"+="+iconx+"px",'top':"+="+icony+"px",'opacity':1}, 'normal', 'swing');
@@ -1951,35 +1997,42 @@ var scriptMgr = (function() {
 // Editable tools
 var EditableTool = function(jqToolsPanel, activeButton){
     // Verify tools panel
-    if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools')) return;
-    if(!activeButton || !activeButton.click) return;
+    if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools') || jqToolsPanel.data('relatTool') != undefined) {
+        console.error("Fail to initialize a editable tool, tools panel isn't valid");
+        return;
+    }
     this.toolsPanel = jqToolsPanel;
-    this.toolsPanel.css('z-index', 8);
-    this.toolsPanel.data('editTool', this);
-    this.activeBn = activeButton;
-    this.activeBn.data('editTool', this);
-    // Active process
-    this.activeBn.click(function() {
-        var tool = $(this).data('editTool');
-        if(tool instanceof EditableTool) {
-            tool.active();
-        }
-    });
+    this.toolsPanel.css('z-index', config.zid.EditableTool);
+    this.toolsPanel.data('relatTool', this);
+    
+    if(activeButton && activeButton.click) {
+        this.activeBn = activeButton;
+        this.activeBn.data('relatTool', this);
+        // Active process
+        this.activeBn.click(function() {
+            var tool = $(this).data('relatTool');
+            if(tool instanceof EditableTool) {
+                tool.active();
+            }
+        });
+    }
     // Verify the existance of del container
     if(jqToolsPanel.find('.del_container img').length == 0) {
         jqToolsPanel.hideable(function() {
-            var tool = $(this).parents('.central_tools').data('editTool');
+            var tool = $(this).parents('.central_tools').data('relatTool');
             tool.close();
         });
     }
     
     // Init editor
     this.editor = $('<div class="direct_editor">');
-    this.editor.data('editTool', this);
+    this.editor.data('relatTool', this);
     
     // Register this tool
-    if(!this.constructor.prototype.allTools) this.constructor.prototype.allTools = '#'+this.toolsPanel.prop('id');
-    else this.constructor.prototype.allTools += ', #'+this.toolsPanel.prop('id');
+    var id = this.toolsPanel.prop('id');
+    if(!this.constructor.prototype.allTools) this.constructor.prototype.allTools = '#'+id;
+    else if(this.constructor.prototype.allTools.indexOf(id) == -1)
+        this.constructor.prototype.allTools += ', #'+id;
 };
 EditableTool.prototype = {
     constructor: EditableTool,
@@ -2222,27 +2275,25 @@ var initShapeTool = function() {
 // Editable tools
 var CreatTool = function(jqToolsPanel, activeButton, unhideable){
 // Verify tools panel
-    if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools')) return;
+    if(!jqToolsPanel || !jqToolsPanel.hasClass || !jqToolsPanel.hasClass('central_tools') || jqToolsPanel.data('relatTool') != undefined) {
+        console.error("Fail to initialize a create tool, tools panel isn't valid");
+        return;
+    }
     this.toolsPanel = jqToolsPanel;
-    this.toolsPanel.css('z-index', 7);
-    this.toolsPanel.data('creatTool', this);
+    this.toolsPanel.css('z-index', config.zid.CreatTool);
+    this.toolsPanel.data('relatTool', this);
     
     if(activeButton && activeButton.click) {
         this.activeBn = activeButton;
-        this.activeBn.data('creatTool', this);
+        this.activeBn.data('relatTool', this);
         // Active process
-        this.activeBn.click(function() {
-            var tool = $(this).data('creatTool');
-            if(tool instanceof CreatTool) {
-                tool.active();
-            }
-        });
+        this.activeBn.click(this.activefn);
     }
     if(unhideable !== true) {
         // Verify the existance of del container
         if(jqToolsPanel.find('.del_container img').length == 0) {
             jqToolsPanel.hideable(function() {
-                var tool = $(this).parents('.central_tools').data('creatTool');
+                var tool = $(this).parents('.central_tools').data('relatTool');
                 tool.close();
             });
         }
@@ -2254,9 +2305,15 @@ CreatTool.prototype = {
     constructor: EditableTool,
     allTools: '',
     init: function() {},
+    activefn: function() {
+        var tool = $(this).data('relatTool');
+        if(tool instanceof CreatTool) {
+            tool.active();
+        }
+    },
     active: function() {
         // Register
-        this.editor.data('creatTool', this);
+        this.editor.data('relatTool', this);
         // Trigger close event if center panel is showing up
         $('.central_tools').filter(':visible').find('.del_container img:first').click();
         this.toolsPanel.show();
@@ -2268,6 +2325,7 @@ CreatTool.prototype = {
     finishEdit: function(elems) {},
     close: function() {
         this.finishEdit(this.editor.children());
+        this.editor.removeData('relatTool');
         this.editor.unbind().hide().children().remove();
         this.toolsPanel.hide();
         this.menuMask.hide();
@@ -2421,7 +2479,7 @@ var initWikiTool = function() {
             return true;
         },
         saveWiki: function(e) {
-            var name = $('#wiki_name').val();
+			var name = $('#wiki_name').val();
 				var editor = e.data.editor;
             if(!name || !nameValidation(name)) {
                 alert('Échec à sauvegarder, nom de wiki invalid');
@@ -2433,7 +2491,7 @@ var initWikiTool = function() {
             var cards = editor.children('div:last-child').prevAll();
             if(cards.length == 0) return false;
             // Other parameters
-            var wiki = new Wiki(name, cards.clone(), $('#wiki_font').val(), $('#wiki_size').val(), $('#wiki_color').val());
+            var wiki = new Wiki(name, cards.clone(), $('#wiki_font').val(), parseInt( $('#wiki_size').val() ), $('#wiki_color').val());
             var nomExiste = false;
             for (elem in srcMgr.sources) {
                     if (srcMgr.sources[elem].type == 'wiki' && elem == name) nomExiste = true;
@@ -3118,7 +3176,7 @@ var initTranslateTool = function() {
             
             // For insertions
             if(format == "inser") {
-                var expo = srcMgr.getExpo(link.id);
+                var expo = srcMgr.getExpoClone(link.id);
                 expo.deletable(false);
                 expo.circleMenu(false);
                 expo.css({'position':'absolute', 'top':obj.position().top-20, 'right':'0px'});
@@ -3178,7 +3236,7 @@ var initTranslateTool = function() {
             			    'font-size' : article.css('font-size'),
             			    'font-family' : article.css('font-family'),
             			    'color' : article.css('color')});
-            ArticleFormater.reverse(newarticle, content, article, metas);
+            ArticleFormater.reverse( newarticle, content, article, metas);
             getArticleExpo(this.right, newarticle, metas);
         },
         
@@ -4143,7 +4201,7 @@ $.fn.circleMenu = function(buttonmap) {
                     $(this).data("func").call(window, tar);
                 });
             }
-            icon.css({'left':rx,'top':ry,'opacity':0});
+            icon.css({'left':0,'top':0,'opacity':0});
             menu.append(icon);
             // Animation
             var iconx = r*Math.cos(alpha*count), icony = r*Math.sin(alpha*count);

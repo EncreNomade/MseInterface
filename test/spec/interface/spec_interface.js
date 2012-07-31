@@ -262,7 +262,7 @@ describe("Dialogs test", function() {
             
             // Add source exemple
             srcMgr.addSource('image', './images/UI/addscript.jpg', 'imgsrc');
-            srcMgr.addSource('anime', {}, 'example');
+            srcMgr.addSource('anime', new Animation('example', 1, true, false), 'example');
             
             // It should not open the dialog if target is not a jquery object
             addScriptDialog("a page");
@@ -311,7 +311,7 @@ describe("Dialogs test", function() {
         
         it(" - Add script dialog can identify page source and source id", function() {
             spyOn(scriptMgr, 'actionSelectList').andCallThrough();
-            spyOn(scriptMgr, 'getRelatedScripts').andCallThrough();
+            spyOn(scriptMgr, 'getRelatedScriptids').andCallThrough();
             
             var page = $('.scene:first');
             var pageid = page.prop('id');
@@ -323,19 +323,19 @@ describe("Dialogs test", function() {
             // For page object
             addScriptDialog(pageli);
             expect(scriptMgr.actionSelectList).toHaveBeenCalledWith('script_action', 'page');
-            expect(scriptMgr.getRelatedScripts).toHaveBeenCalledWith(pageid);
+            expect(scriptMgr.getRelatedScriptids).toHaveBeenCalledWith(pageid);
             dialog.close();
             
             // For animation object
             addScriptDialog(animexpo);
             expect(scriptMgr.actionSelectList).toHaveBeenCalledWith('script_action', 'anime');
-            expect(scriptMgr.getRelatedScripts).toHaveBeenCalledWith('example');
+            expect(scriptMgr.getRelatedScriptids).toHaveBeenCalledWith('example');
             dialog.close();
             
             // For objects
             addScriptDialog(obj, 'obj');
             expect(scriptMgr.actionSelectList).toHaveBeenCalledWith('script_action', 'obj');
-            expect(scriptMgr.getRelatedScripts).toHaveBeenCalledWith('obj1');
+            expect(scriptMgr.getRelatedScriptids).toHaveBeenCalledWith('obj1');
         });
         
         it(" - Add script dialog cancel button will call 'closeBottom', confirm button will call 'validScript'", function() {
