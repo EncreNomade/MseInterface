@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE map SYSTEM "http://mapeditor.org/dtd/1.0/map.dtd">
+<map version="1.0" orientation="orthogonal" width="50" height="50" tilewidth="16" tileheight="16">
+ <tileset firstgid="1" name="16x16" tilewidth="16" tileheight="16" spacing="1" margin="1">
+  <image source="tileset2nn9.png" trans="ffffff" width="299" height="452"/>
+ </tileset>
+ <tileset firstgid="443" name="houses" tilewidth="64" tileheight="80" spacing="1" margin="1">
+  <image source="houses.png" trans="ffffff" width="299" height="452"/>
+ </tileset>
+ <layer name="sub grass" width="50" height="50" visible="0">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAC+3WUQqAIAyAYe9i9z9j+DCSUVNL3Yj/g4E9lFtzUUoAAADzZO8EJjm8E5iEOmIpdeyckaOKmfvKM3fI6co9f9hX7s1q7XG2dF/0Wud6Fyv6+kady1/mFFhFz0tv1LPvTdfQc/0Unlq90N9jqxZPPe+71QfvGoqRXCPXUVg9sWY7Sv7C+u9onbNo/wOSz+h5ilYHAAAAAAAYcwILA8LHECcAAA==
+  </data>
+ </layer>
+ <layer name="grass" width="50" height="50" visible="0">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAC72YUW7bQAxEXSA5gY8g3669Qpr2v+kNmtwgyREjAwpADN4MadnpByFH0u6Sw5nZVZbD4bCscVzjtMWyxak8+4x6vz6vY/S5Xrv3aj56382r79P8NG+tS9fQdel5wkXXTThSvu69hIVbazHPHU7EBc2T5iJsHLeofgpdi/p+hN+ur8r3o1yVT8TB+i7VcoS1HBZuLuqx5kX9cfc1z5rXYq7EPVdz0qebw+lb+6c9msynPe3ym+SfelZDe051kK+ol9KVdJCu98N6qt9M59/LA73eQ9TnTyWet3D9dnqmXhOuhAPhcQfrP5l4bqLTC4VinWpLffkmf3e57q3D6bLi73RLeqrz3W11/Lsyf41z7/4aTMknSb+q9aSTcw1/1ni4cR3neAGcKQfK1/lu8qtb90LrID5RfZNzThr/P+ogjyJ/1v1f9xfdg+rz1zXetvjxxf1wXlvznvgceUAdt6c33wsONd7LvBW3xJ9uX6NzKPlY7c003ofrJx8ivk/3HfL1r7pSTkk3tXekkYTTra+6btWA4q1c13dTr67ph/t+1rNrOg+58Z2PUQ91PVpH56IzhRtHWLreTe5pruQdztev1cPUf9I8OqerhcZf+j0y1QnlRb2tvXffx8Qz8nX9++caj4NrV4fmm7yh4wqNdfh/5qdjNO+TuU+5pf9juN/EoVSz1uNwJjy15pqz81ynJ7pPc6W+0/XXGr9hTFcv+UynDdKrzqW4qD46v1E91Pp0ztSHhKPmSzlr/QmzS/yJeJ503J03ks9p3q6f5GVpXsI+fde586LWTBrWsd24mo/TtXoInfHo3E74KcdVH+6cU3Mk3da60r5J67k8qdfENcWRcCU9TPtKvOr47HSyB6fEV8dzp4FL83dYEN6uH0lPhA/Vp5yf+BXlr/yZ4OJ4R710fNJ1Uh2kbdUEvUue4XByexHl7+pOuqt5Otypx8QvqonyJ69Ive98oNNJnYfyTL7itKC1JD10fep45nRPfO98I/kE4aLhPCXxzOE68bPUf91PaZ2Tee+S3nfz7uGneobi784njtuKe+oZcW7Kv1SPq7fTEGFMuST/c/m734oX9YPyn+6T9I47RznOkd5dHek+Ye7OH+RrlCvxWM9J9O5En8nvaD9SHign6jinV+Jw4qYLx3+nd+obzZd6M9EH8dWdWUiDmqerN43XPZjmcTwmb1BN6DqdPpLfKU/o/ND5YtIx7T91fsfTD9VP0uYQJwAA
+  </data>
+ </layer>
+ <layer name="sub grass" width="50" height="50" visible="0">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAC+3RSwqAMAwFwB5Uj+Dn/ivjostiLSgpzMAjkNUjKQUAAACAPy2RtWNmVfttkb1jZtXq19ofkfPTRmPe3Dn7T25Pd876h5Z689p7hh8AAAAAzOwCgzJR6RAnAAA=
+  </data>
+ </layer>
+ <layer name="houses" width="50" height="50" visible="0">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAC+3SoQ0AIBAEwaf/khAIGkMjMcAlMxWs2CoA+N9srwvOjYDmHtB4S+JjAAAAAAAAAOwWAlOy1BAnAAA=
+  </data>
+ </layer>
+ <objectgroup name="collision" width="50" height="50">
+  <object name="largeOne_" x="288" y="150">
+   <polyline points="-84,9 -19,-2 26,57 88,-8 143,-7 143,51 224,43 209,-65 -1,-83 -157,-54 -220,11 -112,81"/>
+  </object>
+  <object x="369" y="391">
+   <polygon points="0,0 -1,32 63,63 151,59 192,14 159,-5 22,-6"/>
+  </object>
+  <object x="262" y="302" width="51" height="25"/>
+  <object name="largeOne" x="217" y="196">
+   <polyline points="13,108 -44,19 94,118 152,103 154,162 243,112 263,38 126,36 220,-41 -47,-53 -97,60 -79,153"/>
+  </object>
+ </objectgroup>
+</map>

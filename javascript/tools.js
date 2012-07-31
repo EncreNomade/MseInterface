@@ -25,7 +25,70 @@ function cssCoordToNumber(c){
 
 // Check if a string represent a color
 function isColor(c) {
-	return true;
+	return getColorHex( c ) != false;
+}
+
+// know how to interpret the follownig representation :
+//	-   "#FC3"
+//	-   "#F3C431"
+//	-   "rgb( 34 , 123 , 255 )"
+//	-   "rgba( 34 , 123 , 255 , 0.56 )"
+// whatever is given in entry, return the color under the "#F3C431" representation
+// return false if non of the representation match
+function getColorHex( c ){
+	var r , v , b;
+	function hexaToDec( x ){
+		var ix = parseInt( x );
+		if( !isNaN( ix ) )
+			return ix;
+		switch( x.toLowerCase() ){
+				case "a" : return 10;
+				case "b" : return 11;
+				case "c" : return 12;
+				case "d" : return 13;
+				case "e" : return 14;
+				case "f" : return 15;
+		}
+	}
+	function decToHex( x ){
+		if( x < 10 )
+			return ""+x;
+		switch( x ){
+				case 10 : return "a";
+				case 11 : return "b";
+				case 12 : return "c";
+				case 13 : return "d";
+				case 14 : return "e";
+				case 15 : return "f";
+		}
+	}
+	if( c.match( /^#[0-9abcdefABCDEF]{3}$/ ) ){			// #C34     ~=  #CC3344
+		r = hexaToDec( c.charAt(1) ) * 17;
+		v = hexaToDec( c.charAt(2) ) * 17;
+		b = hexaToDec( c.charAt(3) ) * 17;
+	} else
+	if( c.match( /#[0-9abcdefABCDEF]{6}/ ) ){			//#23A4F3
+		r = hexaToDec( c.charAt(1) ) * 16 + hexaToDec( c.charAt(2) );
+		v = hexaToDec( c.charAt(3) ) * 16 + hexaToDec( c.charAt(4) );
+		b = hexaToDec( c.charAt(5) ) * 16 + hexaToDec( c.charAt(6) );
+	} else
+	if( c.match( /^rgba?\( *[0-9]+ *, *[0-9]+ *, *[0-9]+ *(, *[0-9.]* *)?\)$/ ) ){			//rgb( 234 , 45 , 65 )    ||  rgba( 234 , 34 , 56 , 1.4 )
+		r = parseInt( (( /^rgba?\( *([0-9]+) *, *[0-9]+ *, *[0-9]+/ ).exec( c ) || [ "a" , "a"] )[ 1 ] );
+		v = parseInt( (( /^rgba?\( *[0-9]+ *, *([0-9]+) *, *[0-9]+/ ).exec( c ) || [ "a" , "a"] )[ 1 ] );
+		b = parseInt( (( /^rgba?\( *[0-9]+ *, *[0-9]+ *, *([0-9]+)/ ).exec( c ) || [ "a" , "a"] )[ 1 ] );
+	}else
+		return false;
+	
+	if(    typeof( r ) != "number" || isNaN( r ) || 0 > r || r > 255 
+		|| typeof( v ) != "number" || isNaN( v ) || 0 > v || v > 255 
+		|| typeof( b ) != "number" || isNaN( b ) || 0 > b || b > 255 )
+		return false;
+	
+	var d = ( 256 * ( r * 256 + v ) + b );
+	
+	var hex = "#"+decToHex( Math.floor( r/16 ) )+decToHex( r%16 )  +  decToHex( Math.floor( v/16 ) )+decToHex( v%16 )  +  decToHex( Math.floor( b/16 ) )+decToHex( b%16 );
+	
+	return hex;
 }
 
 // Check if it's a ratio in the range given
@@ -2104,7 +2167,13 @@ var initTextTool = function() {
             });
         },
         createTextArea: function(e) {
-            if(this.editor.get(0) != e.target) return;
+            if(this.editor.get(0) != e.target){
+				if( $( e.target ).parent().hasClass("text" ) )		// click on the textArea
+					this.changeEditing( $( $( e.target ).parent() ) );
+				if( $( e.target ).hasClass("text" ) )				// click on the div element
+					this.changeEditing( $( e.target ) );
+				return;
+			}
             if(this.editing) {
             	if(this.editing.children('textarea').val() == "") this.editing.remove();
             }
@@ -2121,6 +2190,26 @@ var initTextTool = function() {
             	$(this).children('textarea').focus();
             }).deletable();
         },
+		changeEditing:function( target ){
+			// update the config panel
+			
+			var testArea = target.children( "textArea" );
+			var tcolor = getColorHex( testArea.css( "color" ) );
+			var font  = testArea.css( "font-family" );
+			var style = testArea.css( "font-weight"  );
+			if( !style || style == "" ) style = "normal";
+			var size  = config.realY( cssCoordToNumber( testArea.css( "font-size" ) ) );
+			var align = testArea.css( "text-align"  );
+			
+			
+			$('#text_color').prop( "value" , tcolor );
+			$('#text_font').prop( "value" , font );
+			$('#text_size').prop( "value" , size );
+			$('#text_style').prop( "value" , style );
+			$('#text_align').prop( "value" , align );
+			
+			this.editing = target;
+		},
         configChanged: function(e){
             if(!this.editing) return;
             // Param

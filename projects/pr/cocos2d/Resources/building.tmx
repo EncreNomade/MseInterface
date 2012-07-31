@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE map SYSTEM "http://mapeditor.org/dtd/1.0/map.dtd">
+<map version="1.0" orientation="orthogonal" width="100" height="15" tilewidth="16" tileheight="16">
+ <tileset firstgid="1" name="tileset" tilewidth="16" tileheight="16" spacing="1">
+  <image source="tileset.png" trans="ffffff" width="289" height="289"/>
+ </tileset>
+ <layer name="Calque 2" width="100" height="15" visible="0">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAC+3ToQGAQBTD0L/mARPAsb+llglSEVHxfLpm5sjO7MqWRn1nT7azV+Ome9D+o9l0D9p/NJvuQfuPZtM9aP/RbLoH7T+aTfeg/Uez6R703x+SHCO8cBcAAA==
+  </data>
+ </layer>
+ <layer name="Calque de Tile 1" width="100" height="15">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAC+2RQQ6CQBAEQU9g5AFq8CD+QoxwV4I+yH/IV/BvtjdChnUTZ1eIXUmdNtmZ6Q4CQgghhBAyVUI46zh3NOcBG0d/T4kWPg3vO5h13PtYyjH3Xy/gEdOtGjmcYKFsqbDXtxxgPjKPFnvX8KrsTZizhImlJvo5D914hpeRWX247Y2vPlK4tdREP+ehG9mHXh8RjAUXQs7sw30fK7gW3Ag5sw/28W99vABYSAbxcBcAAA==
+  </data>
+ </layer>
+ <layer name="collision_floor" width="100" height="15" visible="0">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAC+3TQQ7AIAhEUU/s/ZfuDTGCoGD+S1y1RWFsawAAAKiqCwvv/JjHDz3sWvXqMQfpfnis16L6ip5LxOykml5n3n0/w52YZcvD+u3qOXnYamry0Pw/5GGrqc3jZC/NfjeRRy5V8xh4pE61cBcAAA==
+  </data>
+ </layer>
+ <objectgroup name="collision" width="100" height="15">
+  <object x="11" y="124">
+   <polyline points="0,0 222,-73 313,-24"/>
+  </object>
+ </objectgroup>
+</map>
