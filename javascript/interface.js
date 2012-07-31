@@ -1374,33 +1374,13 @@ function addArticle(manager, name, params, content) {
 	step.append(article);
 }
 
-function modifyZ() {
-	var mod = $('<span><input type="number" value="'+$(this).html()+'" size="2"></input><input type="button" value="ok"></input></span>');
-	$(this).replaceWith(mod);
-	mod.find('input[type="button"]').click(function(){
-		var expo = $(this).parents('.layer_expo');
-		var zid = expo.find('input[type="number"]').val();
-		// Modify layer's index
-		var layer = expo.find('span:first').html();
-		var page = curr.page.prop('id');
-		layers[page][layer].css('z-index', zid);
-		// Replace span with modified zid
-		var res = $('<span>'+zid+'</span>');
-		res.click(modifyZ);
-		$(this).parent().replaceWith(res);
-		// Resort expos
-		var manager = managers[page].manager;
-		var newExpo = expo.clone();
-		expo.remove();
-		addExpo(manager, newExpo);
-	});
-}
-
-function defineZ(step, obj) {
+function defineZ(step, obj){
 	var maxZ = 0;
 	for(var i=0; i<step.children().length; i++) {
-		if (parseInt($(step.children()[i]).css('z-index')) > maxZ) 
-			maxZ =  parseInt($(step.children()[i]).css('z-index'));
+        var z = parseInt(step.children().eq(i).css('z-index'));
+        z = isNaN(z) ? 0 : z;
+		if(z > maxZ)
+            maxZ =  parseInt(step.children().eq(i).css('z-index'));
 	}
 	obj.css('z-index', maxZ+1);
 }

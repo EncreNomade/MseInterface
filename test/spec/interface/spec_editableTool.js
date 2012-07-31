@@ -1,4 +1,4 @@
-describe("Creat tool initialization", function() {
+describe("Editable tool initialization", function() {
     var tool = null;
     var panel = $("<div id='testeditor' class='central_tools'></div");
     
@@ -10,32 +10,35 @@ describe("Creat tool initialization", function() {
     it(" - should verify existance of Tools Panel", function() {
         spyOn(console, 'error');
         
-        tool = new CreatTool(null);
+        tool = new EditableTool(null);
         expect(console.error).toHaveBeenCalled();
         
-        tool = new CreatTool([]);
+        tool = new EditableTool([]);
         expect(console.error.calls.length).toEqual(2);
         
-        tool = new CreatTool($("<div></div"));
+        tool = new EditableTool($("<div></div"));
         expect(console.error.calls.length).toEqual(3);
     });
     
-    it(" - with a valid tools panel should initilize correctly a CreatTool", function() {
+    it(" - with a valid tools panel should initilize correctly a EditableTool", function() {
+        EditableTool.prototype.allTools.replace("#testeditor", "");
+        
         var toolspanel = panel;
-        tool = new CreatTool(toolspanel);
+        tool = new EditableTool(toolspanel);
         
         expect(tool.toolsPanel).toBe(toolspanel);
-        expect(parseInt(toolspanel.css('z-index'))).toEqual(config.zid.CreatTool);
+        expect(parseInt(toolspanel.css('z-index'))).toEqual(config.zid.EditableTool);
         expect(toolspanel.data('relatTool')).toBe(tool);
-        expect(tool.editor.get(0)).toEqual($('#editor').get(0));
-        expect(tool.menuMask.get(0)).toEqual($('#menu_mask').get(0));
+        expect(tool.editor).toEqual(jasmine.any(jQuery));
+        expect(tool.editor.data('relatTool')).toEqual(tool);
+        expect(tool.allTools.indexOf('#testeditor')).not.toEqual(-1);
         
         tool.close();
     });
     
-    it(" - with active button will link the activation of creat tool to this button", function() {
+    it(" - with active button will link the activation of editable tool to this button", function() {
         var activeBtn = $('#texticon');
-        tool = new CreatTool(panel, activeBtn);
+        tool = new EditableTool(panel, activeBtn);
         
         spyOn(tool, 'active');
         expect(tool.activeBn).toBe(activeBtn);
@@ -47,19 +50,12 @@ describe("Creat tool initialization", function() {
         tool.close();
     });
     
-    it(" - with unhideable parameter will decide to add a del_container or not to ToolsPanel", function() {
+    it(" - with add a del_container and make the tools panel hideable", function() {
         var toolspanel = panel;
         toolspanel.children('.del_container').remove();
         spyOn(toolspanel, 'hideable').andCallThrough();
         
-        tool = new CreatTool(toolspanel, null, true);
-        
-        expect(tool.toolsPanel).toBe(toolspanel);
-        expect(toolspanel.children('.del_container').length).toEqual(0);
-        expect(toolspanel.hideable).not.toHaveBeenCalled();
-        
-        panel.removeData('relatTool');
-        tool = new CreatTool(toolspanel, null);
+        tool = new EditableTool(toolspanel, null);
         
         expect(tool.toolsPanel).toBe(toolspanel);
         expect(toolspanel.children('.del_container').length).toEqual(1);
@@ -76,7 +72,7 @@ describe("Creat tool initialization", function() {
 
 
 
-describe("Activation of a creat tool", function() {
+describe("Activation of a editable tool", function() {
     var tool = null;
     var panel = $("<div id='testeditor' class='central_tools'></div");
     
@@ -85,30 +81,37 @@ describe("Activation of a creat tool", function() {
         panel.removeData('relatTool');
     });
     
-    it(" - will register the current creat tool in data", function() {
+    it(" - will add editor panel to the relative parent of edit environment", function() {
         var activeBtn = $('#texticon');
-        tool = new CreatTool(panel, activeBtn);
+        tool = new EditableTool(panel, activeBtn);
         
         spyOn(tool, 'active').andCallThrough();
         activeBtn.click();
         expect(tool.active).toHaveBeenCalled();
-        expect(tool.editor.data('relatTool')).toBe(tool);
+        expect(tool.editor.hasClass('direct_editor')).toBeTruthy();
+        expect(tool.editor.parent().get(0)).toEqual(curr.page.get(0));
         tool.close();
+        
+        animeTool.active();
+        tool.active();
+        expect(tool.editor.parent().get(0)).toEqual(animeTool.editor.get(0));
+        tool.close();
+        animeTool.close();
     });
     
     it(" - will close the tool currently showing and show all panel of edition for this tool", function() {
-        wikiTool.active();
-        expect($('.central_tools').filter(':visible').length).toEqual(1);
+        shapeTool.active();
         
-        spyOn(wikiTool, 'close').andCallThrough();
-        animeTool.active();
-        expect(wikiTool.close).toHaveBeenCalled();
-        expect(wikiTool.toolsPanel.css('display')).toEqual('none');
-        expect(animeTool.toolsPanel.css('display')).not.toEqual('none');
+        spyOn(shapeTool, 'close').andCallThrough();
+        textTool.active();
+        expect(shapeTool.close).toHaveBeenCalled();
+        expect(shapeTool.toolsPanel.css('display')).toEqual('none');
+        expect(textTool.toolsPanel.css('display')).not.toEqual('none');
+        textTool.close();
     });
     
     it(" - will call init function of tool", function() {
-        tool = new CreatTool(panel, $('#texticon'));
+        tool = new EditableTool(panel, $('#texticon'));
         
         spyOn(tool, 'init');
         tool.active();
@@ -119,34 +122,29 @@ describe("Activation of a creat tool", function() {
 
 
 
-describe("Close a creat tool editor", function() {
+describe("Close a editable tool editor", function() {
     var tool = null;
     beforeEach(function() {
         var panel = $("<div id='testeditor' class='central_tools'></div");
-        tool = new CreatTool(panel, $('#texticon'));
+        tool = new EditableTool(panel, $('#texticon'));
     });
     
-    it(" - will call finish edit function for further manipulation of content", function() {
-        spyOn(tool, 'finishEdit').andCallThrough();
+    it(" - will execute a AddToSceneCmd", function() {
+        spyOn(CommandMgr, 'executeCmd');
         tool.close();
-        expect(tool.finishEdit).toHaveBeenCalledWith(jasmine.any(jQuery));
+        expect(CommandMgr.executeCmd).toHaveBeenCalledWith(jasmine.any(AddToSceneCmd));
     });
     
-    it(" - will clear editor content and data, hide the editor, tools panel, and mask", function() {
+    it(" - will clear editor content and data, delete the editor, tools panel", function() {
         tool.active();
         
-        spyOn(tool.editor, 'hide').andCallThrough();
-        spyOn(tool.editor, 'unbind').andCallThrough();
-        spyOn(tool.menuMask, 'hide').andCallThrough();
+        spyOn(tool.editor, 'detach').andCallThrough();
         spyOn(tool.toolsPanel, 'hide').andCallThrough();
         
         tool.close();
         
-        expect(tool.editor.unbind).toHaveBeenCalled();
-        expect(tool.editor.hide).toHaveBeenCalled();
+        expect(tool.editor.detach).toHaveBeenCalled();
         expect(tool.toolsPanel.hide).toHaveBeenCalled();
-        expect(tool.menuMask.hide).toHaveBeenCalled();
         expect(tool.editor.children().length).toEqual(0);
-        expect(tool.editor.data('relatTool')).toBeUndefined();
     });
 });

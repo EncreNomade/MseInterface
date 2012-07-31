@@ -2,7 +2,8 @@
   "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-  <title>Creat Tools Spec Runner</title>
+  <title>Interface d'édition (Jasmine Spec Runner)</title>
+  
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
 <link rel="shortcut icon" type="image/png" href="lib/jasmine-1.2.0/jasmine_favicon.png">
@@ -10,18 +11,20 @@
 <script type="text/javascript" src="lib/jasmine-1.2.0/jasmine.js"></script>
 <script type="text/javascript" src="lib/jasmine-1.2.0/jasmine-html.js"></script>
 
+
 <!-- include source files here... -->
 <script src="../javascript/support/jquery-latest.js"></script>
 <script src="../javascript/support/jquery.color.js"></script>
 <script src="../javascript/tools.js"></script>
 <script src="../javascript/interface.js"></script>
 <script src="../javascript/command.js"></script>
+<script src="support/project_data.js"></script>
 
 <link rel="stylesheet" type="text/css" href="../stylesheets/menu.css" />
 <link rel="stylesheet" type="text/css" href="../stylesheets/interface.css" />
 
 <!-- include spec files here... -->
-<script src="spec/interface/spec_creatTool.js"></script>
+<script src="spec/interface/spec_stepManager.js"></script>
 
 <STYLE type="text/css">
     body {
@@ -33,7 +36,7 @@
         overflow: auto;
     }
     .jasmine_reporter {
-        background: #fff;
+        background-color : rgba(255, 255, 255, 0.9);
         -webkit-box-shadow: 0px 0px 5px #4d4d4d;
         -moz-box-shadow: 0px 0px 5px #4d4d4d;
         box-shadow: 0px 0px 5px #4d4d4d;
@@ -207,37 +210,40 @@
 	$(".menu li.id").text(uid);
 	Config.init({width:800, height:600});
 	
+    if(uid && uid != "") {
+        $(".menu li.id").text(uid);
+    }
+	
 	var config = Config.getInstance();
 	init();
 	
-	CommandMgr.executeCmd(new AddPageCmd('testpage'));
+	(function(){
+    jasmine.NO_TRY_CATCH = false // if set true no error handling by jasmine;
+	var jasmineEnv = jasmine.getEnv();
+	jasmineEnv.updateInterval = 1000;
 	
-	(function() {
-	    var jasmineEnv = jasmine.getEnv();
-	    jasmineEnv.updateInterval = 1000;
+	var htmlReporter = new jasmine.HtmlReporter();
 	
-	    var htmlReporter = new jasmine.HtmlReporter();
+	jasmineEnv.addReporter(htmlReporter);
 	
-	    jasmineEnv.addReporter(htmlReporter);
+	jasmineEnv.specFilter = function(spec) {
+	    return htmlReporter.specFilter(spec);
+	};
 	
-	    jasmineEnv.specFilter = function(spec) {
-	        return htmlReporter.specFilter(spec);
-	    };
+	var currentWindowOnload = window.onload;
 	
-	    var currentWindowOnload = window.onload;
-	
-	    window.onload = function() {
-	        if (currentWindowOnload) {
-	            currentWindowOnload();
-	        }
-	        execJasmine();
-	    };
-	
-	    function execJasmine() {
-	        jasmineEnv.execute();
+	window.onload = function() {
+	    if (currentWindowOnload) {
+	        currentWindowOnload();
 	    }
-	})();
+	    execJasmine();
+	};
 	
+	function execJasmine() {
+	    jasmineEnv.execute();
+	}
+	})();
+
 </script>
 
 </body>
