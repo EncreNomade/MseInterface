@@ -473,6 +473,9 @@ describe("Dialogs test", function() {
             spyOn(window, 'closeBottom');
             spyOn(window, 'validScript').andCallThrough();
             spyOn(CommandMgr, 'executeCmd').andCallThrough();
+            spyOn(window, 'confirm').andCallFake(function() {
+                return true;
+            });
             
             var animexpo = $('.icon_src:contains("example")');
             addScriptDialog(animexpo);
