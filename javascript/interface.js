@@ -701,7 +701,8 @@ function addScriptDialog(src, srcType){
     dialog.annuler.click(closeBottom);
     dialog.confirm.click({sourceId: srcid, sourceType: srcType}, validScript);
     
-    var relatScript = scriptMgr.getRelatedScriptids(srcid);
+    var relatScript = scriptMgr.getSameSrcScripts(srcid);
+
     if (relatScript.length > 0){
         var modifyScriptsButton = dialog.addButton($('<input type="button" value="Modifier les scripts existants"></input>'));
         modifyScriptsButton.click(function(){ modifyScriptDialog(relatScript, null, src); });
@@ -1375,14 +1376,19 @@ function addArticle(manager, name, params, content) {
 }
 
 function defineZ(step, obj){
+    if(!(step instanceof jQuery) || !(obj instanceof jQuery))
+        return false;
+    
 	var maxZ = 0;
-	for(var i=0; i<step.children().length; i++) {
-        var z = parseInt(step.children().eq(i).css('z-index'));
+    var childs = step.children()
+	for(var i=0; i < childs.length; i++) {
+        var elem = childs.eq(i);
+        var z = parseInt(elem.css('z-index'));
         z = isNaN(z) ? 0 : z;
 		if(z > maxZ)
-            maxZ =  parseInt(step.children().eq(i).css('z-index'));
+            maxZ =  parseInt(elem.css('z-index'));
 	}
-	obj.css('z-index', maxZ+1);
+	obj.css('z-index', maxZ+1); // a new obj is set upper others
 }
 
 

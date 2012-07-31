@@ -311,7 +311,7 @@ describe("Dialogs test", function() {
         
         it(" - Add script dialog can identify page source and source id", function() {
             spyOn(scriptMgr, 'actionSelectList').andCallThrough();
-            spyOn(scriptMgr, 'getRelatedScriptids').andCallThrough();
+            spyOn(scriptMgr, 'getSameSrcScripts').andCallThrough();
             
             var page = $('.scene:first');
             var pageid = page.prop('id');
@@ -323,19 +323,19 @@ describe("Dialogs test", function() {
             // For page object
             addScriptDialog(pageli);
             expect(scriptMgr.actionSelectList).toHaveBeenCalledWith('script_action', 'page');
-            expect(scriptMgr.getRelatedScriptids).toHaveBeenCalledWith(pageid);
+            expect(scriptMgr.getSameSrcScripts).toHaveBeenCalledWith(pageid);
             dialog.close();
             
             // For animation object
             addScriptDialog(animexpo);
             expect(scriptMgr.actionSelectList).toHaveBeenCalledWith('script_action', 'anime');
-            expect(scriptMgr.getRelatedScriptids).toHaveBeenCalledWith('example');
+            expect(scriptMgr.getSameSrcScripts).toHaveBeenCalledWith('example');
             dialog.close();
             
             // For objects
             addScriptDialog(obj, 'obj');
             expect(scriptMgr.actionSelectList).toHaveBeenCalledWith('script_action', 'obj');
-            expect(scriptMgr.getRelatedScriptids).toHaveBeenCalledWith('obj1');
+            expect(scriptMgr.getSameSrcScripts).toHaveBeenCalledWith('obj1');
         });
         
         it(" - Add script dialog cancel button will call 'closeBottom', confirm button will call 'validScript'", function() {
@@ -424,7 +424,7 @@ describe("Dialogs test", function() {
             dialog.close();
             
             // Relat src not given (dialog opened by the scripts panel)
-            var relatScript = scriptMgr.getRelatedScriptids('example');
+            var relatScript = scriptMgr.getSameSrcScripts('example');
             modifyScriptDialog(relatScript);
             expect($('#popup_dialog #script_name').prop('tagName')).toEqual('SELECT');
             expect($('#popup_dialog #ajout_auto').prop('type')).toEqual('checkbox');
@@ -437,7 +437,7 @@ describe("Dialogs test", function() {
         it(" - The dialog should call 'tarDynamic' when reaction changed", function() {
             spyOn(window, 'tarDynamic').andCallThrough();
             
-            var relatScript = scriptMgr.getRelatedScriptids('example');
+            var relatScript = scriptMgr.getSameSrcScripts('example');
             modifyScriptDialog(relatScript);
         
             $('#popup_dialog #script_reaction').change();
@@ -448,7 +448,7 @@ describe("Dialogs test", function() {
             spyOn(CommandMgr, 'executeCmd').andCallThrough();
             spyOn(window, 'addScriptDialog');
             
-            var relatScript = scriptMgr.getRelatedScriptids('example');
+            var relatScript = scriptMgr.getSameSrcScripts('example');
             modifyScriptDialog(relatScript);
         
             var del = $('#popup_dialog input[value="Supprimer"]');
@@ -776,4 +776,53 @@ describe("Active bar label function test", function() {
             }
         }
     });
+});
+
+
+
+describe("defineZ function", function(){
+    var step, obj;
+    beforeEach(function(){
+        step = '';
+        step += '<div>';
+        step += '<p style = "z-index: 1;> test</p>';
+        step += '<p style = "z-index: 0;> test</p>';
+        step += '<p style = "z-index: 4;> test</p>';
+        step += '<p style = "z-index: 2;> test</p>';
+        step += '</div>';
+        
+        step = $(step);
+        obj = $('<p />');        
+    });
+    
+    it("refuse if parameters given is non jQuery objects", function(){
+        var res1 = defineZ();
+        var res2 = defineZ(step);
+        var res3 = defineZ(null, obj);
+        
+        expect(res1).toBe(false);
+        expect(res2).toBe(false);
+        expect(res3).toBe(false);
+    });
+    
+    it("set the z-index of the 2nd param to 1 upper the max z-index 1st params children", function(){
+        var z1 = obj.css('z-index');
+        defineZ(step, obj);
+        var z2 = obj.css('z-index');
+        
+        expect(z1).not.toEqual(z2);
+        expect(parseInt(z2)).toEqual(5);
+        
+        step.append('<div style="z-index: 27"></div>')
+        step.append('<div style="z-index: 3"></div>')
+        step.append('<div style="z-index: 0"></div>')
+        obj = $('<p />');
+        defineZ(step, obj);
+        
+        expect(parseInt(obj.css('z-index'))).toEqual(28);
+    });
+});
+
+describe("editSpeakDialog function", function(){
+
 });

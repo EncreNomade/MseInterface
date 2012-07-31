@@ -170,30 +170,30 @@ describe("",function(){
             scriptMgr.delScript("unitTestScript");
         });
         
-        it("return a list with 1 elem if their only one related script", function(){
+        it("return an object with 1 elem if their only one related script", function(){
             scriptMgr.addScriptObj("unitTestScript", new Script('improbableSrc', 'srcType', 'action', 'target', 'reaction', 'immediate', 'supp'));
             var list = scriptMgr.getRelatedScripts('improbableSrc');
-            expect(list.length).toBe(1);
+            expect(Object.keys(list).length).toBe(1);
         });
         
-        it("return a list contain the script related", function(){
+        it("return an object contain the script related", function(){
             var list = scriptMgr.getRelatedScripts('src');
-            expect(list[0].id).toBe('unitTestScript');
+            expect(list['unitTestScript']).toBeDefined();
         });
         
         it("works if related to src", function(){
             var list = scriptMgr.getRelatedScripts('src');
-            expect(list.length).toBeGreaterThan(0);
+            expect(Object.keys(list).length).toBeGreaterThan(0);
         });
          
         it("works if related to target", function(){
             var list = scriptMgr.getRelatedScripts('target');        
-            expect(list.length).toBeGreaterThan(0);
+            expect(Object.keys(list).length).toBeGreaterThan(0);
         });
         
         it("works if related to supp", function(){
             var list = scriptMgr.getRelatedScripts('supp');
-            expect(list.length).toBeGreaterThan(0);
+            expect(Object.keys(list).length).toBeGreaterThan(0);
         });
         
     });
@@ -310,7 +310,7 @@ describe("",function(){
         
         it("return a list contain the script related", function(){
             var list = scriptMgr.getSameSrcScripts('src');
-            expect(list[0].id).toBe('unitTestScript');
+            expect(list[0]).toBe('unitTestScript');
         });
          
         it("don't works if related to target", function(){
@@ -744,6 +744,32 @@ describe("",function(){
         });
     });
 
+    describe("Script.relatedWith", function(){
+        var script = new Script('improbableSrc', 'srcType', 'action', 'unitTarget', 'reaction', 'immediate', 'unitSupp');
+        
+        it("return true if related with src", function(){
+            var res = script.relatedWith('improbableSrc');            
+            expect(res).toBe(true);
+        });
+        
+        it("return true if related with target", function(){
+            var res = script.relatedWith('unitTarget');            
+            expect(res).toBe(true);        
+        });
+        
+        it("return true if related with supp", function(){
+            var res = script.relatedWith('unitSupp');            
+            expect(res).toBe(true);        
+        });
+        
+        it("return false if not related", function(){
+            var res = script.relatedWith('someThing');            
+            expect(res).toBe(false);        
+        });
+        
+        
+    });
+    
 });
 
 
