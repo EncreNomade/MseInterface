@@ -1,12 +1,25 @@
 describe("Create textArea ", function() {
+	var x = 50;
+	var y = 70;
+	var h = 20;
+	var w = 24;
 	beforeEach( function(){
+		
+		x = 50;
+		y = 70;
+		h = 20;
+		w = 24;
+		
+		textTool.active();
 		var e = { 
-			target : textTool.editor.get(0)
+			target : textTool.editor.get(0),
+			clientX : x + textTool.editor.offset().left,
+			clientY : y + textTool.editor.offset().top,
 		}
 		textTool.createTextArea( e );
 	});
 	afterEach( function(){
-		textTool.editor.children().remove();
+		textTool.close();
 	});
 	it("click event binded", function() {
 		spyOn( textTool , "createTextArea" );
@@ -17,6 +30,10 @@ describe("Create textArea ", function() {
     it("textArea added", function() {
 		expect( !textTool.editing  ).toBe( false );
         expect(textTool.editing.children('textarea').length  ).toBe( 1 );
+    });
+	it("with correct css ( position )", function() {
+		expect( textTool.editor.children().position().left ).toBe( x );
+		expect( textTool.editor.children().position().top ).toBe( y );
     });
 	it("two textArea added", function() {
 		var e = { 
@@ -46,7 +63,7 @@ describe("Create textArea ", function() {
     });
 	it("editing field follow the focus ( on click )", function() {
 		var e = { 
-			target : textTool.editor.get(0)
+			target : textTool.editor.get(0),
 		}
 		
 		textTool.editing.children('textarea').text("one");
@@ -68,8 +85,9 @@ describe("Create textArea ", function() {
 
 describe("configChanged", function() {
 	beforeEach( function(){
+		textTool.active();
 		var e = { 
-			target : textTool.editor.get(0)
+			target : textTool.editor.get(0),
 		}
 		textTool.editing.children('textarea').text("one");
 		textTool.createTextArea( e );
@@ -79,7 +97,7 @@ describe("configChanged", function() {
 		textTool.createTextArea( e );
 	});
 	afterEach( function(){
-		textTool.editor.children().remove();
+		textTool.close();
 	});
 	it("changes validity", function() {
 		
@@ -106,16 +124,29 @@ describe("configChanged", function() {
     });
 });
 describe("finishEdit", function() {
+	var x = 50;
+	var y = 70;
+	var h = 20;
+	var w = 24;
 	beforeEach( function(){
+		
+		x = 50;
+		y = 70;
+		h = 20;
+		w = 24;
+		
+		textTool.active();
 		var e = { 
-			target : textTool.editor.get(0)
+			target : textTool.editor.get(0),
+			clientX : x + textTool.editor.offset().left,
+			clientY : y + textTool.editor.offset().top,
 		}
 		textTool.createTextArea( e );
 		textTool.editing.children('textarea').text("one");
 		
 	});
 	afterEach( function(){
-		textTool.editor.children().remove();
+		textTool.close();
 	});
 	it("append", function() {
 		var e = { 
@@ -164,5 +195,10 @@ describe("finishEdit", function() {
 		expect( tar.children().css('font-size')  ).toBe( config.sceneY(ts)+'px' );
 		expect( tar.children().css('font-weight')  ).toBe( tss );
 		expect( tar.children().css('font-family')  ).toBe( tf );
+		
+		$("body").append( tar );
+		expect( tar.children().position().left ).toBe( x );
+		expect( tar.children().position().top ).toBe( y );
+		tar.remove();
     });
 });
