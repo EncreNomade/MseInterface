@@ -806,7 +806,7 @@ function validScript(e){
         tar = $('#script_tar').val();break;
     case "obj": 
         if($('#script_supp').children().length==0) {alert('Information incomplete');return;}
-        tar = $('#script_tar').data('chooser').val();
+        tar = $('#script_tar').data('chooser').val().prop('id');
         supp = $('#script_supp').attr('target');
         break;
     case "cursor":
