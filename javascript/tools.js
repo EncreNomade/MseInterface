@@ -255,7 +255,11 @@ var Config = (function() {
 		// Z-index list
 		this.zid = {
 		    'CreatTool' : 7,
-		    'EditableTool' : 8
+		    'EditableTool' : 8,
+		    'SceneInChoosing' : 106,
+		    'EditorInChoosing' : 0,
+		    'PagebarInChoosing' : 9,
+		    'Scene' : 1
 		};
 	}
 	
@@ -3188,16 +3192,23 @@ var initScriptTool = function() {
                              .animate({backgroundColor: "#fff"}, 800);
                 return;
             }
-            if(srcMgr.sources[name]) {
-            	dialog.showPopup('Ce nom existe déja', 300, 150, 'Confirmer');
-            	dialog.main.append('<p><label>Nouveau nom : </label><input id="rename" type="text" value="'+name+'"></p>');
-            	dialog.main.append('<p><label>Ecraser : </label><input id="eraseName" type="checkbox"></p>');
-            	dialog.confirm.click(function(){
-                    if($('#rename').val() != name || $('#eraseName').get(0).checked) {
-                        CommandMgr.executeCmd(new ModSrcCmd('code', script, $('#rename').val()));
-            		    dialog.close();
-            	    }
-            	});
+            if(srcMgr.isExist(name)) {
+                if(srcMgr.sourceType(name) == "code") {
+                	dialog.showPopup('Ce nom existe déja', 300, 150, 'Confirmer');
+                	dialog.main.append('<p><label>Nouveau nom : </label><input id="rename" type="text" value="'+name+'"></p>');
+                	dialog.main.append('<p><label>Ecraser : </label><input id="eraseName" type="checkbox"></p>');
+                	dialog.confirm.click(function(){
+                	    var newname = $('#rename').val();
+                        if(newname == name && $('#eraseName').get(0).checked) {
+                            CommandMgr.executeCmd(new ModSrcCmd('code', script, newname));
+                		    dialog.close();
+                	    }
+                	    else if(newname != name && !srcMgr.isExist(name)) {
+                	        CommandMgr.executeCmd(new AddSrcCmd('code', script, newname));
+                	        dialog.close();
+                	    }
+                	});
+            	}
             }
             else
                 CommandMgr.executeCmd(new AddSrcCmd('code', script, name));
@@ -3496,13 +3507,14 @@ ObjChooser.prototype = {
     startChoose: function(){
         curr.chooser = this;
         $('body').append('<div id="objChooserMask"></div>');
-        $('#center_panel, #right').css('z-index', 106);
+        $('#center_panel, #right').css('z-index', config.zid.SceneInChoosing);
         this.editorZid = $('#editor').css('z-index');
         this.pageBarZid = $('#pageBar').css('z-index');
-        $('#editor').css('z-index', '0');
-        $('#pageBar').css('z-index', '8');
+        $('#editor').css('z-index', config.zid.EditorInChoosing);
+        $('#pageBar').css('z-index', config.zid.PagebarInChoosing);
     },
     choosed: function(obj){
+        curr.chooser = null;
         // Set referenced id for analyze in the server
         if(!obj.prop('id') || obj.prop('id') == "") 
             obj.prop('id', "referenced"+(ObjChooser.prototype.refObjId++));
@@ -3510,7 +3522,7 @@ ObjChooser.prototype = {
         if(!this.callback) this.jqObj.children('h5').text(obj.prop('id'));
         else this.callback.invoke(obj.prop('id'));
         
-        $('#center_panel, #right').css('z-index', 1);
+        $('#center_panel, #right').css('z-index', config.zid.Scene);
         $('#editor').css('z-index', this.editorZid);
         $('#pageBar').css('z-index', this.pageBarZid);
         $('#objChooserMask').remove();
@@ -3520,7 +3532,6 @@ function objChoosed(e){
     if(!curr.chooser) return;
     e.preventDefault();
     curr.chooser.choosed($(this));
-    curr.chooser = null;
 }
 
 
