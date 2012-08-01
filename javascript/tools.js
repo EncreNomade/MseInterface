@@ -1603,10 +1603,15 @@ Speaker.prototype = {
             elem.append('<input type="text" value="'+name+'" />');
             elem.deletable(null, true);
             var obj = $('#mood_selector').data('spkObj');
-            var dz = new DropZone(obj.changeVisageInEditor,{'height':'100%','border-width': '1px'});
+            var dz = new DropZone(obj.changeVisageInEditor,{'height':'100%','border-width': '2px'});
             dz.jqObj.data('type','image');
             elem.append(dz.jqObj);
             $('#mood_selector').append(elem);
+			dz.jqObj.css( "top" , elem.children("img").position().top+"px" );
+			dz.jqObj.css( "width" , elem.children("img").width()+"px" );
+			dz.jqObj.css( "height" , elem.children("img").height()+"px" );
+			dz.jqObj.css( "z-index" , elem.children("img").css( "z-index" ) +1 );
+			dz.jqObj.css( "position" , "absolute" );
         }
         dialog.showPopup('Edition speaker',450, 410,'Modifier');
         // show ressource panel
@@ -1661,10 +1666,16 @@ Speaker.prototype = {
                 elem.deletable(null,true);
             }
             
-            var dz = new DropZone(self.changeVisageInEditor,{'height':'100%','border-width': '1px'});
+            var dz = new DropZone(self.changeVisageInEditor,{'height':'100%','border-width': '2px'});
             dz.jqObj.data('type','image');
             elem.append(dz.jqObj);
             moodSelector.append(elem);
+			
+			dz.jqObj.css( "top" , elem.children("img").position().top+"px" );
+			dz.jqObj.css( "width" , elem.children("img").width()+"px" );
+			dz.jqObj.css( "height" , elem.children("img").height()+"px" );
+			dz.jqObj.css( "z-index" , elem.children("img").css( "z-index" ) +1 );
+			dz.jqObj.css( "position" , "absolute" );
         }
         
         dialog.confirm.click({'speaker':self}, self.validChanges);
