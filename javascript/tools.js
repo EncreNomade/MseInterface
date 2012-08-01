@@ -1569,7 +1569,9 @@ Speaker.prototype = {
 		return ($.inArray(key, Object.keys(this.portrait)) != -1);
 	},
 	addMood : function( key , image_id ){
-		this.portrait[ key ] = image_id;
+		if( !image_id )
+			image_id= null;
+		this.portrait[ key.toLowerCase() ] = image_id;
 	},
 	renameMood : function( oldName , newName ){
 		this.portrait[ newName ] = this.portrait[ oldName ];
@@ -1585,8 +1587,8 @@ Speaker.prototype = {
         $(this).siblings('img').prop('name',id);
     },
     showSpeakerOnEditor: function(src){
+		// because that function is call by a click, this is not the object himslef,
         var self = srcMgr.getSource(src.data('srcId'));
-        
         function dropVisage(e){
             e = e.originalEvent;
             e.stopPropagation();
@@ -1601,10 +1603,15 @@ Speaker.prototype = {
             elem.append('<input type="text" value="'+name+'" />');
             elem.deletable(null, true);
             var obj = $('#mood_selector').data('spkObj');
-            var dz = new DropZone(obj.changeVisageInEditor,{'height':'100%','border-width': '1px'});
+            var dz = new DropZone(obj.changeVisageInEditor,{'height':'100%','border-width': '2px'});
             dz.jqObj.data('type','image');
             elem.append(dz.jqObj);
             $('#mood_selector').append(elem);
+			dz.jqObj.css( "top" , elem.children("img").position().top+"px" );
+			dz.jqObj.css( "width" , elem.children("img").width()+"px" );
+			dz.jqObj.css( "height" , elem.children("img").height()+"px" );
+			dz.jqObj.css( "z-index" , elem.children("img").css( "z-index" ) +1 );
+			dz.jqObj.css( "position" , "absolute" );
         }
         dialog.showPopup('Edition speaker',450, 410,'Modifier');
         // show ressource panel
@@ -1659,10 +1666,16 @@ Speaker.prototype = {
                 elem.deletable(null,true);
             }
             
-            var dz = new DropZone(self.changeVisageInEditor,{'height':'100%','border-width': '1px'});
+            var dz = new DropZone(self.changeVisageInEditor,{'height':'100%','border-width': '2px'});
             dz.jqObj.data('type','image');
             elem.append(dz.jqObj);
             moodSelector.append(elem);
+			
+			dz.jqObj.css( "top" , elem.children("img").position().top+"px" );
+			dz.jqObj.css( "width" , elem.children("img").width()+"px" );
+			dz.jqObj.css( "height" , elem.children("img").height()+"px" );
+			dz.jqObj.css( "z-index" , elem.children("img").css( "z-index" ) +1 );
+			dz.jqObj.css( "position" , "absolute" );
         }
         
         dialog.confirm.click({'speaker':self}, self.validChanges);
@@ -1695,7 +1708,7 @@ Speaker.prototype = {
 				cmds.push( new AddMoodCmd( spkObj , moodName , srcimg ) );
 			else{
 				state[ moodName ] = false;
-				if( ( !srcimg  ) || spkObj.getPictSrc( moodName ) != srcimg )
+				if( ( !srcimg != !spkObj.getPictSrc( moodName ) ) || spkObj.getPictSrc( moodName ) != srcimg )
 					cmds.push( new ModifyMoodSrcCmd( spkObj , moodName , srcimg ) );
 			}
         });
@@ -1717,7 +1730,7 @@ Speaker.prototype = {
     clearPortraits: function(){
         this.portrait = { neutre : null };
     },
-	getPictSrc : function( key ){
+	getPictSrc : function( key ){	// unused?
 		if( !key )
 			return this.portrait[ "neutre" ];
 		return this.portrait[ key ];
@@ -1729,7 +1742,7 @@ Speaker.prototype = {
 		
 		return $( ".speaker[data-who="+ this.name +"]" );
 	},
-	getIcon : function(){
+	getIcon : function(){  			// unused?
 		if( Object.keys(this.portrait).length < 1 )
 			return;
 		if( this.hasMood( "neutre" ) )
