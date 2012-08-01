@@ -576,8 +576,11 @@ $.extend(AddArticleCmd.prototype, {
             this.state = "FAILEXE";
             return false;
         }
-        addArticle(this.manager, this.name, this.params, this.content);
-        this.state = "SUCCESS";
+        
+        var res = addArticle(this.manager, this.name, this.params, this.content);
+        if(res === false) this.state = "FAILEXE";
+        else this.state = "SUCCESS";
+        
         return this.step;
     },
     undo: function() {
