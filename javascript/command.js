@@ -1125,7 +1125,7 @@ $.extend( ModifySpeakMoodCmd.prototype, {
  */
 var AddMoodCmd = function(  speaker , key , image_id ){
 	this.speaker = speaker;
-	this.key = key;
+	this.key = key.toLowerCase();
 	this.image_id = image_id;
 	this.speaks;
 	

@@ -1569,7 +1569,9 @@ Speaker.prototype = {
 		return ($.inArray(key, Object.keys(this.portrait)) != -1);
 	},
 	addMood : function( key , image_id ){
-		this.portrait[ key ] = image_id;
+		if( !image_id )
+			image_id= null;
+		this.portrait[ key.toLowerCase() ] = image_id;
 	},
 	renameMood : function( oldName , newName ){
 		this.portrait[ newName ] = this.portrait[ oldName ];
@@ -1695,7 +1697,7 @@ Speaker.prototype = {
 				cmds.push( new AddMoodCmd( spkObj , moodName , srcimg ) );
 			else{
 				state[ moodName ] = false;
-				if( ( !srcimg  ) || spkObj.getPictSrc( moodName ) != srcimg )
+				if( ( !srcimg != !spkObj.getPictSrc( moodName ) ) || spkObj.getPictSrc( moodName ) != srcimg )
 					cmds.push( new ModifyMoodSrcCmd( spkObj , moodName , srcimg ) );
 			}
         });

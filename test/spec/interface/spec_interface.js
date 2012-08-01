@@ -780,16 +780,31 @@ describe("Active bar label function test", function() {
         }
     });
 });
+
+
+
 describe(" showSpeakerOnEditor ", function() {
 	describe( "assume the command associate work properly, ( see speaks runner test )", function(){} );
 	
 	var speaker_name = "timmyTheTurtle";
-	var speaker_id = "timmyTheTurtle";
-	var color = "#A34D21";
+	var speaker_id = null;
+	var img_id = null;
 	beforeEach( function(){
-		if( !speaker_id || !srcMgr.isExist( speaker_id ) ){
+	
+		if( !speaker_id || !srcMgr.isExist( speaker_id ) || true )
 			speaker_id = srcMgr.addSource( "speaker" , new Speaker( speaker_name ) );
-		}
+		
+		if( !img_id || !srcMgr.isExist( img_id )  )
+			img_id = srcMgr.addSource( "image" , "./images/UI/addscript.jpg" );
+		
+		
+		CommandMgr.executeCmd( new ModifyMoodSrcCmd(  srcMgr.getSource( speaker_id ) , "neutre" , img_id ) );
+		CommandMgr.executeCmd( new AddMoodCmd(  srcMgr.getSource( speaker_id ) , "happy" , img_id ) );
+		CommandMgr.executeCmd( new AddMoodCmd(  srcMgr.getSource( speaker_id ) , "sad" , img_id ) );
+		CommandMgr.executeCmd( new AddMoodCmd(  srcMgr.getSource( speaker_id ) , "sick" , null ) );
+		CommandMgr.executeCmd( new AddMoodCmd(  srcMgr.getSource( speaker_id ) , "supersad" , img_id ) );
+		CommandMgr.executeCmd( new AddMoodCmd(  srcMgr.getSource( speaker_id ) , "patient" , null ) );
+		
 		
 		var e = $("<div/>").data('srcId' , speaker_id );
 		
@@ -798,46 +813,481 @@ describe(" showSpeakerOnEditor ", function() {
 	afterEach( function(){
 		dialog.close();
 	});
-	it(" check the portraits collection coherence with the speaker object", function() {
-		var spk = srcMgr.getSource( speaker_id );
-		
-		var collection = $("#popup_dialog").find( ".popup_body #mood_selector");
-		
-		for( var i in spk.portrait ){
+	describe( "panel setUp with correct params " , function(){
+		it(" check the portraits collection coherence with the speaker object", function() {
+			var spk = srcMgr.getSource( speaker_id );
 			
-			var moodDOM = collection.find( "div[data-related="+i+"]" );
+			var collection = $("#popup_dialog").find( ".popup_body #mood_selector");
 			
-			expect( moodDOM.length ).toBe( 1 );
-			expect( moodDOM.find( "input[type=text]" ).val() == i || moodDOM.find( "p" ).text()== i );
-			expect( moodDOM.find( "img" ).prop("name")  ).toBe( spk.portrait[ i ] ?  spk.portrait[ i ] : ""  );
-		}
-	});
-	it(" check the neutre exeption", function() {
-		var spk = srcMgr.getSource( speaker_id );
-		
-		var collection = $("#popup_dialog").find( ".popup_body #mood_selector");
-		
-		for( var i in spk.portrait ){
-			
-			var moodDOM = collection.find( "div[data-related="+i+"]" );
-			
-			if( i == "neutre" ){
-				expect( moodDOM.find( "input[type=text]" ).length ).toBe( 0 );
-				expect( moodDOM.find( "p" ).length ).toBe( 1 );
-			}else{
-				expect( moodDOM.find( "input[type=text]" ).length ).toBe( 1 );
-				expect( moodDOM.find( "p" ).length ).toBe( 0 );
+			for( var i in spk.portrait ){
+				
+				var moodDOM = collection.find( "div[data-related="+i+"]" );
+				
+				expect( moodDOM.length ).toBe( 1 );
+				expect( moodDOM.find( "input[type=text]" ).val() == i || moodDOM.find( "p" ).text()== i );
+				expect( moodDOM.find( "img" ).prop("name")  ).toBe( spk.portrait[ i ] ?  spk.portrait[ i ] : ""  );
 			}
-		}
+		});
+		it(" check the color", function() {
+			var bulle = $("#popup_dialog").find( ".popup_body #bulle_couleur");
+			var spk = srcMgr.getSource( speaker_id );
+			
+			expect( getColorHex( bulle.attr("value") ) ).toBe( getColorHex( spk.color ) );
+		});
+		it(" check the name", function() {
+			var bulle = $("#popup_dialog").find( ".popup_body #speaker_name");
+			var spk = srcMgr.getSource( speaker_id );
+			
+			expect(  bulle.attr("value") ).toBe( spk.name );
+		});
+		it(" check the neutre exeption", function() {
+			var spk = srcMgr.getSource( speaker_id );
+			
+			var collection = $("#popup_dialog").find( ".popup_body #mood_selector");
+			
+			for( var i in spk.portrait ){
+				
+				var moodDOM = collection.find( "div[data-related="+i+"]" );
+				
+				if( i == "neutre" ){
+					expect( moodDOM.find( "input[type=text]" ).length ).toBe( 0 );
+					expect( moodDOM.find( "p" ).length ).toBe( 1 );
+				}else{
+					expect( moodDOM.find( "input[type=text]" ).length ).toBe( 1 );
+					expect( moodDOM.find( "p" ).length ).toBe( 0 );
+				}
+			}
+		});
+		it(" try to delete the neutre ( suppose to still be here after )", function() {
+			var spk = srcMgr.getSource( speaker_id );
+			
+			var collection = $("#popup_dialog").find( ".popup_body #mood_selector");
+			
+			var neutreDOM = collection.find( "div[data-related=neutre]" );
+			
+			neutreDOM.find( ".del_container" ).click();
+			neutreDOM.find( ".del_container" ).children().click();
+			
+			expect( collection.find( "div[data-related=neutre]" ).length ).toBe( 1 );
+			expect( collection.find( "div[data-related=neutre]" ).find( "img" ).prop("name") ).toBe( "" );
+		});
+		it(" delete others", function() {
+			var spk = srcMgr.getSource( speaker_id );
+			
+			var collection = $("#popup_dialog").find( ".popup_body #mood_selector");
+			
+			for( var i in spk.portrait ){
+			
+				if( i == "neutre" )
+					continue;
+					
+				var spkDOM = collection.find( "div[data-related="+i+"]" );
+				
+				spkDOM.find( ".del_container" ).click();
+			
+				expect( collection.find( "div[data-related="+i+"]" ).length ).toBe( 1 );
+			}
+		});
 	});
-	it(" try to delete the neutre", function() {
-		var spk = srcMgr.getSource( speaker_id );
+	describe( "param transfer to speaker obj when confirm " , function(){
+		var save = null;
+		beforeEach( function(){
+			var spk = srcMgr.getSource( speaker_id );
+				
+			save =[];
+			for( var i in spk.portrait )
+				save.push( { name:i , src:spk.portrait[i] } );
+		});
+		xit(" valid change called " , function(){
+			
+			var spk = srcMgr.getSource( speaker_id );
+			
+			spyOn( spk , "validChanges" );
+			
+			dialog.confirm.click();
+			
+			expect( spk.validChanges ).toHaveBeenCalled();
+			
+		});
+		describe( " no change" , function(){
+			it(" speaker obj validity", function() {
+				
+				var spk = srcMgr.getSource( speaker_id );
+				
+				dialog.confirm.click();
+				
+				for( var i = 0 ; i < save.length ; i ++  ){
+					expect( spk.hasMood( save[i].name ) ).toBe( true );
+					expect( spk.portrait[ save[i].name ] ? spk.portrait[ save[i].name ] : null ).toBe( save[i].src ? save[i].src : null  ) ;
+				}
+			});
+		});
+		describe( " add mood" , function(){
+			var name = "pokerFace";
+			var src = img_id;
+			beforeEach( function(){
+				name = "pokerface";
+				src = img_id;
+				
+				var elem = $('<div data-related="'+name+'" ><img  src="'+srcMgr.getSource( src )+'" name="'+src+'"></div>');
+	            elem.append('<input type="text" value="'+name+'" />');
+	            elem.deletable(null, true);
+				
+				var collection = $("#popup_dialog").find( ".popup_body #mood_selector");
+				
+				collection.append( elem );
+			});
+			it(" cmd called" , function(){
+			
+				var spk = srcMgr.getSource( speaker_id );
+				
+				spyOn( CommandMgr , "executeCmd" );
+				
+				dialog.confirm.click();
+				
+				expect(CommandMgr.executeCmd).toHaveBeenCalled();
+				
+				// because the command can be a multiple command ( and is actualy ), we match the toString return
+				
+				var match = new AddMoodCmd( spk , name , src ).toString();
+				var success = false;
+				for( var i = 0 ; i < CommandMgr.executeCmd.calls.length ; i ++ ){
+					var arg = CommandMgr.executeCmd.calls[ i ].args[ 0 ];
+					
+					if( arg.toString().indexOf( match ) != -1  )
+						success = true;
+				}
+				expect(success).toBe(true);
+			});
+			it(" speaker obj validity", function() {
+				
+				var spk = srcMgr.getSource( speaker_id );
+				
+				dialog.confirm.click();
+				for( var i = 0 ; i < save.length ; i ++  ){
+					expect( spk.hasMood( save[i].name ) ).toBe( true );
+					expect( spk.portrait[ save[i].name ] ? spk.portrait[ save[i].name ] : null ).toBe( save[i].src ? save[i].src : null  ) ;
+				}
+				expect( spk.hasMood( name )  ).toBe( true );
+				expect( spk.portrait[name] ? spk.portrait[ name ] : null ).toBe( src ? src : null ) ;
+			});
 		
-		var collection = $("#popup_dialog").find( ".popup_body #mood_selector");
+		});		
+		describe( " add mood without src" , function(){
+			var name = "pokerFace";
+			var src = null;
+			beforeEach( function(){
+				name = "pokerface";
+				src = img_id;
+				
+				var elem = $('<div data-related="'+name+'" ><img  src="'+srcMgr.getSource( src )+'" name="'+src+'"></div>');
+	            elem.append('<input type="text" value="'+name+'" />');
+	            elem.deletable(null, true);
+				
+				var collection = $("#popup_dialog").find( ".popup_body #mood_selector");
+				
+				collection.append( elem );
+			});
+			it(" cmd called" , function(){
+			
+				var spk = srcMgr.getSource( speaker_id );
+				
+				spyOn( CommandMgr , "executeCmd" );
+				
+				dialog.confirm.click();
+				
+				expect(CommandMgr.executeCmd).toHaveBeenCalled();
+				
+				// because the command can be a multiple command ( and is actualy ), we match the toString return
+				
+				var match = new AddMoodCmd( spk , name , src ).toString();
+				var success = false;
+				for( var i = 0 ; i < CommandMgr.executeCmd.calls.length ; i ++ ){
+					var arg = CommandMgr.executeCmd.calls[ i ].args[ 0 ];
+					
+					if( arg.toString().indexOf( match ) != -1  )
+						success = true;
+				}
+				expect(success).toBe(true);
+			});
+			it(" speaker obj validity", function() {
+				
+				var spk = srcMgr.getSource( speaker_id );
+				
+				dialog.confirm.click();
+				for( var i = 0 ; i < save.length ; i ++  ){
+					expect( spk.hasMood( save[i].name ) ).toBe( true );
+					expect( spk.portrait[ save[i].name ] ? spk.portrait[ save[i].name ] : null ).toBe( save[i].src ? save[i].src : null  ) ;
+				}
+				expect( spk.hasMood( name )  ).toBe( true );
+				expect( spk.portrait[name] ? spk.portrait[ name ] : null ).toBe( src ? src : null ) ;
+			});
 		
-		var moodDOM = collection.find( "div[data-related=neutre]" );
+		});	
+		describe( " del mood" , function(){
+			var name = null;
+			beforeEach( function(){
+				
+				var collection = $("#popup_dialog").find( ".popup_body #mood_selector");
+				
+				var target = $( collection.children().get(1) );
+				
+				if( target.attr( "data-related" ) == "neutre" )
+					target = $( collection.children().get(0) );
+				
+				name = target.attr( "data-related" );
+				
+				target.remove();
+			});
+			it(" cmd called" , function(){
+			
+				var spk = srcMgr.getSource( speaker_id );
+				
+				spyOn( CommandMgr , "executeCmd" );
+				
+				dialog.confirm.click();
+				
+				expect(CommandMgr.executeCmd).toHaveBeenCalled();
+				
+				// because the command can be a multiple command ( and is actualy ), we match the toString return
+				
+				var match = new DelMoodCmd( spk , name ).toString();
+				var success = false;
+				for( var i = 0 ; i < CommandMgr.executeCmd.calls.length ; i ++ ){
+					var arg = CommandMgr.executeCmd.calls[ i ].args[ 0 ];
+					
+					if( arg.toString().indexOf( match ) != -1  )
+						success = true;
+				}
+				expect(success).toBe(true);
+			});
+			it(" speaker obj validity", function() {
+				
+				var spk = srcMgr.getSource( speaker_id );
+				
+				dialog.confirm.click();
+				for( var i = 0 ; i < save.length ; i ++  ){
+					if( save[i].name == name ){
+						expect( spk.hasMood( save[i].name ) ).toBe( false );
+					}else{
+						expect( spk.hasMood( save[i].name ) ).toBe( true );
+						expect( spk.portrait[ save[i].name ] ? spk.portrait[ save[i].name ] : null ).toBe( save[i].src ? save[i].src : null  ) ;
+					}
+				}
+			});
 		
-		moodDOM.find( "div.del_container" ).click();
+		});
+		describe( " modify mood src" , function(){
+			var name = null;
+			beforeEach( function(){
+				src = img_id;
+				
+				var collection = $("#popup_dialog").find( ".popup_body #mood_selector");
+				
+				var target = collection.children("[data-related=patient]");
+				
+				target.children("img").attr( "name" , src );
+				target.children("img").attr( "src" , srcMgr.getSource( src ) );
+				
+				name = "patient";
+			});
+			it(" cmd called" , function(){
+			
+				var spk = srcMgr.getSource( speaker_id );
+				
+				spyOn( CommandMgr , "executeCmd" );
+				
+				dialog.confirm.click();
+				
+				expect(CommandMgr.executeCmd).toHaveBeenCalled();
+				
+				// because the command can be a multiple command ( and is actualy ), we match the toString return
+				
+				var match = new ModifyMoodSrcCmd( spk , name , src ).toString();
+				var success = false;
+				for( var i = 0 ; i < CommandMgr.executeCmd.calls.length ; i ++ ){
+					var arg = CommandMgr.executeCmd.calls[ i ].args[ 0 ];
+					
+					if( arg.toString().indexOf( match ) != -1  )
+						success = true;
+				}
+				expect(success).toBe(true);
+			});
+			it(" speaker obj validity", function() {
+				
+				var spk = srcMgr.getSource( speaker_id );
+				
+				dialog.confirm.click();
+				for( var i = 0 ; i < save.length ; i ++  ){
+					if( save[i].name == name ){
+						expect( spk.hasMood( save[i].name ) ).toBe( true );
+						expect( spk.portrait[ save[i].name ] ? spk.portrait[ save[i].name ] : null ).toBe( src ? src : null  ) ;
+					}else{
+						expect( spk.hasMood( save[i].name ) ).toBe( true );
+						expect( spk.portrait[ save[i].name ] ? spk.portrait[ save[i].name ] : null ).toBe( save[i].src ? save[i].src : null  ) ;
+					}
+				}
+			});
+		});
+		describe( " modify mood src to null" , function(){
+			var name = null;
+			beforeEach( function(){
+				src = null;
+				
+				var collection = $("#popup_dialog").find( ".popup_body #mood_selector");
+				
+				var target = collection.children("[data-related=neutre]");
+				
+				target.children("img").attr( "name" , src );
+				target.children("img").attr( "src" , srcMgr.getSource( src ) );
+				
+				name = "neutre";
+			});
+			it(" cmd called" , function(){
+			
+				var spk = srcMgr.getSource( speaker_id );
+				
+				spyOn( CommandMgr , "executeCmd" );
+				
+				dialog.confirm.click();
+				
+				expect(CommandMgr.executeCmd).toHaveBeenCalled();
+				
+				// because the command can be a multiple command ( and is actualy ), we match the toString return
+				
+				var match = new ModifyMoodSrcCmd( spk , name , src ).toString();
+				var success = false;
+				for( var i = 0 ; i < CommandMgr.executeCmd.calls.length ; i ++ ){
+					var arg = CommandMgr.executeCmd.calls[ i ].args[ 0 ];
+					
+					if( arg.toString().indexOf( match ) != -1  )
+						success = true;
+				}
+				expect(success).toBe(true);
+			});
+			it(" speaker obj validity", function() {
+				
+				var spk = srcMgr.getSource( speaker_id );
+				
+				dialog.confirm.click();
+				for( var i = 0 ; i < save.length ; i ++  ){
+					if( save[i].name == name ){
+						expect( spk.hasMood( save[i].name ) ).toBe( true );
+						expect( spk.portrait[ save[i].name ] ? spk.portrait[ save[i].name ] : null ).toBe( src ? src : null  ) ;
+					}else{
+						expect( spk.hasMood( save[i].name ) ).toBe( true );
+						expect( spk.portrait[ save[i].name ] ? spk.portrait[ save[i].name ] : null ).toBe( save[i].src ? save[i].src : null  ) ;
+					}
+				}
+			});
+		});
+		describe( " rename mood" , function(){
+			var name = null;
+			var newname = null;
+			beforeEach( function(){
+				src = null;
+				
+				var collection = $("#popup_dialog").find( ".popup_body #mood_selector");
+				
+				var target = collection.children("[data-related=happy]");
+				
+				target.children("input[type=text]").attr( "value" , "rage" );
+				
+				src = target.children("img").attr( "name" );
+				newname = "rage";
+				name = "happy";
+			});
+			it(" cmd called - delMood and addMood will be called ( as if the mood with the prev name had been deleted, and a mood with new name had been added )" , function(){
+			
+				var spk = srcMgr.getSource( speaker_id );
+				
+				spyOn( CommandMgr , "executeCmd" );
+				
+				dialog.confirm.click();
+				
+				expect(CommandMgr.executeCmd).toHaveBeenCalled();
+				
+				// because the command can be a multiple command ( and is actualy ), we match the toString return
+				
+				var match = new AddMoodCmd( spk , newname , src ).toString();
+				var success = false;
+				for( var i = 0 ; i < CommandMgr.executeCmd.calls.length ; i ++ ){
+					var arg = CommandMgr.executeCmd.calls[ i ].args[ 0 ];
+					
+					if( arg.toString().indexOf( match ) != -1  )
+						success = true;
+				}
+				expect(success).toBe(true);
+				
+				var match = new DelMoodCmd( spk , name  ).toString();
+				var success = false;
+				for( var i = 0 ; i < CommandMgr.executeCmd.calls.length ; i ++ ){
+					var arg = CommandMgr.executeCmd.calls[ i ].args[ 0 ];
+					
+					if( arg.toString().indexOf( match ) != -1  )
+						success = true;
+				}
+				expect(success).toBe(true);
+			});
+			it(" speaker obj validity", function() {
+				
+				var spk = srcMgr.getSource( speaker_id );
+				
+				dialog.confirm.click();
+				for( var i = 0 ; i < save.length ; i ++  ){
+					if( save[i].name == name ){
+						expect( spk.hasMood( save[i].name ) ).toBe( false );
+					}else{
+						expect( spk.hasMood( save[i].name ) ).toBe( true );
+						expect( spk.portrait[ save[i].name ] ? spk.portrait[ save[i].name ] : null ).toBe( save[i].src ? save[i].src : null  ) ;
+					}
+				}
+				expect( spk.hasMood( newname ) ).toBe( true );
+				expect( spk.portrait[ newname ] ? spk.portrait[ newname ] : null ).toBe( src ? src : null  ) ;
+			});
+		});
+		describe( " change color" , function(){
+			var color = null;
+			beforeEach( function(){
+				src = null;
+				
+				var bulle = $("#popup_dialog").find( ".popup_body #bulle_couleur");
+				
+				color = "#A54F23";
+				
+				bulle.attr( "value" , color );
+			});
+			it(" cmd called " , function(){
+			
+				var spk = srcMgr.getSource( speaker_id );
+				
+				spyOn( CommandMgr , "executeCmd" );
+				
+				dialog.confirm.click();
+				
+				expect(CommandMgr.executeCmd).toHaveBeenCalled();
+				
+				// because the command can be a multiple command ( and is actualy ), we match the toString return
+				
+				var match = new ModifyColorSpeakCmd( spk , color ).toString();
+				var success = false;
+				for( var i = 0 ; i < CommandMgr.executeCmd.calls.length ; i ++ ){
+					var arg = CommandMgr.executeCmd.calls[ i ].args[ 0 ];
+					
+					if( arg.toString().indexOf( match ) != -1  )
+						success = true;
+				}
+				expect(success).toBe(true);
+				
+			});
+			it(" speaker obj validity", function() {
+				var spk = srcMgr.getSource( speaker_id );
+				
+				dialog.confirm.click();
+				
+				expect( getColorHex( spk.color ) ).toBe( getColorHex( color ) );
+			});
+		});
 	});
 });
 	
