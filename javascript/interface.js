@@ -7,18 +7,21 @@
            Arthur Brongniart
  * Copyright, Encre Nomade
  */
-
+ 
 var msgCenter =(function(){
-    // private
-    var $msgCenter =$('<div id="msgCenter"><ul></ul></div>');
-    var messageList = false;
-    var max = 5;
+    var public = new function MessageCenter(){};
     
-    function fadeIn(jQmsg){jQmsg.addClass('fadeIn');}
-    function fadeOut(jQmsg){jQmsg.removeClass('fadeIn');}
+    // private
+    var $msgCenter =$('<div id="msgCenter"><ul></ul></div>'),
+        $staticMsgCenter =$('<div id="msgCenterStatic"><ul></ul></div>'),
+        messageList = false,
+        max = 5;    
+    
+    function fadeIn(jQmsg){jQmsg.addClass('fadeIn');} // it show the message
+    function fadeOut(jQmsg){jQmsg.removeClass('fadeIn');} // it hide
     function removeMsg(jQmsg){
         jQmsg.remove();
-        if(messageList.children('li').length == 0)
+        if(messageList.children('li').length == 0) // last message, remove the container
             $msgCenter.detach();
     }
     
@@ -32,41 +35,54 @@ var msgCenter =(function(){
     function show(jQmsg){setTimeout(function(){ fadeIn(jQmsg); jQmsg = null; }, 1);}
 
     
-    //public
-    return {
-        send: function(mes, time){
-            if(!messageList){ // initiate
-                messageList = $msgCenter.children('ul');
-            }
-            if(messageList.children('li').length == 0)
-                $msgCenter.prependTo('body');
-                
-            var message = $('<li></li>');
-            message.append(mes);
-            messageList.prepend(message);
+    //public    
+    public.send = function(mes, time){
+        if(!messageList){ // initiate
+            messageList = $msgCenter.children('ul');
+        }
+        if(messageList.children('li').length == 0)
+            $msgCenter.prependTo('body');
             
-            time = isNaN(time) ? 3000 : time;
-            show(message);
-            var ids = hideTimeOut(message, time);
-            
-            message.hover(
-                function(){clearTimeout(ids[0]); clearTimeout(ids[1]);},
-                function(){ids = hideTimeOut(message)}
-            );
-            
-            messageList.children('li').each(function(i){
-                if(i >= max) 
-                    hideTimeOut($(this));
-            });
-        },
-        getList: function(){
-            if(!messageList) 
-                messageList = $msgCenter.children('ul');
-            return messageList;
-        },
-        getMax: function(){ return max; }
+        var message = $('<li></li>');
+        message.append(mes);
+        messageList.prepend(message);
+        
+        show(message);
+        
+        if(time === 0 || time === 'static') return message; // the message will stay in the list
+        
+        time = isNaN(time) ? 3000 : time;
+        this.closeMessage(message, time);
+        
+        return message;
+    };
+    
+    public.getList = function(){
+        if(!messageList) 
+            messageList = $msgCenter.children('ul');
+        return messageList;
     }
+    
+    public.getMax = function(){ return max; };
+    
+    public.closeMessage = function(jQMsg, time){
+        time = isNaN(time) ? 0 : time; // if no time, close immediately else wait the time
+        var ids = hideTimeOut(jQMsg, time);
+        
+        jQMsg.hover(
+            function(){clearTimeout(ids[0]); clearTimeout(ids[1]);},
+            function(){ids = hideTimeOut(jQMsg)}
+        );
+        
+        messageList.children('li').each(function(i){
+            if(i >= max)
+                hideTimeOut($(this));
+        });
+    };
+    
+    return public;
 })();
+
 var pages = {};
 var managers = {};
 var dialog, srcMgr;
