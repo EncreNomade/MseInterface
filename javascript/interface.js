@@ -768,7 +768,7 @@ function modifyScriptDialog(scriptsList, defaultScript, relatSrc) {
         });
     }
     
-    dialog.confirm.click({sourceId: srcid, sourceType: srcType},validScript);
+    dialog.confirm.click({sourceId: srcid, sourceType: srcType}, validScript);
 }
 
 function validScript(e){

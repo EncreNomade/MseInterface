@@ -128,6 +128,9 @@ describe("Close a editable tool editor", function() {
         var panel = $("<div id='testeditor' class='central_tools'></div");
         tool = new EditableTool(panel, $('#texticon'));
     });
+    afterEach(function() {
+        $('#testeditor').remove();
+    });
     
     it(" - will execute a AddToSceneCmd", function() {
         spyOn(CommandMgr, 'executeCmd');
@@ -146,5 +149,67 @@ describe("Close a editable tool editor", function() {
         expect(tool.editor.detach).toHaveBeenCalled();
         expect(tool.toolsPanel.hide).toHaveBeenCalled();
         expect(tool.editor.children().length).toEqual(0);
+    });
+});
+
+
+
+describe("Get editor parent and get target", function() {
+    var pagelis = null, tool;
+    
+    beforeEach(function() {
+        if(!pagelis) {
+            // Init tool
+            var panel = $("<div id='testeditor' class='central_tools'></div");
+            tool = new EditableTool(panel, $('#texticon'));
+            
+            for(var i = 0; i < 5; ++i) {
+                // Create page
+                var page = CommandMgr.executeCmd(new AddPageCmd("newpage"+i));
+                // Create layer
+                var mgr = page.data('StepManager');
+                for(var j = 0; j < 3; ++j)
+                    CommandMgr.executeCmd(new AddStepCmd(mgr, "page"+i+"step"+j));
+            }
+            pagelis = $('#newpage').prevAll();
+        }
+    });
+    
+    it(" - Editor parent will be the current page or the animation editor", function() {
+        pagelis.each(function() {
+            $(this).click();
+            var name = $(this).text();
+            var page = $('#'+name);
+            expect(tool.getEditorParent().get(0)).toEqual(page.get(0));
+            tool.active();
+            expect(tool.editor.parent().get(0)).toEqual(page.get(0));
+            tool.close();
+        });
+        
+        animeTool.active();
+        expect(tool.getEditorParent().get(0)).toEqual(animeTool.editor.get(0));
+        tool.active();
+        expect(tool.editor.parent().get(0)).toEqual(animeTool.editor.get(0));
+        tool.close();
+        animeTool.close();
+    });
+    
+    it(" - Target will be the current step or the frame on top for animation editor", function() {
+        pagelis.each(function() {
+            $(this).click();
+            var name = $(this).text();
+            var page = $('#'+name);
+            var mgr = page.data('StepManager');
+            mgr.manager.children('.layer_expo').each(function() {
+                // Change step
+                $(this).click();
+                var stepn = $(this).data('stepN');
+                var step = mgr.getStep(stepn);
+                
+                tool.active();
+                expect(tool.getTarget().get(0)).toEqual(step.get(0));
+                tool.close();
+            });
+        });
     });
 });
