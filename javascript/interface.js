@@ -724,8 +724,8 @@ function modifyScriptDialog(scriptsList, defaultScript, relatSrc) {
     select += '</select></p>';
     dialog.main.append(select);
     $('#script_name').parent().css('font-weight', 'bold');
-    $('#script_name').change({script: scriptsList},function(e){
-        modifyScriptDialog(e.data.script, $(this).val());
+    $('#script_name').change({script: scriptsList, src: relatSrc},function(e){
+        modifyScriptDialog(e.data.script, $(this).val(), e.data.src);
     });
     
     var choosedScript = $('#script_name').val();
@@ -1346,7 +1346,8 @@ function generateLines( content, font, width, lineHeight ){
 
 
 function addArticle(manager, name, params, content) {
-    if(!params) params = {};
+    if(!params)
+        return false;
     params.type = 'ArticleLayer';
 	var step = manager.addStep(name, params, true);
 	var article = $('<div class="article" defile="'+(params.defile?params.defile:"false")+'"></div>');
