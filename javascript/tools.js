@@ -1581,8 +1581,8 @@ Speaker.prototype = {
         $(this).siblings('img').prop('name',id);
     },
     showSpeakerOnEditor: function(src){
+		// because that function is call by a click, this is not the object himslef,
         var self = srcMgr.getSource(src.data('srcId'));
-        
         function dropVisage(e){
             e = e.originalEvent;
             e.stopPropagation();
@@ -1713,7 +1713,7 @@ Speaker.prototype = {
     clearPortraits: function(){
         this.portrait = { neutre : null };
     },
-	getPictSrc : function( key ){
+	getPictSrc : function( key ){	// unused?
 		if( !key )
 			return this.portrait[ "neutre" ];
 		return this.portrait[ key ];
@@ -1725,7 +1725,7 @@ Speaker.prototype = {
 		
 		return $( ".speaker[data-who="+ this.name +"]" );
 	},
-	getIcon : function(){
+	getIcon : function(){  			// unused?
 		if( Object.keys(this.portrait).length < 1 )
 			return;
 		if( this.hasMood( "neutre" ) )

@@ -777,3 +777,75 @@ describe("Active bar label function test", function() {
         }
     });
 });
+describe(" showSpeakerOnEditor ", function() {
+	describe( "assume the command associate work properly, ( see speaks runner test )", function(){} );
+	
+	var speaker_name = "timmyTheTurtle";
+	var speaker_id = "timmyTheTurtle";
+	var color = "#A34D21";
+	beforeEach( function(){
+		if( !speaker_id || !srcMgr.isExist( speaker_id ) ){
+			speaker_id = srcMgr.addSource( "speaker" , new Speaker( speaker_name ) );
+		}
+		
+		var e = $("<div/>").data('srcId' , speaker_id );
+		
+		srcMgr.getSource( speaker_id ).showSpeakerOnEditor( e );
+	});
+	afterEach( function(){
+		dialog.close();
+	});
+	it(" check the portraits collection coherence with the speaker object", function() {
+		var spk = srcMgr.getSource( speaker_id );
+		
+		var collection = $("#popup_dialog").find( ".popup_body #mood_selector");
+		
+		for( var i in spk.portrait ){
+			
+			var moodDOM = collection.find( "div[data-related="+i+"]" );
+			
+			expect( moodDOM.length ).toBe( 1 );
+			expect( moodDOM.find( "input[type=text]" ).val() == i || moodDOM.find( "p" ).text()== i );
+			expect( moodDOM.find( "img" ).prop("name")  ).toBe( spk.portrait[ i ] ?  spk.portrait[ i ] : ""  );
+		}
+	});
+	it(" check the neutre exeption", function() {
+		var spk = srcMgr.getSource( speaker_id );
+		
+		var collection = $("#popup_dialog").find( ".popup_body #mood_selector");
+		
+		for( var i in spk.portrait ){
+			
+			var moodDOM = collection.find( "div[data-related="+i+"]" );
+			
+			if( i == "neutre" ){
+				expect( moodDOM.find( "input[type=text]" ).length ).toBe( 0 );
+				expect( moodDOM.find( "p" ).length ).toBe( 1 );
+			}else{
+				expect( moodDOM.find( "input[type=text]" ).length ).toBe( 1 );
+				expect( moodDOM.find( "p" ).length ).toBe( 0 );
+			}
+		}
+	});
+	it(" try to delete the neutre", function() {
+		var spk = srcMgr.getSource( speaker_id );
+		
+		var collection = $("#popup_dialog").find( ".popup_body #mood_selector");
+		
+		var moodDOM = collection.find( "div[data-related=neutre]" );
+		
+		moodDOM.find( "div.del_container" ).click();
+	});
+});
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
