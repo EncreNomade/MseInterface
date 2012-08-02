@@ -3185,7 +3185,8 @@ var initScriptTool = function() {
             this.scriptName.val("");
             this.textArea.val("");
         },
-        insertVar: function(id) {
+        insertVar: function(obj) {
+            var id = obj.prop('id');
             var val = this.textArea.val();
             var startPos = this.textArea.get(0).selectionStart;
             var part1 = val.substring(0, startPos);
@@ -3496,17 +3497,19 @@ var loading = function() {
 
 
 // Object chooser widgt
-var ObjChooser = function(id){
+var ObjChooser = function(id, multi){
     this.id = id;
     this.jqObj = $('<div id="'+id+'" class="objChooser"><img src="./images/UI/objchooser.jpg"/><h5/></div>');
     this.jqObj.data('chooser', this);
     this.jqObj.click(function(){
         $(this).data('chooser').startChoose();
     });
+    this.multi = (multi !== true) ? false : true;
+    this.objs = [];
+    this.msg = null;
 };
 ObjChooser.prototype = {
     constructor: ObjChooser,
-    refObjId: 0,
     appendTo: function(parent){
         var h = parent.innerHeight();
         this.jqObj.height(h);
@@ -3515,7 +3518,8 @@ ObjChooser.prototype = {
         this.jqObj.appendTo(parent);
     },
     val: function(){
-        return this.jqObj.children('h5').text();
+        if(!this.multi) return this.objs[0];
+        else return this.objs;
     },
     startChoose: function(){
         curr.chooser = this;
@@ -3525,15 +3529,64 @@ ObjChooser.prototype = {
         this.pageBarZid = $('#pageBar').css('z-index');
         $('#editor').css('z-index', config.zid.EditorInChoosing);
         $('#pageBar').css('z-index', config.zid.PagebarInChoosing);
+        
+        // Active message center notification
+        if(this.multi) {
+            this.msg = $("<p>Cliquer <span>ici</span> pour finir choisir ou appuyer sur return<p>");
+            var span = this.msg.children('span');
+            var li = msgCenter.send(this.msg);
+            
+            span.bind('click', {'chooser':this}, function(e) {
+                msgCenter.closeMessage(li);
+                e.data.chooser.finishChoose();
+            });
+            // Return listener
+// TODO
+        }
+    },
+    getNotif: function(obj) {
+        if(obj.hasClass('textLine')) {
+            return $("<p>    - "+obj.children('p').text()+"</p>");
+        }
     },
     choosed: function(obj){
-        curr.chooser = null;
         // Set referenced id for analyze in the server
         if(!obj.prop('id') || obj.prop('id') == "") 
-            obj.prop('id', "referenced"+(ObjChooser.prototype.refObjId++));
+            obj.prop('id', "referenced"+(curr.objId++));
             
-        if(!this.callback) this.jqObj.children('h5').text(obj.prop('id'));
-        else this.callback.invoke(obj.prop('id'));
+        this.objs.push(obj);
+        
+        if(!multi) this.finishChoose();
+        else if(this.msg) {
+            // Append notification to message center
+            this.msg.after( this.getNotif(obj) );
+        }
+    },
+    finishChoose: function() {
+        curr.chooser = null;
+        this.msg = null;
+        // Single Chooser
+        if(!multi) {
+            if(!this.callback) this.jqObj.children('h5').text(this.objs[0].prop('id'));
+            else if(this.objs[0]) this.callback.invoke(this.objs[0]);
+        }
+        // Multi Chooser
+        else {
+            if(this.callback) {
+                this.callback.invoke(this.objs);
+            }
+            else {
+                var str = "";
+                if(!this.callback) {
+                    for(var i = 0; i < 2 && i < this.objs.length; ++i) {
+                        if(i != 0) str += ", ";
+                        str += this.objs[i].prop('id');
+                    }
+                    if(this.objs.length > 2) str += "...";
+                }
+                this.jqObj.children('h5').text(str);
+            }
+        }
         
         $('#center_panel, #right').css('z-index', config.zid.Scene);
         $('#editor').css('z-index', this.editorZid);
