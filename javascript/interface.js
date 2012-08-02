@@ -728,7 +728,9 @@ function insertElemDialog(e) {
 		    var font = e.data.target.css('font-weight');
 		    font += " "+config.realX( cssCoordToNumber( e.data.target.css('font-size') ) )+"px";
 		    font += " "+e.data.target.css('font-family');
-			last.after(generateSpeaks(text, font , config.realX( e.data.target.width() ) , config.realY( e.data.target.height()) ));
+            var content = generateSpeaks(text, font , config.realX( e.data.target.width() ) , config.realY( e.data.target.height()) );
+			last.after(content);
+            ArticleFormater.setConfigurable(content);
 		}
 		dialog.close();
 	});
@@ -1432,16 +1434,6 @@ function generateLines( content, font, width, lineHeight ){
 	res.each(function() {
 	    if($(this).prop('tagName') == "PARAGRAPHTAG") return;
 		$(this).height(config.sceneY(lineHeight));
-		$(this).deletable(null, true)
-		       .selectable(selectP)
-		       .staticButton('./images/UI/insertbelow.png', insertElemDialog)
-		       .staticButton('./images/UI/config.png', staticConfig)
-		       .staticButton('./images/tools/anime.png', animeTool.animateObj)
-		       .staticButton('./images/UI/addscript.jpg', addScriptForObj);
-		$(this).children('.del_container').css({
-			'position': 'relative',
-			'top': ($(this).children('p').length == 0) ? '0%' : '-100%',
-			'display':'none'});
 	});
 	return res;
 }
@@ -1472,10 +1464,13 @@ function addArticle(manager, name, params, content) {
 	}
 	if(params.color) article.css('color', params.color);
 	if(params.align) article.css('text-align', params.align);
-	article.append(generateSpeaks(content, font, params.lw, params.lh));
+    var res = generateSpeaks(content, font, params.lw, params.lh)
+	article.append(res);
 	// Listener to manipulate
 	article.deletable().configurable();
 	step.append(article);
+    
+    ArticleFormater.setConfigurable(res);
 }
 
 function defineZ(step, obj){
@@ -1683,6 +1678,8 @@ function expressTrad(){
 	
 	$( ".article" ).append( e );
 }
+
+
 var ArticleFormater = function() {
 	
 	var correspondanceType = { 	'audiolink' : 'audio' , 
@@ -2083,7 +2080,9 @@ reverse : function( parent , chaine , article , meta , font , width , lineHeight
 	if( !lineHeight )
 		lineHeight = config.realY( cssCoordToNumber( article.css('line-height') ) );
 	
-	parent.append( generateSpeaks( chaine, font , width , lineHeight ) );
+    var res = generateSpeaks( chaine, font , width , lineHeight );
+	parent.append( res );
+    ArticleFormater.setConfigurable(res);
 	
 	// Deformat chiane
 	var realchaine = chaine.replace(/\[[^\[\]]*\]/g, "");
@@ -2449,8 +2448,48 @@ reverse : function( parent , chaine , article , meta , font , width , lineHeight
 		
 		return { i:parseInt( i[1] ) , type:type[1] , id:id[1] , index:iboA , keyword : keyword , format:format };
 	}
-}
+},
 
+setConfigurable: function ($content){
+    // obj is the children of the article
+    if(!$content.parent().hasClass('article'))
+        return;
+        
+    function setArticleObjProp(jqObj){
+        jqObj.deletable(null, true)
+             .selectable(selectP)
+             .staticButton('./images/UI/insertbelow.png', insertElemDialog)
+             .staticButton('./images/UI/config.png', staticConfig)
+             .staticButton('./images/tools/anime.png', animeTool.animateObj)
+             .staticButton('./images/UI/addscript.jpg', addScriptForObj)
+             .css({'z-index':'0','background':'none'});
+        scriptMgr.countScripts(jqObj.attr('id'),'obj', jqObj);
+        jqObj.children('.del_container').css({
+            'position': 'relative',
+            'left': jqObj.width()-15+'px',
+            'display':'none'});
+    }
+    $content.each(function(){
+        if(!$(this).is('div'))
+            return;
+        if ($(this).hasClass('speaker')){
+            // speaker is a div which contains textLine
+            // it also contains a img which need to have the click event binded
+            $(this).children().each(function(){
+                // if its the img , bind the event
+                if( this.tagName.toLowerCase() == "img" ){
+                    $(this).click( function(e){
+                        editeSpeakDialog( $( e.currentTarget ).parent() );
+                    });
+                } else
+                    // if its not, its textLine
+                    setArticleObjProp($(this));
+            });
+        }
+        else 
+            setArticleObjProp($(this));
+    });
+},
 
 /*
 reverse_ : function( parent , chaine , article , meta , font , width , lineHeight){ 

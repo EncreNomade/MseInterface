@@ -1052,39 +1052,7 @@ StepManager.prototype = {
 	        var obj = $(this);
 	        // Article
 	        if(obj.hasClass('article')) {
-	            obj.children('div').each(function(){
-                    function setArticleObjProp(jqObj){
-                        jqObj.deletable(null, true)
-                             .selectable(selectP)
-                             .staticButton('./images/UI/insertbelow.png', insertElemDialog)
-                             .staticButton('./images/UI/config.png', staticConfig)
-                             .staticButton('./images/tools/anime.png', animeTool.animateObj)
-                             .staticButton('./images/UI/addscript.jpg', addScriptForObj)
-                             .css({'z-index':'0','background':'none'});
-                        scriptMgr.countScripts(jqObj.attr('id'),'obj', jqObj);
-                        jqObj.children('.del_container').css({
-                            'position': 'relative',
-                            'left': jqObj.width()-15+'px',
-                            'display':'none'});
-                    }
-                    if ($(this).hasClass('speaker')){
-						// speaker is a div which contains textLine
-						// it also contains a img which need to have the click event binded
-                        $(this).children().each(function(){
-							// if its the img , bind the event
-							if( this.tagName.toLowerCase() == "img" ){
-								$(this).click( function(e){
-									editeSpeakDialog( $( e.currentTarget ).parent() );
-								});
-							}else
-								// if its not, its textLine
-								setArticleObjProp($(this));
-						});
-                    }
-                    else 
-						setArticleObjProp($(this));
-	            });
-	            obj.deletable().configurable();
+                ArticleFormater.setConfigurable(obj.children());
 	        }
 	        // Other obj
 	        else {
