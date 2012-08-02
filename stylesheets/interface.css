@@ -1182,3 +1182,37 @@ div#language_list #current_lang{
 #msgCenter ul li>p{
     margin: 0;
 }
+
+#msgCenterStatic{    
+    z-index: 200;
+    position: absolute;
+    background-color: #21233A;
+    width: 300px;
+    min-height: 50px;
+    right: 10px;
+    bottom: 10px;
+    -webkit-transition: opacity 0.2s;
+    color: #CCC;
+    border-radius: 7px;
+    box-shadow: 0px 0px 20px black;
+}
+#msgCenterStatic.moving{ opacity: 0.5; }
+#msgCenterStatic h1 {
+    margin: 0;
+    font-size: 20px;
+    text-align: center;
+}
+#msgCenterStatic h1:hover { cursor: move; }
+
+#msgCenterStatic ul {
+margin: 8px 0 2px;
+padding: 0 5px;
+}
+#msgCenterStatic ul li {
+ list-style: none;
+border-top: dashed 1px #686868;
+padding: 2px 10px;
+}
+
+
+
