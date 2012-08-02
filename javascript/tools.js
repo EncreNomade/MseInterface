@@ -261,6 +261,8 @@ var Config = (function() {
 		    'PagebarInChoosing' : 9,
 		    'Scene' : 1
 		};
+		
+		this.withdrawal = 45;
 	}
 	
 	var instance;
@@ -546,7 +548,8 @@ SourceManager.prototype = {
             data.srcId = id;
 			expo.append('<img class="srcicon_back" src="' + data.getMoodUrl("neutre") +'" name="'+id+'">');
 		    expo.append('<p>Speaker: '+data.name+'</p>');
-		    expo.circleMenu({'config':['./images/UI/config.png',data.showSpeakerOnEditor]});
+		    expo.circleMenu({'config':['./images/UI/config.png', data.showSpeakerOnEditor],
+		                     'addDialog':['./images/UI/dialog.png', data.addDialog]});
 		    // expo.click(function(){
 		        // srcMgr.getSource($(this).data('srcId')).showSpeakerOnEditor();
 		    // });
@@ -1585,6 +1588,116 @@ Speaker.prototype = {
         if(!id || type != $(this).data('type')) return;
         $(this).siblings('img').prop('src',srcMgr.sources[id].data);
         $(this).siblings('img').prop('name',id);
+    },
+    addDialog: function(src) {
+        var id = src.data('srcId');
+        var speaker = srcMgr.getSource(id);
+        // Dialog
+        dialog.showPopup('Ajouter un dialog', 380, 420, 'Confirmer');
+        dialog.main.append("<p>Cliquer pour choisir les lignes de dialog</p>");
+        // Object chooser
+        var chooser = new ObjChooser("dialog_chooser", true);
+        var p = $('<p></p>');
+        p.css({'height':30});
+        chooser.appendTo(p);
+        dialog.main.append(p);
+        // Dialog lines
+        dialog.main.append("<p>Résultat de selection</p>");
+        var lines = $("<dl id='dialog_lines'></dl>");
+        lines.css({'height':180});
+        dialog.main.append(lines);
+        // Confirm function
+        dialog.confirm.click(function() {
+            var dts = lines.children('dt');
+            if(dts.length <= 0) {
+                // No content
+                dialog.close();
+                return;
+            }
+            // Init prev id with first obj
+            var offid = 0;
+            var offset = $(dts.get(offid));
+            var article, width, font, lineHeight;
+            var obj, illu, dt, i, j, currid, nextid, prev, originoff, line, length = dts.length;
+            var mood = "neutre", decalage = 50, text;
+            for(i = 0; i < length; ++i) {
+                currid = parseInt( $(dts.get(i)).attr('index') );
+                nextid = (i+1 == length) ? -1 : parseInt( $(dts.get(i+1)).attr('index') );
+                
+                // If prev and curr is seperated, one dialog is found
+                if(currid != nextid-1) {
+                    // Original obj in article correspond to start offset line
+                    originoff = offset.data('originalObj');
+                    article = originoff.parent();
+                    // Prev obj to the start obj, for insert the dialog after
+                    prev = originoff.prev();
+                
+                    // Parameters for dialog object
+                    width = article.width();
+                    font = article.css('font-weight');
+                    font += " "+config.realX( cssCoordToNumber( article.css('font-size') ) )+"px";
+                    font += " "+article.css('font-family');
+                    lineHeight = parseInt(article.css('line-height'));
+                    // Create Dialog object
+                    obj = $('<div id="'+ id +'" class="speaker" data-who="'+speaker.name+'" data-withdrawal="'+ config.sceneX(config.withdrawal) + '" data-color="'+speaker.color+'" data-mood="'+mood+'"/>');
+                    obj.css({"width": width, "background-color": speaker.color});
+                    
+                    // Find all lines text
+                    text = "";
+                    for(j = offid; j <= i; ++j){
+                        line = $(dts.get(j)).data('originalObj');
+                        text += line.children('p').text();
+                        // Remove line original object
+                        line.remove();
+                    }
+                    // Generate new speaks lines
+                    obj.append( generateSpeakLines(text, font, config.realX(width), config.realY(lineHeight), id, mood, config.withdrawal) );
+                    
+                    // Append dialog in the beginning of article parent
+                    if(prev.length == 0) {
+                        article.prepend(obj);
+                    }
+                    else if(prev.prop('tagName') != "PARAGRAPHTAG") {
+                        prev.after(obj);
+                        // Insert a line break if there is not
+                        prev.after('<paragraphtag></paragraphtag>');
+                    }
+                    // Append dialog object after prev
+                    else prev.after(obj);
+                    // Remove the paragraphtag after the obj to avoid parse probleme
+                    if(obj.next().prop('tagName') == "PARAGRAPHTAG")
+                        obj.next().remove();
+                    
+                    // Update offset infor
+                    offid = i+1;
+                    if(offid < length) offset = $(dts.get(offid));
+                }
+            }
+            dialog.close();
+        });
+        // Lines choosed event
+        chooser.callback = new Callback(function(objs){
+            var curr, dt, arr = [];
+            
+            // Sort for further manipulation
+            for(var i = 0; i < objs.length; ++i) {
+                curr = $(objs[i]);
+                dt = $('<dt></dt>').append( curr.children('p').clone() );
+                dt.data('originalObj', curr);
+                dt.attr('index', curr.prevAll().length);
+                arr.push(dt);
+            }
+            arr.sort(function(a,b) {
+                return parseInt(a.attr('index')) - parseInt(b.attr('index'));
+            });
+            for(var i = 0; i < arr.length; ++i)
+                lines.append(arr[i]);
+        }, window);
+        chooser.verifyFn = function(obj) {
+            obj = $(obj);
+            if(!(obj instanceof jQuery) || obj.children('p').text().trim() == "") return false;
+            else return true;
+        };
     },
     showSpeakerOnEditor: function(src){
 		// because that function is call by a click, this is not the object himslef,
@@ -3186,7 +3299,7 @@ var initScriptTool = function() {
             this.textArea.val("");
         },
         insertVar: function(obj) {
-            var id = obj.prop('id');
+            var id = obj.id;
             var val = this.textArea.val();
             var startPos = this.textArea.get(0).selectionStart;
             var part1 = val.substring(0, startPos);
@@ -3507,6 +3620,8 @@ var ObjChooser = function(id, multi){
     this.multi = (multi !== true) ? false : true;
     this.objs = [];
     this.msg = null;
+    this.callback = null;
+    this.verifyFn = null;
 };
 ObjChooser.prototype = {
     constructor: ObjChooser,
@@ -3532,42 +3647,48 @@ ObjChooser.prototype = {
         
         // Active message center notification
         if(this.multi) {
-            this.msg = $("<p>Cliquer <span>ici</span> pour finir choisir ou appuyer sur return<p>");
-            var span = this.msg.children('span');
-            var li = msgCenter.send(this.msg);
+            var msgobj = $("<p>Cliquer <span>ici</span> ou appuyer sur return pour confirmer</p>");
+            var span = msgobj.children('span');
+            this.msg = msgCenter.send(msgobj, 0);
             
             span.bind('click', {'chooser':this}, function(e) {
-                msgCenter.closeMessage(li);
+                msgCenter.closeMessage(e.data.chooser.msg);
                 e.data.chooser.finishChoose();
             });
-            // Return listener
+            // Return key listener
 // TODO
         }
     },
     getNotif: function(obj) {
+        obj = $(obj);
         if(obj.hasClass('textLine')) {
-            return $("<p>    - "+obj.children('p').text()+"</p>");
+            return $("<p> - "+obj.children('p').text()+"</p>");
         }
     },
     choosed: function(obj){
+        // Verification existance of obj
+        if($.inArray(obj, this.objs) != -1) return;
+        if(typeof this.verifyFn == "function") 
+            if(!this.verifyFn(obj)) return;
+        
         // Set referenced id for analyze in the server
-        if(!obj.prop('id') || obj.prop('id') == "") 
-            obj.prop('id', "referenced"+(curr.objId++));
+        if(!obj.id || obj.id == "") 
+            obj.id = "referenced"+(curr.objId++);
             
         this.objs.push(obj);
         
-        if(!multi) this.finishChoose();
+        if(!this.multi) this.finishChoose();
         else if(this.msg) {
             // Append notification to message center
-            this.msg.after( this.getNotif(obj) );
+            this.msg.append( this.getNotif(obj) );
         }
     },
     finishChoose: function() {
         curr.chooser = null;
         this.msg = null;
         // Single Chooser
-        if(!multi) {
-            if(!this.callback) this.jqObj.children('h5').text(this.objs[0].prop('id'));
+        if(!this.multi) {
+            if(!this.callback) this.jqObj.children('h5').text(this.objs[0].id);
             else if(this.objs[0]) this.callback.invoke(this.objs[0]);
         }
         // Multi Chooser
@@ -3580,13 +3701,14 @@ ObjChooser.prototype = {
                 if(!this.callback) {
                     for(var i = 0; i < 2 && i < this.objs.length; ++i) {
                         if(i != 0) str += ", ";
-                        str += this.objs[i].prop('id');
+                        str += this.objs[i].id;
                     }
                     if(this.objs.length > 2) str += "...";
                 }
                 this.jqObj.children('h5').text(str);
             }
         }
+        this.objs.splice(0, this.objs.length);
         
         $('#center_panel, #right').css('z-index', config.zid.Scene);
         $('#editor').css('z-index', this.editorZid);
@@ -3597,7 +3719,7 @@ ObjChooser.prototype = {
 function objChoosed(e){
     if(!curr.chooser) return;
     e.preventDefault();
-    curr.chooser.choosed($(this));
+    curr.chooser.choosed(this);
 }
 
 

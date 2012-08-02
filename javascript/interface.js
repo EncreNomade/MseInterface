@@ -893,7 +893,7 @@ function validScript(e){
         tar = $('#script_tar').val();break;
     case "obj": 
         if($('#script_supp').children().length==0) {alert('Information incomplete');return;}
-        tar = $('#script_tar').data('chooser').val().prop('id');
+        tar = $('#script_tar').data('chooser').val().id;
         supp = $('#script_supp').attr('target');
         break;
     case "cursor":
@@ -1306,10 +1306,9 @@ function generateSpeaks(content, font, width, lineHeight){
 		
 		if( baliseInfo.inside.length > 0 ){
 			var id = "obj"+(curr.objId++);
-			var withdrawal = 45;
-			var lines = generateSpeakLines( baliseInfo.inside , font, width, lineHeight , id_ressource , mood  , withdrawal  );
+			var lines = generateSpeakLines( baliseInfo.inside, font, width, lineHeight, id_ressource, mood, config.withdrawal );
 			var color = srcMgr.getSource( id_ressource ).color;
-			res.append( $('<div id="'+ id +'" class="speaker" data-who="'+baliseInfo.id+'" data-withdrawal="'+ config.sceneX(withdrawal) + '" data-color="'+color+'" data-mood="'+mood+'" style="width:'+  config.sceneX( width )+'px; background-color:'+color+';" />')
+			res.append( $('<div id="'+ id +'" class="speaker" data-who="'+baliseInfo.id+'" data-withdrawal="'+ config.sceneX(config.withdrawal) + '" data-color="'+color+'" data-mood="'+mood+'" style="width:'+  config.sceneX( width )+'px; background-color:'+color+';" />')
                .append( lines ) );
 		}
 	}
@@ -1386,12 +1385,12 @@ function generateSpeakLines( content, font, width, lineHeight, id , mood , decal
              img.attr('name', srcMgr.getSource( id ).portrait[ mood ]);
         else 
 			img.attr('name', 'none');
-        img.css( "position" , "absolute" );
-        img.css( "width" , config.sceneX(decalage*0.9)+"px" );
-        img.css( "height" , config.sceneX(decalage*0.9)+"px" );
+        img.css({ "position": "absolute",
+                  "width": config.sceneX(decalage*0.9),
+                  "height": config.sceneX(decalage*0.9),
+                  "left": config.sceneX(decalage*0.1) });
         img.attr( "height" , config.sceneX(decalage*0.9) );
         img.attr( "width" , config.sceneX(decalage*0.9) );
-		img.css( "left" , config.sceneX( decalage*0.1 )+"px" );
 		
 		
 		img.click( function(e){
