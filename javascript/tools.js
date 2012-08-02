@@ -3619,7 +3619,6 @@ var ObjChooser = function(id, multi){
     });
     this.multi = (multi !== true) ? false : true;
     this.objs = [];
-    this.msg = null;
     this.callback = null;
     this.verifyFn = null;
 };
@@ -3647,12 +3646,12 @@ ObjChooser.prototype = {
         
         // Active message center notification
         if(this.multi) {
-            var msgobj = $("<p>Cliquer <span>ici</span> ou appuyer sur return pour confirmer</p>");
+            var msgobj = $("<p>Cliquer <span style='text-decoration: underline;'>ici</span> ou appuyer sur return pour confirmer</p>");
             var span = msgobj.children('span');
-            this.msg = msgCenter.send(msgobj, 0);
+            msgCenter.showStaticBox(msgobj);
             
             span.bind('click', {'chooser':this}, function(e) {
-                msgCenter.closeMessage(e.data.chooser.msg);
+                msgCenter.closeStaticBox();
                 e.data.chooser.finishChoose();
             });
             // Return key listener
@@ -3678,14 +3677,13 @@ ObjChooser.prototype = {
         this.objs.push(obj);
         
         if(!this.multi) this.finishChoose();
-        else if(this.msg) {
+        else {
             // Append notification to message center
-            this.msg.append( this.getNotif(obj) );
+            msgCenter.sendToStatic( this.getNotif(obj) );
         }
     },
     finishChoose: function() {
         curr.chooser = null;
-        this.msg = null;
         // Single Chooser
         if(!this.multi) {
             if(!this.callback) this.jqObj.children('h5').text(this.objs[0].id);
