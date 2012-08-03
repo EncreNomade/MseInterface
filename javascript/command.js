@@ -1074,7 +1074,8 @@ $.extend(CreateElemCmd.prototype, {
  * note that the add of speak is automaticly done by adding raw text with balise, 
  * deleting a speak is not possible though
  * 1. Modify the mood
- *
+ * 2. Remove Speak Div
+ * 
  */
 var ModifySpeakMoodCmd = function(  speak , newMood , newSrc , oldMood , oldSrc){
 	this.speak = speak;
@@ -1112,7 +1113,35 @@ $.extend( ModifySpeakMoodCmd.prototype, {
 		return "modification de l'humeur ";
 	}
 });
- 
+
+var RemoveSpeakCmd = function(speakerDiv, newLines){
+    this.speakerDiv = speakerDiv;
+    this.newLines = newLines;
+    
+    this.state = "WAITING";
+};
+extend( RemoveSpeakCmd , Command );
+$.extend( RemoveSpeakCmd.prototype, {
+    execute: function(){
+        if(this.state != 'WAITING') return;
+        
+		this.speakerDiv.after(this.newLines);
+        this.speakerDiv.remove();
+		
+        this.state = 'SUCCESS';
+    },
+    undo: function(){
+        if(this.state != 'SUCCESS') return;
+        
+        this.newLines.eq(0).before(this.speakerDiv);
+        this.newLines.remove();
+		
+        this.state = 'CANCEL';
+    },
+	toString : function(){
+		return "suppression de dialogue ";
+	}
+});
  
 
 /* Speaker Related Comands
@@ -1122,7 +1151,7 @@ $.extend( ModifySpeakMoodCmd.prototype, {
  * 1. Add a mood
  * 2. Rename a mood  // unused, instead of rename an item, it is delete and another with the same src is added
  * 3. Delete a mood
- * 4. Modify the srouce image of a mood
+ * 4. Modify the source image of a mood
  * 5. Modify the color
  *
  */

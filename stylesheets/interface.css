@@ -1134,17 +1134,23 @@ svg rect.guide {
 }
 #mood_selector input[type=text]{
     position: absolute;
-    margin-top: 55px;
-    width: 65px;
-    opacity: 0.6;
-    z-index:  200;
+    margin: 50px 0 0 0;
+    width: 70px;
+    opacity: 0.8;
+    z-index: 200;
+    height: 20px;
+    text-align: center;
+    font-size: 16px;
+    font-family: Times New Roman;
+    border: none;
 }
 #mood_selector p{
     position: absolute;
-    margin-top: 55px;
-    width: 65px;
-    opacity: 0.6;
+    margin: 50px 0px 0 0;
+    width: 70px;
+    opacity: 0.8;
     background-color: white;
+    text-align: center;
 }
 #mood_selector > div > .del_container{
     left: 70px;

@@ -474,35 +474,36 @@ function editeSpeakDialog( speak ){
 	
 	// setUp the list of moods
 	var map = spkObj.portrait;
-	var comboBox = $( '<div style="width:100px;height:180px;overflow-y:auto;">' );
+	var comboBox = $( '<div id="mood_selector">' );
+    var defaultOpt = null;
 	for( var i in map ){
-		var option = $( '<div style="background:none;"><img src="' +  spkObj.getMoodUrl( i ) + '" width:"30" height="30" style="width:30px; height:30px;"/>'+i+'</div>' );
+		var option = $( '<div><img src="' +  spkObj.getMoodUrl( i ) + '"/><p>'+i+'</p></div>' );
+        if(i == speak.attr( "data-mood" ))            
+            defaultOpt = option; // select the mood
 		option.click( function( e ){
-			var mood = $( e.currentTarget ).text();
+			var mood = $( e.currentTarget ).children('p').text();
 			speak.attr( "data-mood" , mood );
 			speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( mood ) );
             if(spkObj.portrait[mood]) 
                 speak.children("img").attr( "name" , spkObj.portrait[mood]);
             else speak.children("img").attr( "name" , "none");
 			
-			updateHightlight( mood );
+			updateHightlight.call(this);
 		});
 		comboBox.append( option );
 	}
-	updateHightlight( speak.attr( "data-mood") );
 	
+    if(defaultOpt) 
+        updateHightlight.call(defaultOpt); // choose the current mood
+    comboBox.children('div').css('border-radius', '5px');
+    
 	function updateHightlight( mood ){
-		var c = comboBox.find( "div" );
-		for( var i =0 ; i < c.length ; i ++  ){
-			var option = $( c[ i ] );
-			if( option.text() == mood )
-				option.css( "background" , "blue" );
-			else
-				option.css( "background" , "none" );
-		}
+        var that = $(this);
+        that.siblings().css('border', 'solid 2px transparent');
+        that.css('border', 'solid 2px #C21C1C');
 	}
 	
-	dialog.showPopup('éditer interlocuteur', 340, 250 , "ok");
+	dialog.showPopup('éditer interlocuteur', 350, 300, 'Modifier');
 	dialog.main.append( comboBox  );
 	
 	
@@ -514,6 +515,26 @@ function editeSpeakDialog( speak ){
 		
 		dialog.close();
 	});
+    var delButton = dialog.addButton($('<input type="button" value="supprimer"></input>'));
+    delButton.click({speakDiv: speak}, function(e){
+        var $speaker = e.data.speakDiv;
+        var article = $speaker.parent();
+        
+        var content = $speaker.children('.textLine').children('p').text();        
+        var width = article.width();
+        var lineHeight = parseInt(article.css('line-height'));
+        lineHeight = config.realY(lineHeight);
+        var font = article.css('font-weight');
+        font += " "+config.realX( cssCoordToNumber( article.css('font-size') ) )+"px";
+        font += " "+article.css('font-family');
+        
+        var $lines = generateLines( content, font, width, lineHeight );
+        
+        CommandMgr.executeCmd( new RemoveSpeakCmd($speaker, $lines) );
+        
+        dialog.close();
+    });
+    
 	dialog.annuler.click(function() {
 		var actualMood = speak.attr("data-mood" );
 		if( initialMood != actualMood ){
