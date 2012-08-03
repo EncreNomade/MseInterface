@@ -1668,7 +1668,7 @@ Speaker.prototype = {
         };
     },
     showSpeakerOnEditor: function(src){
-		// because that function is call by a click, this is not the object himslef,
+		// because that function is call by a click, 'this' is not the object himslef,
         var self = srcMgr.getSource(src.data('srcId'));
         function dropVisage(e){
             e = e.originalEvent;
@@ -1679,15 +1679,16 @@ Speaker.prototype = {
             var type = srcMgr.sourceType(id);
             if(!id || type != $(this).data('type')) return;
             // Place in the elem zone
-			var name = 'humeur'+$('#mood_selector div').length;
+			var name = 'humeur'+$('#mood_selector>div').length;
             var elem = $('<div data-related="'+name+'" ><img  src="'+srcMgr.sources[id].data+'" name="'+id+'"></div>');
             elem.append('<input type="text" value="'+name+'" />');
-            elem.deletable(null, true);
+            elem.deletable(null, true);            
+            elem.find('.del_container img').css('right', '10px'); // replace icons
             var obj = $('#mood_selector').data('spkObj');
             var dz = new DropZone(obj.changeVisageInEditor,{'height':'100%','border-width': '2px'});
             dz.jqObj.data('type','image');
             elem.append(dz.jqObj);
-            $('#mood_selector').append(elem);
+            $(this).before(elem);
 			dz.jqObj.css( "top" , elem.children("img").position().top+"px" );
 			dz.jqObj.css( "width" , elem.children("img").width()+"px" );
 			dz.jqObj.css( "height" , elem.children("img").height()+"px" );
@@ -1713,20 +1714,18 @@ Speaker.prototype = {
         $('#bulle_couleur').val(self.color);        
         // $('#bulle_style').val(this.style);
         
-        var dz = (new DropZone(dropVisage, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "add_mood")).jqObj;
-        dz.data('type', 'image');
-        dialog.main.append(dz);
+
         
         var moodSelector = $('<div id="mood_selector"></div>');
         moodSelector.data('spkObj', self);
         dialog.main.append(moodSelector);
         for (var i in self.portrait) {
             // restore all moods
-
 			var url = self.getMoodUrl( i );
             var elem = $('<div data-related="'+i+'"><img src="'+ url +'" ></div>');
 			if( self.portrait[i] )
 				elem.children("img").attr( "name" , self.portrait[i] );
+                
                 
             if(i == 'neutre'){
                 elem.append('<p>'+i+'</p>');
@@ -1746,6 +1745,7 @@ Speaker.prototype = {
                 elem.append('<input type="text" value="'+i+'" />');
                 elem.deletable(null,true);
             }
+            elem.find('.del_container img').css('right', '10px'); // replace icons
             
             var dz = new DropZone(self.changeVisageInEditor,{'height':'100%','border-width': '2px'});
             dz.jqObj.data('type','image');
@@ -1758,6 +1758,11 @@ Speaker.prototype = {
 			dz.jqObj.css( "z-index" , elem.children("img").css( "z-index" ) +1 );
 			dz.jqObj.css( "position" , "absolute" );
         }
+        
+        var dz = (new DropZone(dropVisage, {'height':'65px', 'text-align': 'center'}, "add_mood")).jqObj;
+        dz.data('type', 'image');
+        dz.append('<span style="margin-top: 10px; font-size: 12px;">Ajouter une humeur</span>');
+        moodSelector.append(dz);
         
         dialog.confirm.click({'speaker':self}, self.validChanges);
     },
@@ -1778,6 +1783,8 @@ Speaker.prototype = {
 		
         var moods = $('#mood_selector').children();
         moods.each(function(i){
+            if($(this).hasClass('drop_zone'))
+                return;
             var srcimg = $(this).children('img').attr('name');
 			if( $(this).children('input').length > 0 )
 				var moodName = $(this).children('input').val().toLowerCase();
