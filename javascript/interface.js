@@ -462,87 +462,6 @@ function createPageDialog() {
 		dialog.close();
 	});
 };
-
-// edite speack dialog
-function editeSpeakDialog( speak ){
-	//  search the asoociate speaker
-	var speaker = speak.attr( "data-who" );
-	for( var i in srcMgr.sources )
-		if( srcMgr.sourceType( i ) == "speaker" && srcMgr.getSource( i ).name == speaker )
-			break;
-	var spkObj = srcMgr.getSource( i );
-	
-	// setUp the list of moods
-	var map = spkObj.portrait;
-	var comboBox = $( '<div id="mood_selector">' );
-    var defaultOpt = null;
-	for( var i in map ){
-		var option = $( '<div><img src="' +  spkObj.getMoodUrl( i ) + '"/><p>'+i+'</p></div>' );
-        if(i == speak.attr( "data-mood" ))            
-            defaultOpt = option; // select the mood
-		option.click( function( e ){
-			var mood = $( e.currentTarget ).children('p').text();
-			speak.attr( "data-mood" , mood );
-			speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( mood ) );
-            if(spkObj.portrait[mood]) 
-                speak.children("img").attr( "name" , spkObj.portrait[mood]);
-            else speak.children("img").attr( "name" , "none");
-			
-			updateHightlight.call(this);
-		});
-		comboBox.append( option );
-	}
-	
-    if(defaultOpt) 
-        updateHightlight.call(defaultOpt); // choose the current mood
-    comboBox.children('div').css('border-radius', '5px');
-    
-	function updateHightlight( mood ){
-        var that = $(this);
-        that.siblings().css('border', 'solid 2px transparent');
-        that.css('border', 'solid 2px #C21C1C');
-	}
-	
-	dialog.showPopup('éditer interlocuteur', 350, 300, 'Modifier');
-	dialog.main.append( comboBox  );
-	
-	
-	var initialMood = speak.attr("data-mood" );
-	dialog.confirm.click(function() {
-		var actualMood = speak.attr("data-mood" );
-		if( initialMood != actualMood )
-			CommandMgr.executeCmd( new ModifySpeakMoodCmd( speak , actualMood  , spkObj.getMoodUrl( actualMood ) ,  initialMood , spkObj.getMoodUrl( initialMood ) ) );
-		
-		dialog.close();
-	});
-    var delButton = dialog.addButton($('<input type="button" value="supprimer"></input>'));
-    delButton.click({speakDiv: speak}, function(e){
-        var $speaker = e.data.speakDiv;
-        var article = $speaker.parent();
-        
-        var content = $speaker.children('.textLine').children('p').text();        
-        var width = article.width();
-        var lineHeight = parseInt(article.css('line-height'));
-        lineHeight = config.realY(lineHeight);
-        var font = article.css('font-weight');
-        font += " "+config.realX( cssCoordToNumber( article.css('font-size') ) )+"px";
-        font += " "+article.css('font-family');
-        
-        var $lines = generateLines( content, font, width, lineHeight );
-        
-        CommandMgr.executeCmd( new RemoveSpeakCmd($speaker, $lines) );
-        
-        dialog.close();
-    });
-    
-	dialog.annuler.click(function() {
-		var actualMood = speak.attr("data-mood" );
-		if( initialMood != actualMood ){
-			speak.attr( "data-mood" , initialMood );
-			speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( initialMood ) );
-		}
-	});
-}
 		
 
 // Add step dialog
@@ -1313,7 +1232,7 @@ function generateSpeaks(content, font, width, lineHeight){
 				break;
 			}
 		if( !alreadyExist )
-			id_ressource = srcMgr.addSource( "speaker" , new Speaker( baliseInfo.id ) );
+			id_ressource = speakerMgr.createSpeaker(baliseInfo.id);
 		// and the mood
 		var mood = baliseInfo.param ? baliseInfo.param : "neutre";
 		var data = srcMgr.getSource( id_ressource );
@@ -1417,7 +1336,7 @@ function generateSpeakLines( content, font, width, lineHeight, id , mood , decal
 		
 		
 		img.click( function(e){
-			editeSpeakDialog( $( e.currentTarget ).parent() );
+			speakerMgr.editDialogPopup( $( e.currentTarget ).parent() );
 		});
 		
 		return res.children();
@@ -2491,16 +2410,16 @@ setConfigurable: function ($content){
             'display':'none'});
     }
     $content.each(function(){
-        if(!$(this).is('div'))
+        if(!$(this).is('div.textLine, div.illu, div.game, div.speaker'))
             return;
         if ($(this).hasClass('speaker')){
             // speaker is a div which contains textLine
             // it also contains a img which need to have the click event binded
-            $(this).children().each(function(){
+            $(this).children('.textLine, img').each(function(){
                 // if its the img , bind the event
                 if( this.tagName.toLowerCase() == "img" ){
                     $(this).click( function(e){
-                        editeSpeakDialog( $( e.currentTarget ).parent() );
+                        speakerMgr.editDialogPopup( $( e.currentTarget ).parent() );
                     });
                 } else
                     // if its not, its textLine

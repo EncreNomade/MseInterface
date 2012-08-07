@@ -1074,7 +1074,10 @@ $.extend(CreateElemCmd.prototype, {
  * note that the add of speak is automaticly done by adding raw text with balise, 
  * deleting a speak is not possible though
  * 1. Modify the mood
- * 2. Remove Speak Div
+ * 2. AddDialog command
+ * 3. Remove Speak Div
+ * 4. Create the source and the Speaker Instance
+ * 5. Remove all related speaker div, and del source
  * 
  */
 var ModifySpeakMoodCmd = function(  speak , newMood , newSrc , oldMood , oldSrc){
@@ -1114,9 +1117,39 @@ $.extend( ModifySpeakMoodCmd.prototype, {
 	}
 });
 
-var RemoveSpeakCmd = function(speakerDiv, newLines){
+var AddDialogCmd = function($lines, id, speaker){
+    this.lines = $lines;
+    this.id = id;
+    this.speaker = speaker;
+    
+    this.state = "WAITING";
+};
+extend(AddDialogCmd, Command);
+$.extend( AddDialogCmd.prototype, {
+    execute: function(){        
+        if(this.state != 'WAITING') return;
+        
+        this.newDialog = speakerMgr.addDialog(this.lines, this.id, this.speaker);
+        
+        this.state = 'SUCCESS';
+    },
+    undo: function(){
+        if(this.state != 'SUCCESS') return;
+        
+        var offset = this.newDialog.prev();
+        this.newDialog.detach();
+        offset.after(this.lines);
+        
+        this.state = 'CANCEL';
+    },
+    toString: function(){
+        return "Ajout de dialogue ";
+    }
+});
+
+var RemoveSpeakCmd = function(speakerDiv){
     this.speakerDiv = speakerDiv;
-    this.newLines = newLines;
+    this.prevObj = speakerDiv.prev();
     
     this.state = "WAITING";
 };
@@ -1125,8 +1158,7 @@ $.extend( RemoveSpeakCmd.prototype, {
     execute: function(){
         if(this.state != 'WAITING') return;
         
-		this.speakerDiv.after(this.newLines);
-        this.speakerDiv.remove();
+        this.newLines = speakerMgr.removeDialog(this.speakerDiv);
 		
         this.state = 'SUCCESS';
     },
@@ -1134,7 +1166,7 @@ $.extend( RemoveSpeakCmd.prototype, {
         if(this.state != 'SUCCESS') return;
         
         this.newLines.eq(0).before(this.speakerDiv);
-        this.newLines.remove();
+        this.newLines.detach();
 		
         this.state = 'CANCEL';
     },
@@ -1142,6 +1174,79 @@ $.extend( RemoveSpeakCmd.prototype, {
 		return "suppression de dialogue ";
 	}
 });
+
+var CreateSpeakerCmd = function(speaker){
+    if( !(speaker instanceof Speaker) ){
+        this.state = "INVALID";
+        return;
+    }
+    
+    this.speaker = speaker;
+    
+    this.state = "WAITING";
+};
+extend( CreateSpeakerCmd , Command );
+$.extend( CreateSpeakerCmd.prototype, {
+    execute: function(){
+        if(this.state != 'WAITING') return;
+        
+        speakerMgr.createSpeaker(null, this.speaker); // creation with existing obj
+		
+        this.state = 'SUCCESS';
+    },
+    undo: function(){
+        if(this.state != 'SUCCESS') return;
+        
+        srcMgr.delSource(this.speaker.name);
+		
+        this.state = 'CANCEL';
+    },
+	toString : function(){
+		return "Création du personnage "+this.speaker.name+" " ;
+	}
+});
+
+var RemoveSpeakerCmd = function(src){    
+    var id = src.data('srcId');
+    
+    this.src = src;
+    this.speaker = srcMgr.getSource(id);
+    this.speakersDiv = null;
+    this.lines = null; // contains non speaker lines
+    this.offsets = [];
+    
+    this.state = "WAITING";
+};
+extend( RemoveSpeakerCmd , Command );
+$.extend( RemoveSpeakerCmd.prototype, {
+    execute: function(){
+        if(this.state != 'WAITING') return;        
+        
+        this.speakersDiv = this.speaker.getAssociateSpeak();
+            
+        this.lines = speakerMgr.removeSpeaker(this.src);
+		
+        this.state = 'SUCCESS';
+    },
+    undo: function(){
+        if(this.state != 'SUCCESS') return;
+        
+        for(var i = 0; i<this.lines.length; i++){
+            this.lines[i].eq(0).before(this.speakersDiv.eq(i));
+            this.lines[i].detach();
+        }
+        
+        srcMgr.addSource("speaker", this.speaker, this.speaker.name);
+        this.src = srcMgr.expos[this.speaker.name];
+		
+        this.state = 'CANCEL';
+    },
+	toString : function(){
+		return "Suppression du personnage "+this.speaker.name+" " ;
+	}
+});
+
+
  
 
 /* Speaker Related Comands
