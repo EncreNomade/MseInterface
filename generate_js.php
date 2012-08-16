@@ -527,7 +527,7 @@ class ProjectGenerator {
         else $parent = "null";
         // Init page
         $page = "pages.$id";
-        $this->jstr .= "\n\t".$page."=new mse.BaseContainer($parent,{size:[".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight)."]});";
+        $this->jstr .= "\n\t".$page."=new mse.BaseContainer($parent,'$id',{size:[".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight)."]});";
         
         // Layers
         foreach( $pagenode as $layer ) {
