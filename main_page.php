@@ -80,6 +80,7 @@ else header("Location: index.php", true);
     <li><a href="#">Outils</a>
 		<ul>
 			<li><a id="newTranslation">Nouvelle traduction</a></li>
+			<li><a id="newDialog">Nouveau personnage</a></li>
 		</ul>
 	</li>
 	<li class="id">Connexion</li>
@@ -202,6 +203,7 @@ else header("Location: index.php", true);
 	$('#newCalque').click(createStepDialog);
 	
     $('#newTranslation').click(newTranslationDialog);
+    $('#newDialog').click(speakerMgr.createSpeakerDialog);
     
 	$('#srcAdd').click(addFileDialog);
 	$('#saveProjet').click(saveProject);

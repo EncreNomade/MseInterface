@@ -7,19 +7,25 @@
            Arthur Brongniart
  * Copyright, Encre Nomade
  */
-
-var msgCenter =(function(){
+ 
+var msgCenter =(function(){    
     // private
-    var $msgCenter =$('<div id="msgCenter"><ul></ul></div>');
-    var messageList = false;
-    var max = 5;
-    
-    function fadeIn(jQmsg){jQmsg.addClass('fadeIn');}
-    function fadeOut(jQmsg){jQmsg.removeClass('fadeIn');}
+    var normal = {},
+        static = {},
+        max = 5;
+        
+    normal.box =  $('<div id="msgCenter"><ul></ul></div>');
+    normal.list = normal.box.children('ul');
+    static.box = $('<div id="msgCenterStatic"><h1></h1><ul></ul></div>');
+    static.list = static.box.children('ul');
+    static.visible = false;
+            
+    function fadeIn(jQmsg){jQmsg.addClass('fadeIn');} // it show the message
+    function fadeOut(jQmsg){jQmsg.removeClass('fadeIn');} // it hide
     function removeMsg(jQmsg){
         jQmsg.remove();
-        if(messageList.children('li').length == 0)
-            $msgCenter.detach();
+        if(normal.list.children('li').length == 0) // last message, remove the container
+            normal.box.detach();
     }
     
     function hideTimeOut(jQmsg,time){
@@ -30,43 +36,140 @@ var msgCenter =(function(){
             return [fId, rId];
     }
     function show(jQmsg){setTimeout(function(){ fadeIn(jQmsg); jQmsg = null; }, 1);}
-
     
-    //public
-    return {
-        send: function(mes, time){
-            if(!messageList){ // initiate
-                messageList = $msgCenter.children('ul');
-            }
-            if(messageList.children('li').length == 0)
-                $msgCenter.prependTo('body');
-                
-            var message = $('<li></li>');
-            message.append(mes);
-            messageList.prepend(message);
+    // make staticBox moveable
+    var drag = {target: static.box, x: 0, y: 0, moving: false};        
+    // start move
+    static.box.children('h1').mousedown(function(e){
+        if (!drag.moving) {
+            drag.x = e.pageX;
+            drag.y = e.pageY;
+            drag.moving = true;
+            drag.target.addClass('moving');
+            $(document).bind('mousemove', moving);
+        }        
+        e.preventDefault();
+    });
+    // moving
+    var moving = function(e){
+        if(drag.moving){
+            var dx = e.pageX - drag.x,
+                dy = e.pageY - drag.y,
+                cur_offset = {
+                    left: drag.target.offset().left,
+                    bottom: parseInt(drag.target.css('bottom'))
+                };
+        
+        drag.target.css({
+            left: (cur_offset.left + dx),
+            bottom: (cur_offset.bottom - dy)
+        });
+
+            drag.x = e.pageX;
+            drag.y = e.pageY;
+        }
+    };
+    // finish move
+    $(document).mouseup(function() {
+        if(drag.moving){
+            drag.moving = false;        
+            drag.target.removeClass('moving');
+            $(document).unbind('mousemove', moving);
+        }
+    });
+    
+    // public       
+    var public = new function MessageCenter(){};
+    
+    public.send = function(mes, time){
+        if(normal.list.children('li').length == 0) // if no message the msgCenter is not in DOM
+            normal.box.prependTo('body');
             
-            time = isNaN(time) ? 3000 : time;
-            show(message);
-            var ids = hideTimeOut(message, time);
+        var message = $('<li></li>');
+        message.append(mes);
+        normal.list.prepend(message);
+        
+        show(message);
+        
+        if(time === 0 || time === 'fixed') return message; // the message will stay in the list
+        
+        time = isNaN(time) ? 3000 : time;
+        this.closeMessage(message, time);
+        
+        return message;
+    };
+    
+    public.getList = function(){ return normal.list; };
+    
+    public.getMax = function(){ return max; };
+    
+    public.closeMessage = function(jQMsg, time){
+        if(jQMsg.parents('#msgCenterStatic').length === 1) {
+            // remove a static Message
+            jQMsg.remove();
+            return;
+        }
+        // its a normal message
+        time = isNaN(time) ? 0 : time; // if no time, close immediately else wait the time
+        var ids = hideTimeOut(jQMsg, time);
+        
+        jQMsg.hover(
+            function(){clearTimeout(ids[0]); clearTimeout(ids[1]);}, // hover stop the removing time out
+            function(){ids = hideTimeOut(jQMsg)}  // quit hover --> restart removing time out
+        );
+        
+        normal.list.children('li').each(function(i){
+            if(i >= max)
+                hideTimeOut($(this));
+        });
+    };
+    
+    public.getStaticBox = function(){ return static.box; };
+    
+    public.showStaticBox = function(titre, params){
+        static.list.html(' ');
+        
+        if(!titre || titre == '')
+            titre = 'Notifications';
             
-            message.hover(
-                function(){clearTimeout(ids[0]); clearTimeout(ids[1]);},
-                function(){ids = hideTimeOut(message)}
-            );
-            
-            messageList.children('li').each(function(i){
-                if(i >= max) 
-                    hideTimeOut($(this));
-            });
-        },
-        getList: function(){
-            if(!messageList) 
-                messageList = $msgCenter.children('ul');
-            return messageList;
-        },
-        getMax: function(){ return max; }
-    }
+        static.box.children('h1').html(titre);
+        static.box.prependTo('body');
+        
+        var elemDOM = static.box.get(0);
+        elemDOM.style.removeProperty('left');
+        elemDOM.style.removeProperty('bottom');
+        elemDOM.style.removeProperty('width');
+        
+        if(typeof params == 'object'){
+            if(!isNaN(params.width)) static.box.css('width', params.width);
+            if(!isNaN(params.bottom)) static.box.css('bottom', params.bottom);
+            if(!isNaN(params.left)) static.box.css('left', params.left);
+            if(!isNaN(params.right)) static.box.css('right', params.right);
+        }
+        
+        static.visible = true;
+    };
+    
+    public.closeStaticBox = function(){
+        static.list.html(' ');
+        static.box.detach();
+        
+        static.visible = false;
+    };
+    
+    public.sendToStatic = function(msg){
+        if(!static.visible)
+            this.showStaticBox();
+        var message = $('<li></li>');
+        message.append(msg);
+        static.list.prepend(message);
+        
+        return message;
+    };
+    
+    return public;
 })();
+
 var pages = {};
 var managers = {};
 var dialog, srcMgr;
@@ -359,66 +462,6 @@ function createPageDialog() {
 		dialog.close();
 	});
 };
-
-// edite speack dialog
-function editeSpeakDialog( speak ){
-	//  search the asoociate speaker
-	var speaker = speak.attr( "data-who" );
-	for( var i in srcMgr.sources )
-		if( srcMgr.sourceType( i ) == "speaker" && srcMgr.getSource( i ).name == speaker )
-			break;
-	var spkObj = srcMgr.getSource( i );
-	
-	// setUp the list of moods
-	var map = spkObj.portrait;
-	var comboBox = $( '<div style="width:100px;height:180px;overflow-y:auto;">' );
-	for( var i in map ){
-		var option = $( '<div style="background:none;"><img src="' +  spkObj.getMoodUrl( i ) + '" width:"30" height="30" style="width:30px; height:30px;"/>'+i+'</div>' );
-		option.click( function( e ){
-			var mood = $( e.currentTarget ).text();
-			speak.attr( "data-mood" , mood );
-			speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( mood ) );
-            if(spkObj.portrait[mood]) 
-                speak.children("img").attr( "name" , spkObj.portrait[mood]);
-            else speak.children("img").attr( "name" , "none");
-			
-			updateHightlight( mood );
-		});
-		comboBox.append( option );
-	}
-	updateHightlight( speak.attr( "data-mood") );
-	
-	function updateHightlight( mood ){
-		var c = comboBox.find( "div" );
-		for( var i =0 ; i < c.length ; i ++  ){
-			var option = $( c[ i ] );
-			if( option.text() == mood )
-				option.css( "background" , "blue" );
-			else
-				option.css( "background" , "none" );
-		}
-	}
-	
-	dialog.showPopup('éditer interlocuteur', 340, 250 , "ok");
-	dialog.main.append( comboBox  );
-	
-	
-	var initialMood = speak.attr("data-mood" );
-	dialog.confirm.click(function() {
-		var actualMood = speak.attr("data-mood" );
-		if( initialMood != actualMood )
-			CommandMgr.executeCmd( new ModifySpeakMoodCmd( speak , actualMood  , spkObj.getMoodUrl( actualMood ) ,  initialMood , spkObj.getMoodUrl( initialMood ) ) );
-		
-		dialog.close();
-	});
-	dialog.annuler.click(function() {
-		var actualMood = speak.attr("data-mood" );
-		if( initialMood != actualMood ){
-			speak.attr( "data-mood" , initialMood );
-			speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( initialMood ) );
-		}
-	});
-}
 		
 
 // Add step dialog
@@ -625,7 +668,9 @@ function insertElemDialog(e) {
 		    var font = e.data.target.css('font-weight');
 		    font += " "+config.realX( cssCoordToNumber( e.data.target.css('font-size') ) )+"px";
 		    font += " "+e.data.target.css('font-family');
-			last.after(generateSpeaks(text, font , config.realX( e.data.target.width() ) , config.realY( e.data.target.height()) ));
+            var content = generateSpeaks(text, font , config.realX( e.data.target.width() ) , config.realY( e.data.target.height()) );
+			last.after(content);
+            ArticleFormater.setConfigurable(content);
 		}
 		dialog.close();
 	});
@@ -790,7 +835,7 @@ function validScript(e){
         tar = $('#script_tar').val();break;
     case "obj": 
         if($('#script_supp').children().length==0) {alert('Information incomplete');return;}
-        tar = $('#script_tar').data('chooser').val();
+        tar = $('#script_tar').data('chooser').val().id;
         supp = $('#script_supp').attr('target');
         break;
     case "cursor":
@@ -1187,7 +1232,7 @@ function generateSpeaks(content, font, width, lineHeight){
 				break;
 			}
 		if( !alreadyExist )
-			id_ressource = srcMgr.addSource( "speaker" , new Speaker( baliseInfo.id ) );
+			id_ressource = speakerMgr.createSpeaker(baliseInfo.id);
 		// and the mood
 		var mood = baliseInfo.param ? baliseInfo.param : "neutre";
 		var data = srcMgr.getSource( id_ressource );
@@ -1203,10 +1248,9 @@ function generateSpeaks(content, font, width, lineHeight){
 		
 		if( baliseInfo.inside.length > 0 ){
 			var id = "obj"+(curr.objId++);
-			var withdrawal = 45;
-			var lines = generateSpeakLines( baliseInfo.inside , font, width, lineHeight , id_ressource , mood  , withdrawal  );
+			var lines = generateSpeakLines( baliseInfo.inside, font, width, lineHeight, id_ressource, mood, config.withdrawal );
 			var color = srcMgr.getSource( id_ressource ).color;
-			res.append( $('<div id="'+ id +'" class="speaker" data-who="'+baliseInfo.id+'" data-withdrawal="'+ config.sceneX(withdrawal) + '" data-color="'+color+'" data-mood="'+mood+'" style="width:'+  config.sceneX( width )+'px; background-color:'+color+';" />')
+			res.append( $('<div id="'+ id +'" class="speaker" data-who="'+baliseInfo.id+'" data-withdrawal="'+ config.sceneX(config.withdrawal) + '" data-color="'+color+'" data-mood="'+mood+'" style="width:'+  config.sceneX( width )+'px; background-color:'+color+';" />')
                .append( lines ) );
 		}
 	}
@@ -1283,16 +1327,16 @@ function generateSpeakLines( content, font, width, lineHeight, id , mood , decal
              img.attr('name', srcMgr.getSource( id ).portrait[ mood ]);
         else 
 			img.attr('name', 'none');
-        img.css( "position" , "absolute" );
-        img.css( "width" , config.sceneX(decalage*0.9)+"px" );
-        img.css( "height" , config.sceneX(decalage*0.9)+"px" );
+        img.css({ "position": "absolute",
+                  "width": config.sceneX(decalage*0.9),
+                  "height": config.sceneX(decalage*0.9),
+                  "left": config.sceneX(decalage*0.1) });
         img.attr( "height" , config.sceneX(decalage*0.9) );
         img.attr( "width" , config.sceneX(decalage*0.9) );
-		img.css( "left" , config.sceneX( decalage*0.1 )+"px" );
 		
 		
 		img.click( function(e){
-			editeSpeakDialog( $( e.currentTarget ).parent() );
+			speakerMgr.editDialogPopup( $( e.currentTarget ).parent() );
 		});
 		
 		return res.children();
@@ -1330,16 +1374,6 @@ function generateLines( content, font, width, lineHeight ){
 	res.each(function() {
 	    if($(this).prop('tagName') == "PARAGRAPHTAG") return;
 		$(this).height(config.sceneY(lineHeight));
-		$(this).deletable(null, true)
-		       .selectable(selectP)
-		       .staticButton('./images/UI/insertbelow.png', insertElemDialog)
-		       .staticButton('./images/UI/config.png', staticConfig)
-		       .staticButton('./images/tools/anime.png', animeTool.animateObj)
-		       .staticButton('./images/UI/addscript.jpg', addScriptForObj);
-		$(this).children('.del_container').css({
-			'position': 'relative',
-			'top': ($(this).children('p').length == 0) ? '0%' : '-100%',
-			'display':'none'});
 	});
 	return res;
 }
@@ -1370,10 +1404,13 @@ function addArticle(manager, name, params, content) {
 	}
 	if(params.color) article.css('color', params.color);
 	if(params.align) article.css('text-align', params.align);
-	article.append(generateSpeaks(content, font, params.lw, params.lh));
+    var res = generateSpeaks(content, font, params.lw, params.lh)
+	article.append(res);
 	// Listener to manipulate
 	article.deletable().configurable();
 	step.append(article);
+    
+    ArticleFormater.setConfigurable(res);
 }
 
 function defineZ(step, obj){
@@ -1581,6 +1618,8 @@ function expressTrad(){
 	
 	$( ".article" ).append( e );
 }
+
+
 var ArticleFormater = function() {
 	
 	var correspondanceType = { 	'audiolink' : 'audio' , 
@@ -1981,7 +2020,9 @@ reverse : function( parent , chaine , article , meta , font , width , lineHeight
 	if( !lineHeight )
 		lineHeight = config.realY( cssCoordToNumber( article.css('line-height') ) );
 	
-	parent.append( generateSpeaks( chaine, font , width , lineHeight ) );
+    var res = generateSpeaks( chaine, font , width , lineHeight );
+	parent.append( res );
+    ArticleFormater.setConfigurable(res);
 	
 	// Deformat chiane
 	var realchaine = chaine.replace(/\[[^\[\]]*\]/g, "");
@@ -2347,8 +2388,48 @@ reverse : function( parent , chaine , article , meta , font , width , lineHeight
 		
 		return { i:parseInt( i[1] ) , type:type[1] , id:id[1] , index:iboA , keyword : keyword , format:format };
 	}
-}
+},
 
+setConfigurable: function ($content){
+    // obj is the children of the article
+    if(!$content.parent().hasClass('article'))
+        return;
+        
+    function setArticleObjProp(jqObj){
+        jqObj.deletable(null, true)
+             .selectable(selectP)
+             .staticButton('./images/UI/insertbelow.png', insertElemDialog)
+             .staticButton('./images/UI/config.png', staticConfig)
+             .staticButton('./images/tools/anime.png', animeTool.animateObj)
+             .staticButton('./images/UI/addscript.jpg', addScriptForObj)
+             .css({'z-index':'0','background':'none'});
+        scriptMgr.countScripts(jqObj.attr('id'),'obj', jqObj);
+        jqObj.children('.del_container').css({
+            'position': 'relative',
+            'left': jqObj.width()-15+'px',
+            'display':'none'});
+    }
+    $content.each(function(){
+        if(!$(this).is('div.textLine, div.illu, div.game, div.speaker'))
+            return;
+        if ($(this).hasClass('speaker')){
+            // speaker is a div which contains textLine
+            // it also contains a img which need to have the click event binded
+            $(this).children('.textLine, img').each(function(){
+                // if its the img , bind the event
+                if( this.tagName.toLowerCase() == "img" ){
+                    $(this).click( function(e){
+                        speakerMgr.editDialogPopup( $( e.currentTarget ).parent() );
+                    });
+                } else
+                    // if its not, its textLine
+                    setArticleObjProp($(this));
+            });
+        }
+        else 
+            setArticleObjProp($(this));
+    });
+},
 
 /*
 reverse_ : function( parent , chaine , article , meta , font , width , lineHeight){ 

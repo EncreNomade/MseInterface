@@ -261,6 +261,8 @@ var Config = (function() {
 		    'PagebarInChoosing' : 9,
 		    'Scene' : 1
 		};
+		
+		this.withdrawal = 45;
 	}
 	
 	var instance;
@@ -546,7 +548,9 @@ SourceManager.prototype = {
             data.srcId = id;
 			expo.append('<img class="srcicon_back" src="' + data.getMoodUrl("neutre") +'" name="'+id+'">');
 		    expo.append('<p>Speaker: '+data.name+'</p>');
-		    expo.circleMenu({'config':['./images/UI/config.png',data.showSpeakerOnEditor]});
+		    expo.circleMenu({'delete': ['./images/UI/del.png', function(src){ CommandMgr.executeCmd(new RemoveSpeakerCmd(src)); }],
+                             'config':['./images/UI/config.png', speakerMgr.modifySpeakerDialog],
+		                     'addDialog':['./images/UI/dialog.png', speakerMgr.addDialogPopup]});
 		    // expo.click(function(){
 		        // srcMgr.getSource($(this).data('srcId')).showSpeakerOnEditor();
 		    // });
@@ -1049,39 +1053,7 @@ StepManager.prototype = {
 	        var obj = $(this);
 	        // Article
 	        if(obj.hasClass('article')) {
-	            obj.children('div').each(function(){
-                    function setArticleObjProp(jqObj){
-                        jqObj.deletable(null, true)
-                             .selectable(selectP)
-                             .staticButton('./images/UI/insertbelow.png', insertElemDialog)
-                             .staticButton('./images/UI/config.png', staticConfig)
-                             .staticButton('./images/tools/anime.png', animeTool.animateObj)
-                             .staticButton('./images/UI/addscript.jpg', addScriptForObj)
-                             .css({'z-index':'0','background':'none'});
-                        scriptMgr.countScripts(jqObj.attr('id'),'obj', jqObj);
-                        jqObj.children('.del_container').css({
-                            'position': 'relative',
-                            'left': jqObj.width()-15+'px',
-                            'display':'none'});
-                    }
-                    if ($(this).hasClass('speaker')){
-						// speaker is a div which contains textLine
-						// it also contains a img which need to have the click event binded
-                        $(this).children().each(function(){
-							// if its the img , bind the event
-							if( this.tagName.toLowerCase() == "img" ){
-								$(this).click( function(e){
-									editeSpeakDialog( $( e.currentTarget ).parent() );
-								});
-							}else
-								// if its not, its textLine
-								setArticleObjProp($(this));
-						});
-                    }
-                    else 
-						setArticleObjProp($(this));
-	            });
-	            obj.deletable().configurable();
+                ArticleFormater.setConfigurable(obj.children());
 	        }
 	        // Other obj
 	        else {
@@ -1543,7 +1515,7 @@ Animation.prototype = {
 
 // Speaker system
 var Speaker = function( name ) {
-    if(!name ) return;
+    if(name != '' && !name) return; // if name == '' -> its a call by the dialog creation
     this.name = name;
 	this.portrait = { neutre : null };
 	this.color = "#467291";
@@ -1577,156 +1549,11 @@ Speaker.prototype = {
 		this.portrait[ newName ] = this.portrait[ oldName ];
 		delete this.portrait[ oldName ];
 	},
-    changeVisageInEditor: function(e){
-        e = e.originalEvent;
-        e.stopPropagation();
-        var id = e.dataTransfer.getData('Text');
-        var type = srcMgr.sourceType(id);
-        if(!id || type != $(this).data('type')) return;
-        $(this).siblings('img').prop('src',srcMgr.sources[id].data);
-        $(this).siblings('img').prop('name',id);
-    },
-    showSpeakerOnEditor: function(src){
-		// because that function is call by a click, this is not the object himslef,
-        var self = srcMgr.getSource(src.data('srcId'));
-        function dropVisage(e){
-            e = e.originalEvent;
-            e.stopPropagation();
-            $(this).css('border-style', 'dotted');
-            
-            var id = e.dataTransfer.getData('Text');
-            var type = srcMgr.sourceType(id);
-            if(!id || type != $(this).data('type')) return;
-            // Place in the elem zone
-			var name = 'humeur'+$('#mood_selector div').length;
-            var elem = $('<div data-related="'+name+'" ><img  src="'+srcMgr.sources[id].data+'" name="'+id+'"></div>');
-            elem.append('<input type="text" value="'+name+'" />');
-            elem.deletable(null, true);
-            var obj = $('#mood_selector').data('spkObj');
-            var dz = new DropZone(obj.changeVisageInEditor,{'height':'100%','border-width': '2px'});
-            dz.jqObj.data('type','image');
-            elem.append(dz.jqObj);
-            $('#mood_selector').append(elem);
-			dz.jqObj.css( "top" , elem.children("img").position().top+"px" );
-			dz.jqObj.css( "width" , elem.children("img").width()+"px" );
-			dz.jqObj.css( "height" , elem.children("img").height()+"px" );
-			dz.jqObj.css( "z-index" , elem.children("img").css( "z-index" ) +1 );
-			dz.jqObj.css( "position" , "absolute" );
-        }
-        dialog.showPopup('Edition speaker',450, 410,'Modifier');
-        // show ressource panel
-        $('#bottom').css('z-index','110');
-        
-        var htmlStr = '';
-        htmlStr += '<table>';
-        htmlStr +=  '<tr><td>Nom</td>';
-        htmlStr +=    '<td>Couleur</td>';
-        htmlStr +=    '<td>Style</td> </tr>';
-        htmlStr +=  '<tr><td><input type="text" id="speaker_name"/> </td>';
-        htmlStr +=    '<td><input type="text" id="bulle_couleur"/> </td>';
-        htmlStr +=    '<td><input type="text" id="bulle_style"/> </td> </tr>';
-        htmlStr += '</table><br/>';
-        
-        dialog.main.append(htmlStr);
-        $('#speaker_name').val(self.name);        
-        $('#bulle_couleur').val(self.color);        
-        // $('#bulle_style').val(this.style);
-        
-        var dz = (new DropZone(dropVisage, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "add_mood")).jqObj;
-        dz.data('type', 'image');
-        dialog.main.append(dz);
-        
-        var moodSelector = $('<div id="mood_selector"></div>');
-        moodSelector.data('spkObj', self);
-        dialog.main.append(moodSelector);
-        for (var i in self.portrait) {
-            // restore all moods
-
-			var url = self.getMoodUrl( i );
-            var elem = $('<div data-related="'+i+'"><img src="'+ url +'" ></div>');
-			if( self.portrait[i] )
-				elem.children("img").attr( "name" , self.portrait[i] );
-                
-            if(i == 'neutre'){
-                elem.append('<p>'+i+'</p>');
-                elem.deletable(function(){
-                    // mettre img par default
-                    var img = $(this).parent().siblings('img');
-                    var defaultUrl = "./images/UI/default_portrait.png";
-                    if(img.prop('src') != defaultUrl){
-                        img.prop('src', defaultUrl);
-                        img.removeAttr('name');
-                    }
-                    var obj = $('#mood_selector').data('spkObj');
-                    obj.portrait[i] = null;
-                },true);
-            }
-            else {                
-                elem.append('<input type="text" value="'+i+'" />');
-                elem.deletable(null,true);
-            }
-            
-            var dz = new DropZone(self.changeVisageInEditor,{'height':'100%','border-width': '2px'});
-            dz.jqObj.data('type','image');
-            elem.append(dz.jqObj);
-            moodSelector.append(elem);
-			
-			dz.jqObj.css( "top" , elem.children("img").position().top+"px" );
-			dz.jqObj.css( "width" , elem.children("img").width()+"px" );
-			dz.jqObj.css( "height" , elem.children("img").height()+"px" );
-			dz.jqObj.css( "z-index" , elem.children("img").css( "z-index" ) +1 );
-			dz.jqObj.css( "position" , "absolute" );
-        }
-        
-        dialog.confirm.click({'speaker':self}, self.validChanges);
-    },
 	getMoodUrl : function( key ){
 		if( !key || !this.portrait[ key ] )
 			return "./images/UI/default_portrait.png";
 		return srcMgr.getSource( this.portrait[ key ] );
 	},
-	// analyse the change between the html form and the state of the object
-    validChanges: function(e){
-        var spkObj =  e.data.speaker;
-        
-		var state = {};
-		for( var i in spkObj.portrait )
-			state[ i ] = true;
-		
-		var cmds = [];
-		
-        var moods = $('#mood_selector').children();
-        moods.each(function(i){
-            var srcimg = $(this).children('img').attr('name');
-			if( $(this).children('input').length > 0 )
-				var moodName = $(this).children('input').val().toLowerCase();
-			else
-				var moodName = $(this).text().toLowerCase();
-            var reelName = $(this).attr("data-related" ).toLowerCase();  // name of the elment when we instanciate it
-			
-			if( !spkObj.hasMood( moodName ) )
-				cmds.push( new AddMoodCmd( spkObj , moodName , srcimg ) );
-			else{
-				state[ moodName ] = false;
-				if( ( !srcimg != !spkObj.getPictSrc( moodName ) ) || spkObj.getPictSrc( moodName ) != srcimg )
-					cmds.push( new ModifyMoodSrcCmd( spkObj , moodName , srcimg ) );
-			}
-        });
-        for( var i in state )
-			if( state[ i ] )
-				cmds.push( new DelMoodCmd( spkObj , i ) );
-		
-		var newColor = $('#bulle_couleur' ).val();
-		if( spkObj.color != newColor && isColor( newColor ) )
-			cmds.push( new ModifyColorSpeakCmd( spkObj , newColor ) );
-		
-		
-		CommandMgr.executeCmd( new CommandMulti( cmds ) );
-			
-        
-        closeBottom();
-        dialog.close();
-    },
     clearPortraits: function(){
         this.portrait = { neutre : null };
     },
@@ -1770,7 +1597,453 @@ Speaker.prototype = {
     }
 };
 
+var speakerMgr = (function(){
+    var Private = {};
+    var Public = new function SpeakerManager(){};
+    
+    Private.changeMoodInDialog = function(e){
+        e = e.originalEvent;
+        e.stopPropagation();
+        var id = e.dataTransfer.getData('Text');
+        var type = srcMgr.sourceType(id);
+        if(!id || type != $(this).data('type')) return;
+        // check if drop a new image
+        if($(this).siblings('img').prop('name') == id)
+            return;
+        
+        $(this).siblings('img').prop('src',srcMgr.sources[id].data);
+        $(this).siblings('img').prop('name',id);
+    };    
+    
+    Private.validChanges = function(e){
+        var spkObj =  e.data.speaker;
+        var newName = $('.popup #speaker_name').val();
+        if(newName == '')
+            return;
+        else 
+            spkObj.rename(newName);
+		var state = {};
+		for( var i in spkObj.portrait )
+			state[ i ] = true;
+		
+		var cmds = [];
+		
+        var moods = $('#mood_selector').children();
+        moods.each(function(i){
+            if($(this).hasClass('drop_zone'))
+                return;
+            var srcimg = $(this).children('img').attr('name');
+			if( $(this).children('input').length > 0 )
+				var moodName = $(this).children('input').val().toLowerCase();
+			else
+				var moodName = $(this).text().toLowerCase();
+            var reelName = $(this).attr("data-related" ).toLowerCase();  // name of the elment when we instanciate it
+			
+			if( !spkObj.hasMood( moodName ) )
+				cmds.push( new AddMoodCmd( spkObj , moodName , srcimg ) );
+			else{
+				state[ moodName ] = false;
+				if( ( !srcimg != !spkObj.getPictSrc( moodName ) ) || spkObj.getPictSrc( moodName ) != srcimg )
+					cmds.push( new ModifyMoodSrcCmd( spkObj , moodName , srcimg ) );
+			}
+        });
+        for( var i in state )
+			if( state[ i ] )
+				cmds.push( new DelMoodCmd( spkObj , i ) );
+		
+		var newColor = $('#bulle_couleur' ).val();
+		if( spkObj.color != newColor && isColor( newColor ) )
+			cmds.push( new ModifyColorSpeakCmd( spkObj , newColor ) );
 
+        closeBottom();
+        dialog.close();
+        
+        return cmds;
+    };
+        
+    Private.coreSpeakerDialog = function(speakerObj){
+        function dropVisage(e){
+            e = e.originalEvent;
+            e.stopPropagation();
+            $(this).css('border-style', 'dotted');
+            
+            var id = e.dataTransfer.getData('Text');
+            var type = srcMgr.sourceType(id);
+            if(!id || type != $(this).data('type')) return;
+            
+            // check if drop a new image
+            var siblings = $(this).siblings();
+            var finded = false;
+            siblings.each(function(){ if($(this).find('img').prop('name') == id) finded = true; });
+            if(finded) return;
+            
+            // Place in the elem zone
+			var name = 'humeur'+$('#mood_selector>div').length;
+            var elem = $('<div data-related="'+name+'" ><img  src="'+srcMgr.sources[id].data+'" name="'+id+'"></div>');
+            elem.append('<input type="text" value="'+name+'" />');
+            elem.deletable(null, true);            
+            elem.find('.del_container img').css('right', '10px'); // replace icons
+            var obj = $('#mood_selector').data('spkObj');
+            var dz = new DropZone(Private.changeMoodInDialog,{'height':'100%','border-width': '2px'});
+            dz.jqObj.data('type','image');
+            elem.append(dz.jqObj);
+            $(this).before(elem);
+			dz.jqObj.css( "top" , elem.children("img").position().top+"px" );
+			dz.jqObj.css( "width" , elem.children("img").width()+"px" );
+			dz.jqObj.css( "height" , elem.children("img").height()+"px" );
+			dz.jqObj.css( "z-index" , elem.children("img").css( "z-index" ) +1 );
+			dz.jqObj.css( "position" , "absolute" );
+        }
+        
+        // show ressource panel
+        $('#bottom').css('z-index','110');
+        
+        var htmlStr = '';
+        htmlStr += '<table>';
+        htmlStr +=  '<tr><td>Nom</td>';
+        htmlStr +=    '<td>Couleur</td>';
+        htmlStr +=    '<td>Style</td> </tr>';
+        htmlStr +=  '<tr><td><input type="text" id="speaker_name"/> </td>';
+        htmlStr +=    '<td><input type="text" id="bulle_couleur"/> </td>';
+        htmlStr +=    '<td><input type="text" id="bulle_style"/> </td> </tr>';
+        htmlStr += '</table><br/>';
+        
+        dialog.main.append(htmlStr);
+        $('#speaker_name').val(speakerObj.name);        
+        $('#bulle_couleur').val(speakerObj.color);        
+        // $('#bulle_style').val(this.style);
+        
+        var moodSelector = $('<div id="mood_selector"></div>');
+        moodSelector.data('spkObj', speakerObj);
+        dialog.main.append(moodSelector);
+        for (var i in speakerObj.portrait) {
+            // restore all moods
+			var url = speakerObj.getMoodUrl( i );
+            var elem = $('<div data-related="'+i+'"><img src="'+ url +'" ></div>');
+			if( speakerObj.portrait[i] )
+				elem.children("img").attr( "name" , speakerObj.portrait[i] );                
+                
+            if(i == 'neutre'){
+                elem.append('<p>'+i+'</p>');
+                elem.deletable(function(){
+                    // mettre img par default
+                    var img = $(this).parent().siblings('img');
+                    var defaultUrl = "./images/UI/default_portrait.png";
+                    if(img.prop('src') != defaultUrl){
+                        img.prop('src', defaultUrl);
+                        img.removeAttr('name');
+                    }
+                    var obj = $('#mood_selector').data('spkObj');
+                    obj.portrait[i] = null;
+                },true);
+            }
+            else {
+                elem.append('<input type="text" value="'+i+'" />');
+                elem.deletable(null,true);
+            }
+            elem.find('.del_container img').css('right', '10px'); // replace icons
+            
+            var dz = new DropZone(Private.changeMoodInDialog,{'height':'100%','border-width': '2px'});
+            dz.jqObj.data('type','image');
+            elem.append(dz.jqObj);
+            moodSelector.append(elem);
+			
+			dz.jqObj.css( "top" , elem.children("img").position().top+"px" );
+			dz.jqObj.css( "width" , elem.children("img").width()+"px" );
+			dz.jqObj.css( "height" , elem.children("img").height()+"px" );
+			dz.jqObj.css( "z-index" , elem.children("img").css( "z-index" ) +1 );
+			dz.jqObj.css( "position" , "absolute" );
+        }
+        
+        var dz = (new DropZone(dropVisage, {'height':'65px', 'text-align': 'center'}, "add_mood")).jqObj;
+        dz.data('type', 'image');
+        dz.append('<span style="margin-top: 10px; font-size: 12px;">Ajouter une humeur</span>');
+        moodSelector.append(dz);
+    };
+    
+
+    Public.getSpeaker = function(name){ 
+        for(var id in srcMgr.sources){
+            var src = srcMgr.sources[id]
+            if(src.type == "speaker" && src.data.name == name)
+                return src.data;
+        }
+    };
+    Public.getAllSpeakers = function(){
+        var speakers = [];
+        for(var id in srcMgr.sources){
+            var src = srcMgr.sources[id]
+            if(src.type == "speaker")
+                speakers.push(src.data);
+        }
+        return speakers; 
+    };
+    
+    Public.modifySpeakerDialog = function(src){
+        var speaker = srcMgr.getSource(src.data('srcId'));
+        
+        dialog.showPopup('Edition speaker',450, 410, 'modifier');
+        
+        Private.coreSpeakerDialog(speaker);
+        
+        dialog.confirm.click({'speaker':speaker}, function(e){
+            var changesCmds = Private.validChanges(e);
+            CommandMgr.executeCmd( new CommandMulti( changesCmds ) );
+        });
+    };
+    
+    Public.createSpeakerDialog = function(){
+        var speaker = new Speaker('');
+        
+        dialog.showPopup('Edition speaker',450, 410, 'modifier');        
+        
+        Private.coreSpeakerDialog(speaker);
+        
+        dialog.confirm.click({'speaker':speaker}, function(e){  
+            var name = $('.popup #speaker_name').val();
+            if(name == '' || !nameValidation(name))
+                return alert('Il faut entrer un nom valid pour le personnage.');
+            var spkObj =  e.data.speaker;
+            spkObj.name = name;
+            CommandMgr.executeCmd( new CreateSpeakerCmd(spkObj) );
+            Private.validChanges(e);
+        });
+    };
+    
+    Public.createSpeaker = function(name, speaker) {
+        var spkObj = speaker instanceof Speaker ? speaker : new Speaker(name);
+        srcMgr.addSource( "speaker" , spkObj, spkObj.name);
+        return spkObj;
+    };
+    
+    Public.addDialogPopup = function(src) {
+        var id = src.data('srcId');
+        var speaker = srcMgr.getSource(id);
+        // Dialog
+        dialog.showPopup('Ajouter un dialog', 380, 420, 'Confirmer');
+        dialog.main.append("<p>Cliquer pour choisir les lignes de dialog</p>");
+        // Object chooser
+        var chooser = new ObjChooser("dialog_chooser", true);
+        var p = $('<p></p>');
+        p.css({'height':30});
+        chooser.appendTo(p);
+        dialog.main.append(p);
+        // Dialog lines
+        dialog.main.append("<p>Résultat de selection</p>");
+        var lines = $("<dl id='dialog_lines'></dl>");
+        lines.css({'height':180});
+        dialog.main.append(lines);
+        // Confirm function
+        dialog.confirm.click(function() {
+            var dts = $('dl#dialog_lines').children('dt');
+            if(dts.length <= 0) {
+                // No content
+                dialog.close();
+                return;
+            }
+            // Init prev id with first obj
+            var offid = 0;
+            var offset = $(dts.get(offid));
+            var article, width, font, lineHeight;
+            var obj, illu, dt, i, j, currid, nextid, prev, originoff, line, length = dts.length;
+            var lines, decalage = 50, text;
+            for(i = 0; i < length; ++i) {
+                currid = parseInt( $(dts.get(i)).attr('index') );
+                nextid = (i+1 == length) ? -1 : parseInt( $(dts.get(i+1)).attr('index') );
+                
+                // If prev and curr is seperated, one dialog is found
+                if(currid != nextid-1) {
+                    lines = new jQuery();
+                    for(j = offid; j <= i; ++j){
+                        lines = lines.add( dts.eq(j).data('originalObj') );
+                        console.log(lines);
+                    }
+                    CommandMgr.executeCmd( new AddDialogCmd(lines, id, speaker) );
+                    // Public.addDialog(lines, id, speaker);
+                    
+                    // Update offset infor
+                    offid = i+1;
+                    if(offid < length) offset = dts.eq(offid);
+                }
+            }
+            dialog.close();
+        });
+        // Lines choosed event
+        chooser.callback = new Callback(function(objs){
+            var curr, dt, arr = [];
+            
+            // Sort for further manipulation
+            for(var i = 0; i < objs.length; ++i) {
+                curr = $(objs[i]);
+                dt = $('<dt></dt>').append( curr.children('p').clone() );
+                dt.data('originalObj', curr);
+                dt.attr('index', curr.prevAll().length);
+                arr.push(dt);
+            }
+            arr.sort(function(a,b) {
+                return parseInt(a.attr('index')) - parseInt(b.attr('index'));
+            });
+            for(var i = 0; i < arr.length; ++i)
+                lines.append(arr[i]);
+        }, window);
+        chooser.verifyFn = function(obj) {
+            obj = $(obj);
+            if(!(obj instanceof jQuery) || obj.children('p').text().trim() == "") return false;
+            else return true;
+        };
+    };
+    
+    Public.addDialog = function($lines, id, speaker) { // $lines : jqObj contains the original obj to convert
+        var article, prev, width, font, lineHeight, mood;
+        
+        article = $lines.parent();
+        // Prev obj to the start obj, for insert the dialog after
+        prev = $lines.eq(0).prev();
+        
+        // Parameters for dialog object
+        mood = "neutre";
+        width = $lines.eq(0).width();
+        font = article.css('font-weight');
+        font += " "+config.realX( cssCoordToNumber( article.css('font-size') ) )+"px";
+        font += " "+article.css('font-family');
+        lineHeight = parseInt(article.css('line-height'));
+        // Create Dialog object
+        obj = $('<div id="'+ id +'" class="speaker" data-who="'+speaker.name+'" data-withdrawal="'+ config.sceneX(config.withdrawal) + '" data-color="'+speaker.color+'" data-mood="'+mood+'"/>');
+        obj.css({"width": width, "background-color": speaker.color});
+        
+        // Content
+        text = "";
+        $lines.each(function(){
+            text += $(this).children('p').text();
+        });
+        $lines.detach();
+        
+        // Generate new speaks lines
+        obj.append(generateSpeakLines(text, font, config.realX(width), config.realY(lineHeight), id, mood, config.withdrawal));
+        
+        // Append dialog in the beginning of article parent
+        if(prev.length == 0) {
+            article.prepend(obj);
+        }
+        else if(prev.prop('tagName') != "PARAGRAPHTAG") {
+            prev.after(obj);
+            // Insert a line break if there is not
+            prev.after('<paragraphtag></paragraphtag>');
+        }
+        // Append dialog object after prev
+        else prev.after(obj);
+        // Remove the paragraphtag after the obj to avoid parse probleme
+        if(obj.next().prop('tagName') == "PARAGRAPHTAG")
+            obj.next().remove();  
+                
+        ArticleFormater.setConfigurable(obj);
+        return obj;
+    };
+
+    Public.editDialogPopup = function($speak){
+        //  search the asoociate speaker
+        var speaker = $speak.attr( "data-who" );
+        for( var i in srcMgr.sources )
+            if( srcMgr.sourceType( i ) == "speaker" && srcMgr.getSource( i ).name == speaker )
+                break;
+        var spkObj = srcMgr.getSource( i );
+        
+        // setUp the list of moods
+        var map = spkObj.portrait;
+        var comboBox = $( '<div id="mood_selector">' );
+        var defaultOpt = null;
+        for( var i in map ){
+            var option = $( '<div><img src="' +  spkObj.getMoodUrl( i ) + '"/><p>'+i+'</p></div>' );
+            if(i == $speak.attr( "data-mood" ))            
+                defaultOpt = option; // select the mood
+            option.click( function( e ){
+                var mood = $( e.currentTarget ).children('p').text();
+                $speak.attr( "data-mood" , mood );
+                $speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( mood ) );
+                if(spkObj.portrait[mood]) 
+                    $speak.children("img").attr( "name" , spkObj.portrait[mood]);
+                else $speak.children("img").attr( "name" , "none");
+                
+                updateHightlight.call(this);
+            });
+            comboBox.append( option );
+        }
+        
+        if(defaultOpt)
+            updateHightlight.call(defaultOpt); // choose the current mood
+        comboBox.children('div').css('border-radius', '5px');
+        
+        function updateHightlight( mood ){
+            var that = $(this);
+            that.siblings().css('border', 'solid 2px transparent');
+            that.css('border', 'solid 2px #C21C1C');
+        }
+        
+        dialog.showPopup('éditer interlocuteur', 350, 300, 'Modifier');
+        dialog.main.append( comboBox  );
+        
+        
+        var initialMood = $speak.attr("data-mood" );
+        dialog.confirm.click(function() {
+            var actualMood = $speak.attr("data-mood" );
+            if( initialMood != actualMood )
+                CommandMgr.executeCmd( new ModifySpeakMoodCmd( $speak , actualMood  , spkObj.getMoodUrl( actualMood ) ,  initialMood , spkObj.getMoodUrl( initialMood ) ) );
+            
+            dialog.close();
+        });
+        var delButton = dialog.addButton($('<input type="button" value="supprimer"></input>'));
+        delButton.click({speakDiv: $speak}, function(e){
+            var $speaker = e.data.speakDiv;     
+            CommandMgr.executeCmd( new RemoveSpeakCmd($speaker) );    
+            dialog.close();
+        });
+        
+        dialog.annuler.click(function() {
+            var actualMood = $speak.attr("data-mood" );
+            if( initialMood != actualMood ){
+                $speak.attr( "data-mood" , initialMood );
+                $speak.children( 'img' ).attr( "src" , spkObj.getMoodUrl( initialMood ) );
+            }
+        });
+    }
+
+    Public.removeDialog = function(speakerDiv){
+        var article = speakerDiv.parent();
+        
+        var content = speakerDiv.children('.textLine').children('p').text();        
+        var width = article.width();
+        var lineHeight = parseInt(article.css('line-height'));
+        lineHeight = config.realY(lineHeight);
+        var font = article.css('font-weight');
+        font += " " + config.realX( cssCoordToNumber( article.css('font-size') ) )+"px";
+        font += " " + article.css('font-family');
+        
+        var $lines = generateLines( content, font,  config.realX(width), config.realY(lineHeight));
+
+		speakerDiv.after($lines);
+        speakerDiv.detach();
+        ArticleFormater.setConfigurable($lines);
+        
+        return $lines;
+    }
+    
+    Public.removeSpeaker = function(src){ // call by circle menu
+        var id = src.data('srcId');
+        var speaker = srcMgr.getSource(id);
+        var speakersDiv = speaker.getAssociateSpeak();
+        var lines = [], res = null;
+        for(var i = 0; i < speakersDiv.length; i++){
+            res = Public.removeDialog(speakersDiv.eq(i));
+            lines.push(res);            
+        }
+            
+        srcMgr.delSource(id);
+        
+        return lines;
+    }
+    
+    return Public;
+})();
 
 // Script system
 var Script = function(src, srcType, action, target, reaction, immediate, supp){
@@ -3185,7 +3458,8 @@ var initScriptTool = function() {
             this.scriptName.val("");
             this.textArea.val("");
         },
-        insertVar: function(id) {
+        insertVar: function(obj) {
+            var id = obj.id;
             var val = this.textArea.val();
             var startPos = this.textArea.get(0).selectionStart;
             var part1 = val.substring(0, startPos);
@@ -3496,17 +3770,20 @@ var loading = function() {
 
 
 // Object chooser widgt
-var ObjChooser = function(id){
+var ObjChooser = function(id, multi){
     this.id = id;
     this.jqObj = $('<div id="'+id+'" class="objChooser"><img src="./images/UI/objchooser.jpg"/><h5/></div>');
     this.jqObj.data('chooser', this);
     this.jqObj.click(function(){
         $(this).data('chooser').startChoose();
     });
+    this.multi = (multi !== true) ? false : true;
+    this.objs = [];
+    this.callback = null;
+    this.verifyFn = null;
 };
 ObjChooser.prototype = {
     constructor: ObjChooser,
-    refObjId: 0,
     appendTo: function(parent){
         var h = parent.innerHeight();
         this.jqObj.height(h);
@@ -3515,7 +3792,8 @@ ObjChooser.prototype = {
         this.jqObj.appendTo(parent);
     },
     val: function(){
-        return this.jqObj.children('h5').text();
+        if(!this.multi) return this.objs[0];
+        else return this.objs;
     },
     startChoose: function(){
         curr.chooser = this;
@@ -3525,15 +3803,70 @@ ObjChooser.prototype = {
         this.pageBarZid = $('#pageBar').css('z-index');
         $('#editor').css('z-index', config.zid.EditorInChoosing);
         $('#pageBar').css('z-index', config.zid.PagebarInChoosing);
+        
+        // Active message center notification
+        if(this.multi) {
+            var msgobj = $("<p>Cliquer <span style='text-decoration: underline; cursor: pointer;'>ici</span> ou appuyer sur return pour confirmer</p>");
+            var span = msgobj.children('span');
+            msgCenter.showStaticBox(msgobj);
+            
+            span.bind('click', {'chooser':this}, function(e) {
+                msgCenter.closeStaticBox();
+                e.data.chooser.finishChoose();
+            });
+            // Return key listener
+// TODO
+        }
+    },
+    getNotif: function(obj) {
+        obj = $(obj);
+        if(obj.hasClass('textLine')) {
+            return $("<p> - "+obj.children('p').text()+"</p>");
+        }
     },
     choosed: function(obj){
-        curr.chooser = null;
+        // Verification existance of obj
+        if($.inArray(obj, this.objs) != -1) return;
+        if(typeof this.verifyFn == "function") 
+            if(!this.verifyFn(obj)) return;
+        
         // Set referenced id for analyze in the server
-        if(!obj.prop('id') || obj.prop('id') == "") 
-            obj.prop('id', "referenced"+(ObjChooser.prototype.refObjId++));
+        if(!obj.id || obj.id == "") 
+            obj.id = "referenced"+(curr.objId++);
             
-        if(!this.callback) this.jqObj.children('h5').text(obj.prop('id'));
-        else this.callback.invoke(obj.prop('id'));
+        this.objs.push(obj);
+        
+        if(!this.multi) this.finishChoose();
+        else {
+            // Append notification to message center
+            msgCenter.sendToStatic( this.getNotif(obj) );
+        }
+    },
+    finishChoose: function() {
+        curr.chooser = null;
+        // Single Chooser
+        if(!this.multi) {
+            if(!this.callback) this.jqObj.children('h5').text(this.objs[0].id);
+            else if(this.objs[0]) this.callback.invoke(this.objs[0]);
+        }
+        // Multi Chooser
+        else {
+            if(this.callback) {
+                this.callback.invoke(this.objs);
+            }
+            else {
+                var str = "";
+                if(!this.callback) {
+                    for(var i = 0; i < 2 && i < this.objs.length; ++i) {
+                        if(i != 0) str += ", ";
+                        str += this.objs[i].id;
+                    }
+                    if(this.objs.length > 2) str += "...";
+                }
+                this.jqObj.children('h5').text(str);
+            }
+        }
+        this.objs.splice(0, this.objs.length);
         
         $('#center_panel, #right').css('z-index', config.zid.Scene);
         $('#editor').css('z-index', this.editorZid);
@@ -3544,7 +3877,7 @@ ObjChooser.prototype = {
 function objChoosed(e){
     if(!curr.chooser) return;
     e.preventDefault();
-    curr.chooser.choosed($(this));
+    curr.chooser.choosed(this);
 }
 
 
