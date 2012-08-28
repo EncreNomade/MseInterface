@@ -1,41 +1,56 @@
-/*!
- * Plugin jQuery of Interaction
- * Encre Nomade
- *
- * Author: LING Huabin - lphuabin@gmail.com
- * Copyright, Encre Nomade
- *
- * Date de creation: 18/02/2011
- * Ref: http://docs.jquery.com/Plugins/Authoring
- */
+// Plugin jQuery of Interaction for MSEdition
+// Ref: http://docs.jquery.com/Plugins/Authoring
 
-// Callback
-
+// Callback Class
 var Callback = function(func, caller) {
-    if(!func) return null;
+    if(typeof func != "function") {
+        console.error('Fail to initialize a Callback object: except first parameter to be a function');
+        return;
+    }
+    
 	this.func = func;
 	this.caller = caller;
+	this.args = null;
+	
+	// Arguments to be passed in the function when the callback is invoked
 	if(arguments.length > 2) {
 		this.args = new Array();
 		for(var i = 2; i < arguments.length; i++)
 			this.args.push(arguments[i]);
 	}
 	
-	this.link = function(cb) {
-		if(!this.linked) this.linked = new Array();
-		this.linked.push(cb);
-	};
-	
-	this.invoke = function(paramSup) {
-		var arr = null;
-		if(this.args) arr = (arguments.length>0 ? this.args.concat(Array.prototype.slice.call(arguments)) : this.args);
-		else if(!this.args && arguments.length>0) var arr = arguments;
-		this.func.apply(caller, arr);
-		
-		if(this.linked) {
-			for(var i in this.linked) this.linked[i].invoke();
-		}
-	};
+	// Init futur possible variables
+	// Linked Callbacks list
+	this.linked = null;
+};
+Callback.prototype = {
+    // Any other callback can be linked to one callback, they will be called after its invokation
+    link: function(cb) {
+        // Accept only callback type object
+        if(!(cb instanceof Callback)) return;
+        
+        // Lazy initialize of linked array
+    	if(!this.linked) this.linked = new Array();
+    	
+    	this.linked.push(cb);
+    },
+    invoke: function() {
+        // Arguments array
+    	var arr = null;
+    	
+    	// Additional arguments passed in invokation will be add to the end of original arguments array
+    	if(this.args) arr = (arguments.length>0 ? this.args.concat(Array.prototype.slice.call(arguments)) : this.args);
+    	// No original arguments, then take directly the arguments in invokation
+    	else if(!this.args && arguments.length>0) var arr = arguments;
+    	
+    	// Call function of callback
+    	this.func.apply(this.caller, arr);
+    	
+    	// Invoke linked callback
+    	if(this.linked) {
+    		for(var i in this.linked) this.linked[i].invoke();
+    	}
+    }
 };
 
 
@@ -48,7 +63,7 @@ Path.prototype = {
     constructor: Path,
     add: function(p) {
         if(isNaN(p.x) || isNaN(p.y)) return;
-        this.pts.push({'x':p.x, 'y':p.y, 'clientX':p.clientX, 'clientY':p.clientY});
+        this.pts.push({'x':p.x, 'y':p.y});
     },
     origin: function() {
         return this.pts[0];
@@ -70,8 +85,6 @@ var GestureAnalyser = function(listeners){
     // Tags
     this.tapwait = false;
     this.tapid = 0;
-    this.prevScale = 1;
-    this.session_count = 0;
 }
 GestureAnalyser.prototype = {
     constructor: GestureAnalyser,
@@ -108,53 +121,52 @@ GestureAnalyser.prototype = {
 		}
 		else if(this.count == 2){
 			// Two finger scale begin
-			this.begin = [];
-			for(var id in this.blobs)
-			    this.begin.push(this.blobs[id].origin());
-			var dis = [this.begin[1].clientX - this.begin[0].clientX, this.begin[1].clientY - this.begin[0].clientY];
-			this.disBegin = Math.sqrt(dis[0]*dis[0] + dis[1]*dis[1]);
+			
 		}
-		this.session_count = this.count;
     },
     analyseUpdate: function(id) {
-        if(this.session_count == 1){
+        if(this.count == 1){
     		// One finger translate
     		var begin = this.blobs[id].origin();
     		var end = this.blobs[id].last();
     		var e = {'dx': end.x-begin.x, 'dy': end.y-begin.y, 'type':'translation'};
     		this.listeners.eventNotif('translate', e);
     	}
-    	else if(this.session_count == 2 && this.count == 2){
+    	else if(this.count == 2){
     	    // Collect two finger info
+    	    var begin = [];
     	    var end = [];
     	    var path = [];
     	    for(var id in this.blobs) {
     	        var p = this.blobs[id];
     	        path.push(p);
+    	        begin.push(p.origin());
     	        end.push(p.last());
     	    }
     		// Two finger scale
-    		if(this.listeners.hasListener('scale') && this.disBegin) {
-    		    var disEnd = [end[1].clientX - end[0].clientX, end[1].clientY - end[0].clientY];
+    		if(this.listeners.hasListener('scale')) {
+    		    var disBegin = [begin[1].x - begin[0].x, begin[1].y - begin[0].y];
+    		    var disEnd = [end[1].x - end[0].x, end[1].y - end[0].y];
+    		    var lbegin = Math.sqrt(disBegin[0]*disBegin[0] + disBegin[1]*disBegin[1]);
     		    var lend = Math.sqrt(disEnd[0]*disEnd[0] + disEnd[1]*disEnd[1]);
-                this.prevScale = lend / this.disBegin;
-    		    var e = {'scale': this.prevScale, 'type':'scale'};
+    		    var e = {'scale': lend/lbegin, 'type':'scale'};
     		    this.listeners.eventNotif('scale', e);
     		}
     		// Two finger translate
     		if(this.listeners.hasListener('translate2')) {
-    		    var angleA = angleFor2Point(this.begin[0], end[0]);
-    		    var angleB = angleFor2Point(this.begin[1], end[1]);
+    		    var angleA = angleFor2Point(begin[0], end[0]);
+    		    var angleB = angleFor2Point(begin[1], end[1]);
     		    if(Math.abs(angleA - angleB) <= 20) {
     		        var beforEnd = path[0].pts[path[0].pts.length-2];
     		        this.listeners.eventNotif('translate2', {'deltaDx': end[0].x-beforEnd.x, 
     		                                                 'deltaDy': end[0].y-beforEnd.y, 
-    		                                                 'dx': end[0].x-this.begin[0].x, 
-    		                                                 'dy': end[0].y-this.begin[0].y, 
+    		                                                 'dx': end[0].x-begin[0].x, 
+    		                                                 'dy': end[0].y-begin[0].y, 
     		                                                 'type':'translate2'});
     		    }
     		}
     		// Clean
+    		begin = null;
     		end = null;
     		path = null;
     	}
@@ -165,14 +177,8 @@ GestureAnalyser.prototype = {
     	}
     	else if(this.count == 2){
     		// Two finger scale end
-    		if(this.listeners.hasListener('scale')) {
-    		    var e = {'scale': isNaN(this.prevScale)?1:this.prevScale, 'type':'scaleEnd'};
-    		    this.listeners.eventNotif('scale', e);
-    		}
+    		
     	}
-    	this.begin = null;
-    	this.disBegin = null;
-    	this.prevScale = null;
     }
 };
 
@@ -236,10 +242,11 @@ var EventMgr = function() {
     this.listeners = {};
 };
 EventMgr.prototype = {
-    addListener: function(type, cb) {
+    addListener: function(type, cb, prevent) {
         if( typeof(type) != 'string' || !(cb instanceof Callback) )
         	return;
-        
+        	
+        cb.prevent = (prevent === true ? prevent : false);
         this.listeners[type] = cb;
     },
     removeListener: function(type, cb) {
@@ -249,8 +256,11 @@ EventMgr.prototype = {
         return ( this.listeners[type] != null );
     },
     eventNotif: function(type, e) {
-        if( this.listeners[type] )
-        	this.listeners[type].invoke( e );
+        if( this.listeners[type] ) {
+            var cb = this.listeners[type];
+            if(cb.prevent && e.preventDefault) e.preventDefault();
+        	cb.invoke( e );
+        }
     }
 };
 
@@ -266,6 +276,7 @@ var methods = {
 			if(src)
 				$.data($(this).get(0), 'mseSrc', src);
 		}
+		return this;
 	},
     
     destroy : function() {
@@ -286,13 +297,17 @@ var methods = {
 	
 	setDominate : function() {
 		$.fn.mseInteraction.prototype.dominateElem = $(this).get(0);
+		
+		return this;
 	},
 	cancelDominate : function() {
 		if($.fn.mseInteraction.prototype.dominateElem == $(this).get(0))
 			$.fn.mseInteraction.prototype.dominateElem = null;
+			
+		return this;
 	},
 	
-	addListener : function(type, cb) {
+	addListener : function(type, cb, prevent) {
 		if( typeof(type) != 'string' || !(cb instanceof Callback) )
 			return false;
 		
@@ -309,7 +324,7 @@ var methods = {
 				var lis = {};
 				listenerMgr = $.data( $(this).get(0), 'mselisteners', lis );
 			}
-			listenerMgr.addListener(type, cb);
+			listenerMgr.addListener(type, cb, prevent);
 			
 			// Bind event to delegate function 'analyse'
 			// No need for spercial bind
@@ -323,10 +338,13 @@ var methods = {
 				}
 			}
 		}
+		
+		return this;
 	},
 	removeListener : function(type) {
 	    var listenerMgr = $.data( $(this).get(0), 'mselisteners' );
 	    if(listenerMgr) listenerMgr.removeListener(type);
+	    return this;
 	},
 	
 	setDelegate : function(cb) {
@@ -341,7 +359,7 @@ var methods = {
 		// If not existe, fail to set delegate
 		if( !listenerMgr ) return;
 		for(var type in evts)
-			listenerMgr.addListener(type, cb);
+			listenerMgr.addListener(type, cb, true);
 		// Bind all events
 		if(MseConfig.mobile) {
 			$(this).bind('click dblclick taphold swipeleft swiperight.mseInteraction', analyse);
@@ -358,12 +376,14 @@ var methods = {
 			listenerMgr.addListener('keyup', cb);
 			listenerMgr.addListener('keypress', cb);
 		}
+		return this;
 	},
 	setMultiAnalyser : function(analyser) {
 	    if(analyser instanceof GestureAnalyser) {
 	        _analyser = null;
 	        _analyser = analyser;
 	    }
+	    return this;
 	}
 
 };
@@ -378,6 +398,8 @@ $.fn.mseInteraction = function( method ) {
 	} else {
 		$.error( 'Method ' +  method + ' does not exist on jQuery.mseInteraction' );
     }
+    
+    return this;
 	
 };
 $.fn.mseInteraction.prototype.dominateElem = null;
@@ -406,8 +428,7 @@ function analyse(e) {
 	if(!_listenerMgr) return;
 	
 	var evt = (e.originalEvent ? e.originalEvent : e) || window.event;
-	// Don't prevent key event because it will prevent for all the window
-	if(evt.type.indexOf('key') == -1) evt.preventDefault();
+	
 	var event = new MseGestEvt(evt);
 	
 	switch( event.type ) {
@@ -426,9 +447,8 @@ function analyse(e) {
 				else {
 					_clicked = true;
 					_target = event.target;
-					setTimeout( // Time out, redefine clicked as false
-						dblTimeOut, 
-						dblClickTimeOut );
+					// Time out, redefine clicked as false
+					setTimeout( dblTimeOut, dblClickTimeOut );
 				}
 			}
 		}
@@ -667,24 +687,29 @@ function gestureEnd(e) {
 }
 
 function _addPoint(e) {
+    _currentEvt.original = e;
+    var taroff = $(e.target).offset();
 	if( e.type.indexOf('mouse') >= 0 ) {
 		// Web interacton with mouse or Android touch( TODO: correction )
 		if(MseConfig.browser === 'Firefox') {
-			var offX = e.pageX - $(e.target).offset().left;
-			var offY = e.pageY - $(e.target).offset().top;
+			var offX = e.pageX - taroff.left;
+			var offY = e.pageY - taroff.top;
 		}else {
 			var offX = e.offsetX;
 			var offY = e.offsetY;
 		}
 		_currentEvt.listX.push(offX);
 		_currentEvt.listY.push(offY);
+		_currentEvt.windowX = e.pageX;
+		_currentEvt.windowY = e.pageY;
 	}
 	else {
         // iOS interaction with touch
 		var touch = e.targetTouches[0]; // Get the information for finger #1
-		_currentEvt.listX.push(touch.pageX - $(e.target).position().left);
-		_currentEvt.listY.push(touch.pageY - $(e.target).position().top);
-        
+		_currentEvt.listX.push(touch.pageX - taroff.left);
+		_currentEvt.listY.push(touch.pageY - taroff.top);
+		_currentEvt.windowX = touch.pageX;
+		_currentEvt.windowY = touch.pageY;
 	}
 	_currentEvt.offsetX = _currentEvt.listX[_currentEvt.listX.length-1];
 	_currentEvt.offsetY = _currentEvt.listY[_currentEvt.listY.length-1];
@@ -695,6 +720,10 @@ function _addPoint(e) {
 
 function MseGestEvt( e, forAnalyse ) {
 	this.target = e.target;
+	this.original = e;
+	this.preventDefault = function() {
+	    this.original.preventDefault();
+	};
 	
 	// Event for analyser to analyse the gestures
 	if(forAnalyse) this.type = 'temporary';
@@ -758,6 +787,8 @@ function MseGestEvt( e, forAnalyse ) {
 
 
 function MultiGestEvt( e, type ) {
+    e.preventDefault();
+    
     this.target = e.target;
     this.type = type;
     // Get the information for every touch
@@ -768,7 +799,7 @@ function MultiGestEvt( e, type ) {
         if(!touch.identifier) continue;
         var x = touch.pageX - tarPos.left;
         var y = touch.pageY - tarPos.top;
-        this.touches[touch.identifier] = {'x':x, 'clientX':touch.clientX, 'y':y, 'clientY':touch.clientY, 'evt':type};
+        this.touches[touch.identifier] = {'x':x, 'y':y, 'evt':type};
     }
 }
 
