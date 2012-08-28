@@ -389,6 +389,11 @@ mse.UIObject = function(parent, param) {
     	if(param.insideRec)
     		this.insideRec = param.insideRec;
     }
+    
+    // Other attributes
+    this.insideRec = null;
+    this.analyser = null;
+    this.comments = null;
 };
 mse.UIObject.prototype = {
     offx: 0,
@@ -567,6 +572,11 @@ mse.UIObject.prototype = {
 		this.configCtxFlex(ctx);
 		var s = this.getScale();
 		if(s != 1) ctx.scale(s, s);
+	},
+	// Add Comment to UIObject
+	addComment: function(comment) {
+	    if(!this.comments) this.comments = new mse.Comment(this);
+	    return this.comments.addComment(comment);
 	},
 	
 	// Abstract methods
@@ -799,19 +809,25 @@ mse.Root.prototype = {
             
             this.finishCapture({'x': x, 'y': y, 'w': w, 'h': h});
         }
+    },
+    getProgress: function() {
+        var target = this.container;
+        return target.getProgress();
     }
 };
 
 
 // Container object
-mse.BaseContainer = function(root, param, orientation) {
+mse.BaseContainer = function(root, name, param, orientation) {
 	// Super constructor
 	mse.UIObject.call(this, null, param);
 	
+    this.name = name;
 	this._layers = new Array();
 	this._changed = new Array();
 	this.deleg = null;
 	this.dispatcher = new mse.EventDispatcher(this);
+	this.progressDeleg = null;
 	
 	// Parametres
 	this.scale = 1.0;
@@ -891,6 +907,18 @@ $.extend(mse.BaseContainer.prototype, {
     	for(var i = 0; i < l; i++)
     		this._layers[this._changed.pop()].setActivate(true);
     },
+    // Comment attachment in runtime, 'addComment' is the function for attaching comment in initialization
+    getProgress: function() {
+        if(this.progressDeleg) {
+            var progress = this.progressDeleg.getProgress();
+            if(progress) return progress;
+        }
+        
+        return {type: 'page', name: this.name};
+    },
+    delegProgress: function(target) {
+        if(target.getProgress) this.progressDeleg = target;
+    },
     logic: function(delta) {
     	if(!this.firstShow) {
     		this.firstShow = true;
@@ -925,6 +953,8 @@ $.extend(mse.BaseContainer.prototype, {
     				this._layers[i].draw(ctx);
     			}
     		}
+    		
+    		this.evtDeleg.eventNotif("drawover", {'ctx': ctx});
     	}
     	else{
     		// Draw orientation change notification page
@@ -1479,6 +1509,8 @@ $.extend(mse.Text.prototype, {
     	}
     	
     	if(this.styled) ctx.restore();
+    	
+    	this.evtDeleg.eventNotif("drawover", {'ctx': ctx});
     }
 });
 
@@ -1530,6 +1562,8 @@ mse.ArticleLayer = function(container, z, param, article) {
 	// Dominate obj, if exist, logic and draw dominated by this obj
 	this.dominate = null;
 	this.unhiddableObjectList = [];
+	// Delegate container comment attachment
+	if(container) container.delegProgress(this);
 };
 extend(mse.ArticleLayer, mse.Layer);
 $.extend( mse.ArticleLayer.prototype , {
@@ -1801,6 +1835,27 @@ $.extend( mse.ArticleLayer.prototype , {
 		this.startId = start;
 		this.endId = end;
 	},
+    // get progress delegate, choose the object in the middle of screen
+	getProgress: function(comment) {
+	    var target = this.objList[this.endId];
+    	// Article layer in pause, find the middle object by check visible objects positions
+    	if(this.pause) {
+    	    var middle = this.parent.getY() + this.parent.height/2;
+    	    for(var i = this.startId; i <= this.endId; i++) {
+    	        if(this.objList[i].getY() >= middle) {
+    	            target = this.objList[i];
+    	            break;
+    	        }
+    	    }
+    	}
+	    
+	    // Return progress in article layer
+	    for(var key in objs) {
+	        if(target == objs[key]) return {type: "obj", id: key};
+	    }
+	    
+	    return false;
+	},
 	logic : function(delta) {
 		if(this.active && this.dominate instanceof mse.UIObject) {
 			this.dominate.logic(delta);
@@ -1939,12 +1994,14 @@ $.extend(mse.Image.prototype, {
     	this.configCtxFlex(ctx);
     	if(isNaN(x) || isNaN(y)) {x = this.getX(); y = this.getY();}
     	if(this.currentEffect != null && this.currentEffect.draw) 
-    	    this.currentEffect.draw(ctx, img, x,y, this.width, this.height);
+    	    this.currentEffect.draw(ctx, img, x, y, this.width, this.height);
     	else 
             ctx.drawImage(img, x, y, this.width, this.height);
         
         if (this.zoomable) 
             this.zoomIcon.draw(ctx);
+            
+        this.evtDeleg.eventNotif("drawover", {'ctx': ctx, 'x':x, 'y':y});
     },
     toString: function() {
     	return "[object mse.Image]";
@@ -2093,6 +2150,8 @@ $.extend(mse.Sprite.prototype, {
     	        this.currentEffect.draw(ctx, this.cache, ox,oy, this.width,this.height);
     	    else ctx.drawImage(this.cache, ox,oy, this.width, this.height);
     	}
+    	
+    	this.evtDeleg.eventNotif("drawover", {'ctx': ctx, 'x':ox, 'y':oy});
     }
 });
 
@@ -2418,6 +2477,8 @@ $.extend( mse.GameExpose.prototype , {
         ctx.save();
         if(this.passBn) this.passBn.draw(ctx);
         ctx.restore();
+        
+        this.evtDeleg.eventNotif("drawover", {'ctx': ctx});
     }
 } );
 
@@ -2918,8 +2979,108 @@ $.extend( mse.Video.prototype , {
 	    ctx.fillStyle = "#FFF";
 	    ctx.fill();
 	    ctx.restore();
+	    
+	    this.evtDeleg.eventNotif("drawover", {'ctx': ctx});
 	}
 });
+
+
+
+// Comment object
+mse.Comment = function(target, comment) {
+    if(!(target instanceof mse.UIObject)) {
+        console.error('Comment creation error: target is not a UIObject');
+        return;
+    }
+    
+    this.target = null;
+    this.comments = new Array();
+    this.offx = 0;
+    this.offy = 0;
+    this.w = 0;
+    this.h = 0;
+    this.drawCB = new mse.Callback(this.draw, this);
+    
+    if(comment) this.addComment(comment);
+    
+    this.attachTo(target);
+    
+    if(!this.inited) {
+        this.singletonInit();
+    }
+};
+extend(mse.Comment, mse.UIObject);
+$.extend(mse.Comment.prototype, {
+    inited: false,
+    singletonInit: function() {
+        // Add tag image source
+        mse.src.addSource('tag_single', './UI/tag_single.png', 'img', true);
+        mse.src.addSource('tag_multi', './UI/tag_multi.png', 'img', true);
+    
+        mse.Comment.prototype.inited = true;
+    },
+    addComment: function(comment) {
+        if(comment.content != null && comment.image != null && comment.date != null) this.comments.push(comment);
+        return {x: this.target.getX()+this.offx, y:this.target.getY()+this.offy};
+    },
+    getTagBox: function(target) {
+        var offx, offy, w, h;
+        if(target instanceof mse.Text) {
+            offx = target.width;
+            offy = 0;
+            h = target.height;
+            w = h * 30/43;
+        }
+        else if(target instanceof mse.Image) {
+            offx = target.width - 45;
+            offy = target.height - 30;
+            h = 43;
+            w = 30;
+        }
+        else if(target instanceof mse.GameExpose) {
+            offx = target.width;
+            offy = 0;
+            h = 43;
+            w = 30;
+        }
+        else {
+            offx = target.width - 45;
+            offy = 10;
+            h = 43;
+            w = 30;
+        }
+        return [offx, offy, w, h];
+    },
+    attachTo: function(target) {
+        if(!(target instanceof mse.UIObject)) return;
+        // Remove old draw listener
+        if(this.target)
+            this.target.evtDeleg.removeListener('drawover', this.drawCB);
+        // Add new draw listener to new target
+        target.evtDeleg.addListener('drawover', this.drawCB);
+        // Set target
+        this.target = target;
+        
+        // Additional setup for different target
+        var box = this.getTagBox(target);
+        this.offx = box[0];
+        this.offy = box[1];
+        this.w = box[2];
+        this.h = box[3];
+    },
+    draw: function(e) {
+        var x, y, ctx = e.ctx;
+        x = isNaN(e.x) ? this.target.getX() : e.x;
+        y = isNaN(e.y) ? this.target.getY() : e.y;
+        
+        if(this.comments.length == 1) 
+            ctx.drawImage(mse.src.getSrc('tag_single'), x+this.offx, y+this.offy, this.w, this.h);
+        else if(this.comments.length > 1) 
+            ctx.drawImage(mse.src.getSrc('tag_multi'), x+this.offx, y+this.offy, this.w, this.h);
+    }
+});
+
+
 
 /*           ImageShower
 *  display the target img in fullscreen

@@ -121,9 +121,9 @@ class ProjectGenerator {
         $this->jstr .= "\ninitMseConfig();";
         $this->jstr .= "\nmse.init();";
         // Pages, Layers, Objects
-        $this->jstr .= "\nvar pages={};";
+        $this->jstr .= "\nwindow.pages={};";
         $this->jstr .= "\nvar layers={};";
-        $this->jstr .= "\nvar objs={};";
+        $this->jstr .= "\nwindow.objs={};";
         $this->jstr .= "\nvar animes={};";
         $this->jstr .= "\nvar games={};";
         $this->jstr .= "\nvar wikis={};";

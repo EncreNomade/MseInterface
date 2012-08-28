@@ -29,7 +29,7 @@ body {
     width: 100%;
     height: 100%;
     cursor: crosshair;
-    background: transparent;
+    background: rgba(255,255,255,0);
 }
 .capbox {
     position: absolute;
@@ -39,7 +39,7 @@ body {
     height: 0px;
     z-index: 11;
     border: 1px solid #43A102;
-    background: transparent;
+    background: rgba(255,255,255,0);
 }
 
 .game {
@@ -93,7 +93,7 @@ body {
 
 #menu {
     position: absolute;
-    display: block;
+    visibility: visible;
     z-index: 12;
     top: -192px;
     left: 50px;
@@ -101,11 +101,11 @@ body {
     height: 256px;
     margin: 0px;
     padding: 0px;
-    -webkit-transition: all 0.5s;
-    -moz-transition: all 0.5s;
-    -ms-transition: all 0.5s;
-    -o-transition: all 0.5s;
-    transition: all 0.5s;
+    -webkit-transition: top 0.5s ease-in-out;
+    -moz-transition: top 0.5s ease-in-out;
+    -ms-transition: top 0.5s ease-in-out;
+    -o-transition: top 0.5s ease-in-out;
+    transition: top 0.5s ease-in-out;
     
     -webkit-user-select: none;
     -khtml-user-select: none;
@@ -168,7 +168,6 @@ body {
     height: 300px;
     /*background: transparent url('../UI/texture.jpg') repeat center center;*/
     background: #FDD283;
-    opacity: 0;
     visibility: hidden;
     
     -moz-box-shadow: 0px 0px 5px 2px #becacf;
@@ -182,22 +181,114 @@ body {
     border-bottom-right-radius: 5px;
     border-bottom-left-radius: 5px;
     
-    -webkit-transition: all 0.5s;
-    -moz-transition: all 0.5s;
-    -ms-transition: all 0.5s;
-    -o-transition: all 0.5s;
-    transition: all 0.5s;
+    -webkit-transition: visibility 0.5s linear;
+    -moz-transition: visibility 0.5s linear;
+    -ms-transition: visibility 0.5s linear;
+    -o-transition: visibility 0.5s linear;
+    transition: visibility 0.5s linear;
 }
 #comment.show {
     visibility: visible;
-    opacity: 1;
 }
+#loader{
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.33) url(../UI/loading3.gif) no-repeat center center;
+    z-index: 300;
+    position: absolute;
+    display: none;
+}
+@-webkit-keyframes anime{
+    0%{ visibility: visible; opacity: 1; -webkit-transform: scale(0.1); }
+    50%{ -webkit-transform: scale(2); }
+    90%{ -webkit-transform: scale(1); opacity: 1;}
+    100%{ opacity: 0; }
+}
+@-moz-keyframes anime{
+    0%{ visibility: visible; opacity: 1; -moz-transform: scale(0.1); }
+    50%{ -moz-transform: scale(2); }
+    90%{ -moz-transform: scale(1); opacity: 1;}
+    100%{ opacity: 0; }
+}
+@-o-keyframes anime{
+    0%{ visibility: visible; opacity: 1; -o-transform: scale(0.1); }
+    50%{ -o-transform: scale(2); }
+    90%{ -o-transform: scale(1); opacity: 1;}
+    100%{ opacity: 0; }
+}
+@keyframes anime{
+    0%{ visibility: visible; opacity: 1; transform: scale(0.1); }
+    50%{ transform: scale(2); }
+    90%{ transform: scale(1); opacity: 1;}
+    100%{ opacity: 0; }
+}
+img#newComment{
+    position: absolute;
+    z-index: 100;
+    visibility: hidden;
+    -webkit-transition: top 1s ease 1s, left 1s ease 1s;
+    -moz-transition: top 1s ease 1s, left 1s ease 1s;
+    -o-transition: top 1s ease 1s, left 1s ease 1s;
+    transition: top 1s ease 1s, left 1s ease 1s;
+}
+img#newComment.run{
+    -webkit-animation: anime 2s 1;
+    -moz-animation: anime 2s 1;
+    -o-animation: anime 2s 1;
+    animation: anime 2s 1;
+}
+
+/* Comment list */
+.users_comments {
+    width: 80%;
+    margin: 0 auto 20px;
+    background: rgba(255, 255, 255, 0.5);
+    padding: 5%;
+    border-radius: 5px;
+    border: solid 1px #AFAEAE;
+}
+.one_comment {
+    padding: 10px 0 10px 40px;
+    border-bottom: solid 1px #755B5B;
+    position: relative;
+    margin-bottom: 15px;
+    font-family: Helvetica, Arial, sans-serif;
+}
+.one_comment:last-child{ border-bottom: none; }
+.comment_avatar {
+    position: absolute;
+    top: 5px;
+    left: -16px;
+    border-radius: 4px;
+}
+.comment_body { margin-top: 15px; }
+.comment_image { margin-top: 10px; }
+.comment_image  img{ max-width: 100%; }
+.comment_author { font-weight: bold; }
+.comment_author span {
+    font-style: italic;
+    font-weight: normal;
+}
+.comment_date {
+    color: #8F8F8F;
+    font-size: 0.8em;
+    margin-top: 3px;
+}
+
+
 .close {
     position: absolute;
     right: -20px;
     top: -20px;
     width: 40px;
     height: 40px;
+}
+.resize {
+    position: absolute;
+    bottom: -18px;
+    right: -18px;
+    width: 32px;
+    height: 32px;
 }
 
 #comment .header {
@@ -295,9 +386,9 @@ body {
     padding: 0px;
     width: 100%;
     height: 220px;
+    overflow: auto;
 }
 #comment .body textarea {
-    position: absolute;
     left: 0px;
     top: 0px;
     margin: 10px 5%;
@@ -324,27 +415,290 @@ body {
 
 #scriber {
     position: absolute;
-    background: #fff;
+    background: transparent;
     display: none;
     
-    border: 5px solid #666;
-    border-bottom: 50px solid #666;
-    border-radius: 5px;
+    overflow: visible;
+    -moz-user-select: none;  
+    -webkit-user-select: none;  
+    -ms-user-select: none;  
 }
-#scriber canvas {
+#scriber .canvas_container {
+    position: absolute;
+    left: 0px;
+    top: 50px;
+    border: 5px solid #666;
+    border-radius: 3px;
+    background: transparent url('../UI/paper.jpg') repeat left top;
+    z-index: 1;
+}
+#scriber .canvas_container .close, #scriber .canvas_container .resize {
+    z-index: 2;
+}
+#scriber .canvas_container .inner_container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 1;
+}
+#scriber .canvas_container #sb_imgcanvas {
+    position: absolute;
+    z-index: 1;
+}
+#scriber .canvas_container #sb_drawcanvas {
     position: absolute;
     left: 0px;
     top: 0px;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
 }
-#scriber .confirm {
+#scriber .toolbox{
     position: absolute;
-    right: 30px;
-    bottom: -40px;
+    left: 0px;
+    top: 0px;
+    width: 210px;
+    height: 40px;
+    border: 1px solid #333;
+    background: transparent url('../UI/paper.jpg') repeat left top;
+    
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+    
+    z-index: 2;
+}
+#scriber .toolbox .anchor {
+    position: absolute;
+    left: 0px;
+    left: 0px;
+    top: 0px;
+    width: 3px;
+    height: 32px;
+    margin: 4px 5px 4px 2px;
+    cursor: move;
+    
+    border-right: 1px dotted #333;
+    border-left: 1px dotted #333;
+}
+.toolbox ul {
+    position: absolute;
+    left: 10px;
+    margin: 0px;
+    padding: 0px;
+    width: 200px;
+    height: 40px;
+}
+.toolbox ul li {
+    position: relative;
+    float: left;
+    margin: 3px 6px 3px 0px;
+    padding: 0px;
     width: 32px;
     height: 32px;
-    background: transparent url('../UI/ok.png') no-repeat left top;
+    padding: 1px;
+    list-style: none;
+}
+.toolbox ul li.active {
+    border: 1px dashed #333;
+    padding: 0px;
+}
+.toolbox ul li img {
+    width: 100%;
+    height: 100%;
+}
+.toolbox #sb_colorset li {
+    position: relative;
+    float: left;
+    width: 32px;
+    height: 32px;
+    margin: 4px;
+    padding: 1px;
+    list-style: none;
+}
+.toolbox #sb_colorset li.active {
+    border: 1px dashed #333;
+    padding: 0px;
+}
+.toolbox ul li:hover ul#sb_colorset {
+    height: 294px;
+    opacity: 1;
+}
+.toolbox ul li:hover #sb_sizeset {
+    height: 200px;
+    opacity: 1;
+}
+.toolbox ul li .sb_subtool {
+    position: absolute;
+    float: left;
+    left: -4px;
+    width: 40px;
+    height: 0px;
+    margin: 0px;
+    padding: 0px;
+    background: transparent url('../UI/paper.jpg') repeat left top;
+    border-bottom: 1px solid #333;
+    border-left: 1px solid #333;
+    border-right: 1px solid #333;
+    opacity: 0;
+    
+    -webkit-border-bottom-right-radius: 3px;
+    -webkit-border-bottom-left-radius: 3px;
+    -moz-border-radius-bottomright: 3px;
+    -moz-border-radius-bottomleft: 3px;
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+    
+    overflow: hidden;
+    
+    -webkit-transition: opacity 0.2s linear, height 0.2s linear;
+    -moz-transition: opacity 0.2s linear, height 0.2s linear;
+    -ms-transition: opacity 0.2s linear, height 0.2s linear;
+    -o-transition: opacity 0.2s linear, height 0.2s linear;
+    transition: opacity 0.2s linear, height 0.2s linear;
+}
+.toolbox ul li #sb_sizeset {
+    left: -1px;
+    width: 32px;
+}
+.toolbox ul li #sb_sizebloc {
+    position: absolute;
+    left: 1px;
+    width: 0px;
+    height: 0px;
+    border: 0px;
+    opacity: 0;
+    -webkit-transition: opacity 0.2s linear;
+    -moz-transition: opacity 0.2s linear;
+    -ms-transition: opacity 0.2s linear;
+    -o-transition: opacity 0.2s linear;
+    transition: opacity 0.2s linear;
+}
+.toolbox ul li:hover #sb_sizebloc {
+    opacity: 1;
+    width: 28px;
+    height: 32px;
+    border: 1px dashed #333;
 }
 
+#circle_center {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 0px;
+    height: 0px;
+    z-index: 0;
+}
+#circle_center.active {
+    z-index: 2;
+}
+#circle_center .circle {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 0px;
+    height: 0px;
+    opacity: 0;
+    overflow: visible;
+    border: 1px solid #05a;
+    
+    -webkit-transition: all 0.35s linear;
+    -moz-transition: all 0.35s linear;
+    -ms-transition: all 0.35s linear;
+    -o-transition: all 0.35s linear;
+    transition: all 0.35s linear;
+}
+#circle_center.active .circle {
+    left: -75px;
+    top: -75px;
+    width: 150px;
+    height: 150px;
+    border-radius: 75px;
+    opacity: 1;
+}
+#circle_center .editicon {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    
+    -webkit-transition: all 0.35s linear;
+    -moz-transition: all 0.35s linear;
+    -ms-transition: all 0.35s linear;
+    -o-transition: all 0.35s linear;
+    transition: all 0.35s linear;
+}
+#circle_center .moveicon {
+    background: transparent url('../UI/circle_green.png') no-repeat center center;
+    left: -25px;
+    top: -25px;
+    opacity: 0;
+}
+#circle_center.active .moveicon {
+    opacity: 0.6;
+}
+#circle_center .dragicon {
+    background: transparent url('../UI/arrow_move.png') no-repeat center center;
+    right: -25px;
+    top: -25px;
+    opacity: 0;
+}
+#circle_center.active .dragicon {
+    left: 50px;
+    top: -25px;
+    opacity: 0.6;
+}
+#circle_center .deleteicon {
+    background: transparent url('../UI/delete_red.png') no-repeat center center;
+    left: -25px;
+    top: -25px;
+    opacity: 0;
+    display: none;
+}
+#circle_center.active .deleteicon {
+    left: 40px;
+    top: -90px;
+    opacity: 0.6;
+}
+#circle_center.active .deleteicon:hover, #circle_center.active .dragicon:hover, #circle_center.active .moveicon:hover {
+    opacity: 1;
+}
+
+#capture_result{
+    position: absolute;    
+    background: transparent;
+    left: 0px;
+    top: 50px;
+    border: 5px solid #666;
+    border-radius: 3px 3px 0 0;    
+    overflow: visible;
+    display: none;
+}
+#capture_result #util{
+    text-align: center;
+    letter-spacing: 5px;
+    background-color: #666;
+    border: 5px solid #666;
+    border-radius: 0 0 15px 15px;
+    width: 100%;
+    margin-left: -5px;
+}
+#capture_result>canvas{
+    width: 100%;
+    height: 100%;
+}
+#capture_result img{
+    width: 30px;
+    cursor: pointer;
+    opacity: 0.7;
+}
+#capture_result img:hover{
+    opacity: 1;
+}
+
+#comment_shower {
+    
+}
 
 #imgShower {
     position  : absolute;
@@ -387,9 +741,9 @@ body {
     text-align: center;
     list-style: none;
     opacity: 0;
-    -webkit-transition: all 1s ease; 
-    -moz-transition: all 1s ease; 
-    transition: all 1s ease;
+    -webkit-transition: opacity 1s ease; 
+    -moz-transition: opacity 1s ease; 
+    transition: opacity 1s ease;
     background-color: #FFFFB5;
     padding: 1px 5px 1px 5px;
     border-radius: 5px;
