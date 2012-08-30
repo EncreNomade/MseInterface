@@ -6,7 +6,38 @@ var Ghost = function(ox, oy, target, layer) {
     this.model.opacity = 0;
     this.model.dir = randomInt(4);
     this.model.state = "BIRTH";
-    this.model.logic = function() {
+    this.model.logic = this.modellogic;
+    
+    this.view = new mdj.Sprite(this.model, 'ghost', {w:17,h:36,sx:0,sy:0,sw:68,sh:144});
+    this.view.addAnime("down", new mdj.AnimationSprite(this.view, [0,1,2,3,0], 0, 4));
+    this.view.addAnime("left", new mdj.AnimationSprite(this.view, [4,5,6,7,4], 0, 4));
+    this.view.addAnime("right", new mdj.AnimationSprite(this.view, [8,9,10,11,8], 0, 4));
+    this.view.addAnime("up", new mdj.AnimationSprite(this.view, [12,13,14,15,12], 0, 4));
+    this.model.proxy.addListener('movement', new mse.Callback(function(e){
+        if(e.dx > 0) var dir = 'right';
+        else if(e.dx < 0) var dir = 'left';
+        else if(e.dy > 0) var dir = 'down';
+        else if(e.dy < 0) var dir = 'up';
+        if(this.prevDir != dir) {
+            this.playAnime(dir);
+        }
+        this.prevDir = dir;
+    }, this.view));
+    
+    layer.addObj(this.view);
+    
+    this.reinit = function(ox, oy) {
+        this.model.count = 20;
+        this.model.opacity = 0;
+        this.model.state = "BIRTH";
+        this.model.setPos(ox, oy);
+    };
+};
+Ghost.prototype = {
+    constructor: Ghost,
+    borderx: 1570,
+    bordery: 1250,
+    modellogic: function() {
         if(this.state == "DEAD" || this.state == "WIN" || this.target.game.state != "PLAYING") return;
         if(this.state == 'BIRTH') {
             if(this.opacity < 1) {
@@ -29,6 +60,7 @@ var Ghost = function(ox, oy, target, layer) {
             this.target.game.state = "LOSE";
             this.target.game.count = 50;
             this.target.game.input.disable();
+            this.target.inputv = 0;
             this.target.game.showMsg("Tu as été rattrapé par un fantôme !");
         }
         // Dead check
@@ -57,7 +89,7 @@ var Ghost = function(ox, oy, target, layer) {
                 case 2: this.move(0, 2);break;
                 case 3: this.move(-2, 0);break;
                 }
-                if(this.ox < 50 || this.oy < 50 || this.ox > 1830 || this.oy > 1300)
+                if(this.ox < 50 || this.oy < 50 || this.ox > this.borderx || this.oy > this.bordery)
                     this.count = 0;
             }
         }
@@ -67,32 +99,9 @@ var Ghost = function(ox, oy, target, layer) {
             if(absdisy > 10) this.move(0, 6 * disy/absdisy);
             else if(absdisx > 10) this.move(6 * disx/absdisx, 0);
         }
-    };
-    this.view = new mdj.Sprite(this.model, 'ghost', {w:17,h:36,sx:0,sy:0,sw:68,sh:144});
-    this.view.addAnime("down", new mdj.AnimationSprite(this.view, [0,1,2,3,0], 0, 4));
-    this.view.addAnime("left", new mdj.AnimationSprite(this.view, [4,5,6,7,4], 0, 4));
-    this.view.addAnime("right", new mdj.AnimationSprite(this.view, [8,9,10,11,8], 0, 4));
-    this.view.addAnime("up", new mdj.AnimationSprite(this.view, [12,13,14,15,12], 0, 4));
-    this.model.proxy.addListener('movement', new mse.Callback(function(e){
-        if(e.dx > 0) var dir = 'right';
-        else if(e.dx < 0) var dir = 'left';
-        else if(e.dy > 0) var dir = 'down';
-        else if(e.dy < 0) var dir = 'up';
-        if(this.prevDir != dir) {
-            this.playAnime(dir);
-        }
-        this.prevDir = dir;
-    }, this.view));
-    
-    layer.addObj(this.view);
-    
-    this.reinit = function(ox, oy) {
-        this.model.count = 20;
-        this.model.opacity = 0;
-        this.model.state = "BIRTH";
-        this.model.setPos(ox, oy);
-    };
+    }
 };
+
 
 var Donjon = function(){
     mse.Game.call(this, {fillback:true});
@@ -103,23 +112,27 @@ var Donjon = function(){
     mse.src.addSource('map', 'games/map.jpg', 'img', true);
     mse.src.addSource('ghost', 'games/ghost.png', 'img', true);
     
+    var row = 40, col = 50;
+    var simonox = 31*32+7, simonoy = 2*32;
+    
     this.msg = {
         "INIT": "Clique pour jouer.",
         "WIN": "Bravo!!! Tu as gagné.",
         "LOSE": "Perdu..."
     };
     this.objGid = {
-        hole: [513, 1067, 1962, 1990],
-        skelton: [611, 1025, 1071, 1073, 1074, 1083, 1131, 1135, 1143, 1192, 1193, 1195, 1204, 1247, 1964, 2023, 2024, 2069]
+        hole: [12+11*col, 31+15*col, 32+15*col, 19+20*col, 23+29*col, 25+29*col, 39+32*col],
+        skelton: [12+8*col, 15+8*col, 18+8*col, 30+2*col, 32+2*col, 30+5*col, 32+5*col, 35+5*col, 43+5*col, 44+4*col, 44+6*col, 29+18*col, 34+18*col, 17+30*col, 13+32*col, 28+34*col, 32+34*col, 31+35*col, 28+36*col, 32+37*col, 30+38*col],
+        door: [29+33*col, 4+16*col]
     };
     
-    this.currScene = new mdj.TileMapScene(this, 1920, 1376, 
-                                          mse.configs.getSrcPath("games/map.tmx"),
+    this.currScene = new mdj.TileMapScene(this, 32*col, 32*row, 
+                                          mse.configs.getSrcPath("games/map2.tmx"),
                                           "games/", 
                                           new mse.Callback(function(){
         // Lazy init function
         // Simon model and input
-        this.simonM = new mdj.BoxModel(136, 96, 17, 37);
+        this.simonM = new mdj.BoxModel(simonox, simonoy, 17, 37);
         this.simonM.setCollisionBox(2,20,13,17);
         this.simonM.orient = "DOWN";
         this.simonM.game = this;
@@ -148,16 +161,17 @@ var Donjon = function(){
         colliDetector.register('objs', this.currScene.getLayer('elem'), new mse.Callback(function(e){
             if($.inArray(e.gid, this.objGid.hole) != -1) {
                 this.simonV.playAnime('turn');
-                this.simonM.setPos(136, 96);
+                this.simonM.setPos(simonox, simonoy);
             }
             else if($.inArray(e.gid, this.objGid.skelton) != -1) {
                 this.simonM.inputv = 0.5;
                 this.simonM.count = 5;
             }
-            else if(e.gid == 1013) {
+            else if($.inArray(e.gid, this.objGid.door) != -1) {
                 this.state = "WIN";
                 this.count = 50;
                 this.input.disable();
+                this.simonM.inputv = 0;
                 this.simonV.getAnime('turn').rep = 4;
                 this.simonV.playAnime('turn');
                 this.showMsg("Simon as trouvé la sortie !");
@@ -194,7 +208,7 @@ var Donjon = function(){
         var game = this.getScene().game;
         ctx.save();
         ctx.translate(game.camera.ox, game.camera.oy);
-        ctx.globalAlpha = 0.75;
+        ctx.globalAlpha = 0.8;
         ctx.fillStyle = "#000";
         ctx.beginPath();
         ctx.rect(0,0,game.width,game.height);
@@ -234,7 +248,7 @@ $.extend(Donjon.prototype, {
         this.currScene.init();
         this.input.setTarProxy(this.getEvtProxy());
         this.simonM.inputv = 4;
-        this.simonM.setPos(136, 96);
+        this.simonM.setPos(31*32+7, 2*32);
         // Orientation
         this.simonM.orient = "DOWN";
         

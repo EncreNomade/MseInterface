@@ -47,6 +47,7 @@ mse.src = function() {
 	    loadInfo	: 'Chargement ressources: ',
 	    waitinglist : {},
 	    audExtCheck : /(.ogg|.mp3)/,
+	    volume      : 0.5,
 	    init		: function() {
 	    	var ctx, angle;
 	    	for(var i = 0; i < 12; i++) {
@@ -116,6 +117,7 @@ mse.src = function() {
 	    			return this.loading[(res.lid++)];
 	    		}
 	    	case 'aud': case 'audio':
+	    	    res.volume = this.volume;
 	    		return res;
 	    	}
 	    },
@@ -152,6 +154,10 @@ mse.src = function() {
 	    	ctx.textAlign = 'center';
 	    	ctx.fillText(txt, mse.root.width/2, mse.root.height-60);
 	    	ctx.restore();
+	    },
+	    
+	    setVolume   : function(value) {
+	        this.volume = value/100;
 	    }
 	};
 }();
@@ -1564,11 +1570,19 @@ mse.ArticleLayer = function(container, z, param, article) {
 	this.unhiddableObjectList = [];
 	// Delegate container comment attachment
 	if(container) container.delegProgress(this);
+	// Register this Article
+	mse.ArticleLayer.prototype.allArticle.push(this);
 };
 extend(mse.ArticleLayer, mse.Layer);
 $.extend( mse.ArticleLayer.prototype , {
     minInv : 600,
     maxInv : 3600,
+    allArticle : [],
+    setInterval : function(level) {
+        var articles = mse.ArticleLayer.prototype.allArticle;
+        for(var i = 0; i < articles.length; ++i)
+            articles[i].interval = mse.ArticleLayer.prototype.minInv + level * 200;
+    },
 	setDefile : function(interval) {
 		this.currTime = 0;
 		this.currIndex = 0;
@@ -1602,13 +1616,17 @@ $.extend( mse.ArticleLayer.prototype , {
 				// Left button clicked, Reduce the speed
 				this.layer.interval += 200;
 				this.layer.interval = (this.layer.interval > mse.ArticleLayer.prototype.maxInv) ? mse.ArticleLayer.prototype.maxInv : this.layer.interval;
-				this.tip.setText('moins rapide');
+				var v = (mse.ArticleLayer.prototype.maxInv-this.layer.interval) / 200;
+				v = v.toString(16).toUpperCase();
+				this.tip.setText('moins rapide, vitesse:' + v);
 			}
 			else if(this.accelere.inObj(e.offsetX, e.offsetY)) {
 				// Right button clicked, augmente the speed
 				this.layer.interval -= 200;
 				this.layer.interval = (this.layer.interval < mse.ArticleLayer.prototype.minInv) ? mse.ArticleLayer.prototype.minInv : this.layer.interval;
-				this.tip.setText('plus rapide');
+				var v = (mse.ArticleLayer.prototype.maxInv-this.layer.interval) / 200;
+				v = v.toString(16).toUpperCase();
+				this.tip.setText('plus rapide, vitesse:' + v);
 			}
 			else if(this.play.inObj(e.offsetX, e.offsetY)) {
 			    this.layer.pause = !this.layer.pause;

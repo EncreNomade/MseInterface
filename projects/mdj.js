@@ -805,6 +805,7 @@ mdj.DirectionalInput.prototype = {
             this.tarProxy.removeListener('gestureUpdate', this.touchMovecb);
             this.tarProxy.removeListener('gestureEnd', this.moveEndcb);
         }
+        this.onmove = false;
         this.enabled = false;
     },
     setTarProxy: function(tarProxy) {

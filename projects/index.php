@@ -77,6 +77,7 @@ addEventListener("load", function(){
         <ul>
             <li><div style="width: 32px;height: 30px;background: transparent url('./UI/facebook-like-icon.png') no-repeat left top;"></div></li>
             <li><img id="comment_btn" src="./UI/comment.png"></li>
+            <li><img id="preference_btn" src="./UI/settings.png"></li>
         </ul>
         <img class="feuille" src="./UI/feuille.png">
     </div>
@@ -142,7 +143,14 @@ addEventListener("load", function(){
                 <img id="close" src="./UI/cancel.png">
             </div>
         </div>
-        <div id="comment_shower"></div>
+        <div id="preference">
+            <img class="close" src="./UI/button/close.png"/>
+            <p>Audio: </p>
+            <p>Vitesse: </p>
+            <input type="button" value="Aide"/>
+            <input type="button" value="Auteur"/>
+            <input type="button" value="Crédit"/>
+        </div>
     </div>
     <canvas class="bookroot">Votre navigateur ne supporte pas HTML5</canvas>
     <div class="video"></div>

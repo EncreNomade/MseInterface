@@ -232,7 +232,91 @@ var mmvc = (function(){
     };
 }());
 
+
 var gui = {};
+
+// Slider class
+gui.Slider = function(w, level, parent, val) {
+    // DOM structure
+    this.jqObj = $("<div class='slider'></div>");
+    this.line = $("<div class='line'></div>");
+    this.btn = $("<div class='ctrlbtn'></div>");
+    this.back = $("<img class='background' src='./UI/slider/slider_back.png'/>");
+    this.jqObj.append(this.back).append(this.line).append(this.btn);
+    
+    if(!isNaN(w)) this.jqObj.css('width', w);
+    
+    // Attributes
+    this.width = this.jqObj.width() - this.btn.width();;
+    this.level = isNaN(level) ? 100 : level;
+    this.step = this.width / (this.level-1);
+    this.value = 0;
+    this.ondrag = false;
+    
+    // Add to dom
+    this.appendTo(parent);
+    
+    // Callbacks
+    this.dragStartHandlerCB = new Callback(this.dragStartHandler, this);
+    this.draggingHandlerCB = new Callback(this.draggingHandler, this);
+    this.moveBtnCB = new Callback(this.moveBtn, this);
+    
+    // MMVC for value and observed by ui
+    mmvc.makeModel(this, ['value']);
+    this.observe('value', this.moveBtnCB);
+    if(isNaN(val)) val = 0;
+    this.setvalue(val);
+    
+    this.btn.mseInteraction().mseInteraction('addListener', 'gestureSingle', this.dragStartHandlerCB, true);
+    this.back.mseInteraction().mseInteraction('addListener', 'gestureSingle', this.draggingHandlerCB, true);
+};
+gui.Slider.prototype = {
+    constructor: gui.Slider,
+    appendTo: function(parent) {
+        if( this.jqObj && (parent instanceof jQuery) ) {
+            parent.append(this.jqObj);
+            // Vertical align
+            this.jqObj.css({'top': (parent.height() - this.jqObj.height())/2});
+            return this.jqObj;
+        }
+        else return null;
+    },
+    
+    moveBtn: function(l) {
+        var off = l*this.step-9;
+        if(off < 0) off = 0;
+        this.btn.css('left', off);
+        this.line.css('width', off);
+    },
+    dragStartHandler: function(e) {
+        if(e.type == "gestureStart") this.startDrag(e);
+        else if(e.type == "gestureUpdate") this.dragging(e);
+        else if(e.type == "gestureEnd") this.endDrag(e);
+    },
+    draggingHandler: function(e) {
+        if(e.type == "gestureUpdate") this.dragging(e);
+        else if(e.type == "gestureEnd") this.endDrag(e);
+    },
+    startDrag: function(e) {
+        this.ondrag = true;
+    },
+    dragging: function(e) {
+        if(this.ondrag) {
+            var offset = e.windowX - this.back.offset().left;
+            if(offset > this.width) offset = this.width;
+            else if(offset < 0) offset = 0;
+            var l = Math.ceil( offset / this.step );
+            this.setvalue(l);
+        }
+    },
+    endDrag: function(e) {
+        this.ondrag = false;
+    }
+};
+
+
+
+
 
 gui.fb = {};
 gui.fb.user = null; // initiated in gui.fb.connect or init
@@ -466,6 +550,9 @@ gui.attachComments = function(comments) {
 };
 
 
+
+
+
 // Initialisation
 $(window).load(function() {
     gui.center = $('#center');
@@ -533,7 +620,7 @@ $(window).load(function() {
             $('#loader').show();
             gui.closeComment();
         }
-        else if(confirm("Vous n'ètes pas connecté à Facebook. Se connecter ?")){
+        else if(confirm("Vous n'êtes pas connecté à Facebook. Se connecter ?")){
             gui.fb.connect(function(){$('#share').click();});
         }
 
@@ -549,7 +636,20 @@ $(window).load(function() {
         $loaderImg.css({
             top: $('#root').height()/2 - $loaderImg.height()/2,
             left: $('#root').width()/2 - $loaderImg.width()/2
-        }); 
+        });
     });
     
+    
+    // Preference panel
+    gui.pref = $('#preference');
+    gui.audioctrl = new gui.Slider(200, 100, gui.pref.children('p:first'), 50);
+    gui.speedctrl = new gui.Slider(200, 16, gui.pref.children('p:eq(1)'), 8);
+    gui.audioctrl.jqObj.css('left', 70);
+    gui.speedctrl.jqObj.css('left', 70);
+    // Observer to speed or audio
+    gui.audioctrl.observe('value', new Callback(mse.src.setVolume, mse.src));
+    gui.speedctrl.observe('value', new Callback(mse.ArticleLayer.prototype.setInterval, mse.ArticleLayer.prototype));
+    // Active prefecrence button
+    $('#preference_btn').click(function() {gui.pref.addClass('show');});
+    gui.pref.children('.close').click(function() {gui.pref.removeClass('show');});
 });
