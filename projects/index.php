@@ -25,9 +25,6 @@ if($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('pj', $_GET) && isse
     $chapName = $_GET['pj'];
     $lang = $_GET['language'];
     
-    $intercomments = getInternalCommentsFor($chapName);
-    if($intercomments == "") $intercomments = "[]";
-    
     $content = file_get_contents("./".$_GET['pj']."/content_".$_GET['language'].".js");
 
 }
@@ -164,13 +161,9 @@ addEventListener("load", function(){
 <script type="text/javascript">
 <?php 
 
-print( "var comments = JSON.parse('".$intercomments."');\n" );
-
 if(isset($content)) print($content);
 
 ?>
-
-if(comments instanceof Array) gui.attachComments(comments);
 
 </script>
 

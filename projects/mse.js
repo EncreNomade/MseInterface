@@ -1672,7 +1672,7 @@ $.extend( mse.ArticleLayer.prototype , {
 			}
 		};
 		cb = new mse.Callback(this.speedCtr, this);
-		this.addListener('keydown', cb);
+		//this.addListener('keydown', cb);
 	},
 	setSlider : function() {
 		// Slider
