@@ -3,6 +3,6 @@
         "server" => "localhost",
         "login" => "root",
         "mdp" => "root",
-        "db" => "projects"
+        "db" => "EncreNomade"
     );
 ?>

@@ -121,9 +121,9 @@ class ProjectGenerator {
         $this->jstr .= "\ninitMseConfig();";
         $this->jstr .= "\nmse.init();";
         // Pages, Layers, Objects
-        $this->jstr .= "\nvar pages={};";
+        $this->jstr .= "\nwindow.pages={};";
         $this->jstr .= "\nvar layers={};";
-        $this->jstr .= "\nvar objs={};";
+        $this->jstr .= "\nwindow.objs={};";
         $this->jstr .= "\nvar animes={};";
         $this->jstr .= "\nvar games={};";
         $this->jstr .= "\nvar wikis={};";
@@ -527,7 +527,7 @@ class ProjectGenerator {
         else $parent = "null";
         // Init page
         $page = "pages.$id";
-        $this->jstr .= "\n\t".$page."=new mse.BaseContainer($parent,{size:[".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight)."]});";
+        $this->jstr .= "\n\t".$page."=new mse.BaseContainer($parent,'$id',{size:[".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight)."]});";
         
         // Layers
         foreach( $pagenode as $layer ) {

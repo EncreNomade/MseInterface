@@ -60,16 +60,16 @@ var GameSimonComa = function() {
     this.init = function() {
         this.parent.interrupt();
         
-        this.addListener('gestureStart', cbStart, true);
-    	this.addListener('gestureUpdate', cbMove, true);
-    	this.addListener('gestureEnd', cbEnd, true);
-    	this.addListener('move', cbMoveon, true);
+        this.getEvtProxy().addListener('gestureStart', cbStart, true);
+    	this.getEvtProxy().addListener('gestureUpdate', cbMove, true);
+    	this.getEvtProxy().addListener('gestureEnd', cbEnd, true);
+    	this.getEvtProxy().addListener('move', cbMoveon, true);
     };
     this.end = function() {
-        this.removeListener('gestureStart', cbStart);
-        this.removeListener('gestureUpdate', cbMove);
-        this.removeListener('gestureEnd', cbEnd);
-        this.removeListener('move', cbMoveon);
+        this.getEvtProxy().removeListener('gestureStart', cbStart);
+        this.getEvtProxy().removeListener('gestureUpdate', cbMove);
+        this.getEvtProxy().removeListener('gestureEnd', cbEnd);
+        this.getEvtProxy().removeListener('move', cbMoveon);
         mse.root.evtDistributor.setDominate(null);
         
         this.parent.play();

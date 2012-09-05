@@ -1,0 +1,102 @@
+<html>
+<head>
+
+<script type="text/javascript" src="ProceduralFlower.js"></script>
+<script type="text/javascript">
+
+</script>
+</head>
+<body>
+
+
+<canvas id="myCanvas" width ="500" height = "500" />
+
+
+<script>
+ if( ( iWantDeterminism = false ) ){
+	var _seed = 45678951585432565678;
+	_seed = Math.floor( Math.random() * 10000000000 );
+	
+	console.log( "seed = "+_seed );
+	
+	var _offset = _seed;
+	Math.random = function(){
+			
+		var s = _seed;
+		var square = s *s;
+		
+		var nseed = Math.floor( square / 1000 ) % 10000000000;
+		
+		if( nseed != _seed )
+			_seed = nseed;
+		else
+			_seed = nseed + _offset;
+		return ( _seed / 10000000000 );
+	}
+}
+</script >
+
+<script >
+
+
+var acc = 0;
+
+var canvas , 
+	context,
+	root;
+
+
+var age = 0 , ageMax;
+window.onload = function(){
+
+	var run = function(){
+		if( age > ageMax || !root ){
+			window.setTimeout( run , !root ? 10 : 500 );
+			root = Flw.Branch.createSimple( {x:0,y:0} , Math.PI/2 );
+			age = 0;
+			ageMax = root.getHatchinTime();
+		} 
+		else 
+		{
+			context.clearRect( 0 , 0 , canvas.width , canvas.height );
+			context.save();
+			context.translate( 250 , 450 );
+			context.scale( 1 , -1 );
+			context.lineWidth = 5;
+		    context.strokeStyle = '#34AA00';	
+			root.visitFromTo( context , 0  , age );
+			context.restore();
+			age += 6;
+			window.setTimeout( run , 20 );
+		}	
+	}
+	canvas = document.getElementById('myCanvas');
+	context = canvas.getContext('2d');
+
+	context.save();
+	context.translate( 250 , 250 );
+	context.scale( 1 , -1 );
+	
+	var t1 = Math.random();
+	var t2 = ( t1 + ( Math.random()*0.1 + 0.05 ) ) % 1;
+		
+	var leaf = Flw.Petal.create(
+				{ x: 0 , y : 0 },
+				{ x: 100 , y : 100 } ,
+				0.1 , 
+				0.4 ,
+				t1 ,
+				t2 ,
+				1
+			) ;
+	leaf.draw( context );
+	var flo = Flw.Head.create( { x: 0 , y : 0 } , Math.PI/5 , 250 );
+	flo.visit( context );
+	context.restore();
+	
+	run();
+};
+</script>
+
+</body>
+</html>
