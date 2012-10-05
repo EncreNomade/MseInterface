@@ -504,6 +504,7 @@ function articleStepDialog(name, params) {
 	dialog.main.append('<p><label>Location:</label><input id="articlex" size="10" placeholder="x" type="text"><span>px</span><input id="articley" size="10" placeholder="y" type="text"><span>px</span></p>');
 	dialog.main.append('<p><label>Ligne de texte:</label><input id="linew" size="10" placeholder="Largeur" type="text"><span>px</span><input id="lineh" size="10" placeholder="hauteur" type="text"><span>px</span></p>');
 	dialog.main.append('<p><label>Police:</label><input id="articleFont" size="10" placeholder="famille" type="text"><input id="articleFsize" style="width: 28px;" type="number"><span>px</span><select id="articleFontw"><option value="normal">normal</option><option value="bold">bold</option></select></p>');
+    dialog.main.append('<p><label>google font:</label><input type="checkbox" id="googleFont"/></p>');
 	dialog.main.append('<p><label>Couleur:</label><input id="articleColor" size="10" type="text"></p>');
 	dialog.main.append('<p><label>Alignement:</label><select id="articleAlign"><option value="left">left</option><option value="center">center</option><option value="right">right</option></select></p>');
 	
@@ -515,6 +516,7 @@ function articleStepDialog(name, params) {
 		var x = parseInt($('#articlex').val()), y = parseInt($('#articley').val());
 		var lw = parseInt($('#linew').val()), lh = parseInt($('#lineh').val());
 		var font = $('#articleFont').val();
+        var googleFont = $('#googleFont').get(0).checked;
 		var fsize = $('#articleFsize').val();
 		var weight = $('#articleFontw').val();
 		var color = $('#articleColor').val();
@@ -543,6 +545,8 @@ function articleStepDialog(name, params) {
 			$('#linew').parent().css('color','BLACK');
 		}
 		if(font != "") params.font = font;
+        if(googleFont && font != "") params.googleFont = font;
+        
 		if(!isNaN(fsize)) params.fsize = fsize;
 		params.fweight = weight;
 		if(isColor(color)) params.color = color;
@@ -1398,7 +1402,12 @@ function addArticle(manager, name, params, content) {
 		font += params.fsize+'px ';
 		article.css('font-size', config.sceneY(params.fsize)+'px');
 	}
-	if(params.font) {
+    if(params.googleFont){
+        $('head').append("<link href='http://fonts.googleapis.com/css?family="+params.googleFont+"' rel='stylesheet' type='text/css'>")        
+		article.css('font-family', "'"+params.googleFont+"'");
+        article.attr('data-googleFont', params.googleFont);
+    }
+	else if(params.font) {
 		font += params.font;
 		article.css('font-family', params.font);
 	}
