@@ -526,7 +526,7 @@ gui.scriber = (function($, gui) {
                 e.data.scriber.close();
                 
                 gui.openComment();
-                $('#comment .header #upload').prop('src', img).show(500);
+                gui.setCommentImage(img, 'base64');
             });
             // Confirm
             confirmBn.bind('click', {scriber:this}, function(e) {
@@ -547,7 +547,7 @@ gui.scriber = (function($, gui) {
                 sc.close();
                 
                 gui.openComment();
-                $('#comment .header #upload').prop('src', img).show(500);
+                gui.setCommentImage(img, 'base64');
             });
             // Colorset choose
             colorset.children().each(function(id) {

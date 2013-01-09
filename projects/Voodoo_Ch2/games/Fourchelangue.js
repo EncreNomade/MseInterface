@@ -1,6 +1,9 @@
 var Fourchelangue = function() {
     mse.Game.call(this, {fillback:true, size:[600,480]});
     
+    this.config.title = "Fourchelangue";
+    this.score = 60;
+    
     var base = [
         {fr:6,x:234,y:369,head:0,color:"#d4bf11"},
         {fr:2,x:115,y:388,head:2,color:"#8a8dbf"},
@@ -48,9 +51,9 @@ var Fourchelangue = function() {
     var back = new mse.Image(null, {pos:[0,0],size:[this.width,this.height]}, 'gamedecor');
     var right = new mse.Sprite(null, {pos:[162,140],size:[275,200]}, 'gamesign', 278,200, 0,0,278,200);
     var wrong = new mse.Sprite(null, {pos:[162,140],size:[275,200]}, 'gamesign', 272,200, 278,0,272,200);
-    var replaybn = new mse.Button(null, {pos:[247,380],size:[105,35],font:'12px Arial',fillStyle:'#FFF'}, 'Je réessaie', 'aideBar');
-    var levelupbn = new mse.Button(null, {pos:[247,380],size:[105,35],font:'12px Arial',fillStyle:'#FFF'}, '', 'aideBar');
-    var passbn = new mse.Button(null, {pos:[450,380],size:[105,35],font:'12px Arial',fillStyle:'#FFF'}, 'Je ne joue plus', 'wikiBar');
+    var replaybn = new mse.Button(null, {pos:[170,420],size:[105,35],font:'12px Arial',fillStyle:'#FFF'}, 'Je réessaie', 'aideBar');
+    var levelupbn = new mse.Button(null, {pos:[170,420],size:[105,35],font:'12px Arial',fillStyle:'#FFF'}, '', 'aideBar');
+    var passbn = new mse.Button(null, {pos:[325,420],size:[105,35],font:'12px Arial',fillStyle:'#FFF'}, 'Je ne joue plus', 'wikiBar');
     
     this.mode = 0;
     this.successed = -1;
@@ -117,7 +120,7 @@ var Fourchelangue = function() {
         this.inObj = function(x, y) {
             x -= this.base.x;
             y -= this.base.y;
-            if(x >= ratPos.body.x && x <= ratPos.body.x+size.rat.w && y >= ratPos.head.y && y <= size.base.h)
+            if(x >= ratPos.body.x && x <= ratPos.body.x+size.rat.w && y >= ratPos.bull.y-24 && y <= size.base.h)
                 return true;
             else return false;
         }
@@ -141,6 +144,8 @@ var Fourchelangue = function() {
         "LOSE": "Perdu..."
     };
     this.state = "INIT";
+    this.losecount = 0;
+    this.levelupcount = 0;
     
     this.init = function(levelup) {
         // 0: easy, 1: normal, 2: hard
@@ -148,6 +153,15 @@ var Fourchelangue = function() {
             if(this.mode < 2)
                 this.mode++;
             else this.mode = 0;
+        }
+        else if(levelup === false) {
+            ;
+        }
+        // Start
+        else {
+            this.score = 0;
+            this.losecount = 0;
+            this.levelupcount = 0;
         }
         this.currfcl = fourchelangues[this.mode][randomInt(3)];
         
@@ -202,9 +216,11 @@ var Fourchelangue = function() {
     
     this.checkFail = function() {
         this.state = "FAIL";
+        this.losecount ++;
     };
     this.checkSuccess = function() {
         this.state = "SUCCESS";
+        this.levelupcount ++;
         if(this.mode > this.successed) this.successed = this.mode;
         // Restart from the niveau 1
         if(this.mode+1 >= 3)
@@ -240,7 +256,7 @@ var Fourchelangue = function() {
         }
         // Restart button clicked
         else if(this.state == "FAIL" && replaybn.inObj(x, y)) {
-            this.init();
+            this.init(false);
         }
         else if(this.state == "SUCCESS" && levelupbn.inObj(x, y)) {
             // Levelup button clicked
@@ -248,13 +264,20 @@ var Fourchelangue = function() {
         }
         // Finish game
         else if((this.state == "FAIL" || this.state == "SUCCESS") && passbn.inObj(x, y)) {
+            this.setScore( (this.levelupcount > 0 ? 60 : 0) + 20 * (this.levelupcount==0?1:this.levelupcount-1) - 5 * this.losecount );
+        
             this.getEvtProxy().removeListener('click', this.clickcb);
             if(this.successed >= 0) {
                 this.state = "WIN";
                 this.msg.WIN += "le niveau " + (this.successed+1);
+                this.win();
             }
-            else this.state = "LOSE";
-            this.end();
+            else {
+                this.state = "LOSE";
+                this.lose();
+            }
+            
+            
         }
         else if(this.state == "PLAYING") {
             for(var i in this.bases) {

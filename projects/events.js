@@ -61,6 +61,8 @@ mse.EventDistributor = function(src, jqObj, dispatcher) {
 mse.EventDistributor.prototype = {
     constructor: mse.EventDistributor,
     distributor: function(e) {
+        if(window.mse && mse.currTimeline.inPause) return;
+        
         // Correction coordinates with root viewport
         if(this.src == mse.root && mse.root.viewport && e && !e.corrected && !isNaN(e.offsetX)) {
             e.offsetX += mse.root.viewport.x;
@@ -69,8 +71,8 @@ mse.EventDistributor.prototype = {
         }
     	if(this.dominate) this.rootEvt.eventNotif(e.type, e);
     	else {
-    	    this.rootEvt.eventNotif(e.type, e);
-    	    if(this.dispatcher) this.dispatcher.dispatch(e.type, e);
+    	    var res = this.rootEvt.eventNotif(e.type, e);
+    	    if(!res.prevent && this.dispatcher) this.dispatcher.dispatch(e.type, e);
     	}
     },
     setDispatcher: function(dispatcher) {
@@ -246,7 +248,8 @@ mse.EventDelegateSystem.prototype = {
 		for(var i = 0; i < arr.length; ++i) {
 		    res.success = true;
 		    // If one listener want to prevent the bubbling, it will prevent it by transfering the prevent as true in return value, but it can't prevent other listeners for the same event in this delegate
-		    if(arr[i].preventBubbling) res.prevent = true;
+		    if(arr[i].preventBubbling) 
+		        res.prevent = true;
 		    arr[i].notify(evt);
 		}
 		return res;

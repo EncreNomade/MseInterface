@@ -165,11 +165,14 @@ var NPC = function(sprite, course, dir) {
 var FindSimon = function() {
     mse.Game.call(this, {fillback:true});
     this.msg = {
-        "INIT": "Clique pour aider Simon à échapper à la Meute.",//Utilise les flèches de direction pour diriger Simon dans le parc.
+        "INIT": "Clique pour aider Simon\nà échapper à la Meute.\nUtilise les flêches du clavier.",
         "WIN": "Bravo!!! Tu as gagné."
     };
+    this.config.title = "Parc Montsouris";
     this.state = "INIT";
     
+    mse.src.addSource('aud_findsimon', 'audios/findsimon', 'aud');
+    mse.src.getSrc('aud_findsimon').loop = true;
     mse.src.addSource('parc', 'games/Parc.jpg', 'img', true);
     mse.src.addSource('perso_parc', 'games/personnages.png', 'img', true);
     mse.src.addSource('notice_parc', 'games/points-persos.png', 'img', true);
@@ -211,8 +214,8 @@ var FindSimon = function() {
     var dirs = [
         [[180,0],[0,180]],
         [[90],[],[0]],
-        [[180],[180],[180]],
-        [[0],[180],[],[90,-90]]
+        [[],[180],[]],
+        [[0],[180],[],[90]]
     ];
     
     // Init Simon
@@ -224,26 +227,31 @@ var FindSimon = function() {
     
     // Vitural pad
     if(MseConfig.iOS) {
-        mse.src.addSource('vPadBase', './UI/button/padbase.png', 'img', true);
-        mse.src.addSource('vPadHandler', './UI/button/padhandler.png', 'img', true);
+        var path = "./UI/";
+        if(config.publishMode == "release") path = "./assets/img/season13/story/";
+        mse.src.addSource('vPadBase', path+'button/padbase.png', 'img', true);
+        mse.src.addSource('vPadHandler', path+'button/padhandler.png', 'img', true);
         this.padBase = new mse.Image(null, {pos:[46, this.height-103],size:[48,48],globalAlpha:0.6}, 'vPadBase');
         this.padHandler = new mse.Image(null, {pos:[30, this.height-119],size:[80,80],globalAlpha:0.6}, 'vPadHandler');
         this.touchZone = [30, this.height-119, 80, 80];
     }
     
+    this.begintime = (new Date()).getTime();
+    
     this.init = function() {
+        mse.src.getSrc('aud_findsimon').play();
+    
 		// Init NPCs
 	    this.npc = new Array();
 	    for(var i = 0; i < 4; i++) {
 	        this.npc[i] = new NPC(mechants[i], courses[i], dirs[i]);
 	    }
-        this.npc[3].v = 3;
+        this.npc[3].v = 4.5;
         
         this.simondir = 0;
         this.simonrun.stop();
         this.simonstand.start();
         this.onmove = false;
-        this.lazylose = false;
         this.circleR = 0;
         this.detectR = 50;
         // Init Parc draw parameters
@@ -262,6 +270,8 @@ var FindSimon = function() {
     	    this.getEvtProxy().addListener('gestureUpdate', this.touchMovecb, true, this);
     	    this.getEvtProxy().addListener('gestureEnd', this.moveovercb, true, this);
     	}
+    	
+    	this.begintime = (new Date()).getTime();
     };
     this.mobileLazyInit = function() {
         // Position of parc
@@ -323,12 +333,7 @@ var FindSimon = function() {
 	};
 	
 	this.logic = function(delta) {
-	    if(this.lazylose) {
-	        this.losecount--;
-	        if(this.losecount == 0) this.lose();
-	        return;
-	    }
-		// Parc visible part
+	    // Parc visible part
 		if(this.pos.x > 0) {
 		    this.sx = 0;
 		    this.sw = this.width - this.pos.x;
@@ -376,8 +381,11 @@ var FindSimon = function() {
 		        this.getEvtProxy().removeListener('gestureUpdate', this.touchMovecb);
 		        this.getEvtProxy().removeListener('gestureEnd', this.moveovercb);
 		    }
+		    mse.src.getSrc('aud_findsimon').pause();
+		    
 		    this.state = "WIN";
-		    this.end();
+		    this.setScore( 4000 * 1000 / ( (new Date()).getTime() - this.begintime ) );
+		    this.win();
 		}
 		// NPCs
 		for(var i = 0; i < 4; i++) {
@@ -400,9 +408,10 @@ var FindSimon = function() {
 		            this.getEvtProxy().removeListener('gestureUpdate', this.touchMovecb);
 		            this.getEvtProxy().removeListener('gestureEnd', this.moveovercb);
 		        }
-		        this.lazylose = true;
 		        this.moveover();
-		        this.losecount = 40;
+		        mse.src.getSrc('aud_findsimon').pause();
+		        this.state = "LOSE";
+		        this.lose();
 		    }
 		}
 	};

@@ -53,6 +53,8 @@ else header("Location: index.php", true);
 
 <link rel="stylesheet" type="text/css" href="./stylesheets/menu.css" />
 <link rel="stylesheet" type="text/css" href="./stylesheets/interface.css" />
+<!--<link rel="stylesheet" type="text/css" href="./projects/font/gudea/stylesheet.css" />-->
+<link href='http://fonts.googleapis.com/css?family=Gudea:400,700,400italic&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
 
 </head>
 <body>
@@ -138,6 +140,8 @@ else header("Location: index.php", true);
 		<li><h5>Paramètres: </h5></li>
 		<li><h5>Bloquant:</h5><input id="animeBlock" type="checkbox" checked="true"></li>
 		<li><h5>Boucle:</h5><input id="animeRepeat" style="width: 28px;" type="number" value="1"></li>
+		<li><h5>Largeur:</h5><input id="animeWidth" style="width: 40px;" type="number" value=""><span>px</span></li>
+		<li><h5>Hauteur:</h5><input id="animeHeight" style="width: 40px;" type="number" value=""><span>px</span></li>
 		<li><h5>Nom:</h5><input id="animeName" size="5" type="text"></li>
 		<li><input type="button" id="createAnime" value="Sauvegarder"></input></li>
 	</ul>
@@ -154,7 +158,9 @@ else header("Location: index.php", true);
 	<canvas id="rulerX" class="ruler"></canvas>
 	<canvas id="rulerY" class="ruler"></canvas>
 	
-	<div id="editor"></div>
+	<div id="scene_panel">
+    	<div id="editor"></div>
+    </div>
 </div>
 
 <div id="timeline">
@@ -249,11 +255,11 @@ else header("Location: index.php", true);
 	}
 	
 	// Update local with server storage
-	if(norecord || (lastModLocal < lastModServer)) {
+	if(true || norecord || (lastModLocal < lastModServer)) {
 	    $.get("updateFromServer.php", {'pjName':pjName, 'lang':pjLanguage}, function(msg){
 	        var pjsave = JSON.parse(msg);
 	        if(pjsave) {
-	            //saveToLocalStorage(pjName, msg);
+	            saveToLocalStorage(pjName, msg);
 	            retrieveLocalInfo(pjsave);
 	            
 	            <?php 

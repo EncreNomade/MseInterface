@@ -44,8 +44,10 @@ mdj.Scene = function(game, w, h) {
     this.height = isNaN(h) ? this.game.height : h;
     
     if(MseConfig.iOS) {
-        mse.src.addSource('vPadBase', './UI/button/padbase.png', 'img', true);
-        mse.src.addSource('vPadHandler', './UI/button/padhandler.png', 'img', true);
+        var path = "./UI/";
+        if(config.publishMode == "release") path = "./assets/img/season13/story/";
+        mse.src.addSource('vPadBase', path+'button/padbase.png', 'img', true);
+        mse.src.addSource('vPadHandler', path+'button/padhandler.png', 'img', true);
     }
 };
 mdj.Scene.prototype = {

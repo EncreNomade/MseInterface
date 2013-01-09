@@ -129,7 +129,7 @@ class ProjectGenerator {
         $this->jstr .= "\nvar wikis={};";
         
         $this->jstr .= "\nfunction createbook(){";
-        $this->jstr .= "\n\tmse.configs.srcPath='./".$this->pj->getName()."/';";
+        $this->jstr .= "\n\tif(config.publishMode == 'debug') mse.configs.srcPath='./".$this->pj->getFolder()."/';";
         // Initiale root
         $this->jstr .= "\n\twindow.root = new mse.Root('".$this->pj->getName()."',".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight).",'".$this->pj->getOrientation()."');";
         $this->autoid = 0;
@@ -168,6 +168,22 @@ class ProjectGenerator {
                 
             case "anime":
                 $animesrcs[$name] = $src;
+                $repeat = $src->repeat;
+                $statiq = $src->statiq;
+                $block = $src->block;
+                $animew = isset($src->width) ? $src->width : $this->pjWidth;
+                $animeh = isset($src->height) ? $src->height : $this->pjHeight;
+                $animeFrs = $src->frames;
+                // Calcule total frame duration
+                $duration = 0;
+                foreach( $animeFrs as $frame ) {
+                    // Transform second to frame
+                    $interval = round($frame->interval*25);
+                    $duration += $interval;
+                }
+                // Initialisation of animation
+                $this->jstr .= "\n\tanimes.$name=new mse.Animation($duration,$repeat,".($statiq===false?"false":"true").",null,{'size':[".$this->encodedCoord($animew).",".$this->encodedCoord($animeh)."]});";
+                if($block) $this->jstr .= "\n\tanimes.$name.block=true;";
                 break;
                 
             case "wiki":
@@ -202,9 +218,7 @@ class ProjectGenerator {
         }
         
         foreach( $animesrcs as $name => $src ) {
-            $repeat = $src->repeat;
-            $static = $src->statiq;
-            $block = $src->block;
+            $statiq = $src->statiq;
             $animeFrs = $src->frames;
             $animeObjs = get_object_vars($src->objs);
             // Calcule total frame duration
@@ -218,9 +232,6 @@ class ProjectGenerator {
                 $duration += $interval;
             }
             array_push($frames, $duration);
-            // Initialisation of animation
-            $this->jstr .= "\n\tanimes.$name=new mse.Animation($duration,$repeat,".($static===false?"false":"true").");";
-            if($block) $this->jstr .= "\n\tanimes.$name.block=true;";
             // Obj list
             $objlist = array();
             $nbFr = count($animeFrs);
@@ -261,7 +272,7 @@ class ProjectGenerator {
                     
                     // First initialization of objet, add to objlist array
                     if(!array_key_exists($key, $objlist)){
-                        if($static) {
+                        if($statiq) {
                             switch($t) {
                             case "image":
                                 $this->jstr .= "\n\ttemp.obj=new mse.Image(null,{'pos':[$dxvar,$dyvar],'size':[$dwvar,$dhvar]},'$key');";
@@ -652,6 +663,14 @@ class ProjectGenerator {
             $classname = $objnode['name'];
             $this->jstr .= "\n\t$obj=new $classname();";
         }
+        else if($class == 'anime') {
+            $type = "anime";
+            $params = $this->formatParams($objnode['style'], $type);
+            $this->jstr .= "\n\t$obj=animes.".$objnode['name'].";";
+            if(array_key_exists('left', $params[0])) {
+                $this->jstr .= " $obj.setX(".$params[0]['left'].");";
+            }
+        }
         else if(count($objnode->children()) == 0) {
             // Rectangle obj
             $type = "obj";
@@ -682,6 +701,7 @@ class ProjectGenerator {
         }
         
         if($type == "game") $this->jstr .= " $layer.addGame($obj);";
+        else if($type == "anime") $this->jstr .= " $layer.addAnimation($obj);";
         else if($class != 'speaker') $this->jstr .= " $layer.addObject($obj);";
     }
     function addLink($linknode, $obj, $index) {
@@ -764,6 +784,10 @@ class ProjectGenerator {
             $param['pos'] = array($pj->realCoor($left[2]), $pj->realCoor($top[2]));
             $paramStr .= '"pos":['.$this->encodedCoord($param['pos'][0]).','.$this->encodedCoord($param['pos'][1]).'],';
         }
+        if( $type == "anime" && array_key_exists(2, $left) ) {
+            $param['left'] = $pj->realCoor($left[2]);
+        }
+        
         if( array_key_exists(1, $color) ) {
             $param['fillStyle'] = $color[1];
             $paramStr .= '"fillStyle":"'.$param['fillStyle'].'",';
@@ -776,6 +800,7 @@ class ProjectGenerator {
             $param['globalAlpha'] = $alpha[1];
             $paramStr .= '"globalAlpha":'.$param['globalAlpha'].',';
         }
+    
         $fontSetted = false;
         if( array_key_exists(1, $fsize) ) {
             $fsize[1] = $pj->realCoor($fsize[1]);
@@ -806,6 +831,7 @@ class ProjectGenerator {
             $param['textBaseline'] = $textBaseline[1];
             $paramStr .= '"textBaseline":"'.$param['textBaseline'].'",';
         }
+
         if( array_key_exists(1, $lineHeight) ) {
             $param['lineHeight'] = $pj->realCoor($lineHeight[1]);
             $paramStr .= '"lineHeight":'.$this->encodedCoord($param['lineHeight']).',';

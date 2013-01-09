@@ -628,6 +628,18 @@ SourceManager.prototype = {
 		    game.append('<h3>Game: '+id+'</h3>');
 			game.attr( "id" , "obj"+(curr.objId++) );
 		    return game;
+		case 'anime':
+			var anime = $('<div class="anime" name="'+id+'">');
+			anime.deletable();
+
+			// Resize
+			var w = config.sceneX(this.sources[id].data.width), h = config.sceneY(this.sources[id].data.height);
+			anime.css({'width':w+'px', 'height':h+'px'});
+			anime.css({'left':(parent.width()-w)/2+'px'});
+			anime.append('<h3>Anime: '+id+'</h3>');
+			anime.attr( "id" , "obj"+(curr.objId++) );
+			
+		    return anime;
 		default: 
 		    return null;
 		}
@@ -845,10 +857,10 @@ SourceManager.prototype = {
 	        }
 	        // Original content, upload it
 	        switch(type) {
-	        case "image": case "audio": case "game":
+	        case "image": case "audio": case "game": case "code": 
 	            data = "pjName="+pjName+"&lang="+lang+"&type="+type+"&name="+key+"&data="+this.sources[key].data;
 	            break;
-	        case "wiki": case "anime": case "code": case "speaker":
+	        case "wiki": case "anime": case "speaker":
 	            ++this.uploaded;
 	            this.updateSrcs(pjName, lang);
 	            continue;
@@ -1053,6 +1065,7 @@ StepManager.prototype = {
 	        var obj = $(this);
 	        // Article
 	        if(obj.hasClass('article')) {
+	            obj.deletable().configurable();
                 ArticleFormater.setConfigurable(obj.children());
 	        }
 	        // Other obj
@@ -1176,6 +1189,22 @@ StepManager.prototype = {
 		delete this.steps[this.currStepN-1];
 		delete this.stepexpos[this.currStepN-1];
 		this.currStepN--;
+	},
+	
+	modifyArticle: function(article, font, width, lineHeight) {
+	/*
+	    var metas = ArticleFormater.parseMetaText(article);
+	    
+	    var newarticle = $('<div class="article" defile="'+article.attr('defile')+'"></div>');
+	    newarticle.css({'left':article.css('left'), 'top':article.css('top'), 
+	    			    'width':article.width(), 'height':article.height(),
+	    			    'line-height' : article.css('line-height'), 
+	    			    'text-align' : article.css('text-align'),
+	    			    'font-weight' : article.css('font-weight'),
+	    			    'font-size' : article.css('font-size'),
+	    			    'font-family' : article.css('font-family'),
+	    			    'color' : article.css('color')});
+	    ArticleFormater.reverse( newarticle, content, article, metas);*/
 	}
 };
 
@@ -1292,11 +1321,13 @@ Wiki.prototype = {
 
 
 // Animation system
-var Animation = function(name, repeat, block, statiq) {
+var Animation = function(name, repeat, block, statiq, width, height) {
     //this.anime = {};
     this.name = name;
     this.repeat = repeat;
     this.statiq = statiq;
+    this.width = parseInt(width ? width : config.width);
+    this.height = parseInt(height ? height : config.height);
     this.frames = [];
     this.objs = {};
     this.block = block ? true : false;
@@ -1437,6 +1468,8 @@ Animation.prototype = {
         $('#animeRepeat').val(this.repeat);
         $('#animeName').val(this.name);
         $('#animeBlock').val(this.block);
+        $('#animeWidth').val(this.width ? this.width : config.width).change();
+        $('#animeHeight').val(this.height ? this.height : config.height).change();
         for(var i = 0; i < this.frames.length; i++){
             var frame = this.frames[i];
             var frameexpo = animeTool.addFrame(frame.interval, true);
@@ -2083,7 +2116,8 @@ var scriptMgr = (function() {
             effet: "effetname",
             playDefi: "",
             pauseDefi: "",
-            loadGame: "game"
+            loadGame: "game",
+            finiBook: "",
         },
         optionText: {
             click: "Clique", doubleClick: "Double clique", firstShow: "Première apparition", show: "Apparition",
@@ -2094,7 +2128,8 @@ var scriptMgr = (function() {
             playVoice: "Lecture d'un son", stopVoice: "Arrêter un son",
             addScript: "Ajout d'un script", script: "Ajout d'une suite de codes",
             effet: "Démarrer un effet", playDefi: "Démarrer la lecture", pauseDefi: "Pauser la lecture",
-            loadGame: "Démarrer un jeu"
+            loadGame: "Démarrer un jeu",
+            finiBook: "Déclancher la fin de ce livre"
         },
         cursors: ['default','pointer','crosshair','text','wait','help','move','autre'],
         scripts: {},
@@ -2247,7 +2282,12 @@ var scriptMgr = (function() {
             if(listScript.length > 0) return listScript;
         },
         updateObjScCount: function(objId, listScript, jQCaller){
-            var $obj = jQCaller ? jQCaller : $('#'+objId);
+            var $obj = (jQCaller && jQCaller.length && jQCaller.length != 0) ? jQCaller : $('#'+objId);
+            if($obj.length == 0) {
+                this.delRelatedScripts(objId);
+                return;
+            }
+            
             var $scriptCounter = $obj.find('.scriptCounter');
             if ($scriptCounter.length > 0)  // remove the existing icon
                 $scriptCounter.remove();
@@ -2255,14 +2295,17 @@ var scriptMgr = (function() {
             
             var $nbscripts = listScript.length;
             if ($nbscripts > 0) {
-                var $scriptIcon = $obj.find('.del_container img[src="./images/UI/addscript.jpg"]');
                 var $delContainer = $obj.children('.del_container');
+                if($delContainer.length == 0) return;
+                
+                var $scriptIcon = $delContainer.find('img[src="./images/UI/addscript.jpg"]');
+                if($scriptIcon.length == 0) return;
+                
+                $scriptCounter = $('<div class="scriptCounter">'+ $nbscripts +'</div>');
+                $delContainer.append($scriptCounter);
+                $scriptCounter.click(addScriptForObj);
                 var hidingHoverIc = $scriptIcon.css('display') == 'none';
                 if (hidingHoverIc) $scriptCounter.hide();
-                
-                $delContainer.append('<div class="scriptCounter">'+ $nbscripts +'</div>');
-                $scriptCounter = $delContainer.children('.scriptCounter');
-                $scriptCounter.click(addScriptForObj);
                 
                 if($obj.parents('.article').length > 0){
                     var top = 60 + 5;
@@ -2294,7 +2337,7 @@ var scriptMgr = (function() {
             else if (srcType == "anime") 
                 source = srcMgr.expos[objId];
             
-            if (listScript.length > 0 && source) {
+            if (listScript.length > 0 && source && source.length > 0) {
                 source.data('scriptsList', listScript);
                 source.dblclick(function(e){
                     var $circleMenu = $('#circleMenu');
@@ -2325,6 +2368,7 @@ var scriptMgr = (function() {
             var data = {
                 'pjName': pjName,
                 'lang': lang,
+                'type': 'scripts',
                 'data': JSON.stringify(this.scripts)
             };
             
@@ -2934,6 +2978,10 @@ var initAnimeTool = function() {
         var name = $("#animeName").val();
         var repeat = $("#animeRepeat").val();
         var block = $("#animeBlock").val();
+        var width = $('#animeWidth').val();
+        if(width == "" || width == 0) width = config.width;
+        var height = $('#animeHeight').val();
+        if(height == "" || height == 0) height = config.height;
         var statiq = tool.editor.data('static') == 'false' ? false : true;
         // Name validation
         if(!name || !nameValidation(name)) {
@@ -2941,7 +2989,7 @@ var initAnimeTool = function() {
             return false;
         }
         
-        var anime = new Animation(name, repeat, block, statiq);
+        var anime = new Animation(name, repeat, block, statiq, width, height);
         anime.createAnimation(tool.timeline.children('div'));
         // Existance check
 		var nomExiste = false;
@@ -2962,6 +3010,15 @@ var initAnimeTool = function() {
 		}
         else
             CommandMgr.executeCmd(new AddSrcCmd('anime', anime, name));
+    });
+    
+    $('#animeWidth').change(function() {
+        var width = config.sceneX($('#animeWidth').val());
+        $('#editor').css({'width': width, 'left': (config.swidth-width)/2});
+    });
+    $('#animeHeight').change(function() {
+        var height = config.sceneY($('#animeHeight').val());
+        $('#editor').css({'height': height, 'top': (config.sheight-height)/2});
     });
     
     var addAnimeObj = function(e, id, data) {
@@ -3199,6 +3256,8 @@ var initAnimeTool = function() {
             this.editor.removeData('static').css('background', '#ffffff');
             $('#animeName').val("");
             $('#animeRepeat').val(1);
+            $('#animeWidth').val(config.width).change();
+            $('#animeHeight').val(config.height).change();
         },
         transSetup: function(e){
             var trans = $(e.target);
@@ -3804,6 +3863,8 @@ ObjChooser.prototype = {
         $('#editor').css('z-index', config.zid.EditorInChoosing);
         $('#pageBar').css('z-index', config.zid.PagebarInChoosing);
         
+        this.objs.splice(0, this.objs.length);
+        
         // Active message center notification
         if(this.multi) {
             var msgobj = $("<p>Cliquer <span style='text-decoration: underline; cursor: pointer;'>ici</span> ou appuyer sur return pour confirmer</p>");
@@ -3866,7 +3927,7 @@ ObjChooser.prototype = {
                 this.jqObj.children('h5').text(str);
             }
         }
-        this.objs.splice(0, this.objs.length);
+        //this.objs.splice(0, this.objs.length);
         
         $('#center_panel, #right').css('z-index', config.zid.Scene);
         $('#editor').css('z-index', this.editorZid);
@@ -4316,7 +4377,7 @@ function choose(e) {
 			multiSelect.push( elem );
 			elem.addClass( 'selected' );
 		}
-	} 
+	}
 }
 // only for resizable element
 function chooseElemWithCtrlPts(e) {

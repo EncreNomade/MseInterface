@@ -76,11 +76,13 @@ body{
 .scene {
 	background:#fff;
 	position:absolute;
-	top:36px;
-	left:15px;
+	top:0px;
+	left:0px;
 	margin:0px;
 	padding:0px;
-	border:1px solid #4d4d4d;
+	-moz-box-shadow: 0 0 1px 0px #4d4d4d;
+	-webkit-box-shadow: 0 0 1px 0px #4d4d4d;
+	box-shadow: 0 0 1px 0px #4d4d4d;
 	overflow:hidden;
 	-moz-user-select: none;
 	-webkit-user-select: none;
@@ -103,7 +105,7 @@ body{
 	margin:none; 
 	padding:none;
 	overflow-y:auto;
-	overflow-x:hidden;
+	overflow-x:visible;
 	width:100%;
 	height:100%;
 	border-style: solid; 
@@ -141,14 +143,22 @@ body{
     border-color:#4d4d4d;
     border-width:3px;
 }
-.article .game h3 {
+.article .anime {
+    position:relative;
+    background:#000;
+    margin:0;
+    -moz-box-shadow: 0 0 0 3px #4d4d4d;
+    -webkit-box-shadow: 0 0 0 3px #4d4d4d;
+    box-shadow: 0 0 0 3px #4d4d4d;
+}
+.article .game h3, .article .anime h3 {
     margin:auto;
     width:100%;
     height:30px;
     line-height:30px;
     text-align:center;
     color:#fff;
-    font:18px Verdana;
+    font:18px Gudea;
     -moz-user-select: none;
     -webkit-user-select: none;
     user-select: none;
@@ -326,15 +336,24 @@ body{
 	margin:1px 0px 0px 4px;
 	padding:0px;
 }
+#scene_panel {
+    top:37px;
+    left:16px;
+    width:640px;
+    height:480px;
+    overflow: visible;
+    position:absolute;
+    z-index: 3;
+}
 #editor {
 	background:#fff;
 	opacity:1;
 	position:absolute;
-	top:37px;
-	left:16px;
+	top:0px;
+	left:0px;
 	width:640px;
 	height:480px;
-	overflow:hidden;
+	overflow:visible;
 	z-index:3;
 }
 .direct_editor {
@@ -368,17 +387,18 @@ body{
 	border:1px solid #000;
 }
 .selected {
-	-moz-box-shadow: 0 0 0px 2px #888;
-	-webkit-box-shadow: 0 0 0px 2px #888;
-	box-shadow: 0 0 0px 2px #888;
+	-moz-box-shadow: inset 0 0 3px 2px rgb(246, 168, 0);
+	-webkit-box-shadow: inset 0 0 3px 2px rgb(246, 168, 0);
+	box-shadow: inset 0 0 3px 2px rgb(246, 168, 0);
 }
+/*
 .selected.textLine {
 	background: rgba(4,120,120,0.5);
 	
 	-moz-box-shadow: none;
 	-webkit-box-shadow: none;
 	box-shadow: none;
-}
+}*/
 .text {
 	border:0px;
 	position:absolute;
@@ -456,7 +476,7 @@ body{
 	height: 100%;
 	margin:0px;
 	padding:0px;
-	overflow:hidden;
+	overflow:visible;
 }
 #editor div.active {
     background-color:rgba(255,255,255,0.5);

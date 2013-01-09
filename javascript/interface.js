@@ -913,21 +913,22 @@ function tarDynamic(e) {
         if (typeof(choosedScript) !== 'undefined') choosedCursor = scriptMgr.scripts[choosedScript].target;
         cible.append(scriptMgr.cursorSelectList('script_tar', choosedCursor));
         $('#script_tar').change(function(){
+            var currp = $(this).parent();
             if($(this).val() == "autre") {
                 // show ressource panel
                 showBottom();
                 var supp = $('<p><label>Cursor personalisé</label></p>');
                 var dz = (new DropZone(dropToTargetZone, {'margin':'0px','padding':'0px','width':'60px','height':'60px'}, "script_supp")).jqObj;
                 dz.data('type', "image");
-                $('.popup_body p:eq(4)').after(supp.append(dz));
+                currp.after(supp.append(dz));
                 if (typeof(choosedScript) !== 'undefined') dz.html(srcMgr.getExpoClone(scriptMgr.scripts[choosedScript].supp));
             }
             else {
                 closeBottom();
-                $('.popup_body p:eq(4)').nextAll().remove();
+                currp.nextAll().remove();
             }
         });
-        if (choosedCursor == 'autre') $('#script_tar').change() //trigger for display the choosed cursor if it's "autre"
+        if (choosedCursor == 'autre') $('#script_tar').change(); //trigger for display the choosed cursor if it's "autre"
         break;
     case "anime":
     case "image":
@@ -1086,7 +1087,7 @@ function addImageElem(id, data, page, step) {
 function addPage(name) {
 	var page = $('<div id="'+name+'" class="scene"></div>');
 	page.width(config.swidth).height(config.sheight);
-	$('#center_panel').append(page);
+	$('#scene_panel').append(page);
 	pages[name] = page;
 	
 	// Add step manager
@@ -1508,12 +1509,12 @@ function selectP(e) {
 	e.preventDefault();
 	var elem = $(this);
 	if(curr.choosed && curr.choosed != elem) {
-		curr.choosed.css({'z-index':'0','background':'none'});
+		//curr.choosed.css({'z-index':'0','background':'none'});
 		curr.choosed.children('.del_container').css('display','none');
 	}
 	else if(curr.choosed == elem) return;
 	
-	elem.css({'z-index':'1','background':'#FFBA84'});
+	elem.css({'z-index':'1'});
 	elem.children('.del_container').css('display','block');
 	curr.choosed = elem;
 };
@@ -1532,7 +1533,7 @@ function dropToInsertZone(e) {
 	var data = srcMgr.getSource(id);
 	var type = srcMgr.sourceType(id);
 	// Verification
-	if(!data || (type != "image" && type != "game")) return;
+	if(!data || (type != "image" && type != "game" && type != "anime")) return;
 	// Append to elem zone
 	$(this).append(srcMgr.getExpoClone(id));
 };
@@ -1619,9 +1620,9 @@ function dropToWikiElemZone(e) {
 function expressTrad(){
 	
 	var metas = ArticleFormater.parseMetaText($( ".article" ));
-	var a = ArticleFormater.formate( $( ".article" ), metas )
+	var a = ArticleFormater.formate( $( ".article" ), metas );
 	
-	var e  = ArticleFormater.reverse( a , $( ".article" ), metas )
+	var e  = ArticleFormater.reverse( a , $( ".article" ), metas );
 	
 	$( ".article" ).children().remove();
 	
@@ -2419,7 +2420,7 @@ setConfigurable: function ($content){
             'display':'none'});
     }
     $content.each(function(){
-        if(!$(this).is('div.textLine, div.illu, div.game, div.speaker'))
+        if(!$(this).is('div.textLine, div.illu, div.game, div.speaker, div.anime'))
             return;
         if ($(this).hasClass('speaker')){
             // speaker is a div which contains textLine

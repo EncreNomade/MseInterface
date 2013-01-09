@@ -61,7 +61,7 @@ Ghost.prototype = {
             this.target.game.count = 50;
             this.target.game.input.disable();
             this.target.inputv = 0;
-            this.target.game.showMsg("Tu as été rattrapé par un fantôme !");
+            this.target.game.showMsg("Tu as été rattrapé par un fantôme!");
         }
         // Dead check
         var angle = mseAngleForLine(this.target.ox+8, this.target.oy+18, this.ox+8, this.oy+18);
@@ -120,10 +120,11 @@ var Donjon = function(){
         "WIN": "Bravo!!! Tu as gagné.",
         "LOSE": "Perdu..."
     };
+    this.config.title = "Labyrinthe";
     this.objGid = {
         hole: [12+11*col, 31+15*col, 32+15*col, 19+20*col, 23+29*col, 25+29*col, 39+32*col],
         skelton: [12+8*col, 15+8*col, 18+8*col, 30+2*col, 32+2*col, 30+5*col, 32+5*col, 35+5*col, 43+5*col, 44+4*col, 44+6*col, 29+18*col, 34+18*col, 17+30*col, 13+32*col, 28+34*col, 32+34*col, 31+35*col, 28+36*col, 32+37*col, 30+38*col],
-        door: [29+33*col, 4+16*col]
+        door: [29+34*col, 4+16*col]
     };
     
     this.currScene = new mdj.TileMapScene(this, 32*col, 32*row, 
@@ -174,7 +175,7 @@ var Donjon = function(){
                 this.simonM.inputv = 0;
                 this.simonV.getAnime('turn').rep = 4;
                 this.simonV.playAnime('turn');
-                this.showMsg("Simon as trouvé la sortie !");
+                this.showMsg("Simon a trouvé la sortie !");
             }
         }, this));
         this.simonM.logic = function(delta) {
@@ -280,10 +281,10 @@ $.extend(Donjon.prototype, {
             this.currTime == 1;
         }
         if(this.state == "PLAYING") {
-            if(this.currTime % 15 < 0.04) {
+            if(this.currTime % 8 < 0.04) {
                 if(this.light.curr < 5) this.light.setFrame(this.light.curr+1);
             }
-            if(this.currTime % 75 < 0.04) {
+            if(this.currTime % 40 < 0.04) {
                 if(this.nblight >= 1) {
                     this.nblight--;
                     this.light.setFrame(0);
@@ -302,7 +303,14 @@ $.extend(Donjon.prototype, {
         }
         if(this.state == "WIN" || this.state == "LOSE") {
             if(this.count == 0) {
-                this.state == "WIN" ? this.end() : this.lose();
+                if(this.state == "WIN") {
+                    this.setScore( 4000 / this.currTime );
+                    this.win()
+                }
+                else {
+                    this.setScore( 0 );
+                    this.lose();
+                }
             }
             else this.count--;
         }
@@ -328,7 +336,9 @@ $.extend(Donjon.prototype, {
         ctx.font = "10px Arial";
         ctx.fillText(this.nblight, 45, 20);
         // Map
+        ctx.globalAlpha = 0.5;
         this.map.draw(ctx);
+        ctx.globalAlpha = 1;
         // Msg
         if(this.msgVisible) {
             ctx.shadowBlur = 10;

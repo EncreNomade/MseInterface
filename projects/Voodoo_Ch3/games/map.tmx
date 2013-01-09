@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.0" orientation="orthogonal" width="60" height="43" tilewidth="32" tileheight="32">
- <tileset firstgid="1" name="tileset" tilewidth="32" tileheight="32">
+ <tileset firstgid="1" name="Tileset grotte" tilewidth="32" tileheight="32">
   <image source="Tileset.png" width="160" height="128"/>
  </tileset>
  <layer name="colli" width="60" height="43">

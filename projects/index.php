@@ -51,10 +51,14 @@ addEventListener("load", function(){
 </script>
 
 <link rel="stylesheet" href="./support/main.css" type="text/css">
+<!--<link rel="stylesheet" href="./font/gudea/stylesheet.css" type="text/css">-->
+<link href='http://fonts.googleapis.com/css?family=Gudea:400,700,400italic&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
 <script src="./support/jquery-latest.js"></script>
+<script src="./support/jquery.form.js"></script>
 <script src="./support/BrowserDetect.js"></script>
 <script src="./support/Tools.js"></script>
 <script src="./support/Interaction.js"></script>
+<script src="./config.js"></script>
 <script src="./gui.js"></script>
 <script src="./scriber.js"></script>
 <script src="./events.js"></script>
@@ -78,20 +82,30 @@ addEventListener("load", function(){
         </ul>
         <img class="feuille" src="./UI/feuille.png">
     </div>
+    <div id="comment">
+         <img class="close" src="./UI/button/close.png"/>
+         <div class="header">
+             <img id="profilphoto" src="" />
+             <img id="camera" src="./UI/camera.png" />
+             <img id="user_draw" src="./UI/picture_up.png" />
+             <img id="comment_image" src="" />
+             <div id="upload_container">
+                 <div class="arrow"></div>
+                 <form id="imageuploadform" method="post" enctype="multipart/form-data" action='../upload_user_draw.php'>
+                     <input type="file" name="upload_pic" id="upload_pic" />
+                     <input type="button" value="Télécharger" id="upload_btn" />
+                 </form>
+             </div>
+             <a id="share" class="facebook">Partager</a>
+         </div>
+         <div class="body">
+             <textarea id="comment_content" rows="5" cols="30" placeholder="Écrire votre commentaire ici..."></textarea>
+             <div class="users_comments">
+                 <h5 class='renew_comments'>Cliquer pour voir les anciens commentaires</h5>
+             </div>
+         </div>
+     </div>
     <div id="center">
-        <div id="comment">
-            <img class="close" src="./UI/button/close.png"/>
-            <div class="header">
-                <img id="photo" src="" />
-                <img id="camera" src="./UI/camera.png" />
-                <img id="upload" src="" />
-                <img id="sns" src="./UI/sns_f.png" />
-                <a id="share">Partager</a>
-            </div>
-            <div class="body">
-                <textarea id="comment_content" rows="5" cols="30" placeholder="Écrire votre commentaire ici..."></textarea>
-            </div>
-        </div>
         <div id="scriber">
             <div class="toolbox">
                 <div class="anchor"></div>
@@ -144,6 +158,7 @@ addEventListener("load", function(){
             <img class="close" src="./UI/button/close.png"/>
             <p>Audio: </p>
             <p>Vitesse: </p>
+            <p>Partager les commentaires sur facebook: <input type="checkbox" checked="true"></p>
             <input type="button" value="Aide"/>
             <input type="button" value="Auteur"/>
             <input type="button" value="Crédit"/>
@@ -155,7 +170,25 @@ addEventListener("load", function(){
             <img id="theImage" src=""/>
             <img id="closeBn"  src="UI/button/close.png"/>
     </div></div>
-    <canvas id="gameCanvas" class='game' width=50 height=50></canvas>
+    
+    <div id="game_container" class="dialog">
+        <h1></h1>
+        <div class="sep_line"></div>
+        
+        <canvas id="gameCanvas" class='game' width=50 height=50></canvas>
+        
+        <div id="game_center">
+            <div id="game_result">
+                <img src="./UI/fb_btn.jpg" />
+                <h2>GAGNE !</h2>
+                <h5>Ton score : <span>240</span> pts</h5>
+                <ul>
+                    <li id="game_restart">REJOUER</li>
+                    <li id="game_quit">QUITTER</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script type="text/javascript">

@@ -4,10 +4,12 @@ var RatGame = function() {
 	var oxid = mse.joinCoor(220);
 	var oyid = mse.joinCoor(0);
 	var wid = mse.joinCoor(360);
-	var hid = mse.joinCoor(600);
+	var hid = mse.joinCoor(596);
 	
 	this.canvasox = mse.coor(oxid); this.canvasoy = mse.coor(oyid);
 	this.width = mse.coor(wid); this.height = mse.coor(hid);
+	
+	mse.src.addSource('ratAud', 'audios/rat', 'aud');
 	
 	mse.src.addSource('ratImg', 'games/rat.png', 'img');
 	var ratSit = new mse.Sprite(this,{pos:[30,this.height-80]}, 'ratImg', 80,50, 0,0,400,100);
@@ -29,6 +31,7 @@ var RatGame = function() {
 			
 			sitAnim.stop();
 			hangAnim.start();
+			mse.src.getSrc('ratAud').play();
 		}
 	};
 	this.dragMove = function(e) {
@@ -98,7 +101,7 @@ var RatGame = function() {
 			ctx.fill();
 			ctx.fillRoundRect(0, 0, 240, 30, 10);
 			ctx.fillStyle = "#000";
-			ctx.font = "20px Verdana";
+			ctx.font = "20px Gudea";
 			ctx.textBaseline = 'top';
 			ctx.fillText("Aide Simon, vite!", 10, 4);
 			ctx.restore();

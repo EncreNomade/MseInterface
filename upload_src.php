@@ -27,6 +27,7 @@ function saveBase64Src($name, $encodedStr, $pj) {
     if($type != 'image' && $type != 'audio' && $type != 'game') return;
 // TODO: Extension check
     // Add extension to filename
+    if($type == 'audio' && $res['ext'] == 'mpeg') $res['ext'] = 'mp3';
     $filename = $name.'.'.$res['ext'];
 
     // Decode data
@@ -112,14 +113,14 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' &&
                 echo "SUCCESS";
             }
         break;
-        case "script":
+        case "code":
             if(get_magic_quotes_gpc()) {
                 $script = stripslashes($encodedStr);
             }
             else {
                 $script = $encodedStr;
             }
-            if(!is_null($wiki)) {
+            if(!is_null($script)) {
                 $pj->addSrc($name, $type, $script);
                 echo "SUCCESS";
             }

@@ -37,6 +37,18 @@ function ptRotated(x, y, ox, oy, a) {
     return {x:ox+xp, y:oy+yp};
 };
 
+function inRegion(tarx, tary, x, y, w, h, r) {
+    if(!isNaN(r) && r != 0) {
+        var res = ptRotated(tarx, tary, x, y, r);
+        tarx = res.x;
+        tary = res.y;
+    }
+    var ox = tarx - x, oy = tary - y;
+    if(ox >= 0 && ox <= w && oy >= 0 && oy <= h)
+        return true;
+    else return false;
+};
+
 function distance2Pts(x1,y1,x2,y2) {
     return Math.sqrt(Math.pow(x2-x1, 2)+Math.pow(y2-y1, 2));
 };

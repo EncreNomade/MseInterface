@@ -98,7 +98,7 @@ var RatGame = function() {
 			ctx.fill();
 			ctx.fillRoundRect(0, 0, 240, 30, 10);
 			ctx.fillStyle = "#000";
-			ctx.font = "20px Verdana";
+			ctx.font = "20px Gudea";
 			ctx.textBaseline = 'top';
 			ctx.fillText("Aide Simon, vite!", 10, 4);
 			ctx.restore();
