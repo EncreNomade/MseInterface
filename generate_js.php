@@ -119,7 +119,8 @@ class ProjectGenerator {
         $this->jstr = "";
         // Initiale Mse system
         $this->jstr .= "\ninitMseConfig();";
-        $this->jstr .= "\nmse.init();";
+        // Initiale root
+        $this->jstr .= "\nmse.init(null, '".$this->pj->getName()."',".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight).",'".$this->pj->getOrientation()."');";
         // Pages, Layers, Objects
         $this->jstr .= "\nwindow.pages={};";
         $this->jstr .= "\nvar layers={};";
@@ -130,8 +131,7 @@ class ProjectGenerator {
         
         $this->jstr .= "\nfunction createbook(){";
         $this->jstr .= "\n\tif(config.publishMode == 'debug') mse.configs.srcPath='./".$this->pj->getFolder()."/';";
-        // Initiale root
-        $this->jstr .= "\n\twindow.root = new mse.Root('".$this->pj->getName()."',".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight).",'".$this->pj->getOrientation()."');";
+        $this->jstr .= "\n\twindow.root = mse.root;";
         $this->autoid = 0;
         $startPageSet = false;
         $this->jstr .= "\n\tvar temp = {};";

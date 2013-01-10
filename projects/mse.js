@@ -1,5 +1,5 @@
 /*!
- * Canvas JavaScript Library v1.0.0
+ * Canvas JavaScript Library
  * Encre Nomade
  *
  * Author: LING Huabin - lphuabin@gmail.com
@@ -27,7 +27,7 @@ mse.configs = {
 	},
 	getSrcPath : function(path) {
 	    // Path complete
-	    if(path[0] == '.') return path;
+	    if(path[0] == '.' || path.indexOf("http", 0) == 0) return path;
 	    else return mse.configs.srcPath + path;
 	}
 };
@@ -211,14 +211,14 @@ mse.autoFitToWindow = function(f) {
     }
 }
 
-mse.init = function(configs) {
+mse.init = function(configs, id, width, height, orientation) {
 	$.extend(cfs, configs);
 
     mse.src.init();
     
     // Images
     var path = "./UI/";
-    if(config.publishMode == "release") path = "./assets/img/season13/story/";
+    if(config.publishMode == "release") path = "http://" + window.location.host + config.publicRoot + "assets/img/season13/story/";
 	mse.src.addSource('imgNotif', path+'turn_comp.png', 'img');
 	mse.src.addSource('fbBar', path+'barre/fb.png', 'img');
 	mse.src.addSource('wikiBar', path+'barre/wiki.png', 'img');
@@ -229,7 +229,7 @@ mse.init = function(configs) {
 	
 	// Sound
 	path = "./audio/";
-	if(config.publishMode == "release") path = "./assets/aud/";
+	if(config.publishMode == "release") path = "http://" + window.location.host + config.publicRoot+"assets/aud/";
 	mse.src.addSource('aud_gameover', path+'gameover', 'aud');
 	mse.src.addSource('aud_inter_open', path+'interaction_open', 'aud');
 	mse.src.addSource('aud_inter_close', path+'interaction_close', 'aud');
@@ -261,6 +261,14 @@ mse.init = function(configs) {
 	            clearTimeout(id);
 	        };
 	}(window.MseConfig));
+
+	
+	id = id || 'defaultId';
+	width = width || MseConfig.pageWidth;
+	height = height || MseConfig.pageHeight;
+	orientation = orientation || 'portrait';
+	if(!window.root && !mse.root)
+		window.root = new mse.Root(id, width, height, orientation);
     
     var imgShower = new mse.ImageShower();
 };
@@ -608,7 +616,11 @@ mse.UIObject.prototype = {
 mse.Root = function(id, width, height, orientation) {
 	mse.root = this;
 	// Canvas obj parameters
-	this.jqObj = $('.bookroot').show();
+	this.jqObj = $('.bookroot');
+	if (this.jqObj.length == 0)
+		this.jqObj = $('<canvas class="bookroot"></canvas>').appendTo('body');
+	this.jqObj.show();
+
 	var x = (MseConfig.pageWidth - width)/2;
 	this.setPos(x);
 	//this.jqObj.attr({'id':id});
@@ -739,7 +751,10 @@ mse.Root.prototype = {
     		if(proc[0] < proc[1]) {
     			mse.src.preloadPage(this.ctx, proc[0], proc[1]);
     		}
-    		else this.init = true;
+    		else {
+    		    this.init = true;
+    		    this.evtDistributor.rootEvt.eventNotif("loadover");
+    		}
     	}
     	else if(!this.end) {
     		this.logic(delta);
@@ -1969,7 +1984,7 @@ $.extend( mse.ArticleLayer.prototype , {
 	}
 } );
 
-mmvc.makeModel(mse.ArticleLayer.prototype, ['speedLevel']);
+if(mmvc) mmvc.makeModel(mse.ArticleLayer.prototype, ['speedLevel']);
 
 
 
@@ -2221,8 +2236,8 @@ mse.Game = function(params) {
     else {
         this.offx = 0;
         this.offy = 0;
-        this.width = Math.round(0.6*mse.root.width);
         this.height = Math.round(0.6*mse.root.height);
+        this.width = Math.round(this.height*4/3);
     }
     
     mse.UIObject.call(this, null, params);
@@ -3477,6 +3492,11 @@ mse.Timeline = function(src, interval, timeprog, length) {
 	this.src.initTimeline(this);
 	// For reduce the fps to 30
 	this.switching = false;
+	this.currTimestamp = 0;
+	this.currIndex = 0;
+	this.end = false;
+	this.inPause = true;
+	this.timer = null;
 };
 mse.Timeline.prototype = {
 	constructor : mse.Timeline ,
@@ -3484,20 +3504,22 @@ mse.Timeline.prototype = {
 	    mse.currTimeline.run();
 	},
 	start : function() {
-		// Parameters
-		this.currTimestamp = 0;
-		this.currIndex = 0;
-		this.end = false;
-		this.inPause = false;
-	
-		// First run
-		this.src.runTimeline();
-	
-		// Start timer
-		mse.currTimeline = this;
-		if(this.tsFixed)
-			this.timer = requestAnimationFrame(this.frameFn);
-		else this.timer = setTimeout(this.frameFn, this.timeprog[this.currIndex]);
+		if(this.end || this.inPause) {
+			// Parameters
+			this.currTimestamp = 0;
+			this.currIndex = 0;
+			this.end = false;
+			this.inPause = false;
+		
+			// First run
+			this.src.runTimeline();
+		
+			// Start timer
+			mse.currTimeline = this;
+			if(this.tsFixed)
+				this.timer = requestAnimationFrame(this.frameFn);
+			else this.timer = setTimeout(this.frameFn, this.timeprog[this.currIndex]);
+		}
 	},
 	run : function() {
 		if(this.end) {

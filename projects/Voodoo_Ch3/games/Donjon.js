@@ -202,6 +202,8 @@ var Donjon = function(){
         }
         
         this.camera = new mdj.Camera(this.width, this.height, this.currScene, this.simonM, 8, 18);
+        
+        this.lazyInit();
     }, this));
     
     var maskLayer = new mdj.Layer("mask", this.currScene, 3);
@@ -247,11 +249,6 @@ extend(Donjon, mse.Game);
 $.extend(Donjon.prototype, {
     init: function() {
         this.currScene.init();
-        this.input.setTarProxy(this.getEvtProxy());
-        this.simonM.inputv = 4;
-        this.simonM.setPos(31*32+7, 2*32);
-        // Orientation
-        this.simonM.orient = "DOWN";
         
         // Ghosts
         for(var i = 0; i < this.ghosts.length; ++i)
@@ -261,10 +258,20 @@ $.extend(Donjon.prototype, {
         this.showMsg(this.help);
         this.light.setFrame(0);
 
-        this.simonV.playAnime('turn');
-        this.state = "INIT";
+        this.state = "PREINIT";
         this.currTime = 0;
         this.nblight = 3;
+    },
+    lazyInit: function() {
+        this.input.setTarProxy(this.getEvtProxy());
+        this.simonM.inputv = 4;
+        this.simonM.setPos(31*32+7, 2*32);
+        // Orientation
+        this.simonM.orient = "DOWN";
+        
+        this.simonV.playAnime('turn');
+        
+        this.state = "INIT";
     },
     showMsg: function(txt) {
         this.info.setText(txt);
