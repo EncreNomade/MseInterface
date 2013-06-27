@@ -200,7 +200,7 @@ function init() {
 	
 	// Mouse event handler for the resize behavior
 	$('body').supportResize();
-	$('body').supportMove(); 
+	$('body').supportMove();
 	
 	// Bottom panel active function
 	$('#bottom_panel .tabBar li:lt(2)').click(function() {
@@ -679,6 +679,13 @@ function insertElemDialog(e) {
 		dialog.close();
 	});
 };
+
+
+
+function deleteElem (elem) {
+    scriptMgr.delRelatedScripts(elem);
+    elem.remove();
+}
 
 
 

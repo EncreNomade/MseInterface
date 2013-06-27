@@ -121,7 +121,6 @@ function createbook(){
 	mse.src.addSource('src66','images/src66.png','img',true);
 	mse.src.addSource('src67','images/src67.gif','img',true);
 	mse.src.addSource('src68','images/src68.png','img',true);
-	mse.src.addSource('heartbeat','audios/heartbeat','aud',false);
 	pages.Couverture=new mse.BaseContainer(root,'Couverture',{size:[mse.coor('cid0'),mse.coor('cid1')]});
 	layers.back=new mse.Layer(pages.Couverture,1,{"globalAlpha":1,"textBaseline":"top","size":[mse.coor('cid0'),mse.coor('cid1')]});
 	objs.obj707=new mse.Image(layers.back,{"size":[mse.coor('cid0'),mse.coor('cid1')],"pos":[mse.coor('cid2'),mse.coor('cid2')]},'src44'); layers.back.addObject(objs.obj707);
@@ -154,8 +153,7 @@ function createbook(){
 	objs.obj711=new mse.Mask(layers.contmask,{"size":[mse.coor('cid19'),mse.coor('cid1')],"pos":[mse.coor('cid8'),mse.coor('cid2')],"fillStyle":"rgb(0, 0, 0)","globalAlpha":0.80,"font":"normal "+mse.coor('cid6')+"px Times","textAlign":"left"}); layers.contmask.addObject(objs.obj711);
 	pages.Content.addLayer('contmask',layers.contmask);
 	layers.text=new mse.ArticleLayer(pages.Content,4,{"size":[mse.coor('cid20'),mse.coor('cid21')],"pos":[mse.coor('cid22'),mse.coor('cid23')],"fillStyle":"rgb(255, 255, 255)","globalAlpha":1,"font":"normal "+mse.coor('cid24')+"px Gudea","textAlign":"left","textBaseline":"top","lineHeight":mse.coor('cid25')},null);
-	objs.obj712=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'',true); layers.text.addObject(objs.obj712);
-	objs.obj994=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Ils étaient là.',true); layers.text.addObject(objs.obj994);
+	objs.obj712=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Ils étaient là.',true); layers.text.addObject(objs.obj712);
 	objs.obj713=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'À moins de cent mètres derrière ',true); layers.text.addObject(objs.obj713);
 	objs.obj714=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Simon. Bien décidés à lui faire payer ',true); layers.text.addObject(objs.obj714);
 	objs.obj715=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'l’affront qu’ils avaient subi.',true); layers.text.addObject(objs.obj715);
@@ -168,7 +166,7 @@ function createbook(){
 	objs.obj722=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'nuit. Des yeux, scrutant le moindre ',true); layers.text.addObject(objs.obj722);
 	objs.obj723=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'recoin, repoussant les ténèbres de ',true); layers.text.addObject(objs.obj723);
 	objs.obj724=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'leurs lueurs cyclopes.',true);
-	objs.obj724.addLink(new mse.Link('cyclopes',13,'wiki',wikis.Cyclope)); layers.text.addObject(objs.obj724);
+	objs.obj724.addLink(new mse.Link('cyclopes',12,'wiki',wikis.Cyclope)); layers.text.addObject(objs.obj724);
 	objs.obj725=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Bientôt, ils seraient sur lui.',true); layers.text.addObject(objs.obj725);
 	objs.obj726=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Simon frissonna en songeant à ce qui ',true); layers.text.addObject(objs.obj726);
 	objs.obj727=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'allait lui arriver. Il savait que Kevin, ',true); layers.text.addObject(objs.obj727);
@@ -177,7 +175,7 @@ function createbook(){
 	objs.obj730=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Absolument. Et tant pis s’il ne pouvait ',true); layers.text.addObject(objs.obj730);
 	objs.obj731=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'jamais retourner au foyer.',true); layers.text.addObject(objs.obj731);
 	objs.obj732=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Les pas se rapprochaient, de plus en ',true);
-	objs.obj732.addLink(new mse.Link('Les pas',21,'audio',mse.src.getSrc('pasAppro'))); layers.text.addObject(objs.obj732);
+	objs.obj732.addLink(new mse.Link('Les pas',20,'audio',mse.src.getSrc('pasAppro'))); layers.text.addObject(objs.obj732);
 	objs.obj733=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'plus. Il pouvait entendre leurs voix à ',true); layers.text.addObject(objs.obj733);
 	objs.obj734=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'présent.',true); layers.text.addObject(objs.obj734);
 	objs.src40=new mse.Speaker( layers.text,{"size":[mse.coor('cid27'),mse.coor('cid2')]}, 'kevin', 'src35' , mse.coor(mse.joinCoor(45)) , '#f99200' ); layers.text.addObject(objs.src40);
@@ -209,7 +207,7 @@ function createbook(){
 	objs.obj931=new mse.Text(layers.text,{"size":[mse.coor('cid28'),mse.coor('cid25')]},'Dark.',true);
 	objs.src38.addObject(objs.obj931);
 	objs.obj753=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Dark. Vador. Son rat albinos. Son ',true);
-	objs.obj753.addLink(new mse.Link('albinos',40,'wiki',wikis.albinos)); layers.text.addObject(objs.obj753);
+	objs.obj753.addLink(new mse.Link('albinos',39,'wiki',wikis.albinos)); layers.text.addObject(objs.obj753);
 	objs.obj754=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'plus fidèle compagnon depuis un an.',true); layers.text.addObject(objs.obj754);
 	objs.obj755=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Le seul en vérité.',true); layers.text.addObject(objs.obj755);
 	objs.obj756=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Simon repoussa l’élan de mélancolie ',true); layers.text.addObject(objs.obj756);
@@ -220,7 +218,7 @@ function createbook(){
 	objs.obj760=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'épaules et s’élança.',true); layers.text.addObject(objs.obj760);
 	objs.obj761=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Pas de réaction.',true); layers.text.addObject(objs.obj761);
 	objs.obj762=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Il s’était mis à courir comme si sa vie ',true);
-	objs.obj762.addLink(new mse.Link('courir',50,'audio',mse.src.getSrc('runsound'))); layers.text.addObject(objs.obj762);
+	objs.obj762.addLink(new mse.Link('courir',49,'audio',mse.src.getSrc('runsound'))); layers.text.addObject(objs.obj762);
 	objs.obj763=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'en dépendait.',true); layers.text.addObject(objs.obj763);
 	objs.obj764=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Si la Meute lui tombait dessus, il était ',true); layers.text.addObject(objs.obj764);
 	objs.obj765=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'bon pour un passage à tabac dans les ',true); layers.text.addObject(objs.obj765);
@@ -230,7 +228,7 @@ function createbook(){
 	objs.obj769=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Simon évitait de regarder dans leur ',true); layers.text.addObject(objs.obj769);
 	objs.obj770=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'direction, les yeux rivés sur les ',true); layers.text.addObject(objs.obj770);
 	objs.obj771=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'frondaisons du parc Montsouris. Des ',true);
-	objs.obj771.addLink(new mse.Link('frondaisons',59,'wiki',wikis.frondaison)); layers.text.addObject(objs.obj771);
+	objs.obj771.addLink(new mse.Link('frondaisons',58,'wiki',wikis.frondaison)); layers.text.addObject(objs.obj771);
 	objs.obj772=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'arbres, de la pénombre et des milliards ',true); layers.text.addObject(objs.obj772);
 	objs.obj773=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'de recoins où il pourrait se dissimuler ',true); layers.text.addObject(objs.obj773);
 	objs.obj774=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'en attendant l’aube.',true); layers.text.addObject(objs.obj774);
@@ -258,7 +256,7 @@ function createbook(){
 	objs.obj784=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Que je comprenne quoi ? Qu’il faut se ',true); layers.text.addObject(objs.obj784);
 	objs.obj785=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'laisser faire ? Pas question !',true); layers.text.addObject(objs.obj785);
 	objs.obj786=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Il accéléra.',true);
-	objs.obj786.addLink(new mse.Link('accéléra',79,'audio',mse.src.getSrc('accelera'))); layers.text.addObject(objs.obj786);
+	objs.obj786.addLink(new mse.Link('accéléra',78,'audio',mse.src.getSrc('accelera'))); layers.text.addObject(objs.obj786);
 	objs.obj787=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Il essayait d’oublier que ses poumons ',true); layers.text.addObject(objs.obj787);
 	objs.obj788=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'le brûlaient, qu’il était épuisé par cette ',true); layers.text.addObject(objs.obj788);
 	objs.obj789=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'poursuite qui durait depuis des ',true); layers.text.addObject(objs.obj789);
@@ -266,8 +264,8 @@ function createbook(){
 	objs.obj791=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'menaçait de le paralyser à tout instant.',true); layers.text.addObject(objs.obj791);
 	objs.obj792=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Il traversa le boulevard, déclenchant ',true); layers.text.addObject(objs.obj792);
 	objs.obj793=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'le klaxon furieux d’un noctambule ',true);
-	objs.obj793.addLink(new mse.Link('klaxon',86,'audio',mse.src.getSrc('klaxon')));
-	objs.obj793.addLink(new mse.Link('noctambule',86,'wiki',wikis.Noctambule)); layers.text.addObject(objs.obj793);
+	objs.obj793.addLink(new mse.Link('klaxon',85,'audio',mse.src.getSrc('klaxon')));
+	objs.obj793.addLink(new mse.Link('noctambule',85,'wiki',wikis.Noctambule)); layers.text.addObject(objs.obj793);
 	objs.obj794=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'égaré. Puis il s’engouffra à l’abri des ',true); layers.text.addObject(objs.obj794);
 	objs.obj795=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'arbres. Son sac ballotait sur ses ',true); layers.text.addObject(objs.obj795);
 	objs.obj796=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'épaules et il pensa au pauvre Dark. ',true); layers.text.addObject(objs.obj796);
@@ -276,7 +274,7 @@ function createbook(){
 	objs.obj799=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'pavillon météo qui s’élevait dans la ',true); layers.text.addObject(objs.obj799);
 	objs.obj800=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'pénombre, puis il ralentit sa course.',true); layers.text.addObject(objs.obj800);
 	objs.obj801=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Pas un bruit.',true);
-	objs.obj801.addLink(new mse.Link('bruit',94,'audio',mse.src.getSrc('vent'))); layers.text.addObject(objs.obj801);
+	objs.obj801.addLink(new mse.Link('bruit',93,'audio',mse.src.getSrc('vent'))); layers.text.addObject(objs.obj801);
 	objs.obj802=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Rien d’autre que le vent dans les ',true); layers.text.addObject(objs.obj802);
 	objs.obj803=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'feuilles.',true); layers.text.addObject(objs.obj803);
 	objs.obj804=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Où étaient-ils passés ?',true); layers.text.addObject(objs.obj804);
@@ -288,7 +286,7 @@ function createbook(){
 	objs.obj946.activateZoom(); layers.text.addObject(objs.obj946);
 	objs.obj942=new mse.UIObject(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]}); layers.text.addObject(objs.obj942);
 	objs.obj808=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Il avait reconnu la démarche ',true);
-	objs.obj808.addLink(new mse.Link('démarche',104,'audio',mse.src.getSrc('paslourd'))); layers.text.addObject(objs.obj808);
+	objs.obj808.addLink(new mse.Link('démarche',103,'audio',mse.src.getSrc('paslourd'))); layers.text.addObject(objs.obj808);
 	objs.obj809=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'chaloupée de la Fouine, les pas lourds ',true); layers.text.addObject(objs.obj809);
 	objs.obj810=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'de l’Ours - seize ans, un QI ',true); layers.text.addObject(objs.obj810);
 	objs.obj811=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'inversement proportionnel à sa force - ',true); layers.text.addObject(objs.obj811);
@@ -299,7 +297,7 @@ function createbook(){
 	objs.obj816=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'tentait de l’encercler.',true); layers.text.addObject(objs.obj816);
 	objs.obj817=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Simon réfléchit à toute allure.',true); layers.text.addObject(objs.obj817);
 	objs.obj818=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Le RER !',true);
-	objs.obj818.addLink(new mse.Link('RER',114,'audio',mse.src.getSrc('rer'))); layers.text.addObject(objs.obj818);
+	objs.obj818.addLink(new mse.Link('RER',113,'audio',mse.src.getSrc('rer'))); layers.text.addObject(objs.obj818);
 	objs.obj819=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'La station ne devait être qu’à quelques ',true); layers.text.addObject(objs.obj819);
 	objs.obj820=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'dizaines de mètres devant lui et, même ',true); layers.text.addObject(objs.obj820);
 	objs.obj821=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'en ces heures tardives, il y aurait sans ',true); layers.text.addObject(objs.obj821);
@@ -336,7 +334,7 @@ function createbook(){
 	objs.obj842=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Les deux groupes gagnaient ',true); layers.text.addObject(objs.obj842);
 	objs.obj843=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'insensiblement du terrain. Bientôt ils ',true); layers.text.addObject(objs.obj843);
 	objs.obj844=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'se rejoindraient et ce serait l’hallali.',true);
-	objs.obj844.addLink(new mse.Link('l’hallali',142,'wiki',wikis.hallali)); layers.text.addObject(objs.obj844);
+	objs.obj844.addLink(new mse.Link('l’hallali',141,'wiki',wikis.hallali)); layers.text.addObject(objs.obj844);
 	objs.obj845=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Simon obliqua brutalement vers le ',true); layers.text.addObject(objs.obj845);
 	objs.obj846=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'nord pour essayer de rejoindre un ',true); layers.text.addObject(objs.obj846);
 	objs.obj847=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'bouquet d’arbres denses. Avec un peu ',true); layers.text.addObject(objs.obj847);
@@ -372,7 +370,7 @@ function createbook(){
 	objs.obj875=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'reliefs mangés de rouille d’une ligne ',true); layers.text.addObject(objs.obj875);
 	objs.obj876=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'de chemin de fer abandonnée.',true); layers.text.addObject(objs.obj876);
 	objs.obj877=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'La Petite Ceinture.',true);
-	objs.obj877.addLink(new mse.Link('La Petite Ceinture',177,'wiki',wikis.pCeinture)); layers.text.addObject(objs.obj877);
+	objs.obj877.addLink(new mse.Link('La Petite Ceinture',176,'wiki',wikis.pCeinture)); layers.text.addObject(objs.obj877);
 	objs.obj878=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Un éclat de voix derrière lui le fit ',true); layers.text.addObject(objs.obj878);
 	objs.obj879=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'sursauter.',true); layers.text.addObject(objs.obj879);
 	objs.src42=new mse.Speaker( layers.text,{"size":[mse.coor('cid27'),mse.coor('cid2')]}, 'unknown', 'src41' , mse.coor(mse.joinCoor(45)) , '#f99200' ); layers.text.addObject(objs.src42);
@@ -390,7 +388,7 @@ function createbook(){
 	objs.obj887=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'ressort. Une lame apparut au bout de ',true); layers.text.addObject(objs.obj887);
 	objs.obj888=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'sa main.',true); layers.text.addObject(objs.obj888);
 	objs.obj889=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'L’adolescent sentait le sang battre ',true);
-	objs.obj889.addLink(new mse.Link('battre',188,'audio',mse.src.getSrc('heart'))); layers.text.addObject(objs.obj889);
+	objs.obj889.addLink(new mse.Link('battre',187,'audio',mse.src.getSrc('heart'))); layers.text.addObject(objs.obj889);
 	objs.obj890=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'contre ses tempes, l’adrénaline ',true); layers.text.addObject(objs.obj890);
 	objs.obj891=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'inonder son corps. Il voulait gagner ',true); layers.text.addObject(objs.obj891);
 	objs.obj892=new mse.Text(layers.text,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'du temps pour récupérer. Pour tenter ',true); layers.text.addObject(objs.obj892);
@@ -716,73 +714,6 @@ objs.clickme.evtDeleg.addListener('click', new mse.Callback(mse.root.transition,
 setTimeout(function(){layers.chaclick.addObject(objs.clickme); animes.clickmeAnime.start();}, 100); 
 	};
 	action.add_cha_clickme.register(reaction.add_cha_clickme);
-	action.startHeartbeat=action.contcursor;
-	reaction.startHeartbeat=function(){ 
-		var lines = [
-    objs.obj994,
-    objs.obj713,
-    objs.obj714,
-    objs.obj715,
-    objs.obj716,
-    objs.obj717,
-    objs.obj718,
-    objs.obj719,
-    objs.obj720,
-    objs.obj721,
-    objs.obj722,
-    objs.obj723,
-    objs.obj724,
-    objs.obj725
-]
-
-if(!MseConfig.iPhone && !MseConfig.android) {
-    function textEffect(effet,obj) {
-        obj.startEffect(effet);
-    }
-    for(var i = 0; i < lines.length; i++){
-        var objCible = lines[i];
-        if(objCible instanceof mse.Text){
-            objCible.evtDeleg.addListener('firstShow', new mse.Callback(textEffect, null, {"twistmultitext":{'height':mse.coor(mse.joinCoor(23)), 'variation':6}}, objCible));
-        }
-    }
-
-    mse.src.getSrc('heartbeat').loop = true;
-    mse.src.getSrc('heartbeat').play();
-} 
-	};
-	action.startHeartbeat.register(reaction.startHeartbeat);
-	action.stopHeartBeat=action.startSonNuit;
-	reaction.stopHeartBeat=function(){ 
-		var lines = [
-    objs.obj994,
-    objs.obj713,
-    objs.obj714,
-    objs.obj715,
-    objs.obj716,
-    objs.obj717,
-    objs.obj718,
-    objs.obj719,
-    objs.obj720,
-    objs.obj721,
-    objs.obj722,
-    objs.obj723,
-    objs.obj724,
-    objs.obj725
-]
-
-if(!MseConfig.iPhone && !MseConfig.android) {
-    for(var i = 0; i < lines.length; i++){
-        lines[i].endEffect();
-    }
-    mse.src.getSrc('heartbeat').pause();
-} 
-	};
-	action.stopHeartBeat.register(reaction.stopHeartBeat);
-	action.stopIntroBegining=action.contcursor;
-	reaction.stopIntroBegining=function(){ 
-		mse.src.getSrc('intro').pause(); 
-	};
-	action.stopIntroBegining.register(reaction.stopIntroBegining);
 	mse.currTimeline.start();};
 mse.autoFitToWindow(function(){
 	mse.init(null, 'Voodoo_Ch1',mse.coor('cid0'),mse.coor('cid1'),'portrait');

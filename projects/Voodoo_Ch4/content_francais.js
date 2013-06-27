@@ -1,688 +1,15 @@
-var Zombie = function(conf, sx) {
-    this.sprite = new mse.Sprite(null, {}, 'zombiesprite', conf.fw, conf.fh, conf.sx, conf.sy, conf.sw, conf.sh);
-    this.effet = new mse.EIColorFilter(this.sprite, {duration: 25, rMulti: 0.75, alpha: 0.6});
-    this.walkanime = new mse.FrameAnimation(this.sprite, [0,1,2,3,4,5,6,7], 0, 5);
-    this.deadanime = new mse.FrameAnimation(this.sprite, [0,8,9], 1, 3);
-    this.deadSprite = new mse.Sprite(null, {}, 'zombiesprite', 75,100, 0,0,1050,100);
-    this.fadeAnime = new mse.FrameAnimation(this.deadSprite, [0,1,2,3,4,5,6,7,8,9,10,11,12,13], 1, 3);
-    this.walkanime.start();
-    this.velo = conf.velo;
-    this.life = conf.life;
-    this.offy = 354 - conf.fh;
-    this.minioy = 430 - conf.fh/2;
-    this.offx = sx;
-    this.state = "INIT";
-};
-Zombie.prototype = {
-    constructor: Zombie,
-    init: function(conf, sx) {
-        this.sprite.configSprite(conf.fw, conf.fh, conf.sx, conf.sy, conf.sw, conf.sh);
-        this.walkanime.start();
-        this.count = 0;
-        this.velo = conf.velo;
-        this.life = conf.life;
-        this.offy = 354 - conf.fh;
-        this.minioy = 430 - conf.fh/2;
-        this.offx = sx;
-        this.state = "INIT";
-    },
-    hit: function(power) {
-        this.life -= power;
-        this.offx += 15;
-        
-        this.sprite.startEffect(this.effet);
-        if(this.life <= 0) {
-            this.state = "DIEING";
-            this.deadanime.start();
-            this.count = 0;
-        }
-    },
-    logic: function() {
-        this.sprite.logic();
-        if(this.state == "INIT") {
-            this.offx += this.velo;
-        }
-        else if(this.state == "DIEING") {
-            this.count++;
-            if(this.count == 9) {
-                this.fadeAnime.start();
-            }
-            else if(this.count == 51)
-                this.state = "DEAD";
-        }
-    },
-    drawMini: function(ctx) {
-        if(this.offx < 0) return;
-        if(this.state == "DEAD" || this.state == "DIEING")
-            ctx.drawImage(mse.src.getSrc('zombiesprite'), 698,100,30,30, 440+this.offx/5,this.minioy+10,30,30);
-        else
-            ctx.drawImage(mse.src.getSrc('zombiesprite'), this.sprite.sx,this.sprite.sy,this.sprite.fw,this.sprite.fh, 440+this.offx/5,this.minioy,30,this.sprite.fh/2);
-    },
-    draw: function(ctx) {
-        if(this.count >= 9) this.deadSprite.draw(ctx, this.offx, this.offy);
-        else this.sprite.draw(ctx, this.offx, this.offy);
-    }
-};
 
-var Rock = function(sprite, type, force, angle) {
-    this.sp = sprite;
-    this.fr = type;
-    var velo = (type == 1 ? force/6 : force/4);
-    this.vx = velo * Math.cos(angle);
-    this.vy = velo * Math.sin(angle);
-    this.angle = angle;
-    this.offx = 66;
-    this.offy = 265;
-    this.count = 10;
-    this.rotation = 0;
-};
-Rock.prototype = {
-    constructor: Rock,
-    logic: function() {
-        if(this.count > 0) {
-            this.count--;
-            return;
-        }
-        this.offx += this.vx;
-        this.offy += this.vy;
-        this.vy += 9.8*0.08;
-    },
-    draw: function(ctx) {
-        if(this.count <= 0) {
-            ctx.save();
-            ctx.translate(this.offx + 9.5, this.offy + 8.5);
-            ctx.rotate(this.rotation);
-            this.rotation += Math.PI/6;
-            if(this.rotation >= Math.PI * 2) this.rotation = 0;
-            ctx.translate(-9.5, -8.5);
-            this.sp.drawFrame(this.fr, ctx, 0, 0);
-            ctx.restore();
-        }
-    }
-};
-
-var ShootZombie = function() {
-    mse.Game.call(this, {fillback:true, size:[600,440]});
-    this.config.title = "La cauchemar de Simon";
-    
-    this.msg = {
-        "BEFOREINIT": "Clique pour jouer.",
-        "WIN": "Bravo!!! Tu as gagné ",
-        "LOSE": "Perdu..."
-    };
-    var zombieConfig = [
-        {
-            velo: -1,
-            life: 3,
-            fw: 64, fh: 94,
-            sx: 0, sy: 100, sw: 640, sh: 94
-        },
-        {
-            velo: -2,
-            life: 1,
-            fw: 60, fh: 101,
-            sx: 0, sy: 194, sw: 600, sh: 101
-        },
-        {
-            velo: -3,
-            life: 2,
-            fw: 60, fh: 102,
-            sx: 0, sy: 295, sw: 600, sh: 102
-        },
-        {
-            velo: -4,
-            life: 1,
-            fw: 60, fh: 105,
-            sx: 0, sy: 397, sw: 600, sh: 105
-        }
-    ];
-    var vague = [
-        [1,1,1,1,3,1,1,1],
-        [3,1,1,3,0,1,3,1,1],
-        [3,1,0,1,1,2,3,0,0],
-        [0,0,3,0,3,1,1,2,2,3,0],
-        [2,2,3,3,0,3,0,2,3,0,2,2]
-    ];
-    var toolPos = [
-        {x:42, y:400},
-        {x:118, y:400},
-        {x:194, y:400}
-    ];
-    var power = [
-        1,3,2
-    ];
-    this.shootox = 66;
-    this.shootoy = 265;
-    
-    mse.src.addSource('zombiedecor', 'games/zombieback.jpg', 'img', true);
-    mse.src.addSource('zombiesprite', 'games/Sprites.png', 'img', true);
-    
-    this.decor = new mse.Image(null, {size:[600,440]}, 'zombiedecor');
-    this.simon = new mse.Sprite(null, {pos:[17,262]}, 'zombiesprite', 81,92,0,502,729,92);
-    this.shootAnime = new mse.FrameAnimation(this.simon, [0,1,2,3,4,5,6,7,8,0], 1, 2);
-    this.rockSp = new mse.Sprite(null, {}, 'zombiesprite', 19,17,640,100,57,17);
-    this.rocks = [];
-    this.zombies = [];
-    for(var i = 0; i < 12; ++i) {
-        this.zombies[i] = new Zombie(zombieConfig[0], 600);
-    }
-    
-    this.state = "BEFOREINIT";
-    this.help = new mse.Text(null, {
-    	pos:[60,140],
-    	size:[this.width-120,0],
-    	fillStyle:"rgb(255,255,255)",
-    	font:"20px Arial",
-    	textAlign:"center",
-    	textBaseline:"top",
-    	lineHeight:25}, "Simon rêve qu’il est attaqué par des zombis. Il lance des projectiles pour se défendre.\n \nMaintient le bouton gauche de la souris enfoncé et vise. Relache pour lancer le projectile.\n \nClique pour commencer!", true
-    );
-    this.currVague = 0;
-    this.currTime = 0;
-    
-    this.init = function() {
-        this.reinit();
-        this.state = "INIT";
-        this.currVague = 0;
-        this.getEvtProxy().addListener('click', clickcb, true, this);
-    };
-    this.reinit = function() {
-        if(this.currVague == vague.length) this.currVague = 0;
-        this.max = vague[this.currVague].length;
-        this.curr = 0;
-        this.showtime = randomInt(20) + 50;
-        this.count = 0;
-        this.tool = 0;
-        this.skelton = 3;
-        this.rockSp.setFrame(0);
-        this.angle = 0;
-        this.miredis = 100;
-        this.mirex = this.shootox+100;
-        this.mirey = this.shootoy;
-        this.shooting = false;
-        this.force = 3;
-        this.plus = true;
-        this.nextVague = false;
-        for(var i = 0; i < this.max; ++i)
-            this.zombies[i].init(zombieConfig[vague[this.currVague][i]], 600);
-        this.currTime = 0;
-    };
-    
-    this.win = function() {
-        this.getEvtProxy().removeListener('gestureStart', cbStart);
-        this.getEvtProxy().removeListener('gestureUpdate', cbMove);
-        this.getEvtProxy().removeListener('gestureEnd', cbEnd);
-        this.state = "WIN";
-        this.setScore( 20 * this.currVague + this.currTime * 0.05 );
-        this.constructor.prototype.win.call(this);
-    };
-    this.die = function() {
-        this.getEvtProxy().removeListener('gestureStart', cbStart);
-        this.getEvtProxy().removeListener('gestureUpdate', cbMove);
-        this.getEvtProxy().removeListener('gestureEnd', cbEnd);
-        this.state = "LOSE";
-        this.setScore( 20 * this.currVague + this.currTime * 0.025 );
-        this.lose();
-    };
-    
-    this.click = function(e) {
-        if(this.state == "INIT") {
-            this.state = "START";
-            this.getEvtProxy().removeListener('click', clickcb);
-            this.getEvtProxy().addListener('gestureStart', cbStart, true, this);
-            this.getEvtProxy().addListener('gestureUpdate', cbMove, true, this);
-            this.getEvtProxy().addListener('gestureEnd', cbEnd, true, this);
-        }
-    };
-    this.touchStart = function(e) {
-        if(MseConfig.android || MseConfig.iPhone) {
-            var x = e.offsetX/0.8;
-            var y = e.offsetY/0.62;
-        }
-        else {
-            var x = e.offsetX;
-            var y = e.offsetY;
-        }
-        
-        // Tool clicked
-        for(var i = 0; i < 3; ++i)
-            if(Math.abs(x - toolPos[i].x) < 30 && Math.abs(y - toolPos[i].y) < 30) {
-                this.tool = i;
-                this.rockSp.setFrame(i);
-                return;
-            }
-        
-        if(this.tool == 2 && this.skelton <= 0)
-            return;
-        // Start shoot
-        this.force = 3;
-        this.shooting = true;
-    };
-    this.touchMove = function(e) {
-        if(MseConfig.android || MseConfig.iPhone) {
-            var x = e.offsetX/0.8;
-            var y = e.offsetY/0.62;
-        }
-        else {
-            var x = e.offsetX;
-            var y = e.offsetY;
-        }
-        
-        if(x < 66 || y > 320) return;
-        this.angle = angleForLine(this.shootox, this.shootoy, x, y);
-        this.mirex = this.shootox + this.miredis * Math.cos(this.angle);
-        this.mirey = this.shootoy + this.miredis * Math.sin(this.angle);
-    };
-    this.touchEnd = function(e) {
-        if(MseConfig.android || MseConfig.iPhone) {
-            var x = e.offsetX/0.8;
-            var y = e.offsetY/0.62;
-        }
-        else {
-            var x = e.offsetX;
-            var y = e.offsetY;
-        }
-        
-        if(this.shooting) {
-            this.shooting = false;
-            if(this.tool == 2) {
-                if(this.skelton <= 0) return;
-                else this.skelton--;
-            }
-            this.shootAnime.start();
-            this.rocks.push(new Rock(this.rockSp, this.tool, this.force, this.angle));
-        }
-    };
-    
-    this.logic = function() {
-        if(this.state != "START") return;
-        // Next vague count down
-        if(this.nextVague) {
-            if(this.count < 75) this.count++;
-            else {
-                if(this.currVague == vague.length-1) {
-                    this.currVague++;
-                    this.win();
-                    return;
-                }
-                else {
-                    this.currVague++;
-                    this.reinit();
-                }
-            }
-        }
-        // Force
-        if(this.shooting) {
-            if(this.plus) {
-                if(this.force < 100) this.force+=3;
-                else this.plus = false;
-            }
-            else {
-                if(this.force > 3) this.force-=3;
-                else this.plus = true;
-            }
-        }
-        // Rocks
-        for(var i = 0; i < this.rocks.length; i++) {
-            this.rocks[i].logic();
-            if(this.rocks[i].offx >= 600 || this.rocks[i].offy >= 345)
-                this.rocks.splice(i, 1);
-        }
-        // New zombie out
-        if(this.curr < this.max) {
-            this.count++;
-            if(this.count == this.showtime) {
-                this.showtime += randomInt(20) + 50;
-                this.curr++;
-            }
-        }
-        if(!this.nextVague && this.curr == this.max) var vaguefinish = true;
-        // Zombie
-        for(var i = 0; i < this.curr; ++i) {
-            this.zombies[i].logic();
-            
-            if(this.zombies[i].state != "INIT") continue;
-            vaguefinish = false;
-            // Stone hit zombie
-            var zx = this.zombies[i].offx + 30;
-            var zxmax = this.zombies[i].offx + this.zombies[i].sprite.width;
-            var zy = this.zombies[i].offy;
-            var zymax = this.zombies[i].offy + this.zombies[i].sprite.height;
-            for(var j = 0; j < this.rocks.length; j++) {
-                var rx = this.rocks[j].offx+9.5;
-                var ry = this.rocks[j].offy+8.5;
-                if(rx >= zx && rx <= zxmax && ry >= zy && ry <= zymax) {
-                    this.zombies[i].hit(power[this.rocks[j].fr]);
-                    this.rocks.splice(j, 1);
-                }
-            }
-            
-            // Zombie touch simon
-            if(this.zombies[i].offx < 50)
-                this.die();
-        }
-        // All zombie down, vague finished, start countdown
-        if(vaguefinish) {
-            this.nextVague = true;
-            this.count = 0;
-        }
-        
-        this.currTime++;
-    };
-    this.draw = function(ctx) {
-        ctx.save();
-        if(MseConfig.android || MseConfig.iPhone) {
-            ctx.scale(0.8, 0.62);
-        }
-        // Back
-        this.decor.draw(ctx);
-        
-        // Simon
-        this.simon.draw(ctx);
-        
-        // Zombie
-        for(var i = 0; i < this.curr; ++i) {
-            this.zombies[i].draw(ctx);
-            this.zombies[i].drawMini(ctx);
-        }
-        
-        // Rocks
-        for(var i = 0; i < this.rocks.length; i++) {
-            this.rocks[i].draw(ctx);
-        }
-        
-        // Interface
-        ctx.fillStyle = 'rgba(255,0,0,0.2)';
-        ctx.beginPath();
-        ctx.arc(toolPos[this.tool].x, toolPos[this.tool].y, 29, 0, Math.PI*2, true);
-        ctx.fill();
-        // Skelton
-        ctx.fillStyle = "#fff";
-        ctx.font = "bold 14px Arial";
-        ctx.fillText(this.skelton, toolPos[2].x+15, toolPos[2].y-25);
-        
-        // Shooting
-        if(this.shooting) {
-            ctx.fillStyle = "#fff";
-            ctx.fillRect(this.mirex-8, this.mirey, 18,2);
-            ctx.fillRect(this.mirex, this.mirey-8, 2,18);
-            ctx.strokeStyle = "#323232";
-            ctx.lineWidth = 4;
-            ctx.fillStyle = "#f70000";
-            ctx.fillRect(22,232,0.8*this.force,18);
-            ctx.strokeRoundRect(20,230,84,20,3);
-        }
-        
-        // Start help message
-        if(this.state == "INIT") {
-            ctx.fillStyle = "rgba(0,0,0,0.6)";
-            ctx.strokeStyle = 'rgb(188,188,188)';
-            ctx.fillRect(0,0,this.width,this.height);
-            ctx.strokeRect(0,0,this.width,this.height);
-            this.help.draw(ctx);
-        }
-        
-        ctx.restore();
-    };
-    
-    var cbStart = new mse.Callback(this.touchStart, this);
-    var cbMove = new mse.Callback(this.touchMove, this);
-    var cbEnd = new mse.Callback(this.touchEnd, this);
-    var clickcb = new mse.Callback(this.click, this);
-};
-extend(ShootZombie, mse.Game);var Bougie = function() {
-    mse.Game.call(this);
-    
-    this.setDirectShow(true);
-    this.firstShow = false;
-    
-    this.offx = mse.coor(mse.joinCoor(0)); this.offy = mse.coor(mse.joinCoor(0));
-    this.width = mse.coor(mse.joinCoor(800)); this.height = mse.coor(mse.joinCoor(600));
-    this.bougiePos = [
-        {x:108*this.width/800,y:275*this.height/600,
-         w:57*this.width/800,h:90*this.height/600},
-        {x:310*this.width/800,y:250*this.height/600,
-         w:40*this.width/800,h:60*this.height/600},
-        {x:485*this.width/800,y:270*this.height/600,
-         w:45*this.width/800,h:65*this.height/600},
-        {x:580*this.width/800,y:345*this.height/600,
-         w:65*this.width/800,h:110*this.height/600}
-    ];
-    
-    mse.src.addSource('zippoimg', 'games/flame.png', 'img', true);
-    mse.src.addSource('backcut0', 'games/grotte1.png', 'img', true);
-    mse.src.addSource('backcut1', 'games/grotte2.png', 'img', true);
-    mse.src.addSource('backcut2', 'games/grotte3.png', 'img', true);
-    mse.src.addSource('backcut3', 'games/grotte4.png', 'img', true);
-    mse.src.addSource('backlight', 'games/newback.jpg', 'img', true);
-    
-    this.zippo = new mse.Sprite(null, {}, 'zippoimg', 57,64, 0,0,57,64);
-    this.fire = new mse.Sprite(null, {}, 'zippoimg', 17,58, 57,0,68,58);
-    this.fireAnime = new mse.FrameAnimation(this.fire, [0,1,2,3,3], 0, 2);
-    this.part = [];
-    this.part[0] = new mse.Image(null, {pos:[0,0],size:[355*this.width/800,this.height],globalAlpha:0}, 'backcut0');
-    this.part[1] = new mse.Image(null, {pos:[264*this.width/800,159*this.height/600],size:[129*this.width/800,208*this.height/600],globalAlpha:0}, 'backcut1');
-    this.part[2] = new mse.Image(null, {pos:[418*this.width/800,148*this.height/600],size:[180*this.width/800,236*this.height/600],globalAlpha:0}, 'backcut2');
-    this.part[3] = new mse.Image(null, {pos:[300*this.width/800,0],size:[500*this.width/800,this.height],globalAlpha:0}, 'backcut3');
-    this.backlight = new mse.Image(null, {pos:[0,0],size:[this.width,this.height]}, 'backlight');
-    
-    this.light = [false, false, false, false];
-    this.firstShow = false;
-    this.mousex = 0;
-    this.mousey = 0;
-    this.count = null;
-    
-    this.move = function(e) {
-        this.mousex = e.offsetX - this.offx;
-        this.mousey = e.offsetY - this.offy;
-    };
-    this.click = function(e) {
-        var x = e.offsetX - this.offx;
-        var y = e.offsetY - this.offy;
-        for(var i = 0; i < 4; ++i) {
-            if(!this.light[i] && 
-               x > this.bougiePos[i].x && x < this.bougiePos[i].x+this.bougiePos[i].w &&
-               y > this.bougiePos[i].y && y < this.bougiePos[i].y+this.bougiePos[i].h) {
-                
-                this.light[i] = true;
-                mse.src.getSrc('zippo').play();
-                
-                if(this.light[0] && this.light[1] && this.light[2] && this.light[3])
-                    this.count = 60;
-                break;
-            }
-        }
-    };
-    
-    this.init = function() {
-        if(layers.background.getObjectIndex(this) == -1)
-            layers.background.insertAfter(this, objs.obj306);
-        this.parent = layers.background;
-        this.getEvtProxy().addListener("move", this.movecb);
-        this.getEvtProxy().addListener("click", this.clickcb);
-        layers.content.interrupt();
-        mse.fadeout(layers.content, 25);
-        mse.fadeout(layers.mask, 25);
-        
-        mse.setCursor('pointer');
-        this.fireAnime.start();
-        this.state = "START";
-    };
-    this.win = function() {
-        this.getEvtProxy().removeListener("move", this.movecb);
-        this.getEvtProxy().removeListener("click", this.clickcb);
-        mse.root.evtDistributor.setDominate(null);
-        mse.fadein(layers.content, 25);
-        mse.fadein(layers.mask, 25, new mse.Callback(layers.content.play, layers.content));
-        
-        mse.setCursor('default');
-        this.fireAnime.stop();
-        
-        this.state = "END";
-    };
-    this.logic = function(ctx) {
-        if(this.state != "START") return;
-        for(var i = 0; i < 4; i++) {
-            if(this.light[i] && this.part[i].globalAlpha < 1) {
-                this.part[i].globalAlpha += 0.04;
-                if(this.part[i].globalAlpha > 1)
-                    this.part[i].globalAlpha = 1;
-            }
-        }
-        if(this.count !== null) {
-            if(this.count > 0)
-                this.count--;
-            else this.win();
-        }
-    };
-    this.draw = function(ctx) {
-        if(this.state == "END") {
-            this.backlight.draw(ctx);
-            return;
-        }
-        if(this.state != "START") return;
-        
-        if(!this.firstShow) {
-        	this.firstShow = true;
-        	this.evtDeleg.eventNotif('firstShow');
-        	this.evtDeleg.eventNotif('start');
-        }
-        ctx.save();
-        ctx.translate(this.offx, this.offy);
-        // Draw new back
-        for(var i = 0; i < 4; i++)
-            this.part[i].draw(ctx);
-        
-        // Zone
-        ctx.globalCompositeOperation = "source-atop";
-        ctx.translate(this.mousex, this.mousey);
-        ctx.fillStyle = "#fff";
-        ctx.globalAlpha = 0.1;
-        ctx.beginPath();
-        ctx.arc(0, -45, 54, 0, 2*Math.PI, true);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(0, -45, 57, 0, 2*Math.PI, true);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(0, -45, 60, 0, 2*Math.PI, true);
-        ctx.fill();
-        ctx.globalCompositeOperation = "source-over";
-        
-        // Zippo and fire
-        this.fire.draw(ctx, -8.5, -74);
-        this.zippo.draw(ctx, -40, -40);
-        
-        ctx.restore();
-    };
-    
-    this.movecb = new mse.Callback(this.move, this);
-    this.clickcb = new mse.Callback(this.click, this);
-};
-extend(Bougie, mse.Game);var SacGame = function() {
-    mse.Game.call(this);
-    
-    this.setDirectShow(true);
-    this.firstShow = false;
-    this.audioplaying = false;
-    this.audioplaytime = 0;
-    
-    this.offx = mse.coor(mse.joinCoor(-30)); this.offy = mse.coor(mse.joinCoor(0));
-    this.width = mse.coor(mse.joinCoor(400)); this.height = mse.coor(mse.joinCoor(200));
-    
-    mse.src.addSource('sacsprite', 'games/sac_sprite.jpg', 'img', true);
-    this.sac = new mse.Sprite(this, {pos:[0,0],size:[this.width,this.height]}, "sacsprite", 600,300, 0,0,1800,2400);
-    this.anime = new mse.FrameAnimation(this.sac, [15,16,17,18,19,20,21,22,23,23,23], 1, 4);
-    
-    this.touching = false;
-    
-    this.touchStart = function(e) {
-        this.touching = true;
-    };
-    this.touchMove = function(e) {
-        if(!this.touching || this.state != "START") return;
-        var x = e.offsetX - this.getX();
-        var y = e.offsetY - this.getY();
-        
-        if (!this.audioplaying) {
-            this.audioplaying = true;
-            this.audioplaytime = 0;
-            var i = randomInt(2)+1;
-            mse.src.getSrc('zip'+i).play();
-        }
-        
-        // Valid action
-        if (x > 0.1*this.width && Math.abs(y - 0.5*this.height) < 0.4*this.height) {
-            var ratio = Math.ceil(15 * (x - 0.1*this.width) / (0.9*this.width));
-            this.sac.setFrame(ratio);
-            if(ratio == 15) {
-                this.state = "ANIME";
-                this.anime.start();
-                mse.src.getSrc('peur').play();
-            }
-        }
-    };
-    this.touchEnd = function(e) {
-        this.touching = false;
-    };
-    
-    var cbStart = new mse.Callback(this.touchStart, this);
-    var cbMove = new mse.Callback(this.touchMove, this);
-    var cbEnd = new mse.Callback(this.touchEnd, this);
-    
-    this.state = "INIT";
-    
-    this.init = function() {
-        layers.content.interrupt();
-        
-        this.getEvtProxy().addListener('gestureStart', cbStart);
-    	this.getEvtProxy().addListener('gestureUpdate', cbMove);
-    	this.getEvtProxy().addListener('gestureEnd', cbEnd);
-    	
-    	mse.setCursor('pointer');
-    	this.state = "START";
-    };
-    this.end = function() {
-        this.getEvtProxy().removeListener('gestureStart', cbStart);
-        this.getEvtProxy().removeListener('gestureUpdate', cbMove);
-        this.getEvtProxy().removeListener('gestureEnd', cbEnd);
-        mse.root.evtDistributor.setDominate(null);
-        
-        mse.setCursor('default');
-        layers.content.play();
-    };
-    
-    this.draw = function(ctx) {
-        if(!this.firstShow) {
-        	this.firstShow = true;
-        	this.evtDeleg.eventNotif('firstShow');
-        	this.evtDeleg.eventNotif('start');
-        }
-        
-        if(this.audioplaying) {
-            this.audioplaytime++;
-            if(this.audioplaytime > 40)
-                this.audioplaying = false;
-        }
-        
-        this.sac.draw(ctx);
-    };
-    
-    this.anime.evtDeleg.addListener('end', new mse.Callback(this.end, this));
-};
-extend(SacGame, mse.Game);
 mse.coords = JSON.parse('{"cid0":800,"cid1":600,"cid2":0,"cid3":400,"cid4":200,"cid5":20,"cid6":448.75,"cid7":108.75,"cid8":175,"cid9":106.25,"cid10":32.5,"cid11":361.25,"cid12":178.75,"cid13":221.25,"cid14":17.5,"cid15":396.25,"cid16":56.25,"cid17":203.75,"cid18":246.25,"cid19":340,"cid20":590,"cid21":230,"cid22":10,"cid23":22.5,"cid24":36.25,"cid25":425,"cid26":295,"cid27":306,"cid28":404.11428571429,"cid29":17,"cid30":496.25,"cid31":30,"cid32":156.25,"cid33":41.25,"cid34":266.25,"cid35":33,"cid36":174,"cid37":108,"cid38":449,"cid39":109,"cid40":18,"cid41":223,"cid42":399,"cid43":358,"cid44":181,"cid45":100,"cid46":318,"cid47":283,"cid48":365,"cid49":463,"cid50":91,"cid51":80,"cid52":459,"cid53":141,"cid54":418,"cid55":380,"cid56":49,"cid57":189,"cid58":156,"cid59":300,"cid60":550,"cid61":120,"cid62":204,"cid63":246,"cid64":396,"cid65":56}');
 initMseConfig();
-mse.init();
 window.pages={};
-var layers={};
+window.layers={};
 window.objs={};
 var animes={};
 var games={};
 var wikis={};
 function createbook(){
 	if(config.publishMode == 'debug') mse.configs.srcPath='./Voodoo_Ch4/';
-	window.root = new mse.Root('Voodoo_Ch4',mse.coor('cid0'),mse.coor('cid1'),'portrait');
+	window.root = mse.root;
 	var temp = {};
 	mse.src.addSource('src0','images/src0.jpeg','img',true);
 	mse.src.addSource('darkback','images/darkback.jpeg','img',true);
@@ -691,8 +18,18 @@ function createbook(){
 	mse.src.addSource('src11','images/src11.jpeg','img',true);
 	mse.src.addSource('src12','images/src12.jpeg','img',true);
 	mse.src.addSource('src13','images/src13.png','img',true);
+	animes.titleanime=new mse.Animation(89,1,false,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
+	animes.titleanime.block=true;
+	animes.resumeanime=new mse.Animation(89,1,false,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
+	animes.resumeanime.block=true;
 	games.Bougie = new Bougie();
+	animes.sacanime2=new mse.Animation(145,1,true,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
+	animes.sacanime2.block=true;
 	mse.src.addSource('src18','images/src18.png','img',true);
+	animes.hidelight=new mse.Animation(14,1,false,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
+	animes.hidelight.block=true;
+	animes.showlight=new mse.Animation(72,1,false,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
+	animes.showlight.block=true;
 	mse.src.addSource('src19','images/src19.jpeg','img',true);
 	mse.src.addSource('src20','images/src20.jpeg','img',true);
 	mse.src.addSource('src21','images/src21.jpeg','img',true);
@@ -726,6 +63,10 @@ function createbook(){
 	mse.src.addSource('src24','images/src24.jpeg','img',true);
 	mse.src.addSource('src25','images/src25.jpeg','img',true);
 	mse.src.addSource('src26','images/src26.jpeg','img',true);
+	animes.maskanime=new mse.Animation(89,1,false,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
+	animes.maskanime.block=true;
+	animes.chaanime=new mse.Animation(89,1,false,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
+	animes.chaanime.block=true;
 	mse.src.addSource('src27','images/src27.png','img',true);
 	mse.src.addSource('src28','images/src28.jpeg','img',true);
 	games.SacGame = new SacGame();
@@ -743,6 +84,7 @@ function createbook(){
 	mse.src.addSource('zippo','audios/zippo','aud',false);
 	mse.src.addSource('zombie','audios/zombie','aud',false);
 	mse.src.addSource('merde','audios/merde','aud',false);
+	mse.src.addSource('gargouilli','audios/gargouilli','aud',false);
 	pages.Couverture=new mse.BaseContainer(root,'Couverture',{size:[mse.coor('cid0'),mse.coor('cid1')]});
 	layers.Couverturedefault=new mse.Layer(pages.Couverture,1,{"globalAlpha":1,"textBaseline":"top","size":[mse.coor('cid0'),mse.coor('cid1')]});
 	objs.obj307=new mse.Image(layers.Couverturedefault,{"size":[mse.coor('cid0'),mse.coor('cid1')],"pos":[mse.coor('cid2'),mse.coor('cid2')]},'src26'); layers.Couverturedefault.addObject(objs.obj307);
@@ -812,6 +154,7 @@ function createbook(){
 	objs.obj350=new mse.Text(layers.content,{"size":[mse.coor('cid25'),mse.coor('cid24')]},'Son estomac se mit à rugir, ',true); layers.content.addObject(objs.obj350);
 	objs.obj351=new mse.Text(layers.content,{"size":[mse.coor('cid25'),mse.coor('cid24')]},'furieux d’être au trois quart vide. ',true); layers.content.addObject(objs.obj351);
 	objs.obj352=new mse.Text(layers.content,{"size":[mse.coor('cid25'),mse.coor('cid24')]},'Le borborygme s’amplifia, ',true);
+	objs.obj352.addLink(new mse.Link('Le',36,'audio',mse.src.getSrc('gargouilli')));
 	objs.obj352.addLink(new mse.Link('borborygme',36,'wiki',wikis.Borborygme)); layers.content.addObject(objs.obj352);
 	objs.obj353=new mse.Text(layers.content,{"size":[mse.coor('cid25'),mse.coor('cid24')]},'ricochant sur les parois. C’était ',true); layers.content.addObject(objs.obj353);
 	objs.obj354=new mse.Text(layers.content,{"size":[mse.coor('cid25'),mse.coor('cid24')]},'raté pour la discrétion !',true); layers.content.addObject(objs.obj354);
@@ -907,7 +250,7 @@ function createbook(){
 	objs.obj426=new mse.Text(layers.content,{"size":[mse.coor('cid25'),mse.coor('cid24')]},'d’un coup sec sur le zip avant de ',true); layers.content.addObject(objs.obj426);
 	objs.obj427=new mse.Text(layers.content,{"size":[mse.coor('cid25'),mse.coor('cid24')]},'se reculer d’un bond. ',true); layers.content.addObject(objs.obj427);
 	objs.obj536=new mse.UIObject(layers.content,{"size":[mse.coor('cid25'),mse.coor('cid24')]}); layers.content.addObject(objs.obj536);
-	objs.obj539=new SacGame(); layers.content.addGame(objs.obj539);
+	objs.obj539=games.SacGame; layers.content.addGame(objs.obj539);
 	objs.obj537=new mse.UIObject(layers.content,{"size":[mse.coor('cid25'),mse.coor('cid24')]}); layers.content.addObject(objs.obj537);
 	objs.obj428=new mse.Text(layers.content,{"size":[mse.coor('cid25'),mse.coor('cid24')]},'Une main. Si blanche qu’elle en ',true); layers.content.addObject(objs.obj428);
 	objs.obj429=new mse.Text(layers.content,{"size":[mse.coor('cid25'),mse.coor('cid24')]},'paraissait translucide. Mangée de ',true); layers.content.addObject(objs.obj429);
@@ -1070,7 +413,7 @@ function createbook(){
 	objs.obj525=new mse.Text(layers.content,{"size":[mse.coor('cid25'),mse.coor('cid24')]},'qu’entendit l’adolescent avant de ',true); layers.content.addObject(objs.obj525);
 	objs.obj526=new mse.Text(layers.content,{"size":[mse.coor('cid25'),mse.coor('cid24')]},'s’évanouir.',true); layers.content.addObject(objs.obj526);
 	objs.obj533=new mse.UIObject(layers.content,{"size":[mse.coor('cid25'),mse.coor('cid24')]}); layers.content.addObject(objs.obj533);
-	objs.obj535=new ShootZombie(); layers.content.addGame(objs.obj535);
+	objs.obj535=games.ShootZombie; layers.content.addGame(objs.obj535);
 	objs.obj527=new mse.UIObject(layers.content,{"size":[mse.coor('cid25'),mse.coor('cid24')]}); layers.content.addObject(objs.obj527);
 	objs.obj528=new mse.Text(layers.content,{"size":[mse.coor('cid19'),mse.coor('cid24')],"pos":[mse.coor('cid2'),mse.coor('cid30')],"fillStyle":"rgb(255, 255, 255)","globalAlpha":1,"font":"bold "+mse.coor('cid31')+"px Gudea","textAlign":"center"},'À SUIVRE...',true); layers.content.addObject(objs.obj528);
 	layers.content.setDefile(1300);
@@ -1079,16 +422,10 @@ function createbook(){
 	layers.light=new mse.Layer(pages.Content,4,{"globalAlpha":1,"textBaseline":"top","size":[mse.coor('cid0'),mse.coor('cid1')]});
 	objs.obj281=new mse.Image(layers.light,{"size":[mse.coor('cid32'),mse.coor('cid32')],"pos":[mse.coor('cid33'),mse.coor('cid34')],"fillStyle":"rgb(0, 0, 0)","globalAlpha":0,"font":"normal "+mse.coor('cid5')+"px Times","textAlign":"left"},'src18'); layers.light.addObject(objs.obj281);
 	pages.Content.addLayer('light',layers.light);
-	animes.titleanime=new mse.Animation(89,1,false,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
-	animes.titleanime.block=true;
 	animes.titleanime.addObj('obj9',objs.obj9);
 	animes.titleanime.addAnimation('obj9',{'frame':JSON.parse('[0,75,88,89]'),'opacity':JSON.parse('[0,0,1,1]')});
-	animes.resumeanime=new mse.Animation(89,1,false,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
-	animes.resumeanime.block=true;
 	animes.resumeanime.addObj('obj11',objs.obj11);
 	animes.resumeanime.addAnimation('obj11',{'frame':JSON.parse('[0,75,88,89]'),'opacity':JSON.parse('[0,0,1,1]')});
-	animes.sacanime2=new mse.Animation(145,1,true,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
-	animes.sacanime2.block=true;
 	temp.obj=new mse.Sprite(null,{'pos':[mse.coor('cid45'),mse.coor('cid46')],'size':[mse.coor('cid1'),mse.coor('cid47')]},'src11',600,282, 0,0,600,564);
 	animes.sacanime2.addObj('src11',temp.obj);
 	temp.obj=new mse.Image(null,{'pos':[mse.coor('cid48'),mse.coor('cid49')],'size':[mse.coor('cid50'),mse.coor('cid51')]},'src13');
@@ -1098,20 +435,12 @@ function createbook(){
 	animes.sacanime2.addAnimation('src11',{'frame':JSON.parse('[0,13,18,68,118,131,144,145]'),'spriteSeq':JSON.parse('[0,0,1,1,1,1,1,1]'),'opacity':JSON.parse('[0,1,1,1,1,1,0,0]')});
 	animes.sacanime2.addAnimation('src13',{'frame':JSON.parse('[0,13,18,68,118,131,144,145]'),'pos':[[mse.coor('cid48'),mse.coor('cid49')],[mse.coor('cid48'),mse.coor('cid49')],[mse.coor('cid48'),mse.coor('cid49')],[mse.coor('cid48'),mse.coor('cid49')],[mse.coor('cid54'),mse.coor('cid55')],[mse.coor('cid54'),mse.coor('cid55')],[mse.coor('cid54'),mse.coor('cid55')],[mse.coor('cid54'),mse.coor('cid55')]],'opacity':JSON.parse('[1,1,1,1,1,1,0,0]')});
 	animes.sacanime2.addAnimation('src12',{'frame':JSON.parse('[0,13,18,68,118,131,144,145]'),'opacity':JSON.parse('[1,1,1,1,1,1,0,0]')});
-	animes.hidelight=new mse.Animation(14,1,false,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
-	animes.hidelight.block=true;
 	animes.hidelight.addObj('obj281',objs.obj281);
 	animes.hidelight.addAnimation('obj281',{'frame':JSON.parse('[0,13,14]'),'opacity':JSON.parse('[1,0,0]')});
-	animes.showlight=new mse.Animation(72,1,false,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
-	animes.showlight.block=true;
 	animes.showlight.addObj('obj281',objs.obj281);
 	animes.showlight.addAnimation('obj281',{'frame':JSON.parse('[0,13,33,71,72]'),'opacity':JSON.parse('[0,1,1,1,1]'),'pos':[[mse.coor('cid56'),mse.coor('cid57')],[mse.coor('cid56'),mse.coor('cid57')],[mse.coor('cid3'),mse.coor('cid59')],[mse.coor('cid60'),mse.coor('cid61')],[mse.coor('cid60'),mse.coor('cid61')]]});
-	animes.maskanime=new mse.Animation(89,1,false,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
-	animes.maskanime.block=true;
 	animes.maskanime.addObj('obj310',objs.obj310);
 	animes.maskanime.addAnimation('obj310',{'frame':JSON.parse('[0,75,88,89]'),'opacity':JSON.parse('[0,0,0.60000002384186,0.60000002384186]')});
-	animes.chaanime=new mse.Animation(89,1,false,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
-	animes.chaanime.block=true;
 	animes.chaanime.addObj('obj311',objs.obj311);
 	animes.chaanime.addAnimation('obj311',{'frame':JSON.parse('[0,75,88,89]'),'opacity':JSON.parse('[0,0,1,1]')});
 	var action={};
@@ -1219,4 +548,8 @@ for(var i = 0; i < layers.content.objList.length; i++){
 	};
 	action.stopIntroson.register(reaction.stopIntroson);
 	mse.currTimeline.start();};
-mse.autoFitToWindow(createbook);
+
+mse.autoFitToWindow(function() {
+    mse.init(null, 'Voodoo_Ch4',mse.coor('cid0'),mse.coor('cid1'),'portrait');
+    $(document).ready(createbook);
+});

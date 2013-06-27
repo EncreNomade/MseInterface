@@ -1,599 +1,38 @@
-﻿
-//Game Esquive
 
-// class for enemies  
-var Enemi = function(parent, trajCoor, number) {
-    this.sprite = (function(){
-        if (number%2 == 1)
-            return new mse.Sprite(parent,{ pos:[0,0], size:[50*0.25, 118*0.25] },'enemi', 50, 118, 0, 0, 600, 118);
-        else 
-            return new mse.Sprite(parent,{ pos:[0,0], size:[50*0.25, 99*0.25] }, 'enemi', 50, 99, 0, 118, 600, 99);
-    })();
-    
-    this.anime = new mse.FrameAnimation(this.sprite,[0,1,2,3,4,5,6,7,8,9,10,11],0,0); // Set the animation
-    this.height = this.sprite.height;
-    this.width = this.sprite.width;    
-    
-    this.colMask = {};
-    this.colWidth = this.sprite.width * 0.95;
-    
-    
-    this.trajCoor = trajCoor;
-    this.startY = trajCoor.sy;
-    this.endY = trajCoor.ey;
-    
-    this.originalWidth = this.sprite.width;
-    this.originalHeight = this.sprite.height;
-    
-    this.parent = parent;
-    
-    this.state = 'INACTIVE';
-};
-Enemi.prototype = {
-    init: function(way){
-        this.time = 0;
-        this.anime.start();
-        this.state = 'RUNNING';
-        
-        this.sprite.width = this.originalWidth;
-        this.sprite.height = this.originalHeight;
-        this.sprite.globalAlpha = 1;
-        
-        this.startX = this.trajCoor.sx[way]
-        this.endX = this.trajCoor.ex[way];
-        
-        var min = 4, max = 8;
-        this.speed = Math.floor(Math.random() * (max - min + 1) + max);
-        
-        this.position = 'background';
-    },
-    logic: function(){
-        if (this.y > (this.parent.height) && this.state != 'FINISH')
-            this.state = 'FINISH';
-                 
-        if (this.y > this.endY && this.position == 'background')
-            this.position = 'foreground';
-            
-        if(this.sprite.globalAlpha < 0.05) {
-            this.anime.stop();
-            this.state = 'INACTIVE';
-        }
-    },
-    draw: function(ctx, position){
-        if(this.state != 'INACTIVE' && position == this.position) {
-            this.sprite.height += (this.speed/4);
-            this.sprite.width += (this.speed/4);
-            var x1 = this.startX;
-            var y1 = this.startY;
-            
-            var x2 = this.endX;
-            var y2 = this.endY;
-            var prog = this.time / (y2 - y1);
-            
-            this.x = x1+(x2-x1)*prog;
-            var x = this.x - this.anime.sprite.width/2;
-            
-            this.y = y1+(y2-y1)*prog;
-            var y = this.y - this.anime.sprite.height;
-            this.time += this.speed;
-            this.sprite.draw(ctx, x, y); // draw the enemie at the good position
-            
-            // Colision mask update
-            this.colMask.x = x+this.sprite.width*0.25;
-            this.colMask.y = y;
-            this.colMask.w = this.sprite.width*0.7;
-            this.colMask.h = this.sprite.height;
-            
-            /* Colision mask Draw            
-            ctx.fillStyle = "rgba(255,0,0, 0.5)"; 
-            ctx.fillRect(this.colMask.x, this.colMask.y, this.colMask.w, this.sprite.height);
-            ctx.fillStyle = 'rgba(0,0,0, 1)';
-            // */
-            
-            if (this.state == 'FINISH') this.sprite.globalAlpha -= 0.2;   
-        }            
-    }
-};
-
-// Class for Simon
-var Simon = function(parent, endY, gameWidth){
-    this.line = endY;
-    this.gameWidth = gameWidth;
-    this.dir = 'WAIT';
-    this.state = 'ALIVE';
-    this.life = 3;
-    this.redTime = 25;
-    this.pas = 15;
-    this.heartSize = 15;
-    
-    // Colision mask
-    this.colMask = {};
-    
-    this.sprite = new mse.Sprite(parent,{ pos:[0,0], size:[58, 84] }, 'simon', 58, 84, 0, 0  , 174, 84);
-    this.effect = mse.initImageEffect({ "colorfilter": {rMulti: 0.7, alpha: 0.6, duration: this.redTime} }, this.sprite);
-    this.anime = new mse.FrameAnimation(this.sprite,[0,1,2],0,2); 
-}
-Simon.prototype = {
-    init: function(){
-        this.anime.start();                
-        this.x = this.gameWidth/2-this.sprite.width/2;
-        this.y = this.line - this.sprite.height;
-        this.life = 3;
-    },
-    logic: function(){
-        // Move
-        if(this.dir == 'LEFT' && this.x > 0) this.x-= this.pas;
-        else if (this.dir == 'RIGHT' && (this.x+this.sprite.width) < this.gameWidth) this.x+= this.pas;
-        
-        // Update collision mask
-        this.colMask.x = this.x+ this.sprite.width*0.25;
-        this.colMask.w = this.sprite.width*0.75;
-        
-        this.sprite.logic();
-        
-        // Life management
-        if(this.touched) this.touchedTime++;
-        if(this.touchedTime > this.redTime) this.touched = false;
-    },
-    draw: function(ctx){
-        this.sprite.draw(ctx,this.x,this.y);
-        
-        var coeur = mse.src.getSrc('coeur');
-        for(var i = 0; i < this.life; i++) 
-            ctx.drawImage(coeur, 5+(this.heartSize+1)*i, 5, this.heartSize, this.heartSize);
-        /* Colision mask Draw            
-        ctx.fillStyle = "rgba(0,255,0, 0.5)"; 
-        ctx.fillRect(this.colMask.x, this.colMask.y, this.colMask.w, this.colMask.h);
-        ctx.fillStyle = 'rgba(0,0,0, 1)';
-        // */
-    },
-    changeDir: function(dir){
-        if(dir != this.dir){
-            this.anime.stop();
-            this.dir = dir;
-            switch (dir) {
-                case 'WAIT':
-                    this.sprite.configSprite(58, 84, 0, 0, 174, 84, 58, 84);
-                    this.anime = new mse.FrameAnimation(this.sprite,[0,1,2],0,2);
-                break;
-                case 'LEFT':
-                    this.sprite.configSprite(75, 85, 0, 169, 450, 85, 75, 85);
-                    this.anime = new mse.FrameAnimation(this.sprite,[0,1,2,3,4,5],0,2);
-                break;
-                case 'RIGHT':
-                    this.sprite.configSprite(75, 85, 0, 84 , 450, 85, 75, 85);
-                    this.anime = new mse.FrameAnimation(this.sprite,[0,1,2,3,4,5],0,2);
-                break;
-            }
-            this.anime.start();
-        }
-    },
-    touch: function(){
-        if(!this.touched) {            
-            this.sprite.startEffect(this.effect);
-            this.life--;            
-            this.touched = true;
-            this.touchedTime = 0;
-        }
-    }
-}
-
-var Esquive = function(){
-    mse.Game.call(this, {fillback:true});
-    this.config.title = "Le Concert";
-    
-    this.width = 600; 
-    this.height = 440;
-    
-    // some variable to manage the way's line
-    var dStart = 30;
-    var dEnd = this.width / 6;
-    var middle = this.width / 2;
-    
-    // starts points for ways (x)
-    this.startPoints = [];
-    for(var i = 3; i>0; i--)        // 3 firsts
-        this.startPoints.push(middle - i*dStart);
-    this.startPoints.push(middle);  // middle
-    for(var i = 1; i<=3; i++)       // 3 lasts
-        this.startPoints.push(middle + i*dStart);
-        
-    // end points for the ways (x)
-    this.endPoints = [];
-    for(var i = 0; i < 7; i++)
-        this.endPoints.push(i*dEnd);
-        
-    this.startLine = 170;   // (y)
-    this.endLine = 410;     // (y)
-    this.colTolerance = 20;
-    
-    // Sources
-    mse.src.addSource('enemi', 'games/Ennemi-course.png', 'img', true);    
-    mse.src.addSource('simon', 'games/Simon.png', 'img', true);
-    mse.src.addSource('premierPlan', 'games/1er-plan.png', 'img', true);
-    mse.src.addSource('arrierePlan', 'games/arriere-plan.png', 'img', true);
-    mse.src.addSource('coeur', 'games/heart.png', 'img', true);
-
-    // Objects
-    var trajectoriesCoor = {
-        sx: this.startPoints,
-        sy: this.startLine,
-        ex: this.endPoints,
-        ey: this.endLine
-    };
-    this.sprinters = [];
-    for(var i = 0; i<7; i++)
-        this.sprinters.push(new Enemi(this, trajectoriesCoor, i));
-    
-    this.simon = new Simon(this, this.endLine, this.width);
-    
-    this.spots = new Spot();
-    
-    // Help message
-    if(MseConfig.iOS) var help = "L’intervention de l’inspecteur Angeli fait fuir le public du concert. \nAide Simon à ne pas se faire piétiner par les fuyards !\nTouche l'écran pour contrôler Simon.";
-    else var help = "L’intervention de l’inspecteur Angeli fait fuir le public du concert. \nAide Simon à ne pas se faire piétiner par les fuyards !\nUtilises les flèches pour contrôler Simon.";
-    this.info = new mse.Text(null, {
-		pos:[10,50],
-		size:[this.width-20,0],
-		fillStyle:"rgba(255,255,255,1)",
-		font:"20px Arial",
-		textAlign:"center",
-		textBaseline:"top",
-		lineHeight:25}, help, true
-	);
-	if(MseConfig.iOS) var help2 = "Touche pour commencer !";
-    else var help2 = "Clique pour commencer !";
-    this.info2 = new mse.Text(null, {
-		pos:[10,this.height-50],
-		size:[this.width-20,0],
-		fillStyle:"rgba(255,255,255,1)",
-		font:"15px Arial",
-		textAlign:"center",
-		textBaseline:"top",
-		lineHeight:25}, help2, true
-	);
-        
-        
-    this.msg = {
-        "INIT": "Clique pour jouer.",
-        "WIN": "Bravo!!! Tu as gagné.",
-        "LOSE": "Perdu..."
-    };
-    this.state = "INIT";
-	 
-	this.init = function() {
-        this.state = "INIT";
-        this.currTime = 0;
-        this.level = 0;
-        this.simon.init();
-        for(var i in this.sprinters) this.sprinters[i].state = 'INACTIVE';
-        
-        this.getEvtProxy().addListener('click', this.clickcb, true, this); // Mouse        
-        this.getEvtProxy().addListener('keydown', this.keyDowncb); // Keyboard        
-        this.getEvtProxy().addListener('keyup', this.keyUpcb); // Keyboard
-        
-        this.getEvtProxy().addListener('gestureStart', this.startGestCb);
-        this.getEvtProxy().addListener('gestureUpdate', this.updateGestCb);
-        this.getEvtProxy().addListener('gestureEnd', this.endGestCb);
-        
-        this.state = 'HELP';
-    }
-	 
-    this.logic = function(delta) {
-        if(this.state == "PLAYING" || this.state == "STARTING") this.currTime += delta/1000;
-        
-        if(this.state == "PLAYING"){
-			// Manage level
-			if(this.currTime > 1 && this.currTime < 2 && this.level != 1) this.level = 1;
-			else if(this.currTime > 2 && this.currTime < 6 && this.level != 2) this.level = 2;
-			else if(this.currTime > 6 && this.currTime < 14 && this.level != 3) this.level = 3;
-			else if(this.currTime > 15 && this.currTime < 40 && this.level != 4) this.level = 4;
-			
-			this.simon.logic();
-			
-			var runningEnemies = 7;
-			for(var i in this.sprinters) {
-				this.sprinters[i].logic();
-				// Collision
-				var yDiff = this.endLine - this.sprinters[i].colMask.y - this.sprinters[i].colMask.h;
-				if(yDiff < this.colTolerance  && yDiff > 0 && this.sprinters[i].state == 'RUNNING'){
-					// When Simon & enemie are on the same line
-					if( (this.sprinters[i].colMask.x >= this.simon.colMask.x 
-							&& this.sprinters[i].colMask.x <= this.simon.colMask.x+this.simon.colMask.w) ||
-						(this.simon.colMask.x >= this.sprinters[i].colMask.x 
-							&& this.simon.colMask.x <= this.sprinters[i].colMask.x+this.sprinters[i].colMask.w) )
-					{
-						this.simon.touch();
-					}
-				}
-				if (this.sprinters[i].state == 'INACTIVE') 
-					runningEnemies--;
-			}
-			
-			// Generate enemies
-			this.generateEnemies(runningEnemies);
-			
-			this.checkFinish();    
-		}    
-    }
-    
-    this.draw = function(ctx) {
-		ctx.save();	
-		
-		if(MseConfig.android || MseConfig.iPhone) ctx.scale(0.8, 0.62);
-		            
-		ctx.beginPath();
-		ctx.moveTo(0, 0);
-		ctx.lineTo(this.width, 0);
-		ctx.lineTo(this.width, this.height);
-		ctx.lineTo(0,this.height);
-		ctx.closePath();
-		ctx.clip();
-		
-		if(this.state != 'WIN'){
-			ctx.drawImage(mse.src.getSrc('arrierePlan'), 0, 0, this.width,this.height);            
-			this.spots.draw(ctx);
-			ctx.drawImage(mse.src.getSrc('premierPlan'), 0, 0, this.width,this.height);
-		}
-        
-       if(this.state == 'HELP') {
-            ctx.fillStyle = 'rgba(0,0,0, 0.8)';
-            ctx.fillRect(0,0,this.width, this.height);            
-            
-            ctx.fillStyle = 'rgba(255,255,255, 1)';
-            this.info.draw(ctx);
-            this.info2.draw(ctx);
-        }
-        else if(this.state == 'STARTING') {
-			// Draw 3-2-1-GO!
-			ctx.fillStyle = 'rgba(0,0,0, 0.4)';
-			ctx.fillRect(0,0,this.width, this.height);
-			
-			ctx.fillStyle = 'rgba(255,255,255, 1)';
-			ctx.font = "30px Arial";
-			if (this.currTime < 1)var text = "3";
-			else if(this.currTime < 2) var text = "2";
-			else if(this.currTime < 3) var text = "1";
-			else {
-				this.currTime = 0;
-				this.state = "PLAYING";
-				this.generateEnemies();
-				this.simon.init();
-				var text = "GO !";
-			}
-			ctx.fillText(text,this.width/2-20,this.height/2-30);
-        }
-        else if(this.state == 'PLAYING'){
-                         
-            /* DEBUG
-            // trace the 7 ways            
-            ctx.fillStyle = "rgb(255,255,255)"; 
-            ctx.fillRect(0,0, this.width, this.height);
-            ctx.fillStyle = "rgb(0,0,0)"; 
-            
-            for (var i in this.startPoints) {
-                for(var j = 0; j<this.endLine - this.startLine; j++) {
-                    var y1 = this.startLine;
-                    var x1 = this.startPoints[i];
-                    var y2 = this.endLine;
-                    var x2 = this.endPoints[i];
-                    var prog = j / (this.endLine - this.startLine);
-                    
-                    var x = x1+(x2-x1)*prog;
-                    var y = y1+(y2-y1)*prog;
-                    ctx.fillRect(x, y, 1, 1);
-                }
-            }
-            // */
-            
-            for(var i in this.sprinters) this.sprinters[i].draw(ctx, 'background'); // draw only background sprinters
-            this.simon.draw(ctx);
-            for(var i in this.sprinters) this.sprinters[i].draw(ctx, 'foreground');
-            
-            // draw time
-            var timestr = Math.floor(this.currTime/600) +""+ Math.floor((this.currTime%600)/60) +":"+ Math.floor((this.currTime%60)/10) +""+ Math.floor(this.currTime%10);
-            ctx.font = "15px Arial";
-            ctx.fillText(timestr, this.width-50, 10);
-        }
-        
-        ctx.restore();
-    }
-    
-    this.generateEnemies = function(runningEnemies){
-        switch(this.level){
-            /*case 0: if (!runningEnemies) this.sprinters[Math.floor(Math.random() * 7)].init(Math.floor(Math.random() * 7)); 
-            // if in the level 0 generate one enemi (function call only 1 time in this level)
-                break;*/
-            case 1: var maxRun = 3; var maxGenerate = 4;
-                break;
-            case 2: var maxRun = 4; var maxGenerate = 4;
-                break;
-            case 3: var maxRun = 4; var maxGenerate = 5;
-                break;
-            case 4: var maxRun = 5; var maxGenerate = 6;
-                break;
-        }
-        
-        if(typeof(maxGenerate) != 'undefined' && runningEnemies < maxRun){
-            var nbEnemies = 1 + Math.floor(Math.random() * maxGenerate);
-            var position = [];
-            for(var i = 0; i<nbEnemies; i++){
-                var number = Math.floor(Math.random() * 7); // random way for each new enemi
-                position.push(number);
-            }
-            
-            for (var i = 0; i < nbEnemies; i++)
-                if (this.sprinters[position[i]].state == 'INACTIVE') this.sprinters[position[i]].init(position[i]);
-        }
-    };
-
-    this.checkFinish = function(){
-        if(this.simon.life == 0) {
-            this.state = 'LOSE';
-            this.getEvtProxy().removeListener('click', this.clickcb); // Mouse        
-            this.getEvtProxy().removeListener('keydown', this.keyDowncb); // Keyboard        
-            this.getEvtProxy().removeListener('keyup', this.keyUpcb);
-            this.setScore( 100 * this.currTime / 40 );
-            this.lose();
-        }
-        else if (this.currTime > 40) {
-            this.state = 'WIN';
-            this.getEvtProxy().removeListener('click', this.clickcb); // Mouse        
-            this.getEvtProxy().removeListener('keydown', this.keyDowncb); // Keyboard        
-            this.getEvtProxy().removeListener('keyup', this.keyUpcb);
-            this.setScore( 100 + this.simon.life * this.simon.life * 5 );
-            this.win();
-        }
-    };
-     
-    this.click = function (e) {
-        if(this.state == 'HELP') {
-            this.state = 'STARTING';  
-        };
-	};
-	
-    this.clickcb = new mse.Callback(this.click, this);       
-    
-    this.keyDown = function(e) {
-        if(e.keyCode == __KEY_LEFT && this.simon.dir != 'LEFT')
-            this.simon.changeDir('LEFT');
-        else if(e.keyCode == __KEY_RIGHT  && this.simon.dir != 'RIGHT') 
-            this.simon.changeDir('RIGHT');
-    };
-    this.keyDowncb = new mse.Callback(this.keyDown, this);    
-  
-    this.keyUpcb = new mse.Callback(function(){this.simon.changeDir('WAIT');}, this);
-    
-    this.gestureMove = function(e){
-        if(MseConfig.android || MseConfig.iPhone) var x = e.offsetX/0.8;
-        else var x = e.offsetX;
-        if(x<this.simon.x+this.simon.sprite.width/2 && this.simon.dir != 'LEFT')
-            this.simon.changeDir('LEFT');
-        else if (x>this.simon.x+this.simon.sprite.width/2 && this.simon.dir != 'RIGHT')
-            this.simon.changeDir('RIGHT');
-    };
-    
-    this.startGestCb = new mse.Callback(this.gestureMove, this);    
-    this.updateGestCb = new mse.Callback(this.gestureMove, this);
-    this.endGestCb = new mse.Callback(function(){this.simon.changeDir('WAIT');}, this);
-};
-extend(Esquive, mse.Game);
-
-// Class for spots
-var Spot = function(parent, type){
-    mse.src.addSource('spot-left', 'games/spot-left.png', 'img', true);
-    
-    var x = -30;    
-    var y = x;
-    
-    var left = new mse.Image(null, {pos:[x,y],size:[374,306]},'spot-left');
-    var right = new mse.Image(null, {pos:[x,y]},'spot-left');
-    
-    this.effectL = mse.initImageEffect({ "colorfilter": {rMulti: 0.7, alpha: 0.6} }, left);
-    this.effectR = mse.initImageEffect({ "colorfilter": {rMulti: 0.7, alpha: 0.6} }, right);
-    
-    this.width = 600;
-    //~ this.height = mse.coor(mse.joinCoor(440));
-    
-    this.angleR = 100;
-    this.angleL = 0;
-    
-    var upL = true;
-    var upR = true;
-    
-    this.logic = function(){
-        // Left
-        if(upL) this.angleL++;
-        else this.angleL--;        
-        if(this.angleL>10) {
-            upL = false;
-            this.randomColorEffect('left');
-        }
-        else if(this.angleL<-40) {
-            upL = true;
-            this.randomColorEffect('left');
-        }
-        left.logic();
-        
-        // Right
-        if(upR) this.angleR++;
-        else this.angleR--;       
-        if(this.angleR>110) {
-            upR = false;
-            this.randomColorEffect('right');
-        }
-        else if(this.angleR<80) {        
-            upR = true;
-            this.randomColorEffect('right');
-        }
-        right.logic();
-    };
-    
-    this.draw = function(ctx){
-        // left
-        ctx.save();
-        ctx.rotate(this.angleL*Math.PI/180);
-        left.draw(ctx);   
-        ctx.restore();
-        
-        // right
-        ctx.save();
-        ctx.translate(this.width, 0);
-        ctx.rotate(this.angleR*Math.PI/180); 
-        right.draw(ctx);
-        ctx.restore();
-        
-        this.logic();
-    };
-    
-    var color = [
-        {rMulti: 0.8 ,gMulti: 1   ,bMulti: 1  },    // light red
-        {rMulti: 1   ,gMulti: 0.7 ,bMulti: 1  },    // light green      
-        {rMulti: 0   ,gMulti: 0   ,bMulti: 1  },    // full green
-        {rMulti: 1   ,gMulti: 0 ,bMulti: 0  },      // full blue
-        {rMulti: 0.5   ,gMulti: 0.5 ,bMulti: 1  },
-        {rMulti: 0.33   ,gMulti: 0.98 ,bMulti: 0.69  },
-        {rMulti: 0.1   ,gMulti: 0.7 ,bMulti: 1  },  // orange        
-        {rMulti: 0.3   ,gMulti: 0.65 ,bMulti: 1  }  // jaune
-        
-    ];
-    this.randomColorEffect = function(name){
-        if(name == 'left') {
-            var spot = left;
-            var effect = this.effectL;
-        }
-        else {
-            var spot = right;
-            var effect = this.effectR;
-        }
-        var conf = color[Math.floor(Math.random()*color.length)];   
-        // var conf = {rMulti: Math.random()   ,gMulti: Math.random() ,bMulti: Math.random()  };
-        effect.init(conf, spot);
-        spot.startEffect(effect);
-    };
-}
 mse.coords = JSON.parse('{"cid0":800,"cid1":600,"cid2":0,"cid3":400,"cid4":200,"cid5":20,"cid6":448.75,"cid7":108.75,"cid8":173.75,"cid9":107.5,"cid10":32.5,"cid11":396.25,"cid12":56.25,"cid13":201.25,"cid14":246.25,"cid15":357.5,"cid16":181.25,"cid17":222.5,"cid18":398.75,"cid19":17.5,"cid20":340,"cid21":590,"cid22":230,"cid23":10,"cid24":22.5,"cid25":36.25,"cid26":425,"cid27":306,"cid28":404.11428571429,"cid29":17,"cid30":295,"cid31":223.75,"cid32":496.25,"cid33":18,"cid34":223,"cid35":399,"cid36":358,"cid37":181,"cid38":33,"cid39":174,"cid40":108,"cid41":449,"cid42":109,"cid43":201,"cid44":246,"cid45":396,"cid46":56,"cid47":305,"cid48":140,"cid49":126,"cid50":239,"cid51":160,"cid52":314,"cid53":300,"cid54":69,"cid55":175,"cid56":29,"cid57":60,"cid58":708,"cid59":23,"cid60":683,"cid61":63,"cid62":70,"cid63":50,"cid64":700,"cid65":323,"cid66":128,"cid67":153,"cid68":234,"cid69":365}');
 initMseConfig();
-mse.init();
 window.pages={};
-var layers={};
+window.layers={};
 window.objs={};
 var animes={};
 var games={};
 var wikis={};
 function createbook(){
 	if(config.publishMode == 'debug') mse.configs.srcPath='./Voodoo_Ch5/';
-	window.root = new mse.Root('Voodoo_Ch5',mse.coor('cid0'),mse.coor('cid1'),'portrait');
+	window.root = mse.root;
 	var temp = {};
 	mse.src.addSource('src2','images/src2.jpeg','img',true);
 	mse.src.addSource('src3','images/src3.png','img',true);
 	mse.src.addSource('src4','images/src4.png','img',true);
 	mse.src.addSource('src5','images/src5.png','img',true);
+	animes.resumeAnime=new mse.Animation(89,1,false,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
+	animes.resumeAnime.block=true;
+	animes.maskAnime=new mse.Animation(89,1,false,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
+	animes.maskAnime.block=true;
+	animes.titleAnime=new mse.Animation(89,1,false,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
+	animes.titleAnime.block=true;
+	animes.chaAnime=new mse.Animation(89,1,false,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
+	animes.chaAnime.block=true;
 	mse.src.addSource('src6','images/src6.png','img',true);
 	mse.src.addSource('soncoup','audios/soncoup','aud',false);
 	mse.src.addSource('src10','images/src10.jpeg','img',true);
 	mse.src.addSource('src11','images/src11.jpeg','img',true);
-	mse.src.addSource('sonphoque','audios/sonphoque','aud',false);
+	animes.chBack2Anime=new mse.Animation(26,1,false,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
+	animes.chBack2Anime.block=true;
+	animes.objAnime=new mse.Animation(367,1,true,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
+	animes.objAnime.block=true;
+	animes.hitAngeli=new mse.Animation(95,1,true,null,{'size':[mse.coor('cid0'),mse.coor('cid1')]});
+	animes.hitAngeli.block=true;
 	games.Esquive = new Esquive();
 	mse.src.addSource('src13','images/src13.jpeg','img',true);
 	mse.src.addSource('src14','images/src14.jpeg','img',true);
@@ -616,7 +55,12 @@ function createbook(){
 	wikis.Esoterique.textCard.addSection('Esotérique', 'Adjectif : Que seuls les initiés peuvent comprendre.\nSynonymes : \nHermétique, abstrus, abscons.');
 	mse.src.addSource('src19','images/src19.jpeg','img',true);
 	mse.src.addSource('intro','audios/intro','aud',false);
+	mse.src.addSource('angoisse','audios/angoisse','aud',false);
+	mse.src.addSource('animobjets','audios/animobjets','aud',false);
 	mse.src.addSource('concert','audios/concert','aud',false);
+	mse.src.addSource('coupanime','audios/coupanime','aud',false);
+	mse.src.addSource('game','audios/game','aud',false);
+	mse.src.addSource('phoque','audios/phoque','aud',false);
 	pages.Couverture=new mse.BaseContainer(root,'Couverture',{size:[mse.coor('cid0'),mse.coor('cid1')]});
 	layers.Couverturedefault=new mse.Layer(pages.Couverture,1,{"globalAlpha":1,"textBaseline":"top","size":[mse.coor('cid0'),mse.coor('cid1')]});
 	objs.obj315=new mse.Image(layers.Couverturedefault,{"size":[mse.coor('cid0'),mse.coor('cid1')],"pos":[mse.coor('cid2'),mse.coor('cid2')]},'src16'); layers.Couverturedefault.addObject(objs.obj315);
@@ -654,7 +98,6 @@ function createbook(){
 	objs.obj587.activateZoom(); layers.content.addObject(objs.obj587);
 	objs.obj585=new mse.UIObject(layers.content,{"size":[mse.coor('cid26'),mse.coor('cid25')]}); layers.content.addObject(objs.obj585);
 	objs.obj321=new mse.Text(layers.content,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Un phoque !',true);
-	objs.obj321.addLink(new mse.Link('Un',8,'audio',mse.src.getSrc('sonphoque')));
 	objs.obj321.addLink(new mse.Link('phoque',8,'wiki',wikis.Phoque)); layers.content.addObject(objs.obj321);
 	objs.obj322=new mse.Text(layers.content,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'L’homme était engoncé dans une ',true); layers.content.addObject(objs.obj322);
 	objs.obj323=new mse.Text(layers.content,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'combinaison de vinyle noir qu’il ',true); layers.content.addObject(objs.obj323);
@@ -848,8 +291,7 @@ function createbook(){
 	objs.obj478=new mse.Text(layers.content,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'L’adolescent n’eut pas le temps ',true); layers.content.addObject(objs.obj478);
 	objs.obj479=new mse.Text(layers.content,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'de retenir l’inspecteur que celui-ci ',true); layers.content.addObject(objs.obj479);
 	objs.obj480=new mse.Text(layers.content,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'s’était déjà engagé dans la ',true); layers.content.addObject(objs.obj480);
-	objs.obj481=new mse.Text(layers.content,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'direction des bruits.',true);
-	objs.obj481.addLink(new mse.Link('bruits',114,'audio',mse.src.getSrc('concert'))); layers.content.addObject(objs.obj481);
+	objs.obj481=new mse.Text(layers.content,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'direction des bruits.',true); layers.content.addObject(objs.obj481);
 	objs.obj482=new mse.Text(layers.content,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'Il courait et Simon avait du mal à ',true); layers.content.addObject(objs.obj482);
 	objs.obj483=new mse.Text(layers.content,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'suivre.',true); layers.content.addObject(objs.obj483);
 	objs.obj484=new mse.Speaker( layers.content,{"size":[mse.coor('cid20'),mse.coor('cid2')]}, 'simon', 'src18' , mse.coor(mse.joinCoor(45)) , '#f99200' ); layers.content.addObject(objs.obj484);
@@ -925,7 +367,7 @@ function createbook(){
 	objs.obj550=new mse.Text(layers.content,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'spectateurs commencèrent à ',true); layers.content.addObject(objs.obj550);
 	objs.obj551=new mse.Text(layers.content,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'s’enfuir en hurlant.',true); layers.content.addObject(objs.obj551);
 	objs.obj588=new mse.UIObject(layers.content,{"size":[mse.coor('cid26'),mse.coor('cid25')]}); layers.content.addObject(objs.obj588);
-	objs.obj591=new Esquive(); layers.content.addGame(objs.obj591);
+	objs.obj591=games.Esquive; layers.content.addGame(objs.obj591);
 	objs.obj589=new mse.UIObject(layers.content,{"size":[mse.coor('cid26'),mse.coor('cid25')]}); layers.content.addObject(objs.obj589);
 	objs.obj552=new mse.Text(layers.content,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'En quelques instants à peine, il ne ',true); layers.content.addObject(objs.obj552);
 	objs.obj553=new mse.Text(layers.content,{"size":[mse.coor('cid26'),mse.coor('cid25')]},'restait plus qu’un peu de ',true); layers.content.addObject(objs.obj553);
@@ -968,28 +410,16 @@ function createbook(){
 	layers.content.setDefile(1300);
 	temp.layerDefile=layers.content;
 	pages.Content.addLayer('content',layers.content);
-	animes.resumeAnime=new mse.Animation(89,1,false);
-	animes.resumeAnime.block=true;
 	animes.resumeAnime.addObj('obj7',objs.obj7);
 	animes.resumeAnime.addAnimation('obj7',{'frame':JSON.parse('[0,75,88,89]'),'opacity':JSON.parse('[0,0,1,1]')});
-	animes.maskAnime=new mse.Animation(89,1,false);
-	animes.maskAnime.block=true;
 	animes.maskAnime.addObj('obj4',objs.obj4);
 	animes.maskAnime.addAnimation('obj4',{'frame':JSON.parse('[0,75,88,89]'),'opacity':JSON.parse('[0,0,0.60000002384186,0.60000002384186]')});
-	animes.titleAnime=new mse.Animation(89,1,false);
-	animes.titleAnime.block=true;
 	animes.titleAnime.addObj('obj5',objs.obj5);
 	animes.titleAnime.addAnimation('obj5',{'frame':JSON.parse('[0,75,88,89]'),'opacity':JSON.parse('[0,0,1,1]')});
-	animes.chaAnime=new mse.Animation(89,1,false);
-	animes.chaAnime.block=true;
 	animes.chaAnime.addObj('obj6',objs.obj6);
 	animes.chaAnime.addAnimation('obj6',{'frame':JSON.parse('[0,75,88,89]'),'opacity':JSON.parse('[0,0,1,1]')});
-	animes.chBack2Anime=new mse.Animation(26,1,false);
-	animes.chBack2Anime.block=true;
 	animes.chBack2Anime.addObj('obj278',objs.obj278);
 	animes.chBack2Anime.addAnimation('obj278',{'frame':JSON.parse('[0,25,26]'),'opacity':JSON.parse('[0,1,1]')});
-	animes.objAnime=new mse.Animation(367,1,true);
-	animes.objAnime.block=true;
 	temp.obj=new mse.Image(null,{'pos':[mse.coor('cid47'),mse.coor('cid48')],'size':[mse.coor('cid4'),mse.coor('cid3')]},'src4');
 	animes.objAnime.addObj('src4',temp.obj);
 	temp.obj=new mse.Image(null,{'pos':[mse.coor('cid27'),mse.coor('cid49')],'size':[mse.coor('cid4'),mse.coor('cid3')]},'src5');
@@ -999,8 +429,6 @@ function createbook(){
 	animes.objAnime.addAnimation('src4',{'frame':JSON.parse('[0,50,51,64,114,152,202,240,290,328,353,366,367]'),'pos':[[mse.coor('cid47'),mse.coor('cid48')],[mse.coor('cid47'),mse.coor('cid48')],[mse.coor('cid54'),mse.coor('cid55')],[mse.coor('cid54'),mse.coor('cid55')],[mse.coor('cid54'),mse.coor('cid55')],[mse.coor('cid53'),mse.coor('cid49')],[mse.coor('cid53'),mse.coor('cid49')],[mse.coor('cid64'),mse.coor('cid55')],[mse.coor('cid64'),mse.coor('cid55')],[mse.coor('cid54'),mse.coor('cid55')],[mse.coor('cid54'),mse.coor('cid55')],[mse.coor('cid54'),mse.coor('cid55')],[mse.coor('cid54'),mse.coor('cid55')]],'size':[[mse.coor('cid4'),mse.coor('cid3')],[mse.coor('cid4'),mse.coor('cid3')],[mse.coor('cid56'),mse.coor('cid57')],[mse.coor('cid56'),mse.coor('cid57')],[mse.coor('cid56'),mse.coor('cid57')],[mse.coor('cid4'),mse.coor('cid3')],[mse.coor('cid4'),mse.coor('cid3')],[mse.coor('cid56'),mse.coor('cid57')],[mse.coor('cid56'),mse.coor('cid57')],[mse.coor('cid56'),mse.coor('cid57')],[mse.coor('cid56'),mse.coor('cid57')],[mse.coor('cid56'),mse.coor('cid57')],[mse.coor('cid56'),mse.coor('cid57')]],'opacity':JSON.parse('[0,0,0,1,1,1,1,1,1,1,1,0,0]')});
 	animes.objAnime.addAnimation('src5',{'frame':JSON.parse('[0,50,51,64,114,152,202,240,290,328,353,366,367]'),'pos':[[mse.coor('cid27'),mse.coor('cid49')],[mse.coor('cid27'),mse.coor('cid49')],[mse.coor('cid58'),mse.coor('cid55')],[mse.coor('cid58'),mse.coor('cid55')],[mse.coor('cid58'),mse.coor('cid55')],[mse.coor('cid62'),mse.coor('cid55')],[mse.coor('cid62'),mse.coor('cid55')],[mse.coor('cid65'),mse.coor('cid66')],[mse.coor('cid65'),mse.coor('cid66')],[mse.coor('cid58'),mse.coor('cid55')],[mse.coor('cid58'),mse.coor('cid55')],[mse.coor('cid58'),mse.coor('cid55')],[mse.coor('cid58'),mse.coor('cid55')]],'size':[[mse.coor('cid4'),mse.coor('cid3')],[mse.coor('cid4'),mse.coor('cid3')],[mse.coor('cid59'),mse.coor('cid57')],[mse.coor('cid59'),mse.coor('cid57')],[mse.coor('cid59'),mse.coor('cid57')],[mse.coor('cid59'),mse.coor('cid57')],[mse.coor('cid59'),mse.coor('cid57')],[mse.coor('cid67'),mse.coor('cid3')],[mse.coor('cid67'),mse.coor('cid3')],[mse.coor('cid59'),mse.coor('cid57')],[mse.coor('cid59'),mse.coor('cid57')],[mse.coor('cid59'),mse.coor('cid57')],[mse.coor('cid59'),mse.coor('cid57')]],'opacity':JSON.parse('[0,0,0,1,1,1,1,1,1,1,1,0,0]')});
 	animes.objAnime.addAnimation('src3',{'frame':JSON.parse('[0,50,51,64,114,152,202,240,290,328,353,366,367]'),'opacity':JSON.parse('[0,0,0,1,1,1,1,1,1,1,1,0,0]'),'pos':[[mse.coor('cid50'),mse.coor('cid51')],[mse.coor('cid50'),mse.coor('cid51')],[mse.coor('cid50'),mse.coor('cid51')],[mse.coor('cid50'),mse.coor('cid51')],[mse.coor('cid50'),mse.coor('cid51')],[mse.coor('cid60'),mse.coor('cid55')],[mse.coor('cid60'),mse.coor('cid55')],[mse.coor('cid63'),mse.coor('cid55')],[mse.coor('cid63'),mse.coor('cid55')],[mse.coor('cid50'),mse.coor('cid51')],[mse.coor('cid50'),mse.coor('cid51')],[mse.coor('cid50'),mse.coor('cid51')],[mse.coor('cid50'),mse.coor('cid51')]],'size':[[mse.coor('cid52'),mse.coor('cid53')],[mse.coor('cid52'),mse.coor('cid53')],[mse.coor('cid52'),mse.coor('cid53')],[mse.coor('cid52'),mse.coor('cid53')],[mse.coor('cid52'),mse.coor('cid53')],[mse.coor('cid61'),mse.coor('cid57')],[mse.coor('cid61'),mse.coor('cid57')],[mse.coor('cid61'),mse.coor('cid57')],[mse.coor('cid61'),mse.coor('cid57')],[mse.coor('cid52'),mse.coor('cid53')],[mse.coor('cid52'),mse.coor('cid53')],[mse.coor('cid52'),mse.coor('cid53')],[mse.coor('cid52'),mse.coor('cid53')]]});
-	animes.hitAngeli=new mse.Animation(95,1,true);
-	animes.hitAngeli.block=true;
 	temp.obj=new mse.Sprite(null,{'pos':[mse.coor('cid4'),mse.coor('cid68')],'size':[mse.coor('cid3'),mse.coor('cid69')]},'src6',436,400, 0,0,2180,800);
 	animes.hitAngeli.addObj('src6',temp.obj);
 	animes.hitAngeli.addAnimation('src6',{'frame':JSON.parse('[0,13,38,40,42,44,46,48,50,52,54,56,81,94,95]'),'spriteSeq':JSON.parse('[0,0,0,1,2,3,4,5,6,7,8,9,9,9,9]'),'opacity':JSON.parse('[0,1,1,1,1,1,1,1,1,1,1,1,1,0,0]')});
@@ -1060,11 +488,6 @@ function createbook(){
 		mse.setCursor('default'); 
 	};
 	action.cursorContent.register(reaction.cursorContent);
-	action.startsoundcoup=new mse.Script([{src:animes.hitAngeli,type:'start'}]);
-	reaction.startsoundcoup=function(){ 
-		mse.src.getSrc('soncoup').play(); 
-	};
-	action.startsoundcoup.register(reaction.startsoundcoup);
 	action.addSpotEffet=new mse.Script([{src:animes.chBack2Anime,type:'end'}]);
 	reaction.addSpotEffet=function(){ 
 		objs.obj278.count = 0;
@@ -1126,15 +549,48 @@ for(var i = 0; i < layers.content.objList.length; i++){
 } 
 	};
 	action.addTextEffect.register(reaction.addTextEffect);
-	action.startBeginIntro=action.transTitle;
-	reaction.startBeginIntro=function(){ 
-		mse.src.getSrc('intro').play(); 
-	};
-	action.startBeginIntro.register(reaction.startBeginIntro);
 	action.startFinIntro=new mse.Script([{src:objs.obj583,type:'firstShow'}]);
 	reaction.startFinIntro=function(){ 
 		mse.src.getSrc('intro').play(); 
 	};
 	action.startFinIntro.register(reaction.startFinIntro);
+	action.startSonPhoque=new mse.Script([{src:objs.obj587,type:'firstShow'}]);
+	reaction.startSonPhoque=function(){ 
+		mse.src.getSrc('phoque').play(); 
+	};
+	action.startSonPhoque.register(reaction.startSonPhoque);
+	action.startSonAngoisse=new mse.Script([{src:objs.obj352,type:'firstShow'}]);
+	reaction.startSonAngoisse=function(){ 
+		mse.src.getSrc('angoisse').play(); 
+	};
+	action.startSonAngoisse.register(reaction.startSonAngoisse);
+	action.startObjSon=new mse.Script([{src:animes.objAnime,type:'start'}]);
+	reaction.startObjSon=function(){ 
+		mse.src.getSrc('animobjets').play(); 
+	};
+	action.startObjSon.register(reaction.startObjSon);
+	action.startConcert=new mse.Script([{src:objs.obj458,type:'firstShow'}]);
+	reaction.startConcert=function(){ 
+		mse.src.getSrc('concert').play(); 
+	};
+	action.startConcert.register(reaction.startConcert);
+	action.startsoundcoup=new mse.Script([{src:animes.hitAngeli,type:'start'}]);
+	reaction.startsoundcoup=function(){ 
+		mse.src.getSrc('coupanime').play(); 
+	};
+	action.startsoundcoup.register(reaction.startsoundcoup);
+	action.stopIntro=action.cursorContent;
+	reaction.stopIntro=function(){ 
+		mse.src.getSrc('intro').pause(); 
+	};
+	action.stopIntro.register(reaction.stopIntro);
+	action.startBeginIntro=action.cursorCouv;
+	reaction.startBeginIntro=function(){ 
+		mse.src.getSrc('intro').play(); 
+	};
+	action.startBeginIntro.register(reaction.startBeginIntro);
 	mse.currTimeline.start();};
-mse.autoFitToWindow(createbook);
+mse.autoFitToWindow(function(){
+	mse.init(null, 'Voodoo_Ch5',mse.coor('cid0'),mse.coor('cid1'),'portrait');
+	$(document).ready(createbook);
+});

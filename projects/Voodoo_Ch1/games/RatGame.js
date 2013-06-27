@@ -1,7 +1,7 @@
 var RatGame = function() {
 	mse.Game.call(this);
 	
-	var oxid = mse.joinCoor(220);
+	var oxid = mse.joinCoor(215);
 	var oyid = mse.joinCoor(0);
 	var wid = mse.joinCoor(360);
 	var hid = mse.joinCoor(596);

@@ -3610,7 +3610,7 @@ var initTranslateTool = function() {
             var obj = container.children('p[objId="'+objId+'"]');
             
             // For links
-            if(format == "link") {
+            if(format == "link" && obj.length > 0) {
                 var text = obj.text();
                 if(text.indexOf(keyword, offset) == offset) {
                     var start = text.substr( 0, offset );
@@ -3621,7 +3621,7 @@ var initTranslateTool = function() {
             }
             
             // For insertions
-            if(format == "inser") {
+            if(format == "inser" && obj.length > 0) {
                 var expo = srcMgr.getExpoClone(link.id);
                 expo.deletable(false);
                 expo.circleMenu(false);
@@ -3645,6 +3645,11 @@ var initTranslateTool = function() {
         
         init: function(){
             articles = $('.article');
+            // Expo no need to translate
+            if(pjLanguage == "extrait") {
+                untranslated = false;
+                CreatTool.prototype.close.call(this);
+            }
             // No article, no need to translate
             if(articles.length <= 0) {
                 this.close();
@@ -4361,22 +4366,47 @@ $.fn.moveable = function(supp) {
 // Choose event
 function choose(e) {
 	var elem = $(this);
-	if( !isCtrlDown  ){
+	if( isCtrlDown  ){
+	    for( var i = 0 ; i < multiSelect.length ; i ++ )
+	    	if( $( multiSelect[ i ] ).attr("id") == elem.attr("id") ){
+	    		$( multiSelect[ i ] ).removeClass( 'selected' );
+	    		multiSelect.splice( i , 1 );
+	    		break;
+	    	}
+	    if( i == multiSelect.length ){
+	    	multiSelect.push( elem );
+	    	elem.addClass( 'selected' );
+	    }
+	} 
+	else if ( multiSelect.length > 0 && isMajDown ) {
+	    var existed = multiSelect[0];
+	    // Elem same level
+	    if(existed.parent().get(0) == elem.parent().get(0)) {
+	        // Existed before elem
+	        if (existed.index() < elem.index()) {
+	            var all = existed.nextUntil(elem).andSelf().add(elem);
+	            multiSelect = [];
+	            
+            	var ok = confirm("Delete all ?");
+            	all.each(function() {
+            	    if(ok) {
+            	        deleteElem($(this));
+            	    }
+            	    else {
+            	        multiSelect.push($(this));
+            	        $(this).addClass( 'selected' );
+            	    }
+            	});
+            	
+            	isMajDown = false;
+	        }
+	    }
+	}
+	else {
 		for( var i = 0 ; i < multiSelect.length ; i ++ )
 			$( multiSelect[ i ] ).removeClass( 'selected' );
 		multiSelect = [ elem ];
 		elem.addClass( 'selected' );
-	} else {
-		for( var i = 0 ; i < multiSelect.length ; i ++ )
-			if( $( multiSelect[ i ] ).attr("id") == elem.attr("id") ){
-				$( multiSelect[ i ] ).removeClass( 'selected' );
-				multiSelect.splice( i , 1 );
-				break;
-			}
-		if( i == multiSelect.length ){
-			multiSelect.push( elem );
-			elem.addClass( 'selected' );
-		}
 	}
 }
 // only for resizable element

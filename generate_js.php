@@ -62,11 +62,12 @@ class ProjectGenerator {
         //$content .= file_get_contents("projects/mse.js");
         // System mse effet
         //$content .= file_get_contents("projects/effet_mini.js");
+        /*
         // External js (game)
         foreach($this->scriptExt as $extjs) {
             if(file_exists($extjs))
                 $content .= file_get_contents($extjs);
-        }
+        }*/
         // Project content
         $content .= $js;
         file_put_contents($path, $content);
@@ -119,17 +120,16 @@ class ProjectGenerator {
         $this->jstr = "";
         // Initiale Mse system
         $this->jstr .= "\ninitMseConfig();";
-        // Initiale root
-        $this->jstr .= "\nmse.init(null, '".$this->pj->getName()."',".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight).",'".$this->pj->getOrientation()."');";
         // Pages, Layers, Objects
         $this->jstr .= "\nwindow.pages={};";
-        $this->jstr .= "\nvar layers={};";
+        $this->jstr .= "\nwindow.layers={};";
         $this->jstr .= "\nwindow.objs={};";
         $this->jstr .= "\nvar animes={};";
         $this->jstr .= "\nvar games={};";
         $this->jstr .= "\nvar wikis={};";
         
         $this->jstr .= "\nfunction createbook(){";
+        
         $this->jstr .= "\n\tif(config.publishMode == 'debug') mse.configs.srcPath='./".$this->pj->getFolder()."/';";
         $this->jstr .= "\n\twindow.root = mse.root;";
         $this->autoid = 0;
@@ -523,9 +523,13 @@ class ProjectGenerator {
         
         // Start the book
         $this->jstr .= "\n\tmse.currTimeline.start();};";
+        
         // Lazy init the book
-        $this->jstr .= "\nmse.autoFitToWindow(createbook);";
-        //$this->jstr .= "createbook();";
+        $this->jstr .= "\nmse.autoFitToWindow(function(){";
+        // Initiale root
+        $this->jstr .= "\n\tmse.init(null, '".$this->pj->getName()."',".$this->encodedCoord($this->pjWidth).",".$this->encodedCoord($this->pjHeight).",'".$this->pj->getOrientation()."');";
+        $this->jstr .= "\n\t$(document).ready(createbook);";
+        $this->jstr .= "\n});";
         
         // Join the coords array in the beginning
         $this->jstr = "\nmse.coords = JSON.parse('".json_encode($this->coords)."');".$this->jstr;
@@ -661,7 +665,7 @@ class ProjectGenerator {
         else if($class == 'game') {
             $type = "game";
             $classname = $objnode['name'];
-            $this->jstr .= "\n\t$obj=new $classname();";
+            $this->jstr .= "\n\t$obj=games.$classname;";
         }
         else if($class == 'anime') {
             $type = "anime";
